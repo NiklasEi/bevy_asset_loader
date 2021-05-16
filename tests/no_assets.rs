@@ -12,7 +12,8 @@ fn no_assets() {
         .set_runner(|mut app| {
             app.schedule.run(&mut app.world);
             app.schedule.run(&mut app.world);
-        }).run();
+        })
+        .run();
 }
 
 fn print(mut frame_count: ResMut<i32>) {
@@ -22,5 +23,5 @@ fn print(mut frame_count: ResMut<i32>) {
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 enum MyStates {
     Load,
-    Next
+    Next,
 }
