@@ -7,7 +7,7 @@
 //! ```edition2018
 //! # use bevy_assets_loader::{AssetLoaderPlugin, AssetCollection};
 //! # use bevy::prelude::*;
-//! fn no_assets() {
+//! fn main() {
 //!     App::build()
 //!         .add_state(MyStates::Load)
 //!         .add_plugins(DefaultPlugins)
@@ -40,35 +40,29 @@ use bevy::ecs::system::IntoSystem;
 use bevy::prelude::{Commands, Res, ResMut, SystemSet};
 use std::fmt::Debug;
 use std::hash::Hash;
+use std::marker::PhantomData;
 
-pub struct AssetLoaderPlugin<T> {
+pub struct AssetLoaderPlugin<A, T> {
     on: T,
     next: T,
-    systems: Vec<Box<dyn FnOnce() -> dyn Into<SystemDescriptor>>>,
+    marker: PhantomData<A>,
 }
 
-impl<T> AssetLoaderPlugin<T>
+impl<A, T> AssetLoaderPlugin<A, T>
 where
+    A: AssetCollection,
     T: Component + Debug + Clone + Eq + Hash,
 {
-    pub fn new(on: T, next: T) -> AssetLoaderPlugin<T> {
+    pub fn new(on: T, next: T) -> AssetLoaderPlugin<A, T> {
         Self {
             on,
             next,
-            systems: vec![],
+            marker: PhantomData,
         }
-    }
-
-    pub fn with_collection<A: AssetCollection>(&mut self) -> &mut Self {
-        self.systems
-            .push(Box::new(|| insert_asset_collection::<A>.system()));
-
-        self
     }
 }
 
-// ToDo
-pub trait AssetCollection {
+pub trait AssetCollection: Component {
     fn create(asset_server: &mut ResMut<AssetServer>) -> Self;
 }
 
@@ -76,39 +70,46 @@ struct AssetLoaderNextState<T> {
     next: T,
 }
 
-impl<T> Plugin for AssetLoaderPlugin<T>
+impl<Assets, State> Plugin for AssetLoaderPlugin<Assets, State>
 where
-    T: Component + Debug + Clone + Eq + Hash,
+    Assets: AssetCollection,
+    State: Component + Debug + Clone + Eq + Hash,
 {
     fn build(&self, app: &mut AppBuilder) {
-        let mut insert_resources_set = SystemSet::on_exit(self.on.clone());
-        self.systems.iter().map(|system| {
-            insert_resources_set.with_system(system());
-        });
-
-        app.insert_resource(AssetLoaderNextState::<T> {
+        app.insert_resource(AssetLoaderNextState::<State> {
             next: self.next.clone(),
         })
         .add_system_set(
-            SystemSet::on_enter(self.on.clone()).with_system(start_loading::<T>.system()),
+            SystemSet::on_enter(self.on.clone()).with_system(start_loading::<Assets>.system()),
         )
-        .add_system_set(insert_resources_set);
+        .add_system_set(
+            SystemSet::on_update(self.on.clone())
+                .with_system(check_loading_state::<State, Assets>.system()),
+        )
+        .add_system_set(
+            SystemSet::on_exit(self.on.clone())
+                .with_system(insert_asset_collection::<Assets>.system()),
+        );
     }
 }
 
-fn insert_asset_collection<T: AssetCollection>(
-    mut commands: Commands,
-    mut asset_server: ResMut<AssetServer>,
-) {
-    commands.insert_resource(T::create(&mut asset_server));
+fn start_loading<Assets: AssetCollection>() {
+    // Todo
 }
 
-fn start_loading<T: Component + Debug + Clone + Eq + Hash>(
+fn check_loading_state<T: Component + Debug + Clone + Eq + Hash, A: AssetCollection>(
     mut state: ResMut<State<T>>,
     next_state: Res<AssetLoaderNextState<T>>,
 ) {
-    println!("loading");
+    // todo
     state
         .set(next_state.next.clone())
         .expect("Failed to set next State");
+}
+
+fn insert_asset_collection<A: AssetCollection>(
+    mut commands: Commands,
+    mut asset_server: ResMut<AssetServer>,
+) {
+    commands.insert_resource(A::create(&mut asset_server));
 }
