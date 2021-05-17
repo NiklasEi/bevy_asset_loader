@@ -1,6 +1,5 @@
 use bevy::app::{AppExit, ScheduleRunnerPlugin};
 use bevy::prelude::*;
-use bevy::reflect::TypeUuid;
 use bevy_assets_loader::{AssetCollection, AssetLoaderPlugin};
 use bevy_kira_audio::{AudioPlugin, AudioSource};
 
@@ -36,15 +35,20 @@ fn expect_asset_collection(collection: Option<Res<MyAssets>>, mut exit: EventWri
     }
 }
 
+#[allow(dead_code)]
 struct MyAssets {
     walking: Handle<AudioSource>,
 }
 
 impl AssetCollection for MyAssets {
-    fn create(asset_server: &mut ResMut<AssetServer>) -> Self {
+    fn create(asset_server: &Res<AssetServer>) -> Self {
         MyAssets {
             walking: asset_server.get_handle("walking.ogg"),
         }
+    }
+
+    fn load(asset_server: &Res<AssetServer>) -> Vec<HandleUntyped> {
+        vec![asset_server.load_untyped("walking.ogg")]
     }
 }
 

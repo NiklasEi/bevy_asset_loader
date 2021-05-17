@@ -6,21 +6,32 @@
 //!
 //! ```edition2018
 //! # use bevy_assets_loader::{AssetLoaderPlugin, AssetCollection};
+//! # use bevy_kira_audio::{AudioPlugin, AudioSource, Audio};
 //! # use bevy::prelude::*;
 //! fn main() {
 //!     App::build()
 //!         .add_state(MyStates::Load)
 //!         .add_plugins(DefaultPlugins)
-//!         .add_plugin(AssetLoaderPlugin::new(MyStates::Load, MyStates::Next).with_collection::<MyAssets>())
+//!         .add_plugin(AudioPlugin)
+//!         .add_plugin(AssetLoaderPlugin::<MyAudioAssets, _>::new(
+//!             MyStates::Load,
+//!             MyStates::Next,
+//!         ))
+//! .add_system_set(SystemSet::on_update(MyStates::Next).with_system(use_asset_handles.system()))
 //!         .run();
 //! }
 //!
 //! #[derive(AssetCollection)]
-//! struct MyAssets {
-//!     #[path = "textures/ground.png"]
-//!     ground: Handle<Texture>,
+//! struct MyAudioAssets {
 //!     #[path = "walking.ogg"]
-//!     walking_sound: Handle<AudioSource>
+//!     walking: Handle<AudioSource>,
+//!     #[path = "flying.ogg"]
+//!     flying: Handle<AudioSource>
+//! }
+//!
+//! // since this function runs in [MyState::Next], we know our assets are loaded and [MyAudioAssets] is a resource
+//! fn use_asset_handles(audio_assets: Res<MyAudioAssets>, audio: Res<Audio>) {
+//!     audio.play(audio_assets.flying.clone());
 //! }
 //!
 //! #[derive(Clone, Eq, PartialEq, Debug, Hash)]
@@ -32,10 +43,9 @@
 //!
 
 use bevy::app::{AppBuilder, Plugin};
-use bevy::asset::AssetServer;
+use bevy::asset::{AssetServer, HandleId, HandleUntyped, LoadState};
 use bevy::ecs::component::Component;
 use bevy::ecs::prelude::State;
-use bevy::ecs::schedule::SystemDescriptor;
 use bevy::ecs::system::IntoSystem;
 use bevy::prelude::{Commands, Res, ResMut, SystemSet};
 use std::fmt::Debug;
@@ -57,13 +67,19 @@ where
         Self {
             on,
             next,
-            marker: PhantomData,
+            marker: PhantomData::<A>,
         }
     }
 }
 
 pub trait AssetCollection: Component {
-    fn create(asset_server: &mut ResMut<AssetServer>) -> Self;
+    fn create(asset_server: &Res<AssetServer>) -> Self;
+    fn load(asset_server: &Res<AssetServer>) -> Vec<HandleUntyped>;
+}
+
+struct LoadingAssetHandles<A: Component> {
+    handles: Vec<HandleId>,
+    marker: PhantomData<A>,
 }
 
 struct AssetLoaderNextState<T> {
@@ -93,23 +109,33 @@ where
     }
 }
 
-fn start_loading<Assets: AssetCollection>() {
-    // Todo
+fn start_loading<Assets: AssetCollection>(mut commands: Commands, asset_server: Res<AssetServer>) {
+    let mut handles = Assets::load(&asset_server);
+    commands.insert_resource(LoadingAssetHandles {
+        handles: handles.drain(..).map(|handle| handle.id).collect(),
+        marker: PhantomData::<Assets>,
+    })
 }
 
 fn check_loading_state<T: Component + Debug + Clone + Eq + Hash, A: AssetCollection>(
     mut state: ResMut<State<T>>,
     next_state: Res<AssetLoaderNextState<T>>,
+    asset_server: Res<AssetServer>,
+    loading_asset_handles: Res<LoadingAssetHandles<A>>,
 ) {
-    // todo
-    state
-        .set(next_state.next.clone())
-        .expect("Failed to set next State");
+    let load_state = asset_server.get_group_load_state(loading_asset_handles.handles.clone());
+    if load_state == LoadState::Loaded {
+        state
+            .set(next_state.next.clone())
+            .expect("Failed to set next State");
+    } else {
+        println!("Current loading state: {:?}", load_state);
+    }
 }
 
 fn insert_asset_collection<A: AssetCollection>(
     mut commands: Commands,
-    mut asset_server: ResMut<AssetServer>,
+    asset_server: Res<AssetServer>,
 ) {
-    commands.insert_resource(A::create(&mut asset_server));
+    commands.insert_resource(A::create(&asset_server));
 }
