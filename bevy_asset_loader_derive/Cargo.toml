@@ -1,5 +1,5 @@
 [package]
-name = "bevy_assets_loader_derive"
+name = "bevy_asset_loader_derive"
 version = "0.1.0"
 authors = ["Niklas Eicker <git@nikl.me>"]
 edition = "2018"

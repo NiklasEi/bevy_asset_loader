@@ -1,6 +1,6 @@
 use bevy::app::{AppExit, ScheduleRunnerPlugin};
 use bevy::prelude::*;
-use bevy_assets_loader::{AssetCollection, AssetLoaderPlugin};
+use bevy_asset_loader::{AssetCollection, AssetLoaderPlugin};
 use bevy_kira_audio::{AudioPlugin, AudioSource};
 
 #[test]

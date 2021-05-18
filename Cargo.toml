@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
 members = [
-    "bevy_assets_loader",
-    "bevy_assets_loader_derive"
+    "bevy_asset_loader",
+    "bevy_asset_loader_derive"
 ]

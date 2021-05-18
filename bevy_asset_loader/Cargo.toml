@@ -1,12 +1,12 @@
 [package]
-name = "bevy_assets_loader"
+name = "bevy_asset_loader"
 version = "0.1.0"
 authors = ["Niklas Eicker <git@nikl.me>"]
 edition = "2018"
 
 [dependencies]
 bevy = { version = "0.5.0", default-features = false }
-bevy_assets_loader_derive = {path = "../bevy_assets_loader_derive"}
+bevy_asset_loader_derive = {path = "../bevy_asset_loader_derive" }
 
 [dev-dependencies]
 bevy = { version = "0.5.0", default-features = false }

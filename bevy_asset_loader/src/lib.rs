@@ -42,7 +42,7 @@
 //! ```
 //!
 
-pub use bevy_assets_loader_derive::AssetCollection;
+pub use bevy_asset_loader_derive::AssetCollection;
 
 use bevy::app::{AppBuilder, Plugin};
 use bevy::asset::{AssetServer, HandleId, HandleUntyped, LoadState};
