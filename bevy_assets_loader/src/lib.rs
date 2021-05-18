@@ -42,6 +42,8 @@
 //! ```
 //!
 
+pub use bevy_assets_loader_derive::AssetCollection;
+
 use bevy::app::{AppBuilder, Plugin};
 use bevy::asset::{AssetServer, HandleId, HandleUntyped, LoadState};
 use bevy::ecs::component::Component;
@@ -128,8 +130,6 @@ fn check_loading_state<T: Component + Debug + Clone + Eq + Hash, A: AssetCollect
         state
             .set(next_state.next.clone())
             .expect("Failed to set next State");
-    } else {
-        println!("Current loading state: {:?}", load_state);
     }
 }
 

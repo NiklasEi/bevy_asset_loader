@@ -36,20 +36,12 @@ fn expect_asset_collection(collection: Option<Res<MyAssets>>, mut exit: EventWri
 }
 
 #[allow(dead_code)]
+#[derive(AssetCollection)]
 struct MyAssets {
+    #[asset(path = "walking.ogg")]
     walking: Handle<AudioSource>,
-}
-
-impl AssetCollection for MyAssets {
-    fn create(asset_server: &Res<AssetServer>) -> Self {
-        MyAssets {
-            walking: asset_server.get_handle("walking.ogg"),
-        }
-    }
-
-    fn load(asset_server: &Res<AssetServer>) -> Vec<HandleUntyped> {
-        vec![asset_server.load_untyped("walking.ogg")]
-    }
+    #[asset(path = "flying.ogg")]
+    flying: Handle<AudioSource>,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]

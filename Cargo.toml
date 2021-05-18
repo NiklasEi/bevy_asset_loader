@@ -1,15 +1,6 @@
-[package]
-name = "bevy_assets_loader"
-version = "0.1.0"
-authors = ["Niklas Eicker <git@nikl.me>"]
-edition = "2018"
+[workspace]
 resolver = "2"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-bevy = { version = "0.5.0", default-features = false }
-
-[dev-dependencies]
-bevy = { version = "0.5.0", default-features = false }
-bevy_kira_audio =  { version = "0.4.0", features = ["ogg"] }
+members = [
+    "bevy_assets_loader",
+    "bevy_assets_loader_derive"
+]
