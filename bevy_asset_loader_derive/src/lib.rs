@@ -2,7 +2,7 @@ extern crate proc_macro;
 
 use proc_macro::TokenStream;
 use proc_macro2::Ident;
-use quote::quote;
+use quote::{quote, ToTokens};
 use syn::{Data, Fields, Lit, NestedMeta, Meta};
 
 #[proc_macro_derive(AssetCollection, attributes(asset))]
@@ -19,48 +19,47 @@ struct Asset {
 fn impl_asset_collection(ast: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Vec<syn::Error>> {
     let name = &ast.ident;
 
+    let mut fields = 0;
     let mut assets: Vec<Asset> = vec![];
-    match ast.data {
-        Data::Struct(ref data_struct) => {
-            match data_struct.fields {
-                Fields::Named(ref named_fields) => {
-                    'fields: for field in named_fields.named.iter() {
-                        'attributes: for attr in field.attrs.iter() {
-                            match attr.parse_meta().unwrap() {
-                                syn::Meta::List(ref asset_meta_list) => {
-                                    if asset_meta_list.path.get_ident()
-                                        .unwrap()
-                                        .to_string()
-                                        != "asset"
-                                    {
-                                        continue 'attributes;
-                                    }
+    if let Data::Struct(ref data_struct) = ast.data {
+        if let Fields::Named(ref named_fields) = data_struct.fields {
+            'fields: for field in named_fields.named.iter() {
+                fields += 1;
+                'attributes: for attr in field.attrs.iter() {
+                    if let syn::Meta::List(ref asset_meta_list) =attr.parse_meta().unwrap() {
+                        if *asset_meta_list.path.get_ident()
+                            .unwrap()
+                            != "asset"
+                        {
+                            continue 'attributes;
+                        }
 
-                                    for attribute in asset_meta_list.nested.iter() {
-                                        if let NestedMeta::Meta(Meta::NameValue(ref named_value)) = attribute {
-                                            if named_value.path.get_ident()
-                                                .unwrap()
-                                                .to_string()
-                                                != "path"
-                                            {
-                                                continue;
-                                            }
-                                            if let Lit::Str(path_literal) = &named_value.lit {
-                                                assets.push(Asset { field_ident: field.clone().ident.unwrap(), asset_path: path_literal.value()});
-                                                continue 'fields;
-                                            }
-                                        }
-                                    }
+                        for attribute in asset_meta_list.nested.iter() {
+                            if let NestedMeta::Meta(Meta::NameValue(ref named_value)) = attribute {
+                                if *named_value.path.get_ident()
+                                    .unwrap()
+                                    != "path"
+                                {
+                                    continue;
                                 }
-                                _ => (),
+                                if let Lit::Str(path_literal) = &named_value.lit {
+                                    assets.push(Asset { field_ident: field.clone().ident.unwrap(), asset_path: path_literal.value()});
+                                    continue 'fields;
+                                }
                             }
                         }
                     }
                 }
-                _ => {}
             }
-        },
-        _ => {}
+        } else {
+            return Err(vec![syn::Error::new_spanned(data_struct.fields.clone().into_token_stream(), "only named fields are supported to derive AssetCollection")]);
+        }
+    } else {
+        return Err(vec![syn::Error::new_spanned(&ast.into_token_stream(), "AssetCollection can only be derived for a struct")]);
+    }
+
+    if assets.len() != fields {
+        return Err(vec![syn::Error::new_spanned(&ast.into_token_stream(), "To auto derive AssetCollection every field should have an asset attribute containing a path")]);
     }
 
     let asset_creation = assets
