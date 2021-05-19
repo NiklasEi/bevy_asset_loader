@@ -1,7 +1,5 @@
 //! # Bevy asset loader
 //!
-//! **WIP!**
-//!
 //! The goal of this crate is to offer an easy way for bevy games to load all their assets.
 //!
 //! ```edition2018
@@ -17,7 +15,7 @@
 //!             MyStates::Load,
 //!             MyStates::Next,
 //!         ))
-//! .add_system_set(SystemSet::on_update(MyStates::Next).with_system(use_asset_handles.system()))
+//!         .add_system_set(SystemSet::on_update(MyStates::Next).with_system(use_asset_handles.system()))
 //!         .run();
 //! }
 //!

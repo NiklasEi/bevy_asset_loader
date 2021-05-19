@@ -3,6 +3,14 @@ name = "bevy_asset_loader"
 version = "0.1.0"
 authors = ["Niklas Eicker <git@nikl.me>"]
 edition = "2018"
+license = "MIT"
+description = "Bevy plugin for asset loading"
+repository = "https://github.com/NiklasEi/bevy_asset_loader"
+homepage = "https://github.com/NiklasEi/bevy_asset_loader"
+documentation = "https://github.com/NiklasEi/bevy_asset_loader"
+keywords = ["bevy", "gamedev", "asset", "assets"]
+categories = ["game-development"]
+readme = "../README.md"
 
 [dependencies]
 bevy = { version = "0.5.0", default-features = false }
