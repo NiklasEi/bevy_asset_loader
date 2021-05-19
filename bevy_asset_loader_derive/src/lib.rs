@@ -3,7 +3,6 @@ extern crate proc_macro;
 use proc_macro::TokenStream;
 use proc_macro2::Ident;
 use quote::quote;
-use syn;
 use syn::{Data, Fields, Lit, NestedMeta, Meta};
 
 #[proc_macro_derive(AssetCollection, attributes(asset))]
@@ -70,7 +69,7 @@ fn impl_asset_collection(ast: syn::DeriveInput) -> Result<proc_macro2::TokenStre
 
     let asset_loading = assets
         .iter()
-        .fold(quote!(), |es, Asset {field_ident: _, asset_path}| quote!(#es asset_server.load_untyped(#asset_path),));
+        .fold(quote!(), |es, Asset {field_ident: _, asset_path}| quote!(#es handles.push(asset_server.load_untyped(#asset_path));));
 
 
     let gen = quote! {
@@ -83,7 +82,9 @@ fn impl_asset_collection(ast: syn::DeriveInput) -> Result<proc_macro2::TokenStre
             }
 
             fn load(asset_server: &Res<AssetServer>) -> Vec<HandleUntyped> {
-                vec![#asset_loading]
+                let mut handles = vec![];
+                #asset_loading
+                handles
             }
         }
     };

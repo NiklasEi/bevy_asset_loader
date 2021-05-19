@@ -5,7 +5,7 @@
 //! The goal of this crate is to offer an easy way for bevy games to load all their assets.
 //!
 //! ```edition2018
-//! # use bevy_assets_loader::{AssetLoaderPlugin, AssetCollection};
+//! # use bevy_asset_loader::{AssetLoaderPlugin, AssetCollection};
 //! # use bevy_kira_audio::{AudioPlugin, AudioSource, Audio};
 //! # use bevy::prelude::*;
 //! fn main() {
@@ -23,9 +23,9 @@
 //!
 //! #[derive(AssetCollection)]
 //! struct MyAudioAssets {
-//!     #[path = "walking.ogg"]
+//!     #[asset(path = "walking.ogg")]
 //!     walking: Handle<AudioSource>,
-//!     #[path = "flying.ogg"]
+//!     #[asset(path = "flying.ogg")]
 //!     flying: Handle<AudioSource>
 //! }
 //!
@@ -103,10 +103,6 @@ where
         .add_system_set(
             SystemSet::on_update(self.on.clone())
                 .with_system(check_loading_state::<State, Assets>.system()),
-        )
-        .add_system_set(
-            SystemSet::on_exit(self.on.clone())
-                .with_system(insert_asset_collection::<Assets>.system()),
         );
     }
 }
@@ -120,6 +116,7 @@ fn start_loading<Assets: AssetCollection>(mut commands: Commands, asset_server: 
 }
 
 fn check_loading_state<T: Component + Debug + Clone + Eq + Hash, A: AssetCollection>(
+    mut commands: Commands,
     mut state: ResMut<State<T>>,
     next_state: Res<AssetLoaderNextState<T>>,
     asset_server: Res<AssetServer>,
@@ -127,15 +124,9 @@ fn check_loading_state<T: Component + Debug + Clone + Eq + Hash, A: AssetCollect
 ) {
     let load_state = asset_server.get_group_load_state(loading_asset_handles.handles.clone());
     if load_state == LoadState::Loaded {
+        commands.insert_resource(A::create(&asset_server));
         state
             .set(next_state.next.clone())
             .expect("Failed to set next State");
     }
-}
-
-fn insert_asset_collection<A: AssetCollection>(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-) {
-    commands.insert_resource(A::create(&asset_server));
 }

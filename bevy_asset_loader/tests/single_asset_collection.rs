@@ -4,7 +4,7 @@ use bevy_asset_loader::{AssetCollection, AssetLoaderPlugin};
 use bevy_kira_audio::{AudioPlugin, AudioSource};
 
 #[test]
-fn no_assets() {
+fn single_asset_collection() {
     App::build()
         .add_state(MyStates::Load)
         .add_plugins(DefaultPlugins)
