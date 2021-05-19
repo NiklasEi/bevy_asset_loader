@@ -44,5 +44,11 @@ enum MyStates {
 }
 ```
 
+# Missing features
+
+* Loading multiple `AssetCollection`s per plugin (see [#1](https://github.com/NiklasEi/bevy_asset_loader/issues/1))
+* More than one plugin loading in the same State (maybe an alternative to the point above) (see [#2](https://github.com/NiklasEi/bevy_asset_loader/issues/2))
+  * The current problem here is that the different plugins will enter a race for who is allowed to change the State first
+
 
 [bevy]: https://bevyengine.org/
