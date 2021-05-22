@@ -1,3 +1,8 @@
+//! This crate adds support for auto deriving ``bevy_asset_loader::AssetCollection``
+//!
+//! You do not have to use it directly. Just import ``AssetCollection`` from ``bevy_asset_loader``
+//! and use ``#[derive(AssetCollection)]`` to derive the trait.
+
 extern crate proc_macro;
 
 use proc_macro::TokenStream;
@@ -5,6 +10,18 @@ use proc_macro2::Ident;
 use quote::{quote, ToTokens};
 use syn::{Data, Fields, Lit, NestedMeta, Meta};
 
+/// Derive macro for AssetCollection
+///
+/// The helper attribute ``asset`` can be used to define the path to the asset file.
+/// ```edition2018
+/// #[derive(AssetCollection)]
+/// struct MyAudioAssets {
+///     #[asset(path = "walking.ogg")]
+///     walking: Handle<AudioSource>,
+///     #[asset(path = "flying.ogg")]
+///     flying: Handle<AudioSource>
+/// }
+/// ```
 #[proc_macro_derive(AssetCollection, attributes(asset))]
 pub fn asset_collection_derive(input: TokenStream) -> TokenStream {
     let ast = syn::parse(input).unwrap();

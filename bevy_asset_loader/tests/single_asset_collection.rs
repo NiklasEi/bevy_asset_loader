@@ -1,15 +1,12 @@
-use bevy::app::{AppExit, ScheduleRunnerPlugin};
+use bevy::app::AppExit;
 use bevy::prelude::*;
 use bevy_asset_loader::{AssetCollection, AssetLoaderPlugin};
-use bevy_kira_audio::{AudioPlugin, AudioSource};
 
 #[test]
 fn single_asset_collection() {
     App::build()
         .add_state(MyStates::Load)
         .add_plugins(DefaultPlugins)
-        .add_plugin(ScheduleRunnerPlugin::default())
-        .add_plugin(AudioPlugin)
         .add_system_set(SystemSet::on_update(MyStates::Load).with_system(timeout.system()))
         .add_system_set(
             SystemSet::on_enter(MyStates::Next).with_system(expect_asset_collection.system()),
@@ -38,10 +35,10 @@ fn expect_asset_collection(collection: Option<Res<MyAssets>>, mut exit: EventWri
 #[allow(dead_code)]
 #[derive(AssetCollection)]
 struct MyAssets {
-    #[asset(path = "walking.ogg")]
-    walking: Handle<AudioSource>,
-    #[asset(path = "flying.ogg")]
-    flying: Handle<AudioSource>,
+    #[asset(path = "player.png")]
+    player: Handle<Texture>,
+    #[asset(path = "tree.png")]
+    tree: Handle<Texture>,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
