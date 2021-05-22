@@ -10,31 +10,31 @@
 This [Bevy][bevy] plugin reduces boilerplate when loading game assets. The crate offers the `AssetCollection` trait and can automatically load structs that implement it. The trait can be derived.
 
 # How to use
-The plugin takes an AssetCollection and two states as configuration. During the first stage it will load the assets and insert the struct implementing `AssetCollection` as a resource. When the assets are done loading, the plugin switches to the second state.
+The plugin takes an `AssetCollection` and two `State`s as configuration. During the first state it will load the assets and check up on the loading status in every frame. When the assets are done loading, the asset collection is inserted as a resource. Then the plugin switches to the second state. You can now use the assets by requesting the resource in your systems.
 
 ```rust
 fn main() {
     App::build()
         .add_state(MyStates::AssetLoading)
-        .add_plugin(AssetLoaderPlugin::<MyAudioAssets, _>::new(
+        .add_plugin(AssetLoaderPlugin::<MyAssets, _>::new(
             MyStates::AssetLoading,
             MyStates::Next,
         ))
         .add_system_set(
-            SystemSet::on_enter(MyStates::Next).with_system(use_my_audio_assets.system()),
+            SystemSet::on_enter(MyStates::Next).with_system(use_my_assets.system()),
         )
         .run();
 }
 
 #[derive(AssetCollection)]
-struct MyAudioAssets {
-    #[asset(path = "audio/walking.ogg")]
-    walking: Handle<AudioSource>,
-    #[asset(path = "audio/flying.ogg")]
-    flying: Handle<AudioSource>,
+struct MyAssets {
+    #[asset(path = "textures/player.ogg")]
+    player: Handle<Texture>,
+    #[asset(path = "textures/tree.ogg")]
+    tree: Handle<Texture>,
 }
 
-fn use_my_audio_assets(_assets: Res<MyAudioAssets>) {
+fn use_my_assets(_assets: Res<MyAssets>) {
     // do something using the asset handles in `assets`
 }
 
