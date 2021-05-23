@@ -8,9 +8,12 @@
 This [Bevy][bevy] plugin reduces boilerplate when loading game assets. The crate offers the `AssetCollection` trait and can automatically load structs that implement it. The trait can be derived.
 
 # How to use
-The `AssetLoader` is constructed with two `State`s. During the first state it will load the assets and check up on the loading status in every frame. When the assets are done loading, the collections will be inserted as resources. Then the plugin switches to the second state.
 
-You can add as many `AssetCollection`s to the loader as you want. This id done by chaining `with_collection` calls. To finish the setup, the `build` function needs to be called with your `AppBuilder`.
+The `AssetLoader` is constructed with two `State`s. During the first state it will load the assets and check up on the loading status in every frame. When the assets are done loading, the collections will be inserted as resources, and the plugin switches to the second state.
+
+You can add as many `AssetCollection`s to the loader as you want. This is done by chaining `with_collection` calls. To finish the setup, call the `build` function with your `AppBuilder`.
+
+Now you can start your game logic from the second configured state and use the `AssetCollection`s as resources in your systems.
 
 ```rust
 use bevy::prelude::*;
