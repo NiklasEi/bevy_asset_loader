@@ -33,8 +33,8 @@ fn main() {
 
 #[derive(AssetCollection)]
 struct AudioAssets {
-  #[asset(path = "background.ogg")]
-  background: Handle<AudioSource>
+  #[asset(path = "walking.ogg")]
+  walking: Handle<AudioSource>
 }
 
 #[derive(AssetCollection)]
