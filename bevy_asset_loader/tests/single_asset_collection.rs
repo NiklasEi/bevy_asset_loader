@@ -1,20 +1,21 @@
 use bevy::app::AppExit;
+use bevy::asset::AssetPlugin;
+use bevy::audio::AudioPlugin;
 use bevy::prelude::*;
-use bevy_asset_loader::{AssetCollection, AssetLoaderPlugin};
+use bevy_asset_loader::{AssetCollection, AssetLoader};
 
 #[test]
 fn single_asset_collection() {
-    App::build()
-        .add_state(MyStates::Load)
-        .add_plugins(DefaultPlugins)
-        .add_system_set(SystemSet::on_update(MyStates::Load).with_system(timeout.system()))
-        .add_system_set(
-            SystemSet::on_enter(MyStates::Next).with_system(expect_asset_collection.system()),
-        )
-        .add_plugin(AssetLoaderPlugin::<MyAssets, _>::new(
-            MyStates::Load,
-            MyStates::Next,
-        ))
+    let mut app = App::build();
+    app.add_state(MyStates::Load)
+        .add_plugins(MinimalPlugins)
+        .add_plugin(AssetPlugin::default())
+        .add_plugin(AudioPlugin::default());
+    AssetLoader::new(MyStates::Load, MyStates::Next)
+        .with_collection::<MyAssets>()
+        .build(&mut app);
+    app.add_system_set(SystemSet::on_update(MyStates::Load).with_system(timeout.system()))
+        .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(expect.system()))
         .run();
 }
 
@@ -24,7 +25,7 @@ fn timeout(time: Res<Time>) {
     }
 }
 
-fn expect_asset_collection(collection: Option<Res<MyAssets>>, mut exit: EventWriter<AppExit>) {
+fn expect(collection: Option<Res<MyAssets>>, mut exit: EventWriter<AppExit>) {
     if collection.is_none() {
         panic!("Asset collection was not inserted");
     } else {
@@ -35,10 +36,10 @@ fn expect_asset_collection(collection: Option<Res<MyAssets>>, mut exit: EventWri
 #[allow(dead_code)]
 #[derive(AssetCollection)]
 struct MyAssets {
-    #[asset(path = "player.png")]
-    player: Handle<Texture>,
-    #[asset(path = "tree.png")]
-    tree: Handle<Texture>,
+    #[asset(path = "flying.ogg")]
+    flying: Handle<AudioSource>,
+    #[asset(path = "walking.png")]
+    walking: Handle<AudioSource>,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
