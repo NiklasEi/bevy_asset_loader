@@ -1,6 +1,6 @@
 [package]
 name = "bevy_asset_loader"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Niklas Eicker <git@nikl.me>"]
 edition = "2018"
 license = "MIT"
@@ -14,7 +14,11 @@ readme = "../README.md"
 
 [dependencies]
 bevy = { version = "0.5.0", default-features = false }
-bevy_asset_loader_derive = { version = "=0.1.0", path = "../bevy_asset_loader_derive" }
+bevy_asset_loader_derive = { version = "=0.2.0", path = "../bevy_asset_loader_derive" }
 
 [dev-dependencies]
 bevy = { version = "0.5.0", features = ["bevy_audio", "vorbis"] }
+
+[[example]]
+name = "two_collections"
+path = "examples/two_collections.rs"

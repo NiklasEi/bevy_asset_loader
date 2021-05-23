@@ -8,7 +8,7 @@ extern crate proc_macro;
 use proc_macro::TokenStream;
 use proc_macro2::Ident;
 use quote::{quote, ToTokens};
-use syn::{Data, Fields, Lit, NestedMeta, Meta};
+use syn::{Data, Fields, Lit, Meta, NestedMeta};
 
 /// Derive macro for AssetCollection
 ///
@@ -25,15 +25,19 @@ use syn::{Data, Fields, Lit, NestedMeta, Meta};
 #[proc_macro_derive(AssetCollection, attributes(asset))]
 pub fn asset_collection_derive(input: TokenStream) -> TokenStream {
     let ast = syn::parse(input).unwrap();
-    impl_asset_collection(ast).unwrap_or_else(to_compile_errors).into()
+    impl_asset_collection(ast)
+        .unwrap_or_else(to_compile_errors)
+        .into()
 }
 
 struct Asset {
     field_ident: Ident,
-    asset_path: String
+    asset_path: String,
 }
 
-fn impl_asset_collection(ast: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Vec<syn::Error>> {
+fn impl_asset_collection(
+    ast: syn::DeriveInput,
+) -> Result<proc_macro2::TokenStream, Vec<syn::Error>> {
     let name = &ast.ident;
 
     let mut fields = 0;
@@ -43,24 +47,21 @@ fn impl_asset_collection(ast: syn::DeriveInput) -> Result<proc_macro2::TokenStre
             'fields: for field in named_fields.named.iter() {
                 fields += 1;
                 'attributes: for attr in field.attrs.iter() {
-                    if let syn::Meta::List(ref asset_meta_list) =attr.parse_meta().unwrap() {
-                        if *asset_meta_list.path.get_ident()
-                            .unwrap()
-                            != "asset"
-                        {
+                    if let syn::Meta::List(ref asset_meta_list) = attr.parse_meta().unwrap() {
+                        if *asset_meta_list.path.get_ident().unwrap() != "asset" {
                             continue 'attributes;
                         }
 
                         for attribute in asset_meta_list.nested.iter() {
                             if let NestedMeta::Meta(Meta::NameValue(ref named_value)) = attribute {
-                                if *named_value.path.get_ident()
-                                    .unwrap()
-                                    != "path"
-                                {
+                                if *named_value.path.get_ident().unwrap() != "path" {
                                     continue;
                                 }
                                 if let Lit::Str(path_literal) = &named_value.lit {
-                                    assets.push(Asset { field_ident: field.clone().ident.unwrap(), asset_path: path_literal.value()});
+                                    assets.push(Asset {
+                                        field_ident: field.clone().ident.unwrap(),
+                                        asset_path: path_literal.value(),
+                                    });
                                     continue 'fields;
                                 }
                             }
@@ -69,24 +70,39 @@ fn impl_asset_collection(ast: syn::DeriveInput) -> Result<proc_macro2::TokenStre
                 }
             }
         } else {
-            return Err(vec![syn::Error::new_spanned(data_struct.fields.clone().into_token_stream(), "only named fields are supported to derive AssetCollection")]);
+            return Err(vec![syn::Error::new_spanned(
+                data_struct.fields.clone().into_token_stream(),
+                "only named fields are supported to derive AssetCollection",
+            )]);
         }
     } else {
-        return Err(vec![syn::Error::new_spanned(&ast.into_token_stream(), "AssetCollection can only be derived for a struct")]);
+        return Err(vec![syn::Error::new_spanned(
+            &ast.into_token_stream(),
+            "AssetCollection can only be derived for a struct",
+        )]);
     }
 
     if assets.len() != fields {
         return Err(vec![syn::Error::new_spanned(&ast.into_token_stream(), "To auto derive AssetCollection every field should have an asset attribute containing a path")]);
     }
 
-    let asset_creation = assets
-        .iter()
-        .fold(quote!(), |es, Asset {field_ident, asset_path}| quote!(#es#field_ident : asset_server.get_handle(#asset_path),));
+    let asset_creation = assets.iter().fold(
+        quote!(),
+        |es,
+         Asset {
+             field_ident,
+             asset_path,
+         }| quote!(#es#field_ident : asset_server.get_handle(#asset_path),),
+    );
 
-    let asset_loading = assets
-        .iter()
-        .fold(quote!(), |es, Asset {field_ident: _, asset_path}| quote!(#es handles.push(asset_server.load_untyped(#asset_path));));
-
+    let asset_loading = assets.iter().fold(
+        quote!(),
+        |es,
+         Asset {
+             field_ident: _,
+             asset_path,
+         }| quote!(#es handles.push(asset_server.load_untyped(#asset_path));),
+    );
 
     let gen = quote! {
         #[automatically_derived]

@@ -1,7 +1,5 @@
 # Bevy asset loader
 
-*WIP: already functional, but lacking some features. Feedback very welcome!*
-
 [![crates.io](https://img.shields.io/crates/v/bevy_asset_loader.svg)](https://crates.io/crates/bevy_asset_loader)
 [![docs](https://docs.rs/bevy_asset_loader/badge.svg)](https://docs.rs/bevy_asset_loader)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/NiklasEi/bevy_asset_loader/blob/main/LICENSE.md)
@@ -10,46 +8,51 @@
 This [Bevy][bevy] plugin reduces boilerplate when loading game assets. The crate offers the `AssetCollection` trait and can automatically load structs that implement it. The trait can be derived.
 
 # How to use
-The plugin takes an `AssetCollection` and two `State`s as configuration. During the first state it will load the assets and check up on the loading status in every frame. When the assets are done loading, the asset collection is inserted as a resource. Then the plugin switches to the second state. You can now use the assets by requesting the resource in your systems.
+The `AssetLoader` is constructed with two `State`s. During the first state it will load the assets and check up on the loading status in every frame. When the assets are done loading, the collections will be inserted as resources. Then the plugin switches to the second state.
+
+You can add as many `AssetCollection`s to the loader as you want. This id done by chaining `with_collection` calls. To finish the setup, the `build` function needs to be called with your `AppBuilder`.
 
 ```rust
+use bevy::prelude::*;
+use bevy_asset_loader::{AssetLoader, AssetCollection};
+
 fn main() {
-    App::build()
-        .add_state(MyStates::AssetLoading)
-        .add_plugin(AssetLoaderPlugin::<MyAssets, _>::new(
-            MyStates::AssetLoading,
-            MyStates::Next,
-        ))
-        .add_system_set(
-            SystemSet::on_enter(MyStates::Next).with_system(use_my_assets.system()),
-        )
-        .run();
+  let mut app = App::build();
+  AssetLoader::new(GameState::AssetLoading, GameState::Next)
+          .with_collection::<TextureAssets>()
+          .with_collection::<AudioAssets>()
+          .build(&mut app);
+  app.add_state(GameState::AssetLoading)
+          .add_plugins(DefaultPlugins)
+          .add_system_set(SystemSet::on_enter(GameState::Next).with_system(use_my_assets.system()))
+          .run();
 }
 
 #[derive(AssetCollection)]
-struct MyAssets {
-    #[asset(path = "textures/player.ogg")]
-    player: Handle<Texture>,
-    #[asset(path = "textures/tree.ogg")]
-    tree: Handle<Texture>,
+struct AudioAssets {
+  #[asset(path = "background.ogg")]
+  background: Handle<AudioSource>
 }
 
-fn use_my_assets(_assets: Res<MyAssets>) {
-    // do something using the asset handles in `assets`
+#[derive(AssetCollection)]
+struct TextureAssets {
+  #[asset(path = "textures/player.png")]
+  player: Handle<Texture>,
+  #[asset(path = "textures/tree.png")]
+  tree: Handle<Texture>,
+}
+
+fn use_my_assets(_texture_assets: Res<TextureAssets>, _audio_assets: Res<AudioAssets>) {
+  // do something using the asset handles from the resources
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
-enum MyStates {
-    AssetLoading,
-    Next,
+enum GameState {
+  AssetLoading,
+  Next,
 }
 ```
 
-# Missing features
-
-* Loading multiple `AssetCollection`s per plugin (see [#1](https://github.com/NiklasEi/bevy_asset_loader/issues/1))
-* More than one plugin loading in the same State (maybe an alternative to the point above) (see [#2](https://github.com/NiklasEi/bevy_asset_loader/issues/2))
-  * The current problem here is that the different plugins will enter a race for who is allowed to change the State first
-
+See the [example]("/bevy_asset_loader/examples/two_collections.rs") for a complete setup. 
 
 [bevy]: https://bevyengine.org/
