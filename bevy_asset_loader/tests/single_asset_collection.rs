@@ -38,7 +38,7 @@ fn expect(collection: Option<Res<MyAssets>>, mut exit: EventWriter<AppExit>) {
 struct MyAssets {
     #[asset(path = "flying.ogg")]
     flying: Handle<AudioSource>,
-    #[asset(path = "walking.png")]
+    #[asset(path = "walking.ogg")]
     walking: Handle<AudioSource>,
 }
 
