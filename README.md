@@ -53,6 +53,6 @@ enum GameState {
 }
 ```
 
-See the [example]("/bevy_asset_loader/examples/two_collections.rs") for a complete setup. 
+See the [example](/bevy_asset_loader/examples/two_collections.rs) for a complete setup. 
 
 [bevy]: https://bevyengine.org/
