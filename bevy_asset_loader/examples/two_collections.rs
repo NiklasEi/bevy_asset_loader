@@ -1,6 +1,7 @@
-use bevy::input::keyboard::KeyboardInput;
 use bevy::prelude::*;
 use bevy_asset_loader::{AssetCollection, AssetLoader};
+
+const PLAYER_SPEED: f32 = 5.;
 
 fn main() {
     let mut app = App::build();
@@ -11,7 +12,9 @@ fn main() {
     app.add_state(MyStates::AssetLoading)
         .add_plugins(DefaultPlugins)
         .add_system_set(
-            SystemSet::on_enter(MyStates::Next).with_system(spawn_player_and_tree.system()),
+            SystemSet::on_enter(MyStates::Next)
+                .with_system(spawn_player_and_tree.system())
+                .with_system(play_background_audio.system()),
         )
         .add_system_set(SystemSet::on_update(MyStates::Next).with_system(move_player.system()))
         .run();
@@ -19,8 +22,8 @@ fn main() {
 
 #[derive(AssetCollection)]
 struct AudioAssets {
-    #[asset(path = "walking.ogg")]
-    walking: Handle<AudioSource>,
+    #[asset(path = "background.ogg")]
+    background: Handle<AudioSource>,
 }
 
 #[derive(AssetCollection)]
@@ -48,34 +51,35 @@ fn spawn_player_and_tree(
         .insert(Player);
     commands.spawn_bundle(SpriteBundle {
         material: materials.add(texture_assets.tree.clone().into()),
-        transform: Transform::from_translation(Vec3::new(5., 3., 1.)),
+        transform: Transform::from_translation(Vec3::new(50., 30., 1.)),
         ..Default::default()
     });
 }
 
-fn move_player(
-    mut keyboard_input_events: EventReader<KeyboardInput>,
-    mut player: Query<&mut Transform, With<Player>>,
-    audio_assets: Res<AudioAssets>,
-    audio: Res<Audio>,
-) {
-    let mut movement = Vec2::new(0., 0.);
-    for event in keyboard_input_events.iter() {
-        if let Some(key) = event.key_code {
-            match key {
-                KeyCode::W => movement.y += 5.,
-                KeyCode::S => movement.y -= 5.,
-                KeyCode::A => movement.x -= 5.,
-                KeyCode::D => movement.x += 5.,
-                _ => (),
-            }
-        }
+fn play_background_audio(audio_assets: Res<AudioAssets>, audio: Res<Audio>) {
+    audio.play(audio_assets.background.clone());
+}
+
+fn move_player(input: Res<Input<KeyCode>>, mut player: Query<&mut Transform, With<Player>>) {
+    let mut movement = Vec3::new(0., 0., 0.);
+    if input.pressed(KeyCode::W) {
+        movement.y += 1.;
     }
-    if movement != Vec2::ZERO {
-        audio.play(audio_assets.walking.clone());
+    if input.pressed(KeyCode::S) {
+        movement.y -= 1.;
     }
+    if input.pressed(KeyCode::A) {
+        movement.x -= 1.;
+    }
+    if input.pressed(KeyCode::D) {
+        movement.x += 1.;
+    }
+    if movement == Vec3::ZERO {
+        return;
+    }
+    movement = movement.normalize() * PLAYER_SPEED;
     if let Ok(mut transform) = player.single_mut() {
-        transform.translation += Vec3::new(movement.x.clone(), movement.y.clone(), 0.)
+        transform.translation += movement;
     }
 }
 
