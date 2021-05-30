@@ -7,14 +7,16 @@ use bevy_asset_loader::{AssetCollection, AssetLoader};
 #[test]
 fn single_asset_collection() {
     let mut app = App::build();
-    app.add_state(MyStates::Load)
-        .add_plugins(MinimalPlugins)
-        .add_plugin(AssetPlugin::default())
-        .add_plugin(AudioPlugin::default());
+
     AssetLoader::new(MyStates::Load, MyStates::Next)
         .with_collection::<MyAssets>()
         .build(&mut app);
-    app.add_system_set(SystemSet::on_update(MyStates::Load).with_system(timeout.system()))
+
+    app.add_state(MyStates::Load)
+        .add_plugins(MinimalPlugins)
+        .add_plugin(AssetPlugin::default())
+        .add_plugin(AudioPlugin::default())
+        .add_system_set(SystemSet::on_update(MyStates::Load).with_system(timeout.system()))
         .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(expect.system()))
         .run();
 }
