@@ -38,10 +38,8 @@ fn expect(collection: Option<Res<MyAssets>>, mut exit: EventWriter<AppExit>) {
 #[allow(dead_code)]
 #[derive(AssetCollection)]
 struct MyAssets {
-    #[asset(path = "flying.ogg")]
-    flying: Handle<AudioSource>,
-    #[asset(path = "walking.ogg")]
-    walking: Handle<AudioSource>,
+    #[asset(path = "audio/background.ogg")]
+    background: Handle<AudioSource>,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
