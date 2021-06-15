@@ -1,5 +1,9 @@
 //! The goal of this crate is to offer an easy way for bevy games to load all their assets in a loading State.
 //!
+//! `bevy_asset_loader` introduces the derivable trait [AssetCollection]. Structs with asset handles
+//! can be automatically loaded during a configurable loading [State]. Afterwards they will be inserted as
+//! resources containing loaded handles and the plugin will switch to a second configurable [State].
+//!
 //! ```edition2018
 //! # use bevy_asset_loader::{AssetLoader, AssetCollection};
 //! # use bevy::prelude::*;
@@ -13,7 +17,9 @@
 //!     app
 //!         .add_state(GameState::Loading)
 //!         //.add_plugins(DefaultPlugins)
-//!         .add_system_set(SystemSet::on_update(GameState::Next).with_system(use_asset_handles.system()))
+//!         .add_system_set(SystemSet::on_update(GameState::Next)
+//!             .with_system(use_asset_handles.system())
+//!         )
 //!         # .add_plugins(MinimalPlugins)
 //!         # .add_plugin(AssetPlugin::default())
 //!         # .set_runner(|mut app| app.schedule.run(&mut app.world))
