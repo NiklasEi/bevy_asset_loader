@@ -1,4 +1,4 @@
-//! The goal of this crate is to offer an easy way for bevy games to load all their assets.
+//! The goal of this crate is to offer an easy way for bevy games to load all their assets in a loading State.
 //!
 //! ```edition2018
 //! # use bevy_asset_loader::{AssetLoader, AssetCollection};
@@ -22,10 +22,10 @@
 //!
 //! #[derive(AssetCollection)]
 //! struct AudioAssets {
-//!     #[asset(path = "walking.ogg")]
-//!     walking: Handle<AudioSource>,
-//!     #[asset(path = "flying.ogg")]
-//!     flying: Handle<AudioSource>
+//!     #[asset(path = "audio/background.ogg")]
+//!     background: Handle<AudioSource>,
+//!     #[asset(path = "audio/plop.ogg")]
+//!     plop: Handle<AudioSource>
 //! }
 //!
 //! #[derive(AssetCollection)]
@@ -39,7 +39,7 @@
 //! // since this function runs in [MyState::Next], we know our assets are
 //! // loaded and [MyAudioAssets] is a resource
 //! fn use_asset_handles(audio_assets: Res<AudioAssets>, audio: Res<Audio>) {
-//!     audio.play(audio_assets.flying.clone());
+//!     audio.play(audio_assets.background.clone());
 //! }
 //!
 //! #[derive(Clone, Eq, PartialEq, Debug, Hash)]
@@ -55,7 +55,7 @@
 pub use bevy_asset_loader_derive::AssetCollection;
 
 use bevy::app::AppBuilder;
-use bevy::asset::{AssetServer, HandleId, HandleUntyped, LoadState};
+use bevy::asset::{AssetServer, HandleUntyped, LoadState};
 use bevy::ecs::component::Component;
 use bevy::ecs::schedule::State;
 use bevy::ecs::system::IntoSystem;
@@ -87,7 +87,7 @@ pub trait AssetCollection: Component {
 }
 
 struct LoadingAssetHandles<A: Component> {
-    handles: Vec<HandleId>,
+    handles: Vec<HandleUntyped>,
     marker: PhantomData<A>,
 }
 
@@ -97,9 +97,8 @@ struct AssetLoaderConfiguration<T> {
 }
 
 fn start_loading<Assets: AssetCollection>(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let mut handles = Assets::load(&asset_server);
     commands.insert_resource(LoadingAssetHandles {
-        handles: handles.drain(..).map(|handle| handle.id).collect(),
+        handles: Assets::load(&asset_server),
         marker: PhantomData::<Assets>,
     })
 }
@@ -112,7 +111,8 @@ fn check_loading_state<T: Component + Debug + Clone + Eq + Hash, Assets: AssetCo
     loading_asset_handles: Option<Res<LoadingAssetHandles<Assets>>>,
 ) {
     if let Some(loading_asset_handles) = loading_asset_handles {
-        let load_state = asset_server.get_group_load_state(loading_asset_handles.handles.clone());
+        let load_state = asset_server
+            .get_group_load_state(loading_asset_handles.handles.iter().map(|handle| handle.id));
         if load_state == LoadState::Loaded {
             commands.insert_resource(Assets::create(&asset_server));
             commands.remove_resource::<LoadingAssetHandles<Assets>>();
@@ -163,8 +163,8 @@ fn check_loading_state<T: Component + Debug + Clone + Eq + Hash, Assets: AssetCo
 ///
 /// #[derive(AssetCollection)]
 /// pub struct AudioAssets {
-///     #[asset(path = "audio/flying.ogg")]
-///     pub flying: Handle<AudioSource>,
+///     #[asset(path = "audio/background.ogg")]
+///     pub background: Handle<AudioSource>,
 /// }
 ///
 /// #[derive(AssetCollection)]
@@ -214,8 +214,8 @@ where
     /// # }
     /// # #[derive(AssetCollection)]
     /// # pub struct AudioAssets {
-    /// #     #[asset(path = "audio/flying.ogg")]
-    /// #     pub flying: Handle<AudioSource>,
+    /// #     #[asset(path = "audio/background.ogg")]
+    /// #     pub background: Handle<AudioSource>,
     /// # }
     /// # #[derive(AssetCollection)]
     /// # pub struct TextureAssets {
@@ -261,8 +261,8 @@ where
     /// # }
     /// # #[derive(AssetCollection)]
     /// # pub struct AudioAssets {
-    /// #     #[asset(path = "audio/flying.ogg")]
-    /// #     pub flying: Handle<AudioSource>,
+    /// #     #[asset(path = "audio/background.ogg")]
+    /// #     pub background: Handle<AudioSource>,
     /// # }
     /// # #[derive(AssetCollection)]
     /// # pub struct TextureAssets {
@@ -307,8 +307,8 @@ where
     /// # }
     /// # #[derive(AssetCollection)]
     /// # pub struct AudioAssets {
-    /// #     #[asset(path = "audio/flying.ogg")]
-    /// #     pub flying: Handle<AudioSource>,
+    /// #     #[asset(path = "audio/background.ogg")]
+    /// #     pub background: Handle<AudioSource>,
     /// # }
     /// # #[derive(AssetCollection)]
     /// # pub struct TextureAssets {
