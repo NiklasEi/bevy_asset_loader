@@ -63,9 +63,10 @@ pub use bevy_asset_loader_derive::AssetCollection;
 use bevy::app::AppBuilder;
 use bevy::asset::{AssetServer, HandleUntyped, LoadState};
 use bevy::ecs::component::Component;
+use bevy::ecs::prelude::IntoExclusiveSystem;
 use bevy::ecs::schedule::State;
 use bevy::ecs::system::IntoSystem;
-use bevy::prelude::{Commands, Res, ResMut, SystemSet};
+use bevy::prelude::{Commands, FromWorld, Res, ResMut, SystemSet, World};
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::marker::PhantomData;
@@ -134,6 +135,11 @@ fn check_loading_state<T: Component + Debug + Clone + Eq + Hash, Assets: AssetCo
     }
 }
 
+fn post_process<Asset: FromWorld + Component>(world: &mut World) {
+    let asset = Asset::from_world(world);
+    world.insert_resource(asset);
+}
+
 /// A Bevy plugin to configure automatic asset loading
 ///
 /// ```edition2018
@@ -185,6 +191,7 @@ pub struct AssetLoader<T> {
     next: T,
     load: SystemSet,
     check: SystemSet,
+    post_process: SystemSet,
     collection_count: usize,
 }
 
@@ -235,7 +242,8 @@ where
         Self {
             next,
             load: SystemSet::on_enter(load.clone()),
-            check: SystemSet::on_update(load),
+            check: SystemSet::on_update(load.clone()),
+            post_process: SystemSet::on_exit(load),
             collection_count: 0,
         }
     }
@@ -286,6 +294,56 @@ where
         self
     }
 
+    /// Add any [FromWorld] resource to be inititlized after all asset collections are loaded.
+    /// ```edition2018
+    /// # use bevy_asset_loader::{AssetLoader, AssetCollection};
+    /// # use bevy::prelude::*;
+    /// # use bevy::asset::AssetPlugin;
+    /// # fn main() {
+    ///     let mut app = App::build();
+    ///     AssetLoader::new(GameState::Loading, GameState::Menu)
+    ///         .with_collection::<TextureForAtlas>()
+    ///         .post_process::<TextureAtlasFromWorld>()
+    ///         .build(&mut app);
+    /// #   app
+    /// #       .add_state(GameState::Loading)
+    /// #       .add_plugins(MinimalPlugins)
+    /// #       .add_plugin(AssetPlugin::default())
+    /// #       .set_runner(|mut app| app.schedule.run(&mut app.world))
+    /// #       .run();
+    /// # }
+    /// # #[derive(Clone, Eq, PartialEq, Debug, Hash)]
+    /// # enum GameState {
+    /// #     Loading,
+    /// #     Menu
+    /// # }
+    /// # struct TextureAtlasFromWorld {
+    /// #     atlas: Handle<TextureAtlas>
+    /// # }
+    /// # impl FromWorld for TextureAtlasFromWorld {
+    /// #     fn from_world(world: &mut World) -> Self {
+    /// #         let cell = world.cell();
+    /// #         let assets = cell.get_resource::<TextureForAtlas>().expect("TextureForAtlas not loaded");
+    /// #         let mut atlases = cell.get_resource_mut::<Assets<TextureAtlas>>().expect("TextureAtlases missing");
+    /// #         TextureAtlasFromWorld {
+    /// #             atlas: atlases.add(TextureAtlas::from_grid(assets.array.clone(), Vec2::new(250., 250.), 1, 4))
+    /// #         }
+    /// #     }
+    /// # }
+    /// # #[derive(AssetCollection)]
+    /// # pub struct TextureForAtlas {
+    /// #     #[asset(path = "textures/female_adventurer.ogg")]
+    /// #     pub array: Handle<Texture>,
+    /// # }
+    /// ```
+    pub fn post_process<A: FromWorld + Component>(mut self) -> Self {
+        self.post_process = self
+            .post_process
+            .with_system(post_process::<A>.exclusive_system());
+
+        self
+    }
+
     /// Finish configuring the [AssetLoader]
     ///
     /// Calling this function is required to set up the asset loading.
@@ -327,6 +385,7 @@ where
     pub fn build(self, app: &mut AppBuilder) {
         app.add_system_set(self.load)
             .add_system_set(self.check)
+            .add_system_set(self.post_process)
             .insert_resource(AssetLoaderConfiguration::<T> {
                 count: self.collection_count,
                 next: self.next,
