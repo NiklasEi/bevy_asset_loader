@@ -56,6 +56,10 @@ enum GameState {
 }
 ```
 
-See the [example](/bevy_asset_loader/examples/two_collections.rs) for a complete setup. 
+See the [example](/bevy_asset_loader/examples/two_collections.rs) for a complete setup.
+
+## Initialize FromWorld resources
+
+In situations where you would like to prepare other resources based on your loaded assets you can use `AssetLoader::post_process` to initialize `FromWorld` resources. This can for example be used to create and insert a resource containing a TextureAtlas handle from a sprite sheet (see the [atlas_from_grid example](/bevy_asset_loader/examples/atlas_from_grid.rs)).
 
 [bevy]: https://bevyengine.org/
