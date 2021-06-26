@@ -5,7 +5,7 @@ fn main() {
     let mut app = App::build();
     AssetLoader::new(MyStates::AssetLoading, MyStates::Next)
         .with_collection::<SpriteSheet>()
-        .post_process::<MyTextureAtlas>()
+        .init_resource::<MyTextureAtlas>()
         .build(&mut app);
     app.add_state(MyStates::AssetLoading)
         .add_plugins(DefaultPlugins)

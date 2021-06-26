@@ -5,12 +5,12 @@ use bevy::prelude::*;
 use bevy_asset_loader::{AssetCollection, AssetLoader};
 
 #[test]
-fn post_process() {
+fn init_resource() {
     let mut app = App::build();
 
     AssetLoader::new(MyStates::Load, MyStates::Next)
         .with_collection::<MyAssets>()
-        .post_process::<PostProcessed>()
+        .init_resource::<PostProcessed>()
         .build(&mut app);
 
     app.add_state(MyStates::Load)

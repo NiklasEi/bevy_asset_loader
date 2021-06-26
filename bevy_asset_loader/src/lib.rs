@@ -135,7 +135,7 @@ fn check_loading_state<T: Component + Debug + Clone + Eq + Hash, Assets: AssetCo
     }
 }
 
-fn post_process<Asset: FromWorld + Component>(world: &mut World) {
+fn init_resource<Asset: FromWorld + Component>(world: &mut World) {
     let asset = Asset::from_world(world);
     world.insert_resource(asset);
 }
@@ -303,7 +303,7 @@ where
     ///     let mut app = App::build();
     ///     AssetLoader::new(GameState::Loading, GameState::Menu)
     ///         .with_collection::<TextureForAtlas>()
-    ///         .post_process::<TextureAtlasFromWorld>()
+    ///         .init_resource::<TextureAtlasFromWorld>()
     ///         .build(&mut app);
     /// #   app
     /// #       .add_state(GameState::Loading)
@@ -336,10 +336,10 @@ where
     /// #     pub array: Handle<Texture>,
     /// # }
     /// ```
-    pub fn post_process<A: FromWorld + Component>(mut self) -> Self {
+    pub fn init_resource<A: FromWorld + Component>(mut self) -> Self {
         self.post_process = self
             .post_process
-            .with_system(post_process::<A>.exclusive_system());
+            .with_system(init_resource::<A>.exclusive_system());
 
         self
     }
