@@ -158,7 +158,7 @@ fn check_loading_state<T: Component + Debug + Clone + Eq + Hash, Assets: AssetCo
 /// }
 ///
 /// fn play_audio(audio_assets: Res<AudioAssets>, audio: Res<Audio>) {
-///     audio.play(audio_assets.flying.clone());
+///     audio.play(audio_assets.background.clone());
 /// }
 ///
 /// #[derive(Clone, Eq, PartialEq, Debug, Hash)]
