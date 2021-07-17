@@ -13,15 +13,6 @@ use syn::{Data, Fields, Lit, Meta, NestedMeta};
 /// Derive macro for AssetCollection
 ///
 /// The helper attribute ``asset`` can be used to define the path to the asset file.
-/// ```edition2018
-/// #[derive(AssetCollection)]
-/// struct MyAudioAssets {
-///     #[asset(path = "walking.ogg")]
-///     walking: Handle<AudioSource>,
-///     #[asset(path = "flying.ogg")]
-///     flying: Handle<AudioSource>
-/// }
-/// ```
 #[proc_macro_derive(AssetCollection, attributes(asset))]
 pub fn asset_collection_derive(input: TokenStream) -> TokenStream {
     let ast = syn::parse(input).unwrap();

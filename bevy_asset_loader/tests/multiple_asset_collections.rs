@@ -9,8 +9,8 @@ fn multiple_asset_collections() {
     let mut app = App::build();
 
     AssetLoader::new(MyStates::Load, MyStates::Next)
-        .with_collection::<MyAssets>()
-        .with_collection::<MyOtherAssets>()
+        .with_collection::<PlopAudio>()
+        .with_collection::<BackgroundAudio>()
         .build(&mut app);
 
     app.add_state(MyStates::Load)
@@ -23,14 +23,14 @@ fn multiple_asset_collections() {
 }
 
 fn timeout(time: Res<Time>) {
-    if time.seconds_since_startup() > 10. {
-        panic!("The asset loader did not change the state in 10 seconds");
+    if time.seconds_since_startup() > 60. {
+        panic!("The asset loader did not change the state in 60 seconds");
     }
 }
 
 fn expect(
-    collection: Option<Res<MyAssets>>,
-    other_collection: Option<Res<MyAssets>>,
+    collection: Option<Res<PlopAudio>>,
+    other_collection: Option<Res<BackgroundAudio>>,
     mut exit: EventWriter<AppExit>,
 ) {
     if collection.is_none() || other_collection.is_none() {
@@ -42,16 +42,16 @@ fn expect(
 
 #[allow(dead_code)]
 #[derive(AssetCollection)]
-struct MyAssets {
-    #[asset(path = "flying.ogg")]
-    flying: Handle<AudioSource>,
+struct PlopAudio {
+    #[asset(path = "audio/plop.ogg")]
+    plop: Handle<AudioSource>,
 }
 
 #[allow(dead_code)]
 #[derive(AssetCollection)]
-struct MyOtherAssets {
-    #[asset(path = "walking.ogg")]
-    walking: Handle<AudioSource>,
+struct BackgroundAudio {
+    #[asset(path = "audio/background.ogg")]
+    background: Handle<AudioSource>,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
