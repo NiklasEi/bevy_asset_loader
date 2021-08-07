@@ -7,7 +7,8 @@ extern crate proc_macro;
 
 use proc_macro::TokenStream;
 use proc_macro2::Ident;
-use quote::{quote, ToTokens};
+use quote::{quote, ToTokens, TokenStreamExt};
+use std::option::Option::Some;
 use syn::{Data, Fields, Lit, Meta, NestedMeta};
 
 /// Derive macro for AssetCollection
@@ -26,38 +27,45 @@ struct Asset {
     asset_path: String,
 }
 
+const ASSET_ATTRIBUTE: &str = "asset";
+const PATH_ATTRIBUTE: &str = "path";
+
 fn impl_asset_collection(
     ast: syn::DeriveInput,
 ) -> Result<proc_macro2::TokenStream, Vec<syn::Error>> {
     let name = &ast.ident;
 
-    let mut fields = 0;
+    let mut default_fields: Vec<Ident> = vec![];
     let mut assets: Vec<Asset> = vec![];
     if let Data::Struct(ref data_struct) = ast.data {
         if let Fields::Named(ref named_fields) = data_struct.fields {
-            'fields: for field in named_fields.named.iter() {
-                fields += 1;
+            for field in named_fields.named.iter() {
+                let mut asset: Option<Asset> = None;
                 'attributes: for attr in field.attrs.iter() {
                     if let syn::Meta::List(ref asset_meta_list) = attr.parse_meta().unwrap() {
-                        if *asset_meta_list.path.get_ident().unwrap() != "asset" {
+                        if *asset_meta_list.path.get_ident().unwrap() != ASSET_ATTRIBUTE {
                             continue 'attributes;
                         }
 
                         for attribute in asset_meta_list.nested.iter() {
                             if let NestedMeta::Meta(Meta::NameValue(ref named_value)) = attribute {
-                                if *named_value.path.get_ident().unwrap() != "path" {
+                                if *named_value.path.get_ident().unwrap() != PATH_ATTRIBUTE {
                                     continue;
                                 }
                                 if let Lit::Str(path_literal) = &named_value.lit {
-                                    assets.push(Asset {
+                                    asset = Some(Asset {
                                         field_ident: field.clone().ident.unwrap(),
                                         asset_path: path_literal.value(),
                                     });
-                                    continue 'fields;
                                 }
                             }
                         }
                     }
+                }
+                if let Some(asset) = asset {
+                    assets.push(asset);
+                } else {
+                    default_fields.push(field.clone().ident.unwrap());
                 }
             }
         } else {
@@ -73,18 +81,18 @@ fn impl_asset_collection(
         )]);
     }
 
-    if assets.len() != fields {
-        return Err(vec![syn::Error::new_spanned(&ast.into_token_stream(), "To auto derive AssetCollection every field should have an asset attribute containing a path")]);
-    }
-
-    let asset_creation = assets.iter().fold(
+    let mut asset_creation = assets.iter().fold(
         quote!(),
         |es,
          Asset {
              field_ident,
              asset_path,
-         }| quote!(#es#field_ident : asset_server.get_handle(#asset_path),),
+         }| { quote!(#es#field_ident : asset_server.get_handle(#asset_path),) },
     );
+    asset_creation.append_all(default_fields.iter().fold(
+        quote!(),
+        |es, ident| quote! (#es#ident : Default::default()),
+    ));
 
     let asset_loading = assets.iter().fold(
         quote!(),

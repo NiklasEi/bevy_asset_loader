@@ -58,6 +58,8 @@ enum GameState {
 
 See the [example](/bevy_asset_loader/examples/two_collections.rs) for a complete setup.
 
+Apart from asset handles, asset collections can also contain any other fields that implement default. They will be initialised with their default values.
+
 ### Initialize FromWorld resources
 
 In situations where you would like to prepare other resources based on your loaded assets you can use `AssetLoader::init_resource` to initialize `FromWorld` resources. You can for example create and insert a resource containing a texture atlas based on a sprite sheet (see the [atlas_from_grid example](/bevy_asset_loader/examples/atlas_from_grid.rs)).
