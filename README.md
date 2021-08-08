@@ -66,6 +66,11 @@ In situations where you would like to prepare other resources based on your load
 
 `AssetLoader::init_resource` does the same as Bevy's `App::init_resource`, but at a different point in time. While Bevy inserts your resources at the very beginning, the AssetLoader will do so after having inserted your loaded asset collections. That means that you can use your asset collections in the `FromWorld` implementations.
 
+## Development
+
+The integration tests cannot run with default features enabled. Because they do not insert the render plugin of Bevy, they fail due to the derive macro requiring the `TextureAtlas` asset collection (this is toggled with the `render` feature).  
+Use `cargo test --no-default-features` to run all tests.
+
 ## License
 
 Licensed under either of
