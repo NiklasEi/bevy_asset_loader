@@ -12,6 +12,9 @@ keywords = ["bevy", "gamedev", "asset", "assets"]
 categories = ["game-development"]
 readme = "../README.md"
 
+[features]
+render = []
+
 [lib]
 proc-macro = true
 

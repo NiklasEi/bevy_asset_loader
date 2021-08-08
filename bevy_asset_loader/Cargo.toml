@@ -12,6 +12,10 @@ keywords = ["bevy", "gamedev", "asset", "assets"]
 categories = ["game-development"]
 readme = "../README.md"
 
+[features]
+default = ["render"]
+render = ["bevy_asset_loader_derive/render"]
+
 [dependencies]
 bevy = { version = "0.5.0", default-features = false }
 bevy_asset_loader_derive = { version = "=0.4.0", path = "../bevy_asset_loader_derive" }
@@ -22,3 +26,12 @@ bevy = { version = "0.5.0", features = ["vorbis"] }
 [[example]]
 name = "two_collections"
 path = "examples/two_collections.rs"
+
+[[example]]
+name = "atlas_from_grid"
+path = "examples/atlas_from_grid.rs"
+required-features = ["render"]
+
+[[example]]
+name = "insert_resource"
+path = "examples/insert_resource.rs"

@@ -66,7 +66,7 @@ use bevy::ecs::component::Component;
 use bevy::ecs::prelude::IntoExclusiveSystem;
 use bevy::ecs::schedule::State;
 use bevy::ecs::system::IntoSystem;
-use bevy::prelude::{Commands, FromWorld, Res, ResMut, SystemSet, World};
+use bevy::prelude::{Commands, FromWorld, Res, SystemSet, World};
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::marker::PhantomData;
@@ -88,7 +88,7 @@ use std::marker::PhantomData;
 /// ```
 pub trait AssetCollection: Component {
     /// Create a new AssetCollection from the [bevy::asset::AssetServer]
-    fn create(asset_server: &Res<AssetServer>) -> Self;
+    fn create(world: &mut World) -> Self;
     /// Start loading all the assets in the collection
     fn load(asset_server: &Res<AssetServer>) -> Vec<HandleUntyped>;
 }
@@ -111,28 +111,49 @@ fn start_loading<Assets: AssetCollection>(mut commands: Commands, asset_server: 
 }
 
 fn check_loading_state<T: Component + Debug + Clone + Eq + Hash, Assets: AssetCollection>(
-    mut commands: Commands,
-    mut state: ResMut<State<T>>,
-    mut config: ResMut<AssetLoaderConfiguration<T>>,
-    asset_server: Res<AssetServer>,
-    loading_asset_handles: Option<Res<LoadingAssetHandles<Assets>>>,
+    world: &mut World,
 ) {
-    if let Some(loading_asset_handles) = loading_asset_handles {
-        let load_state = asset_server
-            .get_group_load_state(loading_asset_handles.handles.iter().map(|handle| handle.id));
-        if load_state == LoadState::Loaded {
-            commands.insert_resource(Assets::create(&asset_server));
-            commands.remove_resource::<LoadingAssetHandles<Assets>>();
+    {
+        let cell = world.cell();
+        let loading_asset_handles = cell.get_resource::<LoadingAssetHandles<Assets>>();
+        if let Some(loading_asset_handles) = loading_asset_handles {
+            let mut state = cell
+                .get_resource_mut::<State<T>>()
+                .expect("Cannot get State resource");
+            let mut config = cell
+                .get_resource_mut::<AssetLoaderConfiguration<T>>()
+                .expect("Cannot get AssetLoaderConfiguration resource");
+            let asset_server = cell
+                .get_resource::<AssetServer>()
+                .expect("Cannot get AssetServer resource");
+            let load_state = asset_server
+                .get_group_load_state(loading_asset_handles.handles.iter().map(|handle| handle.id));
+            if load_state != LoadState::Loaded {
+                return;
+            }
             if config.count == 1 {
-                commands.remove_resource::<AssetLoaderConfiguration<T>>();
                 state
                     .set(config.next.clone())
                     .expect("Failed to set next State");
             } else {
                 config.count -= 1;
             }
+        } else {
+            return;
         }
     }
+    let asset_collection = Assets::create(world);
+    world.insert_resource(asset_collection);
+    world.remove_resource::<LoadingAssetHandles<Assets>>();
+    if world
+        .get_resource::<AssetLoaderConfiguration<T>>()
+        .unwrap()
+        .count
+        > 0
+    {
+        return;
+    }
+    world.remove_resource::<AssetLoaderConfiguration<T>>();
 }
 
 fn init_resource<Asset: FromWorld + Component>(world: &mut World) {
@@ -288,7 +309,9 @@ where
     /// ```
     pub fn with_collection<A: AssetCollection>(mut self) -> Self {
         self.load = self.load.with_system(start_loading::<A>.system());
-        self.check = self.check.with_system(check_loading_state::<T, A>.system());
+        self.check = self
+            .check
+            .with_system(check_loading_state::<T, A>.exclusive_system());
         self.collection_count += 1;
 
         self
