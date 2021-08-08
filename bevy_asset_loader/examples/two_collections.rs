@@ -3,6 +3,7 @@ use bevy_asset_loader::{AssetCollection, AssetLoader};
 
 const PLAYER_SPEED: f32 = 5.;
 
+/// This example shows how to load multiple asset collections with one [AssetLoader]
 fn main() {
     let mut app = App::build();
     AssetLoader::new(MyStates::AssetLoading, MyStates::Next)
