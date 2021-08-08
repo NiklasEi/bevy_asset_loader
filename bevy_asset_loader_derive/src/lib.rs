@@ -176,6 +176,7 @@ fn impl_asset_collection(
             fn create(world: &mut World) -> Self {
                 let cell = world.cell();
                 let asset_server = cell.get_resource::<AssetServer>().expect("Cannot get AssetServer");
+                #[cfg(feature = "render")]
                 let mut atlases = cell
                     .get_resource_mut::<Assets<TextureAtlas>>()
                     .expect("Cannot get Assets<TextureAtlas>");
