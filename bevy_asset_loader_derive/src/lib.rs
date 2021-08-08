@@ -65,16 +65,28 @@ impl AssetBuilder {
     fn build(self) -> Result<Asset, ParseFieldError> {
         let mut missing_fields = vec![];
         if self.cell_width.is_none() {
-            missing_fields.push(TEXTURE_ATLAS_CELL_WIDTH);
+            missing_fields.push(format!(
+                "{}/{}",
+                TEXTURE_ATLAS_ATTRIBUTE, TEXTURE_ATLAS_CELL_WIDTH
+            ));
         }
         if self.cell_height.is_none() {
-            missing_fields.push(TEXTURE_ATLAS_CELL_HEIGHT);
+            missing_fields.push(format!(
+                "{}/{}",
+                TEXTURE_ATLAS_ATTRIBUTE, TEXTURE_ATLAS_CELL_HEIGHT
+            ));
         }
         if self.columns.is_none() {
-            missing_fields.push(TEXTURE_ATLAS_COLUMNS);
+            missing_fields.push(format!(
+                "{}/{}",
+                TEXTURE_ATLAS_ATTRIBUTE, TEXTURE_ATLAS_COLUMNS
+            ));
         }
         if self.rows.is_none() {
-            missing_fields.push(TEXTURE_ATLAS_ROWS);
+            missing_fields.push(format!(
+                "{}/{}",
+                TEXTURE_ATLAS_ATTRIBUTE, TEXTURE_ATLAS_ROWS
+            ));
         }
         if self.field_ident.is_none() || self.asset_path.is_none() {
             return Err(ParseFieldError::NoAttributes);
@@ -110,11 +122,20 @@ fn impl_asset_collection(
         if let Fields::Named(ref named_fields) = data_struct.fields {
             for field in named_fields.named.iter() {
                 let asset = parse_field(field);
-
-                if let Ok(asset) = asset {
-                    assets.push(asset);
-                } else if let Err(ParseFieldError::NoAttributes) = asset {
-                    default_fields.push(field.clone().ident.unwrap());
+                match asset {
+                    Ok(asset) => assets.push(asset),
+                    Err(ParseFieldError::NoAttributes) => {
+                        default_fields.push(field.clone().ident.unwrap())
+                    }
+                    Err(ParseFieldError::MissingAttributes(missing_attributes)) => {
+                        return Err(vec![syn::Error::new_spanned(
+                            field.into_token_stream(),
+                            format!(
+                                "Field is missing asset attributes: {}",
+                                missing_attributes.join(", ")
+                            ),
+                        )]);
+                    }
                 }
             }
         } else {
@@ -197,7 +218,7 @@ fn impl_asset_collection(
 
 enum ParseFieldError {
     NoAttributes,
-    MissingAttributes(Vec<&'static str>),
+    MissingAttributes(Vec<String>),
 }
 
 fn parse_field(field: &Field) -> Result<Asset, ParseFieldError> {
