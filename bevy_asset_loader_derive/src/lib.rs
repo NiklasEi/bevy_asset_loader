@@ -136,6 +136,24 @@ fn impl_asset_collection(
                             ),
                         )]);
                     }
+                    Err(ParseFieldError::WrongAttributeType(token_stream, expected)) => {
+                        return Err(vec![syn::Error::new_spanned(
+                            token_stream,
+                            format!("Wrong attribute type. Expected '{}'", expected),
+                        )]);
+                    }
+                    Err(ParseFieldError::UnknownAttributeType(token_stream)) => {
+                        return Err(vec![syn::Error::new_spanned(
+                            token_stream,
+                            "Unknown attribute type",
+                        )]);
+                    }
+                    Err(ParseFieldError::UnknownAttribute(token_stream)) => {
+                        return Err(vec![syn::Error::new_spanned(
+                            token_stream,
+                            "Unknown attribute",
+                        )]);
+                    }
                 }
             }
         } else {
@@ -218,6 +236,9 @@ fn impl_asset_collection(
 
 enum ParseFieldError {
     NoAttributes,
+    WrongAttributeType(proc_macro2::TokenStream, &'static str),
+    UnknownAttributeType(proc_macro2::TokenStream),
+    UnknownAttribute(proc_macro2::TokenStream),
     MissingAttributes(Vec<String>),
 }
 
@@ -231,12 +252,17 @@ fn parse_field(field: &Field) -> Result<Asset, ParseFieldError> {
 
             for attribute in asset_meta_list.nested.iter() {
                 if let NestedMeta::Meta(Meta::NameValue(ref named_value)) = attribute {
-                    if *named_value.path.get_ident().unwrap() != PATH_ATTRIBUTE {
-                        continue;
-                    }
-                    if let Lit::Str(path_literal) = &named_value.lit {
-                        builder.asset_path = Some(path_literal.value());
-                        builder.field_ident = Some(field.clone().ident.unwrap());
+                    let path = named_value.path.get_ident().unwrap().clone();
+
+                    if path == PATH_ATTRIBUTE {
+                        if let Lit::Str(path_literal) = &named_value.lit {
+                            builder.asset_path = Some(path_literal.value());
+                            builder.field_ident = Some(field.clone().ident.unwrap());
+                        } else {
+                            return Err(ParseFieldError::WrongAttributeType(named_value.clone().into_token_stream(), "str"));
+                        }
+                    }  else {
+                        return Err(ParseFieldError::UnknownAttribute(named_value.clone().into_token_stream()))
                     }
                 } else if let NestedMeta::Meta(Meta::List(ref meta_list)) = attribute {
                     let path = meta_list.path.get_ident().unwrap().clone();
@@ -248,25 +274,37 @@ fn parse_field(field: &Field) -> Result<Asset, ParseFieldError> {
                                     if let Lit::Float(width) = &named_value.lit {
                                         builder.cell_width =
                                             Some(width.base10_parse::<f32>().unwrap())
+                                    } else {
+                                        return Err(ParseFieldError::WrongAttributeType(named_value.clone().into_token_stream(), "float"));
                                     }
                                 } else if path == TEXTURE_ATLAS_CELL_HEIGHT {
                                     if let Lit::Float(height) = &named_value.lit {
                                         builder.cell_height =
                                             Some(height.base10_parse::<f32>().unwrap())
+                                    } else {
+                                        return Err(ParseFieldError::WrongAttributeType(named_value.clone().into_token_stream(), "float"));
                                     }
                                 } else if path == TEXTURE_ATLAS_COLUMNS {
                                     if let Lit::Int(columns) = &named_value.lit {
                                         builder.columns =
                                             Some(columns.base10_parse::<usize>().unwrap())
+                                    } else {
+                                        return Err(ParseFieldError::WrongAttributeType(named_value.clone().into_token_stream(), "integer"));
                                     }
                                 } else if path == TEXTURE_ATLAS_ROWS {
                                     if let Lit::Int(rows) = &named_value.lit {
                                         builder.rows = Some(rows.base10_parse::<usize>().unwrap())
+                                    } else {
+                                        return Err(ParseFieldError::WrongAttributeType(named_value.clone().into_token_stream(), "integer"));
                                     }
                                 }
                             }
                         }
+                    } else {
+                        return Err(ParseFieldError::UnknownAttribute(meta_list.clone().into_token_stream()))
                     }
+                } else {
+                    return Err(ParseFieldError::UnknownAttributeType(attribute.clone().into_token_stream()));
                 }
             }
         }
