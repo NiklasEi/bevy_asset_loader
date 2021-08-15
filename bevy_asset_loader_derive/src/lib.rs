@@ -211,6 +211,7 @@ fn impl_asset_collection(
 
     let impl_asset_collection = quote! {
         #[automatically_derived]
+        #[allow(unused_variables)]
         impl AssetCollection for #name {
             fn create(world: &mut World) -> Self {
                 let cell = world.cell();
