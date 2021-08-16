@@ -116,30 +116,30 @@ fn check_loading_state<T: Component + Debug + Clone + Eq + Hash, Assets: AssetCo
     {
         let cell = world.cell();
         let loading_asset_handles = cell.get_resource::<LoadingAssetHandles<Assets>>();
-        if let Some(loading_asset_handles) = loading_asset_handles {
-            let mut state = cell
-                .get_resource_mut::<State<T>>()
-                .expect("Cannot get State resource");
-            let mut config = cell
-                .get_resource_mut::<AssetLoaderConfiguration<T>>()
-                .expect("Cannot get AssetLoaderConfiguration resource");
-            let asset_server = cell
-                .get_resource::<AssetServer>()
-                .expect("Cannot get AssetServer resource");
-            let load_state = asset_server
-                .get_group_load_state(loading_asset_handles.handles.iter().map(|handle| handle.id));
-            if load_state != LoadState::Loaded {
-                return;
-            }
-            if config.count == 1 {
-                state
-                    .set(config.next.clone())
-                    .expect("Failed to set next State");
-            } else {
-                config.count -= 1;
-            }
-        } else {
+        if loading_asset_handles.is_none() {
             return;
+        }
+        let loading_asset_handles = loading_asset_handles.unwrap();
+        let mut state = cell
+            .get_resource_mut::<State<T>>()
+            .expect("Cannot get State resource");
+        let mut config = cell
+            .get_resource_mut::<AssetLoaderConfiguration<T>>()
+            .expect("Cannot get AssetLoaderConfiguration resource");
+        let asset_server = cell
+            .get_resource::<AssetServer>()
+            .expect("Cannot get AssetServer resource");
+        let load_state = asset_server
+            .get_group_load_state(loading_asset_handles.handles.iter().map(|handle| handle.id));
+        if load_state != LoadState::Loaded {
+            return;
+        }
+        if config.count == 1 {
+            state
+                .set(config.next.clone())
+                .expect("Failed to set next State");
+        } else {
+            config.count -= 1;
         }
     }
     let asset_collection = Assets::create(world);
@@ -216,9 +216,9 @@ pub struct AssetLoader<T> {
     collection_count: usize,
 }
 
-impl<T> AssetLoader<T>
+impl<State> AssetLoader<State>
 where
-    T: Component + Debug + Clone + Eq + Hash,
+    State: Component + Debug + Clone + Eq + Hash,
 {
     /// Create a new [AssetLoader]
     ///
@@ -259,7 +259,7 @@ where
     /// #     pub tree: Handle<Texture>,
     /// # }
     /// ```
-    pub fn new(load: T, next: T) -> AssetLoader<T> {
+    pub fn new(load: State, next: State) -> AssetLoader<State> {
         Self {
             next,
             load: SystemSet::on_enter(load.clone()),
@@ -311,7 +311,7 @@ where
         self.load = self.load.with_system(start_loading::<A>.system());
         self.check = self
             .check
-            .with_system(check_loading_state::<T, A>.exclusive_system());
+            .with_system(check_loading_state::<State, A>.exclusive_system());
         self.collection_count += 1;
 
         self
@@ -409,7 +409,7 @@ where
         app.add_system_set(self.load)
             .add_system_set(self.check)
             .add_system_set(self.post_process)
-            .insert_resource(AssetLoaderConfiguration::<T> {
+            .insert_resource(AssetLoaderConfiguration::<State> {
                 count: self.collection_count,
                 next: self.next,
             });
