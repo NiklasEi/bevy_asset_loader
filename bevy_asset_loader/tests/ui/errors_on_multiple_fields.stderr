@@ -1,0 +1,19 @@
+error: Unknown attribute type
+ --> $DIR/errors_on_multiple_fields.rs:8:13
+  |
+8 |     #[asset(what_is_this)]
+  |             ^^^^^^^^^^^^
+
+error: Field is missing asset attributes: texture_atlas/cell_height, texture_atlas/columns, texture_atlas/rows
+  --> $DIR/errors_on_multiple_fields.rs:11:5
+   |
+11 | /     #[asset(texture_atlas(cell_width=100.))]
+12 | |     #[asset(path = "test.png")]
+13 | |     second: Handle<TextureAtlas>,
+   | |________________________________^
+
+error: Wrong attribute type. Expected 'integer'
+  --> $DIR/errors_on_multiple_fields.rs:14:62
+   |
+14 |     #[asset(texture_atlas(cell_width=100., cell_heigth=100., columns = 10., rows = 1))]
+   |                                                              ^^^^^^^^^^^^^

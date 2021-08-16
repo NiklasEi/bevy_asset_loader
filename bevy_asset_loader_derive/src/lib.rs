@@ -62,7 +62,7 @@ struct AssetBuilder {
 }
 
 impl AssetBuilder {
-    fn build(self) -> Result<Asset, ParseFieldError> {
+    fn build(self) -> Result<Asset, Vec<ParseFieldError>> {
         let mut missing_fields = vec![];
         if self.cell_width.is_none() {
             missing_fields.push(format!(
@@ -89,7 +89,7 @@ impl AssetBuilder {
             ));
         }
         if self.field_ident.is_none() || self.asset_path.is_none() {
-            return Err(ParseFieldError::NoAttributes);
+            return Err(vec![ParseFieldError::NoAttributes]);
         }
         if missing_fields.len() == 4 {
             return Ok(Asset::Basic(BasicAsset {
@@ -97,7 +97,7 @@ impl AssetBuilder {
                 asset_path: self.asset_path.unwrap(),
             }));
         }
-        if missing_fields.len() < 1 {
+        if missing_fields.is_empty() {
             return Ok(Asset::TextureAtlas(TextureAtlasAsset {
                 field_ident: self.field_ident.unwrap(),
                 asset_path: self.asset_path.unwrap(),
@@ -107,7 +107,7 @@ impl AssetBuilder {
                 rows: self.rows.unwrap(),
             }));
         }
-        Err(ParseFieldError::MissingAttributes(missing_fields))
+        Err(vec![ParseFieldError::MissingAttributes(missing_fields)])
     }
 }
 
@@ -120,41 +120,51 @@ fn impl_asset_collection(
     let mut assets: Vec<Asset> = vec![];
     if let Data::Struct(ref data_struct) = ast.data {
         if let Fields::Named(ref named_fields) = data_struct.fields {
+            let mut compile_errors = vec![];
             for field in named_fields.named.iter() {
                 let asset = parse_field(field);
                 match asset {
                     Ok(asset) => assets.push(asset),
-                    Err(ParseFieldError::NoAttributes) => {
-                        default_fields.push(field.clone().ident.unwrap())
-                    }
-                    Err(ParseFieldError::MissingAttributes(missing_attributes)) => {
-                        return Err(vec![syn::Error::new_spanned(
-                            field.into_token_stream(),
-                            format!(
-                                "Field is missing asset attributes: {}",
-                                missing_attributes.join(", ")
-                            ),
-                        )]);
-                    }
-                    Err(ParseFieldError::WrongAttributeType(token_stream, expected)) => {
-                        return Err(vec![syn::Error::new_spanned(
-                            token_stream,
-                            format!("Wrong attribute type. Expected '{}'", expected),
-                        )]);
-                    }
-                    Err(ParseFieldError::UnknownAttributeType(token_stream)) => {
-                        return Err(vec![syn::Error::new_spanned(
-                            token_stream,
-                            "Unknown attribute type",
-                        )]);
-                    }
-                    Err(ParseFieldError::UnknownAttribute(token_stream)) => {
-                        return Err(vec![syn::Error::new_spanned(
-                            token_stream,
-                            "Unknown attribute",
-                        )]);
+                    Err(errors) => {
+                        for error in errors {
+                            match error {
+                                ParseFieldError::NoAttributes => {
+                                    default_fields.push(field.clone().ident.unwrap())
+                                }
+                                ParseFieldError::MissingAttributes(missing_attributes) => {
+                                    compile_errors.push(syn::Error::new_spanned(
+                                        field.into_token_stream(),
+                                        format!(
+                                            "Field is missing asset attributes: {}",
+                                            missing_attributes.join(", ")
+                                        ),
+                                    ));
+                                }
+                                ParseFieldError::WrongAttributeType(token_stream, expected) => {
+                                    compile_errors.push(syn::Error::new_spanned(
+                                        token_stream,
+                                        format!("Wrong attribute type. Expected '{}'", expected),
+                                    ));
+                                }
+                                ParseFieldError::UnknownAttributeType(token_stream) => {
+                                    compile_errors.push(syn::Error::new_spanned(
+                                        token_stream,
+                                        "Unknown attribute type",
+                                    ));
+                                }
+                                ParseFieldError::UnknownAttribute(token_stream) => {
+                                    compile_errors.push(syn::Error::new_spanned(
+                                        token_stream,
+                                        "Unknown attribute",
+                                    ));
+                                }
+                            }
+                        }
                     }
                 }
+            }
+            if !compile_errors.is_empty() {
+                return Err(compile_errors);
             }
         } else {
             return Err(vec![syn::Error::new_spanned(
@@ -178,10 +188,10 @@ fn impl_asset_collection(
         Asset::TextureAtlas(texture_asset) => {
             let field_ident = texture_asset.field_ident.clone();
             let asset_path = texture_asset.asset_path.clone();
-            let cell_width = texture_asset.cell_width.clone();
-            let cell_height = texture_asset.cell_height.clone();
-            let columns = texture_asset.columns.clone();
-            let rows = texture_asset.rows.clone();
+            let cell_width = texture_asset.cell_width;
+            let cell_height = texture_asset.cell_height;
+            let columns = texture_asset.columns;
+            let rows = texture_asset.rows;
             quote!(
                 #es#field_ident : {
                 atlases.add(TextureAtlas::from_grid(
@@ -243,8 +253,9 @@ enum ParseFieldError {
     MissingAttributes(Vec<String>),
 }
 
-fn parse_field(field: &Field) -> Result<Asset, ParseFieldError> {
+fn parse_field(field: &Field) -> Result<Asset, Vec<ParseFieldError>> {
     let mut builder = AssetBuilder::default();
+    let mut errors = vec![];
     for attr in field.attrs.iter() {
         if let syn::Meta::List(ref asset_meta_list) = attr.parse_meta().unwrap() {
             if *asset_meta_list.path.get_ident().unwrap() != ASSET_ATTRIBUTE {
@@ -260,10 +271,15 @@ fn parse_field(field: &Field) -> Result<Asset, ParseFieldError> {
                             builder.asset_path = Some(path_literal.value());
                             builder.field_ident = Some(field.clone().ident.unwrap());
                         } else {
-                            return Err(ParseFieldError::WrongAttributeType(named_value.clone().into_token_stream(), "str"));
+                            errors.push(ParseFieldError::WrongAttributeType(
+                                named_value.clone().into_token_stream(),
+                                "str",
+                            ));
                         }
-                    }  else {
-                        return Err(ParseFieldError::UnknownAttribute(named_value.clone().into_token_stream()))
+                    } else {
+                        errors.push(ParseFieldError::UnknownAttribute(
+                            named_value.clone().into_token_stream(),
+                        ))
                     }
                 } else if let NestedMeta::Meta(Meta::List(ref meta_list)) = attribute {
                     let path = meta_list.path.get_ident().unwrap().clone();
@@ -276,39 +292,58 @@ fn parse_field(field: &Field) -> Result<Asset, ParseFieldError> {
                                         builder.cell_width =
                                             Some(width.base10_parse::<f32>().unwrap())
                                     } else {
-                                        return Err(ParseFieldError::WrongAttributeType(named_value.clone().into_token_stream(), "float"));
+                                        errors.push(ParseFieldError::WrongAttributeType(
+                                            named_value.clone().into_token_stream(),
+                                            "float",
+                                        ));
                                     }
                                 } else if path == TEXTURE_ATLAS_CELL_HEIGHT {
                                     if let Lit::Float(height) = &named_value.lit {
                                         builder.cell_height =
                                             Some(height.base10_parse::<f32>().unwrap())
                                     } else {
-                                        return Err(ParseFieldError::WrongAttributeType(named_value.clone().into_token_stream(), "float"));
+                                        errors.push(ParseFieldError::WrongAttributeType(
+                                            named_value.clone().into_token_stream(),
+                                            "float",
+                                        ));
                                     }
                                 } else if path == TEXTURE_ATLAS_COLUMNS {
                                     if let Lit::Int(columns) = &named_value.lit {
                                         builder.columns =
                                             Some(columns.base10_parse::<usize>().unwrap())
                                     } else {
-                                        return Err(ParseFieldError::WrongAttributeType(named_value.clone().into_token_stream(), "integer"));
+                                        errors.push(ParseFieldError::WrongAttributeType(
+                                            named_value.clone().into_token_stream(),
+                                            "integer",
+                                        ));
                                     }
                                 } else if path == TEXTURE_ATLAS_ROWS {
                                     if let Lit::Int(rows) = &named_value.lit {
                                         builder.rows = Some(rows.base10_parse::<usize>().unwrap())
                                     } else {
-                                        return Err(ParseFieldError::WrongAttributeType(named_value.clone().into_token_stream(), "integer"));
+                                        errors.push(ParseFieldError::WrongAttributeType(
+                                            named_value.clone().into_token_stream(),
+                                            "integer",
+                                        ));
                                     }
                                 }
                             }
                         }
                     } else {
-                        return Err(ParseFieldError::UnknownAttribute(meta_list.clone().into_token_stream()))
+                        errors.push(ParseFieldError::UnknownAttribute(
+                            meta_list.clone().into_token_stream(),
+                        ))
                     }
                 } else {
-                    return Err(ParseFieldError::UnknownAttributeType(attribute.clone().into_token_stream()));
+                    errors.push(ParseFieldError::UnknownAttributeType(
+                        attribute.clone().into_token_stream(),
+                    ));
                 }
             }
         }
+    }
+    if !errors.is_empty() {
+        return Err(errors);
     }
     builder.build()
 }
