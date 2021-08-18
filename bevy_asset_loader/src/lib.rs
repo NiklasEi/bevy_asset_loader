@@ -142,43 +142,52 @@ fn check_loading_state<T: Component + Debug + Clone + Eq + Hash, Assets: AssetCo
     world: &mut World,
 ) {
     {
+        let cell = world.cell();
+
+        let loading_asset_handles = cell.get_resource::<LoadingAssetHandles<Assets>>();
+        if loading_asset_handles.is_none() {
+            return;
+        }
+
+        let loading_asset_handles = loading_asset_handles.unwrap();
+        let asset_server = cell
+            .get_resource::<AssetServer>()
+            .expect("Cannot get AssetServer resource");
+        let _asset_server_2 = cell
+            .get_resource::<AssetServer>()
+            .expect("Cannot get AssetServer resource");
+        let load_state = asset_server
+            .get_group_load_state(loading_asset_handles.handles.iter().map(|handle| handle.id));
+        if load_state != LoadState::Loaded {
+            return;
+        }
+
+        // Todo: fire events `AssetCollection-` Ready/Loaded/Inserted?
+        // First event when all handles are done
+        // => system checks for events, reduces config count/changes state
+        // => fires event that collection is now inserted
+        // Export labels to sort check_loading_state / insert systems
+        let mut state = cell
+            .get_resource_mut::<State<T>>()
+            .expect("Cannot get State resource");
+        let mut asset_loader_configuration = cell
+            .get_resource_mut::<AssetLoaderConfiguration<T>>()
+            .expect("Cannot get AssetLoaderConfiguration resource");
+        if let Some(mut config) = asset_loader_configuration
+            .configuration
+            .get_mut(state.current())
         {
-            let cell = world.cell();
-            let loading_asset_handles = cell.get_resource::<LoadingAssetHandles<Assets>>();
-            if loading_asset_handles.is_none() {
-                return;
-            }
-            let loading_asset_handles = loading_asset_handles.unwrap();
-            let mut state = cell
-                .get_resource_mut::<State<T>>()
-                .expect("Cannot get State resource");
-            let mut asset_loader_configuration = cell
-                .get_resource_mut::<AssetLoaderConfiguration<T>>()
-                .expect("Cannot get AssetLoaderConfiguration resource");
-            let asset_server = cell
-                .get_resource::<AssetServer>()
-                .expect("Cannot get AssetServer resource");
-            let load_state = asset_server
-                .get_group_load_state(loading_asset_handles.handles.iter().map(|handle| handle.id));
-            if load_state != LoadState::Loaded {
-                return;
-            }
-            if let Some(mut config) = asset_loader_configuration
-                .configuration
-                .get_mut(state.current())
-            {
-                config.count -= 1;
-                if config.count == 0 {
-                    state
-                        .set(config.next.clone())
-                        .expect("Failed to set next State");
-                }
+            config.count -= 1;
+            if config.count == 0 {
+                state
+                    .set(config.next.clone())
+                    .expect("Failed to set next State");
             }
         }
-        let asset_collection = Assets::create(world);
-        world.insert_resource(asset_collection);
-        world.remove_resource::<LoadingAssetHandles<Assets>>();
     }
+    let asset_collection = Assets::create(world);
+    world.insert_resource(asset_collection);
+    world.remove_resource::<LoadingAssetHandles<Assets>>();
 }
 
 fn init_resource<Asset: FromWorld + Component>(world: &mut World) {
