@@ -1,0 +1,17 @@
+error: Unknown attribute
+ --> $DIR/unknown_attribute.rs:8:13
+  |
+8 |     #[asset(what_is_this = "I don't know this")]
+  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: Unknown attribute
+  --> $DIR/unknown_attribute.rs:15:13
+   |
+15 |     #[asset(paths = "test.ogg")]
+   |             ^^^^^^^^^^^^^^^^^^
+
+error: Unknown attribute
+  --> $DIR/unknown_attribute.rs:21:27
+   |
+21 |     #[asset(texture_atlas(what_is_this = 2))]
+   |                           ^^^^^^^^^^^^^^^^

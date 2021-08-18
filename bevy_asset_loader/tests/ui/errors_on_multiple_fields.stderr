@@ -15,5 +15,5 @@ error: Field is missing asset attributes: texture_atlas/cell_height, texture_atl
 error: Wrong attribute type. Expected 'integer'
   --> $DIR/errors_on_multiple_fields.rs:14:62
    |
-14 |     #[asset(texture_atlas(cell_width=100., cell_heigth=100., columns = 10., rows = 1))]
+14 |     #[asset(texture_atlas(cell_width=100., cell_height=100., columns = 10., rows = 1))]
    |                                                              ^^^^^^^^^^^^^

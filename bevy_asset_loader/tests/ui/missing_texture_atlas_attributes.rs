@@ -6,6 +6,6 @@ fn main() {}
 #[derive(AssetCollection)]
 struct Test {
     #[asset(texture_atlas(columns = 2))]
-    #[asset(path = "test.ogg")]
-    test: Handle<AudioSource>
+    #[asset(path = "test.png")]
+    test: Handle<TextureAtlas>
 }

@@ -326,6 +326,10 @@ fn parse_field(field: &Field) -> Result<Asset, Vec<ParseFieldError>> {
                                             "integer",
                                         ));
                                     }
+                                } else {
+                                    errors.push(ParseFieldError::UnknownAttribute(
+                                        named_value.clone().into_token_stream(),
+                                    ));
                                 }
                             }
                         }
