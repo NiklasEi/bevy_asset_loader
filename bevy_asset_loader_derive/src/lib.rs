@@ -36,11 +36,17 @@ enum Asset {
 const ASSET_ATTRIBUTE: &str = "asset";
 const PATH_ATTRIBUTE: &str = "path";
 
+#[non_exhaustive]
+struct TextureAtlasAttribute;
+
+impl TextureAtlasAttribute {
+    pub const CELL_WIDTH: &'static str = "cell_width";
+    pub const CELL_HEIGHT: &'static str = "cell_height";
+    pub const COLUMNS: &'static str = "columns";
+    pub const ROWS: &'static str = "rows";
+}
+
 const TEXTURE_ATLAS_ATTRIBUTE: &str = "texture_atlas";
-const TEXTURE_ATLAS_CELL_WIDTH: &str = "cell_width";
-const TEXTURE_ATLAS_CELL_HEIGHT: &str = "cell_height";
-const TEXTURE_ATLAS_COLUMNS: &str = "columns";
-const TEXTURE_ATLAS_ROWS: &str = "rows";
 
 struct TextureAtlasAsset {
     field_ident: Ident,
@@ -67,25 +73,29 @@ impl AssetBuilder {
         if self.cell_width.is_none() {
             missing_fields.push(format!(
                 "{}/{}",
-                TEXTURE_ATLAS_ATTRIBUTE, TEXTURE_ATLAS_CELL_WIDTH
+                TEXTURE_ATLAS_ATTRIBUTE,
+                TextureAtlasAttribute::CELL_WIDTH
             ));
         }
         if self.cell_height.is_none() {
             missing_fields.push(format!(
                 "{}/{}",
-                TEXTURE_ATLAS_ATTRIBUTE, TEXTURE_ATLAS_CELL_HEIGHT
+                TEXTURE_ATLAS_ATTRIBUTE,
+                TextureAtlasAttribute::CELL_HEIGHT
             ));
         }
         if self.columns.is_none() {
             missing_fields.push(format!(
                 "{}/{}",
-                TEXTURE_ATLAS_ATTRIBUTE, TEXTURE_ATLAS_COLUMNS
+                TEXTURE_ATLAS_ATTRIBUTE,
+                TextureAtlasAttribute::COLUMNS
             ));
         }
         if self.rows.is_none() {
             missing_fields.push(format!(
                 "{}/{}",
-                TEXTURE_ATLAS_ATTRIBUTE, TEXTURE_ATLAS_ROWS
+                TEXTURE_ATLAS_ATTRIBUTE,
+                TextureAtlasAttribute::ROWS
             ));
         }
         if self.field_ident.is_none() || self.asset_path.is_none() {
@@ -287,7 +297,7 @@ fn parse_field(field: &Field) -> Result<Asset, Vec<ParseFieldError>> {
                         for attribute in meta_list.nested.iter() {
                             if let NestedMeta::Meta(Meta::NameValue(ref named_value)) = attribute {
                                 let path = named_value.path.get_ident().unwrap().clone();
-                                if path == TEXTURE_ATLAS_CELL_WIDTH {
+                                if path == TextureAtlasAttribute::CELL_WIDTH {
                                     if let Lit::Float(width) = &named_value.lit {
                                         builder.cell_width =
                                             Some(width.base10_parse::<f32>().unwrap())
@@ -297,7 +307,7 @@ fn parse_field(field: &Field) -> Result<Asset, Vec<ParseFieldError>> {
                                             "float",
                                         ));
                                     }
-                                } else if path == TEXTURE_ATLAS_CELL_HEIGHT {
+                                } else if path == TextureAtlasAttribute::CELL_HEIGHT {
                                     if let Lit::Float(height) = &named_value.lit {
                                         builder.cell_height =
                                             Some(height.base10_parse::<f32>().unwrap())
@@ -307,7 +317,7 @@ fn parse_field(field: &Field) -> Result<Asset, Vec<ParseFieldError>> {
                                             "float",
                                         ));
                                     }
-                                } else if path == TEXTURE_ATLAS_COLUMNS {
+                                } else if path == TextureAtlasAttribute::COLUMNS {
                                     if let Lit::Int(columns) = &named_value.lit {
                                         builder.columns =
                                             Some(columns.base10_parse::<usize>().unwrap())
@@ -317,7 +327,7 @@ fn parse_field(field: &Field) -> Result<Asset, Vec<ParseFieldError>> {
                                             "integer",
                                         ));
                                     }
-                                } else if path == TEXTURE_ATLAS_ROWS {
+                                } else if path == TextureAtlasAttribute::ROWS {
                                     if let Lit::Int(rows) = &named_value.lit {
                                         builder.rows = Some(rows.base10_parse::<usize>().unwrap())
                                     } else {
