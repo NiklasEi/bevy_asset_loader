@@ -1,0 +1,17 @@
+error: Wrong attribute type. Expected 'str'
+ --> $DIR/wrong_attribute_type.rs:8:13
+  |
+8 |     #[asset(path = 1)]
+  |             ^^^^^^^^
+
+error: Wrong attribute type. Expected 'float'
+  --> $DIR/wrong_attribute_type.rs:14:27
+   |
+14 |     #[asset(texture_atlas(cell_height = 100, cell_width=100., columns = 1, rows = 1))]
+   |                           ^^^^^^^^^^^^^^^^^
+
+error: Wrong attribute type. Expected 'integer'
+  --> $DIR/wrong_attribute_type.rs:21:64
+   |
+21 |     #[asset(texture_atlas(cell_height = 100., cell_width=100., columns = "5", rows = 1))]
+   |                                                                ^^^^^^^^^^^^^

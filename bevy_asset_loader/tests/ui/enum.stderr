@@ -1,0 +1,8 @@
+error: AssetCollection can only be derived for a struct
+  --> $DIR/enum.rs:7:1
+   |
+7  | / enum Test {
+8  | |     #[asset(path = "test.ogg")]
+9  | |     Asset(Handle<AudioSource>)
+10 | | }
+   | |_^

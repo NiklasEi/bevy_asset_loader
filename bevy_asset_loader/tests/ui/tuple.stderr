@@ -1,0 +1,5 @@
+error: only named fields are supported to derive AssetCollection
+ --> $DIR/tuple.rs:6:12
+  |
+6 | struct Test(usize);
+  |            ^^^^^^^

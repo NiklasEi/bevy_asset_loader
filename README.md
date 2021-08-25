@@ -2,18 +2,18 @@
 
 [![crates.io](https://img.shields.io/crates/v/bevy_asset_loader.svg)](https://crates.io/crates/bevy_asset_loader)
 [![docs](https://docs.rs/bevy_asset_loader/badge.svg)](https://docs.rs/bevy_asset_loader)
-[![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/NiklasEi/bevy_asset_loader/blob/main/LICENSE.md)
+[![license](https://img.shields.io/crates/l/bevy_asset_loader)](https://github.com/NiklasEi/bevy_asset_loader/blob/main/LICENSE.md)
 [![crates.io](https://img.shields.io/crates/d/bevy_asset_loader.svg)](https://crates.io/crates/bevy_asset_loader)
 
 This [Bevy][bevy] plugin reduces boilerplate when loading game assets. The crate offers the `AssetCollection` trait and can automatically load structs that implement it. The trait can be derived.
 
 ## How to use
 
-The `AssetLoader` is constructed with two `State`s. During the first state it will load the assets and check up on the loading status in every frame. When the assets are done loading, the collections will be inserted as resources, and the plugin switches to the second state.
+The `AssetLoader` is constructed with two states (see [the cheatbook on states][cheatbook-states]). During the first state it will load the assets and check up on the loading status in every frame. When the assets are done loading, the collections will be inserted as resources, and the plugin switches to the second state.
 
-You can add as many `AssetCollection`s to the loader as you want. This is done by chaining `with_collection` calls. To finish the setup, call the `build` function with your `AppBuilder`.
+For structs with named fields that are either asset handles or implement default, `AssetCollection` can be derived. You can add as many `AssetCollection`s to the loader as you want by chaining `with_collection` calls. To finish the setup, call the `build` function with your `AppBuilder`.
 
-Now you can start your game logic from the second configured state and use the `AssetCollection`s as resources in your systems.
+Now you can start your game logic from the second configured state and use the asset collections as resources in your systems.
 
 ```rust
 use bevy::prelude::*;
@@ -60,9 +60,14 @@ See the [example](/bevy_asset_loader/examples/two_collections.rs) for a complete
 
 ### Initialize FromWorld resources
 
-In situations where you would like to prepare other resources based on your loaded assets you can use `AssetLoader::init_resource` to initialize `FromWorld` resources. You can for example create and insert a resource containing a texture atlas based on a sprite sheet (see the [atlas_from_grid example](/bevy_asset_loader/examples/atlas_from_grid.rs)).
+In situations where you would like to prepare other resources based on your loaded assets you can use `AssetLoader::init_resource` to initialize `FromWorld` resources.
 
 `AssetLoader::init_resource` does the same as Bevy's `App::init_resource`, but at a different point in time. While Bevy inserts your resources at the very beginning, the AssetLoader will do so after having inserted your loaded asset collections. That means that you can use your asset collections in the `FromWorld` implementations.
+
+## Development
+
+The integration tests cannot run with default features enabled. Because they do not insert the render plugin of Bevy, they fail due to the derive macro requiring the `TextureAtlas` asset collection (this is toggled with the `render` feature).  
+Use `cargo test --no-default-features` to run all tests.
 
 ## License
 
@@ -82,3 +87,4 @@ for inclusion in the work by you, as defined in the Apache-2.0 license, shall be
 additional terms or conditions.
 
 [bevy]: https://bevyengine.org/
+[cheatbook-states]: https://bevy-cheatbook.github.io/programming/states.html
