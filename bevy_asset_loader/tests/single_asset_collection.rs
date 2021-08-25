@@ -6,7 +6,7 @@ use bevy_asset_loader::{AssetCollection, AssetLoader};
 
 #[test]
 fn single_asset_collection() {
-    let mut app = App::build();
+    let mut app = App::new();
 
     AssetLoader::new(MyStates::Load, MyStates::Next)
         .with_collection::<MyAssets>()

@@ -9,7 +9,7 @@
 //! # use bevy::prelude::*;
 //! # use bevy::asset::AssetPlugin;
 //! fn main() {
-//! let mut app = App::build();
+//! let mut app = App::new();
 //!     AssetLoader::new(GameState::Loading, GameState::Next)
 //!         .with_collection::<AudioAssets>()
 //!         .with_collection::<TextureAssets>()
@@ -60,7 +60,7 @@
 
 pub use bevy_asset_loader_derive::AssetCollection;
 
-use bevy::app::AppBuilder;
+use bevy::app::App;
 use bevy::asset::{AssetServer, HandleUntyped, LoadState};
 use bevy::ecs::component::Component;
 use bevy::ecs::prelude::IntoExclusiveSystem;
@@ -202,7 +202,7 @@ fn init_resource<Asset: FromWorld + Component>(world: &mut World) {
 /// # use bevy::prelude::*;
 /// # use bevy::asset::AssetPlugin;
 /// fn main() {
-/// let mut app = App::build();
+/// let mut app = App::new();
 ///     AssetLoader::new(GameState::Loading, GameState::Menu)
 ///         .with_collection::<AudioAssets>()
 ///         .with_collection::<TextureAssets>()
@@ -264,7 +264,7 @@ where
     /// # use bevy::prelude::*;
     /// # use bevy::asset::AssetPlugin;
     /// # fn main() {
-    ///     let mut app = App::build();
+    ///     let mut app = App::new();
     ///     AssetLoader::new(GameState::Loading, GameState::Menu)
     ///         .with_collection::<AudioAssets>()
     ///         .with_collection::<TextureAssets>()
@@ -313,7 +313,7 @@ where
     /// # use bevy::prelude::*;
     /// # use bevy::asset::AssetPlugin;
     /// # fn main() {
-    ///     let mut app = App::build();
+    ///     let mut app = App::new();
     ///     AssetLoader::new(GameState::Loading, GameState::Menu)
     ///         .with_collection::<AudioAssets>()
     ///         .with_collection::<TextureAssets>()
@@ -359,7 +359,7 @@ where
     /// # use bevy::prelude::*;
     /// # use bevy::asset::AssetPlugin;
     /// # fn main() {
-    ///     let mut app = App::build();
+    ///     let mut app = App::new();
     ///     AssetLoader::new(GameState::Loading, GameState::Menu)
     ///         .with_collection::<TextureForAtlas>()
     ///         .init_resource::<TextureAtlasFromWorld>()
@@ -411,7 +411,7 @@ where
     /// # use bevy::prelude::*;
     /// # use bevy::asset::AssetPlugin;
     /// # fn main() {
-    ///     let mut app = App::build();
+    ///     let mut app = App::new();
     ///     AssetLoader::new(GameState::Loading, GameState::Menu)
     ///         .with_collection::<AudioAssets>()
     ///         .with_collection::<TextureAssets>()
@@ -441,9 +441,9 @@ where
     /// #     pub tree: Handle<Texture>,
     /// # }
     /// ```
-    pub fn build(self, app: &mut AppBuilder) {
+    pub fn build(self, app: &mut App) {
         let asset_loader_configuration = app
-            .world_mut()
+            .world
             .get_resource_mut::<AssetLoaderConfiguration<State>>();
         let config = LoadingConfiguration {
             next: self.next_state.clone(),
@@ -458,7 +458,7 @@ where
             asset_loader_configuration
                 .configuration
                 .insert(self.loading_state.clone(), config);
-            app.world_mut().insert_resource(asset_loader_configuration);
+            app.world.insert_resource(asset_loader_configuration);
         }
         app.add_system_set(self.load)
             .add_system_set(self.check)

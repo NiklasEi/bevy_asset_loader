@@ -7,7 +7,7 @@ use bevy_asset_loader::{AssetCollection, AssetLoader};
 /// In this showcase we load two textures in an [AssetCollection] and then combine
 /// them by adding up their image data.
 fn main() {
-    let mut app = App::build();
+    let mut app = App::new();
     AssetLoader::new(MyStates::AssetLoading, MyStates::Next)
         .with_collection::<TextureAssets>()
         .init_resource::<CombinedTexture>()
