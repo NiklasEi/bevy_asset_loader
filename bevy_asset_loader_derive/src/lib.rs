@@ -36,14 +36,15 @@ enum Asset {
 const ASSET_ATTRIBUTE: &str = "asset";
 const PATH_ATTRIBUTE: &str = "path";
 
-#[non_exhaustive]
 struct TextureAtlasAttribute;
 
 impl TextureAtlasAttribute {
-    pub const CELL_WIDTH: &'static str = "cell_width";
-    pub const CELL_HEIGHT: &'static str = "cell_height";
+    pub const TILE_SIZE_X: &'static str = "tile_size_x";
+    pub const TILE_SIZE_Y: &'static str = "tile_size_y";
     pub const COLUMNS: &'static str = "columns";
     pub const ROWS: &'static str = "rows";
+    pub const PADDING_X: &'static str = "padding_x";
+    pub const PADDING_Y: &'static str = "padding_y";
 }
 
 const TEXTURE_ATLAS_ATTRIBUTE: &str = "texture_atlas";
@@ -51,37 +52,41 @@ const TEXTURE_ATLAS_ATTRIBUTE: &str = "texture_atlas";
 struct TextureAtlasAsset {
     field_ident: Ident,
     asset_path: String,
-    cell_width: f32,
-    cell_height: f32,
+    tile_size_x: f32,
+    tile_size_y: f32,
     columns: usize,
     rows: usize,
+    padding_x: f32,
+    padding_y: f32,
 }
 
 #[derive(Default)]
 struct AssetBuilder {
     field_ident: Option<Ident>,
     asset_path: Option<String>,
-    cell_width: Option<f32>,
-    cell_height: Option<f32>,
+    tile_size_x: Option<f32>,
+    tile_size_y: Option<f32>,
     columns: Option<usize>,
     rows: Option<usize>,
+    padding_x: f32,
+    padding_y: f32,
 }
 
 impl AssetBuilder {
     fn build(self) -> Result<Asset, Vec<ParseFieldError>> {
         let mut missing_fields = vec![];
-        if self.cell_width.is_none() {
+        if self.tile_size_x.is_none() {
             missing_fields.push(format!(
                 "{}/{}",
                 TEXTURE_ATLAS_ATTRIBUTE,
-                TextureAtlasAttribute::CELL_WIDTH
+                TextureAtlasAttribute::TILE_SIZE_X
             ));
         }
-        if self.cell_height.is_none() {
+        if self.tile_size_y.is_none() {
             missing_fields.push(format!(
                 "{}/{}",
                 TEXTURE_ATLAS_ATTRIBUTE,
-                TextureAtlasAttribute::CELL_HEIGHT
+                TextureAtlasAttribute::TILE_SIZE_Y
             ));
         }
         if self.columns.is_none() {
@@ -111,10 +116,12 @@ impl AssetBuilder {
             return Ok(Asset::TextureAtlas(TextureAtlasAsset {
                 field_ident: self.field_ident.unwrap(),
                 asset_path: self.asset_path.unwrap(),
-                cell_width: self.cell_width.unwrap(),
-                cell_height: self.cell_height.unwrap(),
+                tile_size_x: self.tile_size_x.unwrap(),
+                tile_size_y: self.tile_size_y.unwrap(),
                 columns: self.columns.unwrap(),
                 rows: self.rows.unwrap(),
+                padding_x: self.padding_x,
+                padding_y: self.padding_y,
             }));
         }
         Err(vec![ParseFieldError::MissingAttributes(missing_fields)])
@@ -198,17 +205,20 @@ fn impl_asset_collection(
         Asset::TextureAtlas(texture_asset) => {
             let field_ident = texture_asset.field_ident.clone();
             let asset_path = texture_asset.asset_path.clone();
-            let cell_width = texture_asset.cell_width;
-            let cell_height = texture_asset.cell_height;
+            let tile_size_x = texture_asset.tile_size_x;
+            let tile_size_y = texture_asset.tile_size_y;
             let columns = texture_asset.columns;
             let rows = texture_asset.rows;
+            let padding_x = texture_asset.padding_x;
+            let padding_y = texture_asset.padding_y;
             quote!(
                 #es#field_ident : {
-                atlases.add(TextureAtlas::from_grid(
+                atlases.add(TextureAtlas::from_grid_with_padding(
                     asset_server.get_handle(#asset_path),
-                    Vec2::new(#cell_width, #cell_height),
+                    Vec2::new(#tile_size_x, #tile_size_y),
                     #columns,
                     #rows,
+                    Vec2::new(#padding_x, #padding_y),
                 ))},
             )
         }
@@ -297,20 +307,20 @@ fn parse_field(field: &Field) -> Result<Asset, Vec<ParseFieldError>> {
                         for attribute in meta_list.nested.iter() {
                             if let NestedMeta::Meta(Meta::NameValue(ref named_value)) = attribute {
                                 let path = named_value.path.get_ident().unwrap().clone();
-                                if path == TextureAtlasAttribute::CELL_WIDTH {
+                                if path == TextureAtlasAttribute::TILE_SIZE_X {
                                     if let Lit::Float(width) = &named_value.lit {
-                                        builder.cell_width =
-                                            Some(width.base10_parse::<f32>().unwrap())
+                                        builder.tile_size_x =
+                                            Some(width.base10_parse::<f32>().unwrap());
                                     } else {
                                         errors.push(ParseFieldError::WrongAttributeType(
                                             named_value.clone().into_token_stream(),
                                             "float",
                                         ));
                                     }
-                                } else if path == TextureAtlasAttribute::CELL_HEIGHT {
+                                } else if path == TextureAtlasAttribute::TILE_SIZE_Y {
                                     if let Lit::Float(height) = &named_value.lit {
-                                        builder.cell_height =
-                                            Some(height.base10_parse::<f32>().unwrap())
+                                        builder.tile_size_y =
+                                            Some(height.base10_parse::<f32>().unwrap());
                                     } else {
                                         errors.push(ParseFieldError::WrongAttributeType(
                                             named_value.clone().into_token_stream(),
@@ -320,7 +330,7 @@ fn parse_field(field: &Field) -> Result<Asset, Vec<ParseFieldError>> {
                                 } else if path == TextureAtlasAttribute::COLUMNS {
                                     if let Lit::Int(columns) = &named_value.lit {
                                         builder.columns =
-                                            Some(columns.base10_parse::<usize>().unwrap())
+                                            Some(columns.base10_parse::<usize>().unwrap());
                                     } else {
                                         errors.push(ParseFieldError::WrongAttributeType(
                                             named_value.clone().into_token_stream(),
@@ -329,11 +339,31 @@ fn parse_field(field: &Field) -> Result<Asset, Vec<ParseFieldError>> {
                                     }
                                 } else if path == TextureAtlasAttribute::ROWS {
                                     if let Lit::Int(rows) = &named_value.lit {
-                                        builder.rows = Some(rows.base10_parse::<usize>().unwrap())
+                                        builder.rows = Some(rows.base10_parse::<usize>().unwrap());
                                     } else {
                                         errors.push(ParseFieldError::WrongAttributeType(
                                             named_value.clone().into_token_stream(),
                                             "integer",
+                                        ));
+                                    }
+                                } else if path == TextureAtlasAttribute::PADDING_X {
+                                    if let Lit::Float(padding_x) = &named_value.lit {
+                                        builder.padding_x =
+                                            padding_x.base10_parse::<f32>().unwrap();
+                                    } else {
+                                        errors.push(ParseFieldError::WrongAttributeType(
+                                            named_value.clone().into_token_stream(),
+                                            "float",
+                                        ));
+                                    }
+                                } else if path == TextureAtlasAttribute::PADDING_Y {
+                                    if let Lit::Float(padding_y) = &named_value.lit {
+                                        builder.padding_y =
+                                            padding_y.base10_parse::<f32>().unwrap();
+                                    } else {
+                                        errors.push(ParseFieldError::WrongAttributeType(
+                                            named_value.clone().into_token_stream(),
+                                            "float",
                                         ));
                                     }
                                 } else {

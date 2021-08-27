@@ -1,4 +1,4 @@
-error: Field is missing asset attributes: texture_atlas/cell_width, texture_atlas/cell_height, texture_atlas/rows
+error: Field is missing asset attributes: texture_atlas/tile_size_x, texture_atlas/tile_size_y, texture_atlas/rows
   --> $DIR/missing_texture_atlas_attributes.rs:8:5
    |
 8  | /     #[asset(texture_atlas(columns = 2))]
