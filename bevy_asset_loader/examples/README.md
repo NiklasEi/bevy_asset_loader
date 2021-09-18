@@ -4,9 +4,9 @@ These examples are simple Bevy Apps illustrating the capabilities of `bevy_asset
 
 Example | File | Description
 --- | --- | ---
-`atlas_from_grid` | [`atlas_from_grid.rs`](./atlas_from_grid.rs) | Loading a texture atlas from a sprite sheet
-`insert_resource` | [`insert_resource.rs`](./insert_resource.rs) | Inserting a `FromWorld` resource when all asset collections are loaded
-`two_collections` | [`two_collections.rs`](./two_collections.rs) | Load multiple asset collections
+`atlas_from_grid` | [`atlas_from_grid.rs`](atlas_from_grid.rs) | Loading a texture atlas from a sprite sheet
+`init_resource` | [`init_resource.rs`](init_resource.rs) | Inserting a `FromWorld` resource when all asset collections are loaded
+`two_collections` | [`two_collections.rs`](two_collections.rs) | Load multiple asset collections
 
 ## Credits
 The example includes copyright assets:

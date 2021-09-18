@@ -18,6 +18,7 @@ fn main() {
 
 #[derive(AssetCollection)]
 struct MyAssets {
+    // if the sheet would have padding, we could set that with `padding_x` and `padding_y`
     #[asset(texture_atlas(tile_size_x = 100., tile_size_y = 96., columns = 8, rows = 1))]
     #[asset(path = "textures/female_adventurer.png")]
     female_adventurer: Handle<TextureAtlas>,
