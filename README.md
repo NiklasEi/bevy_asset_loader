@@ -66,6 +66,18 @@ In situations where you would like to prepare other resources based on your load
 
 `AssetLoader::init_resource` does the same as Bevy's `App::init_resource`, but at a different point in time. While Bevy inserts your resources at the very beginning, the AssetLoader will do so after having inserted your loaded asset collections. That means that you can use your asset collections in the `FromWorld` implementations.
 
+### Loading color materials
+
+You can directly load color materials. For a complete example please take a look at [color_material.rs](/bevy_asset_loader/examples/color_material.rs).
+```rust
+#[derive(AssetCollection)]
+struct MyAssets {
+    #[asset(color_material)]
+    #[asset(path = "textures/player.png")]
+    player: Handle<ColorMaterial>,
+}
+```
+
 ### Loading texture atlases
 
 You can directly load texture atlases from sprite sheets. For a complete example please take a look at [atlas_from_grid.rs](/bevy_asset_loader/examples/atlas_from_grid.rs).

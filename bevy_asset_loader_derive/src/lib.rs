@@ -5,12 +5,16 @@
 
 extern crate proc_macro;
 
+mod assets;
+
 use proc_macro::TokenStream;
-use proc_macro2::Ident;
-use quote::{quote, ToTokens, TokenStreamExt};
 use std::option::Option::Some;
 use std::result::Result::{Err, Ok};
+
+use proc_macro2::Ident;
+use quote::{quote, TokenStreamExt, ToTokens};
 use syn::{Data, Field, Fields, Lit, Meta, NestedMeta};
+use crate::assets::*;
 
 /// Derive macro for AssetCollection
 ///
@@ -23,21 +27,11 @@ pub fn asset_collection_derive(input: TokenStream) -> TokenStream {
         .into()
 }
 
-struct BasicAsset {
-    field_ident: Ident,
-    asset_path: String,
-}
-
-enum Asset {
-    Basic(BasicAsset),
-    TextureAtlas(TextureAtlasAsset),
-}
-
 const ASSET_ATTRIBUTE: &str = "asset";
 const PATH_ATTRIBUTE: &str = "path";
 
+const TEXTURE_ATLAS_ATTRIBUTE: &str = "texture_atlas";
 struct TextureAtlasAttribute;
-
 impl TextureAtlasAttribute {
     pub const TILE_SIZE_X: &'static str = "tile_size_x";
     pub const TILE_SIZE_Y: &'static str = "tile_size_y";
@@ -47,18 +41,7 @@ impl TextureAtlasAttribute {
     pub const PADDING_Y: &'static str = "padding_y";
 }
 
-const TEXTURE_ATLAS_ATTRIBUTE: &str = "texture_atlas";
-
-struct TextureAtlasAsset {
-    field_ident: Ident,
-    asset_path: String,
-    tile_size_x: f32,
-    tile_size_y: f32,
-    columns: usize,
-    rows: usize,
-    padding_x: f32,
-    padding_y: f32,
-}
+const COLOR_MATERIAL_ATTRIBUTE: &str = "color_material";
 
 #[derive(Default)]
 struct AssetBuilder {
@@ -70,6 +53,7 @@ struct AssetBuilder {
     rows: Option<usize>,
     padding_x: f32,
     padding_y: f32,
+    is_color_material: bool
 }
 
 impl AssetBuilder {
@@ -107,10 +91,14 @@ impl AssetBuilder {
             return Err(vec![ParseFieldError::NoAttributes]);
         }
         if missing_fields.len() == 4 {
-            return Ok(Asset::Basic(BasicAsset {
+            let asset = BasicAsset {
                 field_ident: self.field_ident.unwrap(),
                 asset_path: self.asset_path.unwrap(),
-            }));
+            };
+            if self.is_color_material {
+                return Ok(Asset::ColorMaterial(asset));
+            }
+            return Ok(Asset::Basic(asset));
         }
         if missing_fields.is_empty() {
             return Ok(Asset::TextureAtlas(TextureAtlasAsset {
@@ -202,6 +190,11 @@ fn impl_asset_collection(
             let asset_path = basic.asset_path.clone();
             quote!(#es#field_ident : asset_server.get_handle(#asset_path),)
         }
+        Asset::ColorMaterial(basic) => {
+            let field_ident = basic.field_ident.clone();
+            let asset_path = basic.asset_path.clone();
+            quote!(#es#field_ident : materials.add(asset_server.get_handle(#asset_path).into()),)
+        }
         Asset::TextureAtlas(texture_asset) => {
             let field_ident = texture_asset.field_ident.clone();
             let asset_path = texture_asset.asset_path.clone();
@@ -233,6 +226,10 @@ fn impl_asset_collection(
             let asset_path = asset.asset_path.clone();
             quote!(#es handles.push(asset_server.load_untyped(#asset_path));)
         }
+        Asset::ColorMaterial(asset) => {
+            let asset_path = asset.asset_path.clone();
+            quote!(#es handles.push(asset_server.load_untyped(#asset_path));)
+        }
         Asset::TextureAtlas(asset) => {
             let asset_path = asset.asset_path.clone();
             quote!(#es handles.push(asset_server.load_untyped(#asset_path));)
@@ -246,6 +243,10 @@ fn impl_asset_collection(
             fn create(world: &mut World) -> Self {
                 let cell = world.cell();
                 let asset_server = cell.get_resource::<AssetServer>().expect("Cannot get AssetServer");
+                #[cfg(feature = "sprite")]
+                let mut materials = cell
+                    .get_resource_mut::<Assets<ColorMaterial>>()
+                    .expect("Cannot get Assets<ColorMaterial>");
                 #[cfg(feature = "render")]
                 let mut atlases = cell
                     .get_resource_mut::<Assets<TextureAtlas>>()
@@ -300,6 +301,15 @@ fn parse_field(field: &Field) -> Result<Asset, Vec<ParseFieldError>> {
                     } else {
                         errors.push(ParseFieldError::UnknownAttribute(
                             named_value.clone().into_token_stream(),
+                        ))
+                    }
+                } else if let NestedMeta::Meta(Meta::Path(ref meta_path)) = attribute {
+                    let path = meta_path.get_ident().unwrap().clone();
+                    if path == COLOR_MATERIAL_ATTRIBUTE {
+                        builder.is_color_material = true;
+                    } else {
+                        errors.push(ParseFieldError::UnknownAttribute(
+                            meta_path.clone().into_token_stream(),
                         ))
                     }
                 } else if let NestedMeta::Meta(Meta::List(ref meta_list)) = attribute {

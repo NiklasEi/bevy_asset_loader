@@ -1,5 +1,0 @@
-error: Unknown attribute type
- --> $DIR/unknown_attribute_type.rs:8:13
-  |
-8 |     #[asset(what_is_this)]
-  |             ^^^^^^^^^^^^
