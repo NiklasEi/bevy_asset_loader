@@ -1,4 +1,4 @@
-error: Unknown attribute type
+error: Unknown attribute
  --> $DIR/errors_on_multiple_fields.rs:8:13
   |
 8 |     #[asset(what_is_this)]

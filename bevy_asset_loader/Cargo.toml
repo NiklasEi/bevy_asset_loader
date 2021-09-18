@@ -13,8 +13,9 @@ categories = ["game-development"]
 readme = "../README.md"
 
 [features]
-default = ["render"]
+default = ["render", "sprite"]
 render = ["bevy_asset_loader_derive/render"]
+sprite = ["bevy_asset_loader_derive/sprite"]
 
 [dependencies]
 bevy = { git = "https://github.com/bevyengine/bevy", rev = "f6b42b86691bdea92613df3e1e754dbc9455dbc2", default-features = false }
@@ -36,3 +37,8 @@ required-features = ["render"]
 [[example]]
 name = "init_resource"
 path = "examples/init_resource.rs"
+
+[[example]]
+name = "color_material"
+path = "examples/color_material.rs"
+required-features = ["sprite"]
