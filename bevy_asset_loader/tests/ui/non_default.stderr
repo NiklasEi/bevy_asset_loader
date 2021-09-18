@@ -5,8 +5,4 @@ error[E0277]: the trait bound `NoDefault: Default` is not satisfied
     |          ^^^^^^^^^^^^^^^ the trait `Default` is not implemented for `NoDefault`
     |
 note: required by `std::default::Default::default`
-   --> $DIR/default.rs:116:5
-    |
-116 |     fn default() -> Self;
-    |     ^^^^^^^^^^^^^^^^^^^^^
     = note: this error originates in the derive macro `AssetCollection` (in Nightly builds, run with -Z macro-backtrace for more info)
