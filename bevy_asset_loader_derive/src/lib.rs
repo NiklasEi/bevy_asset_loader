@@ -255,7 +255,8 @@ fn impl_asset_collection(
                 }
             }
 
-            fn load(asset_server: &Res<AssetServer>) -> Vec<HandleUntyped> {
+            fn load(world: &mut World) -> Vec<HandleUntyped> {
+                let asset_server = world.get_resource::<AssetServer>().expect("Cannot get AssetServer");
                 let mut handles = vec![];
                 #asset_loading
                 handles
