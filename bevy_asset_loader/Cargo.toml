@@ -34,5 +34,5 @@ path = "examples/atlas_from_grid.rs"
 required-features = ["render"]
 
 [[example]]
-name = "insert_resource"
-path = "examples/insert_resource.rs"
+name = "init_resource"
+path = "examples/init_resource.rs"

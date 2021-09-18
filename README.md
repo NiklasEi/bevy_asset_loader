@@ -62,17 +62,17 @@ See [two_collections.rs](/bevy_asset_loader/examples/two_collections.rs) for a c
 
 ### Initialize FromWorld resources
 
-In situations where you would like to prepare other resources based on your loaded assets you can use `AssetLoader::init_resource` to initialize `FromWorld` resources.
+In situations where you would like to prepare other resources based on your loaded assets you can use `AssetLoader::init_resource` to initialize `FromWorld` resources. See [init_resource.rs](/bevy_asset_loader/examples/init_resource.rs) for an example that loads two textures and then combines their image data into a third texture.
 
 `AssetLoader::init_resource` does the same as Bevy's `App::init_resource`, but at a different point in time. While Bevy inserts your resources at the very beginning, the AssetLoader will do so after having inserted your loaded asset collections. That means that you can use your asset collections in the `FromWorld` implementations.
 
-### Directly loading texture atlases
+### Loading texture atlases
 
 You can directly load texture atlases from sprite sheets. For a complete example please take a look at [atlas_from_grid.rs](/bevy_asset_loader/examples/atlas_from_grid.rs).
 ```rust
 #[derive(AssetCollection)]
 struct MyAssets {
-    #[asset(texture_atlas(tile_size_x = 100., tile_size_y = 96., columns = 8, rows = 1))]
+    #[asset(texture_atlas(tile_size_x = 100., tile_size_y = 96., columns = 8, rows = 1, padding_x = 12., padding_y = 12.))]
     #[asset(path = "textures/sprite_sheet.png")]
     sprite: Handle<TextureAtlas>,
 }
