@@ -11,10 +11,10 @@ use proc_macro::TokenStream;
 use std::option::Option::Some;
 use std::result::Result::{Err, Ok};
 
-use proc_macro2::Ident;
-use quote::{quote, TokenStreamExt, ToTokens};
-use syn::{Data, Field, Fields, Lit, Meta, NestedMeta};
 use crate::assets::*;
+use proc_macro2::Ident;
+use quote::{quote, ToTokens, TokenStreamExt};
+use syn::{Data, Field, Fields, Lit, Meta, NestedMeta};
 
 /// Derive macro for AssetCollection
 ///
@@ -53,7 +53,7 @@ struct AssetBuilder {
     rows: Option<usize>,
     padding_x: f32,
     padding_y: f32,
-    is_color_material: bool
+    is_color_material: bool,
 }
 
 impl AssetBuilder {
@@ -236,25 +236,45 @@ fn impl_asset_collection(
         }
     });
 
-    let impl_asset_collection = quote! {
-        #[automatically_derived]
-        #[allow(unused_variables)]
-        impl AssetCollection for #name {
-            fn create(world: &mut World) -> Self {
-                let cell = world.cell();
-                let asset_server = cell.get_resource::<AssetServer>().expect("Cannot get AssetServer");
-                #[cfg(feature = "sprite")]
+    #[allow(unused_mut)]
+    let mut conditional_asset_collections = quote! {};
+
+    #[cfg(feature = "sprite")]
+    {
+        conditional_asset_collections = quote! {
+        #conditional_asset_collections
                 let mut materials = cell
                     .get_resource_mut::<Assets<ColorMaterial>>()
                     .expect("Cannot get Assets<ColorMaterial>");
-                #[cfg(feature = "render")]
+        };
+    }
+
+    #[cfg(feature = "render")]
+    {
+        conditional_asset_collections = quote! {
+        #conditional_asset_collections
                 let mut atlases = cell
                     .get_resource_mut::<Assets<TextureAtlas>>()
                     .expect("Cannot get Assets<TextureAtlas>");
+        };
+    }
+
+    let create_function = quote! {
+            fn create(world: &mut World) -> Self {
+                let cell = world.cell();
+                let asset_server = cell.get_resource::<AssetServer>().expect("Cannot get AssetServer");
+                #conditional_asset_collections
                 #name {
                     #asset_creation
                 }
             }
+    };
+
+    let impl_asset_collection = quote! {
+        #[automatically_derived]
+        #[allow(unused_variables)]
+        impl AssetCollection for #name {
+            #create_function
 
             fn load(world: &mut World) -> Vec<HandleUntyped> {
                 let asset_server = world.get_resource::<AssetServer>().expect("Cannot get AssetServer");
