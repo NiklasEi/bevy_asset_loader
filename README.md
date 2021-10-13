@@ -77,6 +77,7 @@ struct MyAssets {
     player: Handle<ColorMaterial>,
 }
 ```
+*This requires the feature `sprite` which is part of the default features*
 
 ### Loading texture atlases
 
@@ -89,6 +90,7 @@ struct MyAssets {
     sprite: Handle<TextureAtlas>,
 }
 ```
+*This requires the feature `render` which is part of the default features*
 
 ## Development
 

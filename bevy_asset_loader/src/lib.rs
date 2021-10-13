@@ -1,22 +1,24 @@
-//! The goal of this crate is to offer an easy way for bevy games to load all their assets in a loading State.
+//! The goal of this crate is to offer an easy way for bevy games to load all their assets in a loading [bevy_ecs::schedule::State].
 //!
 //! `bevy_asset_loader` introduces the derivable trait [AssetCollection]. Structs with asset handles
-//! can be automatically loaded during a configurable loading [State]. Afterwards they will be inserted as
-//! resources containing loaded handles and the plugin will switch to a second configurable [State].
+//! can be automatically loaded during a configurable loading [bevy_ecs::schedule::State]. Afterwards they will be inserted as
+//! resources containing loaded handles and the plugin will switch to a second configurable [bevy_ecs::schedule::State].
 //!
 //! ```edition2018
 //! # use bevy_asset_loader::{AssetLoader, AssetCollection};
 //! # use bevy::prelude::*;
 //! # use bevy::asset::AssetPlugin;
 //! fn main() {
-//! let mut app = App::new();
+//!     let mut app = App::new();
 //!     AssetLoader::new(GameState::Loading, GameState::Next)
 //!         .with_collection::<AudioAssets>()
 //!         .with_collection::<TextureAssets>()
 //!         .build(&mut app);
 //!     app
 //!         .add_state(GameState::Loading)
-//!         //.add_plugins(DefaultPlugins)
+//! # /*
+//!         .add_plugins(DefaultPlugins)
+//! # */
 //!         .add_system_set(SystemSet::on_update(GameState::Next)
 //!             .with_system(use_asset_handles.system())
 //!         )
@@ -42,8 +44,8 @@
 //!     pub tree: Handle<Texture>,
 //! }
 //!
-//! // since this function runs in [MyState::Next], we know our assets are
-//! // loaded and [MyAudioAssets] is a resource
+//! // since this function runs in MyState::Next, we know our assets are
+//! // loaded and their handles are in the resource AudioAssets
 //! fn use_asset_handles(audio_assets: Res<AudioAssets>, audio: Res<Audio>) {
 //!     audio.play(audio_assets.background.clone());
 //! }
@@ -87,7 +89,7 @@ use std::marker::PhantomData;
 /// }
 /// ```
 pub trait AssetCollection: Component {
-    /// Create a new AssetCollection from the [bevy::asset::AssetServer]
+    /// Create a new AssetCollection from the [bevy_asset::AssetServer]
     fn create(world: &mut World) -> Self;
     /// Start loading all the assets in the collection
     fn load(world: &mut World) -> Vec<HandleUntyped>;
@@ -203,7 +205,7 @@ fn init_resource<Asset: FromWorld + Component>(world: &mut World) {
 /// # use bevy::prelude::*;
 /// # use bevy::asset::AssetPlugin;
 /// fn main() {
-/// let mut app = App::new();
+///     let mut app = App::new();
 ///     AssetLoader::new(GameState::Loading, GameState::Menu)
 ///         .with_collection::<AudioAssets>()
 ///         .with_collection::<TextureAssets>()
@@ -258,8 +260,8 @@ where
 {
     /// Create a new [AssetLoader]
     ///
-    /// This function takes two States. During the first all assets will be loaded and the
-    /// collections will be inserted as resources. Then the second state is set in your Bevy App.
+    /// This function takes two [bevy_ecs::schedule::State]s. During the first one, all assets will be loaded and the
+    /// collections will be inserted as resources. Then your app is moved into the second [bevy_ecs::schedule::State].
     /// ```edition2018
     /// # use bevy_asset_loader::{AssetLoader, AssetCollection};
     /// # use bevy::prelude::*;
@@ -308,7 +310,7 @@ where
 
     /// Add an [AssetCollection] to the [AssetLoader]
     ///
-    /// The added collection will be loaded and inserted into your Bevy App as a resource.
+    /// The added collection will be loaded and inserted into your Bevy app as a resource.
     /// ```edition2018
     /// # use bevy_asset_loader::{AssetLoader, AssetCollection};
     /// # use bevy::prelude::*;
@@ -356,7 +358,7 @@ where
         self
     }
 
-    /// Add any [FromWorld] resource to be inititlized after all asset collections are loaded.
+    /// Add any [bevy_ecs::world::FromWorld] resource to be initialized after all asset collections are loaded.
     /// ```edition2018
     /// # use bevy_asset_loader::{AssetLoader, AssetCollection};
     /// # use bevy::prelude::*;

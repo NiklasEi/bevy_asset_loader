@@ -2,6 +2,8 @@ use bevy::prelude::*;
 use bevy_asset_loader::{AssetCollection, AssetLoader};
 
 /// This example demonstrates how to load a texture atlas from a sprite sheet
+///
+/// Requires the feature 'render' (part of default features)
 fn main() {
     let mut app = App::new();
     AssetLoader::new(MyStates::AssetLoading, MyStates::Next)
