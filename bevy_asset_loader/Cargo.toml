@@ -18,11 +18,11 @@ render = ["bevy_asset_loader_derive/render"]
 sprite = ["bevy_asset_loader_derive/sprite"]
 
 [dependencies]
-bevy = { git = "https://github.com/bevyengine/bevy", rev = "f6b42b86691bdea92613df3e1e754dbc9455dbc2", default-features = false }
+bevy = { git = "https://github.com/bevyengine/bevy", rev = "6a8a8c9d21f32e0e46623db9438813b009f9e014", default-features = false }
 bevy_asset_loader_derive = { version = "=0.6.0", path = "../bevy_asset_loader_derive" }
 
 [dev-dependencies]
-bevy = {git = "https://github.com/bevyengine/bevy", rev = "f6b42b86691bdea92613df3e1e754dbc9455dbc2", features = ["vorbis"] }
+bevy = {git = "https://github.com/bevyengine/bevy", rev = "6a8a8c9d21f32e0e46623db9438813b009f9e014", features = ["vorbis"] }
 trybuild = "1.0"
 
 [[example]]

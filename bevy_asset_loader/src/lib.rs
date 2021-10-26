@@ -64,13 +64,10 @@ pub use bevy_asset_loader_derive::AssetCollection;
 
 use bevy::app::App;
 use bevy::asset::{AssetServer, HandleUntyped, LoadState};
-use bevy::ecs::component::Component;
 use bevy::ecs::prelude::IntoExclusiveSystem;
-use bevy::ecs::schedule::State;
+use bevy::ecs::schedule::{State, StateData};
 use bevy::prelude::{FromWorld, SystemSet, World};
 use bevy::utils::HashMap;
-use std::fmt::Debug;
-use std::hash::Hash;
 use std::marker::PhantomData;
 
 /// Trait to mark a struct as a collection of assets
@@ -88,14 +85,14 @@ use std::marker::PhantomData;
 ///     tree: Handle<Texture>
 /// }
 /// ```
-pub trait AssetCollection: Component {
+pub trait AssetCollection: Send + Sync + 'static {
     /// Create a new AssetCollection from the [bevy_asset::AssetServer]
     fn create(world: &mut World) -> Self;
     /// Start loading all the assets in the collection
     fn load(world: &mut World) -> Vec<HandleUntyped>;
 }
 
-struct LoadingAssetHandles<A: Component> {
+struct LoadingAssetHandles<A: AssetCollection> {
     handles: Vec<HandleUntyped>,
     marker: PhantomData<A>,
 }
@@ -117,9 +114,7 @@ struct LoadingConfiguration<T> {
     count: usize,
 }
 
-fn start_loading<T: Component + Debug + Clone + Eq + Hash, Assets: AssetCollection>(
-    world: &mut World,
-) {
+fn start_loading<T: StateData, Assets: AssetCollection>(world: &mut World) {
     {
         let cell = world.cell();
         let mut asset_loader_configuration = cell
@@ -144,9 +139,7 @@ fn start_loading<T: Component + Debug + Clone + Eq + Hash, Assets: AssetCollecti
     world.insert_resource(handles);
 }
 
-fn check_loading_state<T: Component + Debug + Clone + Eq + Hash, Assets: AssetCollection>(
-    world: &mut World,
-) {
+fn check_loading_state<T: StateData, Assets: AssetCollection>(world: &mut World) {
     {
         let cell = world.cell();
 
@@ -193,7 +186,7 @@ fn check_loading_state<T: Component + Debug + Clone + Eq + Hash, Assets: AssetCo
     world.remove_resource::<LoadingAssetHandles<Assets>>();
 }
 
-fn init_resource<Asset: FromWorld + Component>(world: &mut World) {
+fn init_resource<Asset: FromWorld + Send + Sync + 'static>(world: &mut World) {
     let asset = Asset::from_world(world);
     world.insert_resource(asset);
 }
@@ -256,7 +249,7 @@ pub struct AssetLoader<T> {
 
 impl<State> AssetLoader<State>
 where
-    State: Component + Debug + Clone + Eq + Hash,
+    State: StateData,
 {
     /// Create a new [AssetLoader]
     ///
@@ -400,7 +393,7 @@ where
     /// #     pub array: Handle<Texture>,
     /// # }
     /// ```
-    pub fn init_resource<A: FromWorld + Component>(mut self) -> Self {
+    pub fn init_resource<A: FromWorld + Send + Sync + 'static>(mut self) -> Self {
         self.post_process = self
             .post_process
             .with_system(init_resource::<A>.exclusive_system());

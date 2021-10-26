@@ -35,6 +35,7 @@ struct TextureAssets {
     tree: Handle<Texture>,
 }
 
+#[derive(Component)]
 struct Player;
 
 fn spawn_player_and_tree(
@@ -79,9 +80,8 @@ fn move_player(input: Res<Input<KeyCode>>, mut player: Query<&mut Transform, Wit
         return;
     }
     movement = movement.normalize() * PLAYER_SPEED;
-    if let Ok(mut transform) = player.single_mut() {
-        transform.translation += movement;
-    }
+    let mut transform = player.single_mut();
+    transform.translation += movement;
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
