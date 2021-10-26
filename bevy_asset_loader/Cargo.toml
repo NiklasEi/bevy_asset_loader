@@ -2,7 +2,7 @@
 name = "bevy_asset_loader"
 version = "0.6.0"
 authors = ["Niklas Eicker <git@nikl.me>"]
-edition = "2018"
+edition = "2021"
 license = "MIT OR Apache-2.0"
 description = "Bevy plugin for asset loading"
 repository = "https://github.com/NiklasEi/bevy_asset_loader"
