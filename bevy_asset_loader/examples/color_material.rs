@@ -5,7 +5,7 @@ use bevy_asset_loader::{AssetCollection, AssetLoader};
 ///
 /// Requires the feature 'sprite' (part of default features)
 fn main() {
-    let mut app = App::build();
+    let mut app = App::new();
     AssetLoader::new(MyStates::AssetLoading, MyStates::Next)
         .with_collection::<MyAssets>()
         .build(&mut app);
