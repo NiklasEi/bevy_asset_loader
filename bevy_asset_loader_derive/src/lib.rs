@@ -188,12 +188,12 @@ fn impl_asset_collection(
         Asset::Basic(basic) => {
             let field_ident = basic.field_ident.clone();
             let asset_path = basic.asset_path.clone();
-            quote!(#es#field_ident : asset_server.get_handle(#asset_path),)
+            quote!(#es #field_ident : asset_server.get_handle(#asset_path),)
         }
         Asset::ColorMaterial(basic) => {
             let field_ident = basic.field_ident.clone();
             let asset_path = basic.asset_path.clone();
-            quote!(#es#field_ident : materials.add(asset_server.get_handle(#asset_path).into()),)
+            quote!(#es #field_ident : materials.add(asset_server.get_handle(#asset_path).into()),)
         }
         Asset::TextureAtlas(texture_asset) => {
             let field_ident = texture_asset.field_ident.clone();
@@ -205,7 +205,7 @@ fn impl_asset_collection(
             let padding_x = texture_asset.padding_x;
             let padding_y = texture_asset.padding_y;
             quote!(
-                #es#field_ident : {
+                #es #field_ident : {
                 atlases.add(TextureAtlas::from_grid_with_padding(
                     asset_server.get_handle(#asset_path),
                     Vec2::new(#tile_size_x, #tile_size_y),
@@ -218,7 +218,7 @@ fn impl_asset_collection(
     });
     asset_creation.append_all(default_fields.iter().fold(
         quote!(),
-        |es, ident| quote! (#es#ident : Default::default()),
+        |es, ident| quote! (#es #ident : Default::default()),
     ));
 
     let asset_loading = assets.iter().fold(quote!(), |es, asset| match asset {
