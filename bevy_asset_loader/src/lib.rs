@@ -470,3 +470,7 @@ where
             .add_system_set(self.post_process);
     }
 }
+
+#[doc = include_str!("../../README.md")]
+#[cfg(doctest)]
+struct ReadmeDoctests;
