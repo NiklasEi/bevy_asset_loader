@@ -1,5 +1,6 @@
 # Changelog
 
+- Remove `render` and `sprite` features from the default features
 - Allow using the plugin without a "next" state ([#20](https://github.com/NiklasEi/bevy_asset_loader/issues/20))
   - `AssetLoader::new` now only takes the "loading" state
   - An optional "next" state can be configured via `AssetLoader::continue_to_state`  

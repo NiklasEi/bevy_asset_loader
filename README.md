@@ -69,7 +69,7 @@ In situations where you would like to prepare other resources based on your load
 
 ### Loading color materials
 
-You can directly load color materials. For a complete example please take a look at [color_material.rs](/bevy_asset_loader/examples/color_material.rs).
+You can directly load color materials if you enable the feature `sprite`. For a complete example please take a look at [color_material.rs](/bevy_asset_loader/examples/color_material.rs).
 ```rust ignore
 #[derive(AssetCollection)]
 struct MyAssets {
@@ -78,11 +78,10 @@ struct MyAssets {
     player: Handle<ColorMaterial>,
 }
 ```
-*This requires the feature `sprite` which is part of the default features*
 
 ### Loading texture atlases
 
-You can directly load texture atlases from sprite sheets. For a complete example please take a look at [atlas_from_grid.rs](/bevy_asset_loader/examples/atlas_from_grid.rs).
+You can directly load texture atlases from sprite sheets if you enable the feature `render`. For a complete example please take a look at [atlas_from_grid.rs](/bevy_asset_loader/examples/atlas_from_grid.rs).
 ```rust ignore
 #[derive(AssetCollection)]
 struct MyAssets {
@@ -91,7 +90,6 @@ struct MyAssets {
     sprite: Handle<TextureAtlas>,
 }
 ```
-*This requires the feature `render` which is part of the default features*
 
 ## Development
 
