@@ -8,7 +8,8 @@ use bevy_asset_loader::{AssetCollection, AssetLoader};
 /// them by adding up their image data.
 fn main() {
     let mut app = App::build();
-    AssetLoader::new(MyStates::AssetLoading, MyStates::Next)
+    AssetLoader::new(MyStates::AssetLoading)
+        .continue_to_state(MyStates::Next)
         .with_collection::<TextureAssets>()
         .init_resource::<CombinedTexture>()
         .build(&mut app);

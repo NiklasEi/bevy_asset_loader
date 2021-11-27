@@ -23,7 +23,8 @@ use bevy_asset_loader::{AssetLoader, AssetCollection};
 
 fn main() {
   let mut app = App::build();
-  AssetLoader::new(GameState::AssetLoading, GameState::Next)
+  AssetLoader::new(GameState::AssetLoading)
+          .continue_to_state(GameState::Next)
           .with_collection::<TextureAssets>()
           .with_collection::<AudioAssets>()
           .build(&mut app);

@@ -6,7 +6,8 @@ const PLAYER_SPEED: f32 = 5.;
 /// This example shows how to load multiple asset collections with one [AssetLoader]
 fn main() {
     let mut app = App::build();
-    AssetLoader::new(MyStates::AssetLoading, MyStates::Next)
+    AssetLoader::new(MyStates::AssetLoading)
+        .continue_to_state(MyStates::Next)
         .with_collection::<TextureAssets>()
         .with_collection::<AudioAssets>()
         .build(&mut app);
