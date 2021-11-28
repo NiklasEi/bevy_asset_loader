@@ -1,7 +1,10 @@
-//! This crate adds support for auto deriving ``bevy_asset_loader::AssetCollection``
+//! This crate adds support for auto deriving [bevy_asset_loader::AssetCollection]
 //!
 //! You do not have to use it directly. Just import ``AssetCollection`` from ``bevy_asset_loader``
 //! and use ``#[derive(AssetCollection)]`` to derive the trait.
+
+#![forbid(unsafe_code)]
+#![warn(unused_imports)]
 
 extern crate proc_macro;
 
@@ -18,7 +21,8 @@ use syn::{Data, Field, Fields, Lit, Meta, NestedMeta};
 
 /// Derive macro for AssetCollection
 ///
-/// The helper attribute ``asset`` can be used to define the path to the asset file.
+/// The helper attribute ``asset`` can be used to define the path to the asset file
+/// and other asset options.
 #[proc_macro_derive(AssetCollection, attributes(asset))]
 pub fn asset_collection_derive(input: TokenStream) -> TokenStream {
     let ast = syn::parse(input).unwrap();
@@ -27,11 +31,11 @@ pub fn asset_collection_derive(input: TokenStream) -> TokenStream {
         .into()
 }
 
-const ASSET_ATTRIBUTE: &str = "asset";
-const PATH_ATTRIBUTE: &str = "path";
+pub(crate) const ASSET_ATTRIBUTE: &str = "asset";
+pub(crate) const PATH_ATTRIBUTE: &str = "path";
 
-const TEXTURE_ATLAS_ATTRIBUTE: &str = "texture_atlas";
-struct TextureAtlasAttribute;
+pub(crate) const TEXTURE_ATLAS_ATTRIBUTE: &str = "texture_atlas";
+pub(crate) struct TextureAtlasAttribute;
 impl TextureAtlasAttribute {
     pub const TILE_SIZE_X: &'static str = "tile_size_x";
     pub const TILE_SIZE_Y: &'static str = "tile_size_y";
@@ -41,80 +45,8 @@ impl TextureAtlasAttribute {
     pub const PADDING_Y: &'static str = "padding_y";
 }
 
-const COLOR_MATERIAL_ATTRIBUTE: &str = "color_material";
-
-#[derive(Default)]
-struct AssetBuilder {
-    field_ident: Option<Ident>,
-    asset_path: Option<String>,
-    tile_size_x: Option<f32>,
-    tile_size_y: Option<f32>,
-    columns: Option<usize>,
-    rows: Option<usize>,
-    padding_x: f32,
-    padding_y: f32,
-    is_color_material: bool,
-}
-
-impl AssetBuilder {
-    fn build(self) -> Result<Asset, Vec<ParseFieldError>> {
-        let mut missing_fields = vec![];
-        if self.tile_size_x.is_none() {
-            missing_fields.push(format!(
-                "{}/{}",
-                TEXTURE_ATLAS_ATTRIBUTE,
-                TextureAtlasAttribute::TILE_SIZE_X
-            ));
-        }
-        if self.tile_size_y.is_none() {
-            missing_fields.push(format!(
-                "{}/{}",
-                TEXTURE_ATLAS_ATTRIBUTE,
-                TextureAtlasAttribute::TILE_SIZE_Y
-            ));
-        }
-        if self.columns.is_none() {
-            missing_fields.push(format!(
-                "{}/{}",
-                TEXTURE_ATLAS_ATTRIBUTE,
-                TextureAtlasAttribute::COLUMNS
-            ));
-        }
-        if self.rows.is_none() {
-            missing_fields.push(format!(
-                "{}/{}",
-                TEXTURE_ATLAS_ATTRIBUTE,
-                TextureAtlasAttribute::ROWS
-            ));
-        }
-        if self.field_ident.is_none() || self.asset_path.is_none() {
-            return Err(vec![ParseFieldError::NoAttributes]);
-        }
-        if missing_fields.len() == 4 {
-            let asset = BasicAsset {
-                field_ident: self.field_ident.unwrap(),
-                asset_path: self.asset_path.unwrap(),
-            };
-            if self.is_color_material {
-                return Ok(Asset::ColorMaterial(asset));
-            }
-            return Ok(Asset::Basic(asset));
-        }
-        if missing_fields.is_empty() {
-            return Ok(Asset::TextureAtlas(TextureAtlasAsset {
-                field_ident: self.field_ident.unwrap(),
-                asset_path: self.asset_path.unwrap(),
-                tile_size_x: self.tile_size_x.unwrap(),
-                tile_size_y: self.tile_size_y.unwrap(),
-                columns: self.columns.unwrap(),
-                rows: self.rows.unwrap(),
-                padding_x: self.padding_x,
-                padding_y: self.padding_y,
-            }));
-        }
-        Err(vec![ParseFieldError::MissingAttributes(missing_fields)])
-    }
-}
+pub(crate) const FOLDER_ATTRIBUTE: &str = "folder";
+pub(crate) const COLOR_MATERIAL_ATTRIBUTE: &str = "color_material";
 
 fn impl_asset_collection(
     ast: syn::DeriveInput,
@@ -190,6 +122,11 @@ fn impl_asset_collection(
             let asset_path = basic.asset_path.clone();
             quote!(#es #field_ident : asset_server.get_handle(#asset_path),)
         }
+        Asset::Folder(basic) => {
+            let field_ident = basic.field_ident.clone();
+            let asset_path = basic.asset_path.clone();
+            quote!(#es #field_ident : asset_server.load_folder(#asset_path).unwrap(),)
+        }
         Asset::ColorMaterial(basic) => {
             let field_ident = basic.field_ident.clone();
             let asset_path = basic.asset_path.clone();
@@ -225,6 +162,10 @@ fn impl_asset_collection(
         Asset::Basic(asset) => {
             let asset_path = asset.asset_path.clone();
             quote!(#es handles.push(asset_server.load_untyped(#asset_path));)
+        }
+        Asset::Folder(asset) => {
+            let asset_path = asset.asset_path.clone();
+            quote!(#es asset_server.load_folder(#asset_path).unwrap().drain(..).for_each(|handle| handles.push(handle));)
         }
         Asset::ColorMaterial(asset) => {
             let asset_path = asset.asset_path.clone();
@@ -327,6 +268,8 @@ fn parse_field(field: &Field) -> Result<Asset, Vec<ParseFieldError>> {
                     let path = meta_path.get_ident().unwrap().clone();
                     if path == COLOR_MATERIAL_ATTRIBUTE {
                         builder.is_color_material = true;
+                    } else if path == FOLDER_ATTRIBUTE {
+                        builder.is_folder = true;
                     } else {
                         errors.push(ParseFieldError::UnknownAttribute(
                             meta_path.clone().into_token_stream(),
