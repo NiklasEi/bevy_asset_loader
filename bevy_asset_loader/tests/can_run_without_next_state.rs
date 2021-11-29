@@ -17,7 +17,11 @@ fn single_asset_collection() {
         .add_plugins(MinimalPlugins)
         .add_plugin(AssetPlugin::default())
         .add_plugin(AudioPlugin::default())
-        .add_system_set(SystemSet::on_update(MyStates::Load).with_system(timeout.system()).with_system(expect.system()))
+        .add_system_set(
+            SystemSet::on_update(MyStates::Load)
+                .with_system(timeout.system())
+                .with_system(expect.system()),
+        )
         .run();
 }
 
@@ -27,7 +31,11 @@ fn timeout(time: Res<Time>) {
     }
 }
 
-fn expect(collection: Option<Res<MyAssets>>, mut exit: EventWriter<AppExit>, mut test_state: ResMut<TestState>) {
+fn expect(
+    collection: Option<Res<MyAssets>>,
+    mut exit: EventWriter<AppExit>,
+    mut test_state: ResMut<TestState>,
+) {
     if collection.is_some() {
         if test_state.wait_frames_after_load == 0 {
             exit.send(AppExit);
@@ -38,13 +46,13 @@ fn expect(collection: Option<Res<MyAssets>>, mut exit: EventWriter<AppExit>, mut
 }
 
 struct TestState {
-    wait_frames_after_load: usize
+    wait_frames_after_load: usize,
 }
 
 impl Default for TestState {
     fn default() -> Self {
         TestState {
-            wait_frames_after_load: 5
+            wait_frames_after_load: 5,
         }
     }
 }

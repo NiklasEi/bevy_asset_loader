@@ -1,5 +1,5 @@
+use crate::{ParseFieldError, TextureAtlasAttribute, TEXTURE_ATLAS_ATTRIBUTE};
 use proc_macro2::Ident;
-use crate::{ParseFieldError, TEXTURE_ATLAS_ATTRIBUTE, TextureAtlasAttribute};
 
 pub(crate) struct TextureAtlasAsset {
     pub field_ident: Ident,
@@ -28,6 +28,7 @@ pub(crate) enum Asset {
 pub(crate) struct AssetBuilder {
     pub field_ident: Option<Ident>,
     pub asset_path: Option<String>,
+    pub folder_path: Option<String>,
     pub tile_size_x: Option<f32>,
     pub tile_size_y: Option<f32>,
     pub columns: Option<usize>,
@@ -69,10 +70,19 @@ impl AssetBuilder {
                 TextureAtlasAttribute::ROWS
             ));
         }
-        if self.field_ident.is_none() || self.asset_path.is_none() {
+        if self.asset_path.is_none() && self.folder_path.is_none() {
             return Err(vec![ParseFieldError::NoAttributes]);
         }
+        if self.folder_path.is_some() && self.asset_path.is_some() {
+            return Err(vec![ParseFieldError::EitherSingleAssetOrFolder]);
+        }
         if missing_fields.len() == 4 {
+            if self.folder_path.is_some() {
+                return Ok(Asset::Folder(BasicAsset {
+                    field_ident: self.field_ident.unwrap(),
+                    asset_path: self.folder_path.unwrap(),
+                }));
+            }
             let asset = BasicAsset {
                 field_ident: self.field_ident.unwrap(),
                 asset_path: self.asset_path.unwrap(),

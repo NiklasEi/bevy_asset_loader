@@ -68,6 +68,12 @@ fn impl_asset_collection(
                                 ParseFieldError::NoAttributes => {
                                     default_fields.push(field.clone().ident.unwrap())
                                 }
+                                ParseFieldError::EitherSingleAssetOrFolder => {
+                                    compile_errors.push(syn::Error::new_spanned(
+                                        field.into_token_stream(),
+                                        format!("You can only specify one of 'folder' or 'path'",),
+                                    ));
+                                }
                                 ParseFieldError::MissingAttributes(missing_attributes) => {
                                     compile_errors.push(syn::Error::new_spanned(
                                         field.into_token_stream(),
@@ -230,6 +236,7 @@ fn impl_asset_collection(
 
 enum ParseFieldError {
     NoAttributes,
+    EitherSingleAssetOrFolder,
     WrongAttributeType(proc_macro2::TokenStream, &'static str),
     UnknownAttributeType(proc_macro2::TokenStream),
     UnknownAttribute(proc_macro2::TokenStream),
@@ -248,11 +255,20 @@ fn parse_field(field: &Field) -> Result<Asset, Vec<ParseFieldError>> {
             for attribute in asset_meta_list.nested.iter() {
                 if let NestedMeta::Meta(Meta::NameValue(ref named_value)) = attribute {
                     let path = named_value.path.get_ident().unwrap().clone();
+                    builder.field_ident = Some(field.clone().ident.unwrap());
 
                     if path == PATH_ATTRIBUTE {
                         if let Lit::Str(path_literal) = &named_value.lit {
                             builder.asset_path = Some(path_literal.value());
-                            builder.field_ident = Some(field.clone().ident.unwrap());
+                        } else {
+                            errors.push(ParseFieldError::WrongAttributeType(
+                                named_value.clone().into_token_stream(),
+                                "str",
+                            ));
+                        }
+                    } else if path == FOLDER_ATTRIBUTE {
+                        if let Lit::Str(path_literal) = &named_value.lit {
+                            builder.folder_path = Some(path_literal.value());
                         } else {
                             errors.push(ParseFieldError::WrongAttributeType(
                                 named_value.clone().into_token_stream(),
