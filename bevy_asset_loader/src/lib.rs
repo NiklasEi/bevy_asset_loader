@@ -514,6 +514,7 @@ where
     }
 }
 
+#[cfg(all(feature = "sprite", feature = "render"))]
 #[doc = include_str!("../../README.md")]
 #[cfg(doctest)]
 struct ReadmeDoctests;
