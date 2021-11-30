@@ -17,19 +17,20 @@ For structs with named fields that are either asset handles or implement default
 
 Now you can start your game logic from the second configured state and use the asset collections as resources in your systems.
 
-```rust
+```rust no_run
 use bevy::prelude::*;
 use bevy_asset_loader::{AssetLoader, AssetCollection};
 
 fn main() {
-  let mut app = App::build();
-  AssetLoader::new(GameState::AssetLoading, GameState::Next)
+  let mut app = App::new();
+  AssetLoader::new(GameState::AssetLoading)
+          .continue_to_state(GameState::Next)
           .with_collection::<TextureAssets>()
           .with_collection::<AudioAssets>()
           .build(&mut app);
   app.add_state(GameState::AssetLoading)
           .add_plugins(DefaultPlugins)
-          .add_system_set(SystemSet::on_enter(GameState::Next).with_system(use_my_assets.system()))
+          .add_system_set(SystemSet::on_enter(GameState::Next).with_system(use_my_assets))
           .run();
 }
 
@@ -68,8 +69,8 @@ In situations where you would like to prepare other resources based on your load
 
 ### Loading color materials
 
-You can directly load color materials. For a complete example please take a look at [color_material.rs](/bevy_asset_loader/examples/color_material.rs).
-```rust
+You can directly load color materials if you enable the feature `sprite`. For a complete example please take a look at [color_material.rs](/bevy_asset_loader/examples/color_material.rs).
+```rust ignore
 #[derive(AssetCollection)]
 struct MyAssets {
     #[asset(color_material)]
@@ -77,12 +78,11 @@ struct MyAssets {
     player: Handle<ColorMaterial>,
 }
 ```
-*This requires the feature `sprite` which is part of the default features*
 
 ### Loading texture atlases
 
-You can directly load texture atlases from sprite sheets. For a complete example please take a look at [atlas_from_grid.rs](/bevy_asset_loader/examples/atlas_from_grid.rs).
-```rust
+You can directly load texture atlases from sprite sheets if you enable the feature `render`. For a complete example please take a look at [atlas_from_grid.rs](/bevy_asset_loader/examples/atlas_from_grid.rs).
+```rust ignore
 #[derive(AssetCollection)]
 struct MyAssets {
     #[asset(texture_atlas(tile_size_x = 100., tile_size_y = 96., columns = 8, rows = 1, padding_x = 12., padding_y = 12.))]
@@ -90,7 +90,6 @@ struct MyAssets {
     sprite: Handle<TextureAtlas>,
 }
 ```
-*This requires the feature `render` which is part of the default features*
 
 ## Development
 

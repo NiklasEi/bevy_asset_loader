@@ -8,7 +8,8 @@ use bevy_asset_loader::{AssetCollection, AssetLoader};
 fn multiple_asset_collections() {
     let mut app = App::new();
 
-    AssetLoader::new(MyStates::Load, MyStates::Next)
+    AssetLoader::new(MyStates::Load)
+        .continue_to_state(MyStates::Next)
         .with_collection::<PlopAudio>()
         .with_collection::<BackgroundAudio>()
         .build(&mut app);

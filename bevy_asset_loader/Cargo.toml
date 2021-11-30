@@ -13,8 +13,9 @@ categories = ["game-development"]
 readme = "../README.md"
 
 [features]
-default = ["render", "sprite"]
+# This feature requires bevy's TextureAtlas assets to be available
 render = ["bevy_asset_loader_derive/render"]
+# This feature requires bevy's ColorMaterial assets to be available
 sprite = ["bevy_asset_loader_derive/sprite"]
 
 [dependencies]

@@ -4,13 +4,14 @@
 //! can be automatically loaded during a configurable loading [bevy_ecs::schedule::State]. Afterwards they will be inserted as
 //! resources containing loaded handles and the plugin will switch to a second configurable [bevy_ecs::schedule::State].
 //!
-//! ```edition2018
+//! ```edition2021
 //! # use bevy_asset_loader::{AssetLoader, AssetCollection};
 //! # use bevy::prelude::*;
 //! # use bevy::asset::AssetPlugin;
 //! fn main() {
 //!     let mut app = App::new();
-//!     AssetLoader::new(GameState::Loading, GameState::Next)
+//!     AssetLoader::new(GameState::Loading)
+//!         .continue_to_state(GameState::Next)
 //!         .with_collection::<AudioAssets>()
 //!         .with_collection::<TextureAssets>()
 //!         .build(&mut app);
@@ -74,7 +75,7 @@ use std::marker::PhantomData;
 ///
 /// Derive is supported for structs with named fields.
 /// Each field needs to be annotated with ``#[asset(path = "path/to/asset.file")]``
-/// ```edition2018
+/// ```edition2021
 /// # use bevy_asset_loader::AssetCollection;
 /// # use bevy::prelude::*;
 /// #[derive(AssetCollection)]
@@ -110,7 +111,7 @@ impl<T> Default for AssetLoaderConfiguration<T> {
 }
 
 struct LoadingConfiguration<T> {
-    next: T,
+    next: Option<T>,
     count: usize,
 }
 
@@ -175,9 +176,9 @@ fn check_loading_state<T: StateData, Assets: AssetCollection>(world: &mut World)
         {
             config.count -= 1;
             if config.count == 0 {
-                state
-                    .set(config.next.clone())
-                    .expect("Failed to set next State");
+                if let Some(next) = config.next.as_ref() {
+                    state.set(next.clone()).expect("Failed to set next State");
+                }
             }
         }
     }
@@ -193,13 +194,14 @@ fn init_resource<Asset: FromWorld + Send + Sync + 'static>(world: &mut World) {
 
 /// A Bevy plugin to configure automatic asset loading
 ///
-/// ```edition2018
+/// ```edition2021
 /// # use bevy_asset_loader::{AssetLoader, AssetCollection};
 /// # use bevy::prelude::*;
 /// # use bevy::asset::AssetPlugin;
 /// fn main() {
 ///     let mut app = App::new();
-///     AssetLoader::new(GameState::Loading, GameState::Menu)
+///     AssetLoader::new(GameState::Loading)
+///         .continue_to_state(GameState::Menu)
 ///         .with_collection::<AudioAssets>()
 ///         .with_collection::<TextureAssets>()
 ///         .build(&mut app);
@@ -239,7 +241,7 @@ fn init_resource<Asset: FromWorld + Send + Sync + 'static>(world: &mut World) {
 /// }
 /// ```
 pub struct AssetLoader<T> {
-    next_state: T,
+    next_state: Option<T>,
     loading_state: T,
     load: SystemSet,
     check: SystemSet,
@@ -253,15 +255,16 @@ where
 {
     /// Create a new [AssetLoader]
     ///
-    /// This function takes two [bevy_ecs::schedule::State]s. During the first one, all assets will be loaded and the
-    /// collections will be inserted as resources. Then your app is moved into the second [bevy_ecs::schedule::State].
-    /// ```edition2018
+    /// This function takes a [bevy_ecs::schedule::State] during which all asset collections will
+    /// be loaded and inserted as resources.
+    /// ```edition2021
     /// # use bevy_asset_loader::{AssetLoader, AssetCollection};
     /// # use bevy::prelude::*;
     /// # use bevy::asset::AssetPlugin;
     /// # fn main() {
     ///     let mut app = App::new();
-    ///     AssetLoader::new(GameState::Loading, GameState::Menu)
+    ///     AssetLoader::new(GameState::Loading)
+    ///         .continue_to_state(GameState::Menu)
     ///         .with_collection::<AudioAssets>()
     ///         .with_collection::<TextureAssets>()
     ///         .build(&mut app);
@@ -290,9 +293,9 @@ where
     /// #     pub tree: Handle<Texture>,
     /// # }
     /// ```
-    pub fn new(load: State, next: State) -> AssetLoader<State> {
+    pub fn new(load: State) -> AssetLoader<State> {
         Self {
-            next_state: next,
+            next_state: None,
             loading_state: load.clone(),
             load: SystemSet::on_enter(load.clone()),
             check: SystemSet::on_update(load.clone()),
@@ -301,16 +304,61 @@ where
         }
     }
 
-    /// Add an [AssetCollection] to the [AssetLoader]
-    ///
-    /// The added collection will be loaded and inserted into your Bevy app as a resource.
-    /// ```edition2018
+    /// The [AssetLoader] will set this [bevy_ecs::schedule::State] after all asset collections
+    /// are loaded and inserted as resources.
+    /// ```edition2021
     /// # use bevy_asset_loader::{AssetLoader, AssetCollection};
     /// # use bevy::prelude::*;
     /// # use bevy::asset::AssetPlugin;
     /// # fn main() {
     ///     let mut app = App::new();
-    ///     AssetLoader::new(GameState::Loading, GameState::Menu)
+    ///     AssetLoader::new(GameState::Loading)
+    ///         .continue_to_state(GameState::Menu)
+    ///         .with_collection::<AudioAssets>()
+    ///         .with_collection::<TextureAssets>()
+    ///         .build(&mut app);
+    /// #   app
+    /// #       .add_state(GameState::Loading)
+    /// #       .add_plugins(MinimalPlugins)
+    /// #       .add_plugin(AssetPlugin::default())
+    /// #       .set_runner(|mut app| app.schedule.run(&mut app.world))
+    /// #       .run();
+    /// # }
+    /// # #[derive(Clone, Eq, PartialEq, Debug, Hash)]
+    /// # enum GameState {
+    /// #     Loading,
+    /// #     Menu
+    /// # }
+    /// # #[derive(AssetCollection)]
+    /// # pub struct AudioAssets {
+    /// #     #[asset(path = "audio/background.ogg")]
+    /// #     pub background: Handle<AudioSource>,
+    /// # }
+    /// # #[derive(AssetCollection)]
+    /// # pub struct TextureAssets {
+    /// #     #[asset(path = "textures/player.png")]
+    /// #     pub player: Handle<Texture>,
+    /// #     #[asset(path = "textures/tree.png")]
+    /// #     pub tree: Handle<Texture>,
+    /// # }
+    /// ```
+    pub fn continue_to_state(mut self, next: State) -> Self {
+        self.next_state = Some(next);
+
+        self
+    }
+
+    /// Add an [AssetCollection] to the [AssetLoader]
+    ///
+    /// The added collection will be loaded and inserted into your Bevy app as a resource.
+    /// ```edition2021
+    /// # use bevy_asset_loader::{AssetLoader, AssetCollection};
+    /// # use bevy::prelude::*;
+    /// # use bevy::asset::AssetPlugin;
+    /// # fn main() {
+    ///     let mut app = App::new();
+    ///     AssetLoader::new(GameState::Loading)
+    ///         .continue_to_state(GameState::Menu)
     ///         .with_collection::<AudioAssets>()
     ///         .with_collection::<TextureAssets>()
     ///         .build(&mut app);
@@ -352,13 +400,14 @@ where
     }
 
     /// Add any [bevy_ecs::world::FromWorld] resource to be initialized after all asset collections are loaded.
-    /// ```edition2018
+    /// ```edition2021
     /// # use bevy_asset_loader::{AssetLoader, AssetCollection};
     /// # use bevy::prelude::*;
     /// # use bevy::asset::AssetPlugin;
     /// # fn main() {
     ///     let mut app = App::new();
-    ///     AssetLoader::new(GameState::Loading, GameState::Menu)
+    ///     AssetLoader::new(GameState::Loading)
+    ///         .continue_to_state(GameState::Menu)
     ///         .with_collection::<TextureForAtlas>()
     ///         .init_resource::<TextureAtlasFromWorld>()
     ///         .build(&mut app);
@@ -404,13 +453,14 @@ where
     /// Finish configuring the [AssetLoader]
     ///
     /// Calling this function is required to set up the asset loading.
-    /// ```edition2018
+    /// ```edition2021
     /// # use bevy_asset_loader::{AssetLoader, AssetCollection};
     /// # use bevy::prelude::*;
     /// # use bevy::asset::AssetPlugin;
     /// # fn main() {
     ///     let mut app = App::new();
-    ///     AssetLoader::new(GameState::Loading, GameState::Menu)
+    ///     AssetLoader::new(GameState::Loading)
+    ///         .continue_to_state(GameState::Menu)
     ///         .with_collection::<AudioAssets>()
     ///         .with_collection::<TextureAssets>()
     ///         .build(&mut app);
@@ -463,3 +513,7 @@ where
             .add_system_set(self.post_process);
     }
 }
+
+#[doc = include_str!("../../README.md")]
+#[cfg(doctest)]
+struct ReadmeDoctests;

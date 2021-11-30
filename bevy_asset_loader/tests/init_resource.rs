@@ -8,7 +8,8 @@ use bevy_asset_loader::{AssetCollection, AssetLoader};
 fn init_resource() {
     let mut app = App::new();
 
-    AssetLoader::new(MyStates::Load, MyStates::Next)
+    AssetLoader::new(MyStates::Load)
+        .continue_to_state(MyStates::Next)
         .with_collection::<MyAssets>()
         .init_resource::<PostProcessed>()
         .build(&mut app);
