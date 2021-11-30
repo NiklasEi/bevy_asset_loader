@@ -34,6 +34,8 @@ struct TextureAssets {
     player: Handle<Texture>,
     #[asset(path = "textures/tree.png")]
     tree: Handle<Texture>,
+    #[asset(folder = "textures")]
+    _textures: Vec<HandleUntyped>,
 }
 
 struct Player;

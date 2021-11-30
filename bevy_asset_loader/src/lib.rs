@@ -184,9 +184,7 @@ fn check_loading_state<T: Component + Debug + Clone + Eq + Hash, Assets: AssetCo
             config.count -= 1;
             if config.count == 0 {
                 if let Some(next) = config.next.as_ref() {
-                    state
-                        .set(next.clone())
-                        .expect("Failed to set next State");
+                    state.set(next.clone()).expect("Failed to set next State");
                 }
             }
         }
