@@ -49,7 +49,7 @@ impl FromWorld for CombinedTexture {
             .enumerate()
             .map(|(index, player_value)| {
                 player_value
-                    .checked_add(tree_texture.data[index].clone())
+                    .checked_add(tree_texture.data[index])
                     .unwrap_or(u8::MAX)
             })
             .collect();
