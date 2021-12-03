@@ -71,7 +71,7 @@ fn impl_asset_collection(
                                 ParseFieldError::EitherSingleAssetOrFolder => {
                                     compile_errors.push(syn::Error::new_spanned(
                                         field.into_token_stream(),
-                                        format!("You can only specify one of 'folder' or 'path'",),
+                                        "You can only specify one of 'folder' or 'path'",
                                     ));
                                 }
                                 ParseFieldError::MissingAttributes(missing_attributes) => {
