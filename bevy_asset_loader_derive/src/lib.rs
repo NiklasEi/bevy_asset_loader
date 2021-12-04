@@ -284,8 +284,6 @@ fn parse_field(field: &Field) -> Result<Asset, Vec<ParseFieldError>> {
                     let path = meta_path.get_ident().unwrap().clone();
                     if path == COLOR_MATERIAL_ATTRIBUTE {
                         builder.is_color_material = true;
-                    } else if path == FOLDER_ATTRIBUTE {
-                        builder.is_folder = true;
                     } else {
                         errors.push(ParseFieldError::UnknownAttribute(
                             meta_path.clone().into_token_stream(),
