@@ -33,6 +33,7 @@ pub fn asset_collection_derive(input: TokenStream) -> TokenStream {
 
 pub(crate) const ASSET_ATTRIBUTE: &str = "asset";
 pub(crate) const PATH_ATTRIBUTE: &str = "path";
+pub(crate) const KEY_ATTRIBUTE: &str = "key";
 
 pub(crate) const TEXTURE_ATLAS_ATTRIBUTE: &str = "texture_atlas";
 pub(crate) struct TextureAtlasAttribute;
@@ -72,6 +73,12 @@ fn impl_asset_collection(
                                     compile_errors.push(syn::Error::new_spanned(
                                         field.into_token_stream(),
                                         "You can only specify one of 'folder' or 'path'",
+                                    ));
+                                }
+                                ParseFieldError::KeyAttributeStandsAlone => {
+                                    compile_errors.push(syn::Error::new_spanned(
+                                        field.into_token_stream(),
+                                        "The 'key' attribute has to be the only 'asset' attribute on a field",
                                     ));
                                 }
                                 ParseFieldError::MissingAttributes(missing_attributes) => {
@@ -133,6 +140,11 @@ fn impl_asset_collection(
             let asset_path = basic.asset_path.clone();
             quote!(#es #field_ident : asset_server.load_folder(#asset_path).unwrap(),)
         }
+        Asset::DynamicAsset(dynamic) => {
+            let field_ident = dynamic.field_ident.clone();
+            let asset_key = dynamic.key.clone();
+            quote!(#es #field_ident : asset_server.get_handle(asset_keys.get_path_for_key(#asset_key.into())),)
+        }
         Asset::ColorMaterial(basic) => {
             let field_ident = basic.field_ident.clone();
             let asset_path = basic.asset_path.clone();
@@ -173,6 +185,10 @@ fn impl_asset_collection(
             let asset_path = asset.asset_path.clone();
             quote!(#es asset_server.load_folder(#asset_path).unwrap().drain(..).for_each(|handle| handles.push(handle));)
         }
+        Asset::DynamicAsset(dynamic) => {
+            let asset_key = dynamic.key.clone();
+            quote!(#es handles.push(asset_server.load_untyped(asset_keys.get_path_for_key(#asset_key.into())));)
+        }
         Asset::ColorMaterial(asset) => {
             let asset_path = asset.asset_path.clone();
             quote!(#es handles.push(asset_server.load_untyped(#asset_path));)
@@ -210,10 +226,22 @@ fn impl_asset_collection(
             fn create(world: &mut World) -> Self {
                 let cell = world.cell();
                 let asset_server = cell.get_resource::<AssetServer>().expect("Cannot get AssetServer");
+                let asset_keys = cell.get_resource::<bevy_asset_loader::AssetKeys>().expect("Cannot get bevy_asset_loader::AssetKeys");
                 #conditional_asset_collections
                 #name {
                     #asset_creation
                 }
+            }
+    };
+
+    let load_function = quote! {
+            fn load(world: &mut World) -> Vec<HandleUntyped> {
+                let cell = world.cell();
+                let asset_server = cell.get_resource::<AssetServer>().expect("Cannot get AssetServer");
+                let asset_keys = cell.get_resource::<bevy_asset_loader::AssetKeys>().expect("Cannot get bevy_asset_loader::AssetKeys");
+                let mut handles = vec![];
+                #asset_loading
+                handles
             }
     };
 
@@ -223,12 +251,7 @@ fn impl_asset_collection(
         impl AssetCollection for #name {
             #create_function
 
-            fn load(world: &mut World) -> Vec<HandleUntyped> {
-                let asset_server = world.get_resource::<AssetServer>().expect("Cannot get AssetServer");
-                let mut handles = vec![];
-                #asset_loading
-                handles
-            }
+            #load_function
         }
     };
     Ok(impl_asset_collection)
@@ -237,6 +260,7 @@ fn impl_asset_collection(
 enum ParseFieldError {
     NoAttributes,
     EitherSingleAssetOrFolder,
+    KeyAttributeStandsAlone,
     WrongAttributeType(proc_macro2::TokenStream, &'static str),
     UnknownAttributeType(proc_macro2::TokenStream),
     UnknownAttribute(proc_macro2::TokenStream),
@@ -269,6 +293,15 @@ fn parse_field(field: &Field) -> Result<Asset, Vec<ParseFieldError>> {
                     } else if path == FOLDER_ATTRIBUTE {
                         if let Lit::Str(path_literal) = &named_value.lit {
                             builder.folder_path = Some(path_literal.value());
+                        } else {
+                            errors.push(ParseFieldError::WrongAttributeType(
+                                named_value.clone().into_token_stream(),
+                                "str",
+                            ));
+                        }
+                    } else if path == KEY_ATTRIBUTE {
+                        if let Lit::Str(path_literal) = &named_value.lit {
+                            builder.key = Some(path_literal.value());
                         } else {
                             errors.push(ParseFieldError::WrongAttributeType(
                                 named_value.clone().into_token_stream(),

@@ -118,6 +118,26 @@ struct LoadingConfiguration<T> {
     count: usize,
 }
 
+/// todo
+#[derive(Default)]
+pub struct AssetKeys {
+    keys: HashMap<String, String>,
+}
+
+impl AssetKeys {
+    /// todo
+    pub fn get_path_for_key(&self, key: &str) -> &str {
+        self.keys
+            .get(key)
+            .expect(&format!("Failed to get a path for key '{}'", key))
+    }
+
+    /// todo
+    pub fn set_asset_key<T: Into<String>>(&mut self, key: T, value: T) {
+        self.keys.insert(key.into(), value.into());
+    }
+}
+
 fn start_loading<T: Component + Debug + Clone + Eq + Hash, Assets: AssetCollection>(
     world: &mut World,
 ) {
@@ -250,6 +270,7 @@ fn init_resource<Asset: FromWorld + Component>(world: &mut World) {
 pub struct AssetLoader<T> {
     next_state: Option<T>,
     loading_state: T,
+    keys: HashMap<String, String>,
     load: SystemSet,
     check: SystemSet,
     post_process: SystemSet,
@@ -304,6 +325,7 @@ where
         Self {
             next_state: None,
             loading_state: load.clone(),
+            keys: HashMap::default(),
             load: SystemSet::on_enter(load.clone()),
             check: SystemSet::on_update(load.clone()),
             post_process: SystemSet::on_exit(load),
@@ -402,6 +424,15 @@ where
             .check
             .with_system(check_loading_state::<State, A>.exclusive_system());
         self.collection_count += 1;
+
+        self
+    }
+
+    /// Todo
+    pub fn add_keys(mut self, mut keys: HashMap<String, String>) -> Self {
+        keys.drain().for_each(|(key, value)| {
+            self.keys.insert(key, value);
+        });
 
         self
     }
@@ -515,6 +546,7 @@ where
                 .insert(self.loading_state.clone(), config);
             app.world_mut().insert_resource(asset_loader_configuration);
         }
+        app.init_resource::<AssetKeys>();
         app.add_system_set(self.load)
             .add_system_set(self.check)
             .add_system_set(self.post_process);
