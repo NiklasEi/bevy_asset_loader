@@ -8,7 +8,7 @@ fn main() {
     let mut app = App::build();
     AssetLoader::new(MyStates::AssetLoading)
         .continue_to_state(MyStates::Next)
-        // this collection has a dynamic asset where the file path is resolved in run time
+        // this collection has a dynamic asset where the file path is resolved at run time
         .with_collection::<TextureAssets>()
         .with_collection::<AudioAssets>()
         .build(&mut app);
@@ -31,12 +31,6 @@ fn main() {
 }
 
 #[derive(AssetCollection)]
-struct AudioAssets {
-    #[asset(path = "audio/background.ogg")]
-    background: Handle<AudioSource>,
-}
-
-#[derive(AssetCollection)]
 struct TextureAssets {
     // This key will be resolved when the collection is loaded.
     // It needs to be registered in the resource bevy_asset_loader::AssetKeys
@@ -44,6 +38,12 @@ struct TextureAssets {
     player: Handle<Texture>,
     #[asset(path = "textures/tree.png")]
     tree: Handle<Texture>,
+}
+
+#[derive(AssetCollection)]
+struct AudioAssets {
+    #[asset(path = "audio/background.ogg")]
+    background: Handle<AudioSource>,
 }
 
 #[derive(AssetCollection)]
