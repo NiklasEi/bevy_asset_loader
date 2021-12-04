@@ -9,6 +9,7 @@ fn main() {
     AssetLoader::new(MyStates::AssetLoading)
         .continue_to_state(MyStates::Next)
         // this collection has a dynamic asset where the file path is resolved at run time
+        // => see the TextureAssets definition below
         .with_collection::<TextureAssets>()
         .with_collection::<AudioAssets>()
         .build(&mut app);
@@ -34,11 +35,33 @@ fn main() {
 struct TextureAssets {
     // This key will be resolved when the collection is loaded.
     // It needs to be registered in the resource bevy_asset_loader::AssetKeys
+    // => see the choose_character system below
     #[asset(key = "character")]
     player: Handle<Texture>,
     #[asset(path = "textures/tree.png")]
     tree: Handle<Texture>,
 }
+
+// This system decides which file to load as the character texture based on some player input
+fn choose_character(
+    mut state: ResMut<State<MyStates>>,
+    mut asset_keys: ResMut<AssetKeys>,
+    mouse_input: Res<Input<MouseButton>>,
+) {
+    if mouse_input.just_pressed(MouseButton::Left) {
+        asset_keys.set_asset_key("character", "textures/female_adventurer.png")
+    } else if mouse_input.just_pressed(MouseButton::Right) {
+        asset_keys.set_asset_key("character", "textures/zombie.png")
+    } else {
+        return;
+    }
+
+    state
+        .set(MyStates::AssetLoading)
+        .expect("Failed to change state");
+}
+
+// Rest of example setup
 
 #[derive(AssetCollection)]
 struct AudioAssets {
@@ -107,24 +130,6 @@ enum MyStates {
     Menu,
     AssetLoading,
     Next,
-}
-
-fn choose_character(
-    mut state: ResMut<State<MyStates>>,
-    mut asset_keys: ResMut<AssetKeys>,
-    mouse_input: Res<Input<MouseButton>>,
-) {
-    if mouse_input.just_pressed(MouseButton::Left) {
-        asset_keys.set_asset_key("character", "textures/female_adventurer.png")
-    } else if mouse_input.just_pressed(MouseButton::Right) {
-        asset_keys.set_asset_key("character", "textures/zombie.png")
-    } else {
-        return;
-    }
-
-    state
-        .set(MyStates::AssetLoading)
-        .expect("Failed to change state");
 }
 
 fn menu(mut commands: Commands, font_assets: Res<FontAssets>) {
