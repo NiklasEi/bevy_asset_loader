@@ -36,7 +36,6 @@ pub(crate) struct AssetBuilder {
     pub padding_x: f32,
     pub padding_y: f32,
     pub is_color_material: bool,
-    pub is_folder: bool,
 }
 
 impl AssetBuilder {
@@ -89,9 +88,6 @@ impl AssetBuilder {
             };
             if self.is_color_material {
                 return Ok(Asset::ColorMaterial(asset));
-            }
-            if self.is_folder {
-                return Ok(Asset::Folder(asset));
             }
             return Ok(Asset::Basic(asset));
         }
