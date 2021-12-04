@@ -10,8 +10,8 @@ Example | File | Description
 `two_collections` | [`two_collections.rs`](two_collections.rs) | Load multiple asset collections
 
 ## Credits
-The example includes copyright assets:
+The example includes third party assets:
 
 Background audio: [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) [Jay_You](https://freesound.org/people/Jay_You/sounds/460432/)
 
-Sprite female adventurer [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/) [Kenny](https://kenney.nl/assets/toon-characters-1)
+Toon character sheets [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/) [Kenny](https://kenney.nl/assets/toon-characters-1)

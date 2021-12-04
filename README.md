@@ -64,7 +64,7 @@ See [two_collections.rs](/bevy_asset_loader/examples/two_collections.rs) for a c
 ### Loading a folder as asset
 
 You can load all assets in a folder and keep them in an `AssetCollection` as a vector of untyped handles.
-```rust no_run
+```rust
 use bevy::prelude::*;
 use bevy_asset_loader::AssetCollection;
 
@@ -110,6 +110,25 @@ struct MyAssets {
 In situations where you would like to prepare other resources based on your loaded assets you can use `AssetLoader::init_resource` to initialize `FromWorld` resources. See [init_resource.rs](/bevy_asset_loader/examples/init_resource.rs) for an example that loads two textures and then combines their image data into a third texture.
 
 `AssetLoader::init_resource` does the same as Bevy's `App::init_resource`, but at a different point in time. While Bevy inserts your resources at the very beginning, the AssetLoader will do so after having inserted your loaded asset collections. That means that you can use your asset collections in the `FromWorld` implementations.
+
+### Dynamic assets
+
+It is possible to decide an asset file path at run time. This is done via the resource `AssetKeys` which is basically a map of asset keys to their file paths. The `AssetLoader` initializes the resource and reads it during the loading state. You should define all asset keys and their paths in a previous state.
+
+```rust
+use bevy::prelude::*;
+use bevy_asset_loader::AssetCollection;
+
+#[derive(AssetCollection)]
+struct TextureAssets {
+  #[asset(key = "player")]
+  player: Handle<Texture>,
+}
+```
+
+Take a look at the [dynamic_asset](bevy_asset_loader/examples/dynamic_asset.rs) example to see how this can work in your code.
+
+*There will likely be additions to this feature in the future. There should be first class support to define all the other asset attributes dynamically (e.g., texture atlas options).*
 
 ## License
 
