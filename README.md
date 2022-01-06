@@ -25,7 +25,7 @@ fn main() {
   let mut app = App::new();
   AssetLoader::new(GameState::AssetLoading)
           .continue_to_state(GameState::Next)
-          .with_collection::<TextureAssets>()
+          .with_collection::<ImageAssets>()
           .with_collection::<AudioAssets>()
           .build(&mut app);
   app.add_state(GameState::AssetLoading)
@@ -41,14 +41,14 @@ struct AudioAssets {
 }
 
 #[derive(AssetCollection)]
-struct TextureAssets {
-  #[asset(path = "textures/player.png")]
-  player: Handle<Texture>,
-  #[asset(path = "textures/tree.png")]
-  tree: Handle<Texture>,
+struct ImageAssets {
+  #[asset(path = "images/player.png")]
+  player: Handle<Image>,
+  #[asset(path = "images/tree.png")]
+  tree: Handle<Image>,
 }
 
-fn use_my_assets(_texture_assets: Res<TextureAssets>, _audio_assets: Res<AudioAssets>) {
+fn use_my_assets(_image_assets: Res<ImageAssets>, _audio_assets: Res<AudioAssets>) {
   // do something using the asset handles from the resources
 }
 
@@ -70,9 +70,9 @@ use bevy::prelude::*;
 use bevy_asset_loader::AssetCollection;
 
 #[derive(AssetCollection)]
-struct TextureAssets {
+struct ImageAssets {
   #[asset(key = "player")]
-  player: Handle<Texture>,
+  player: Handle<Image>,
 }
 ```
 
@@ -89,14 +89,14 @@ use bevy_asset_loader::AssetCollection;
 
 #[derive(AssetCollection)]
 struct MyAssets {
-    #[asset(folder = "textures")]
+    #[asset(folder = "images")]
     folder: Vec<HandleUntyped>,
 }
 ```
 
-### Loading color materials
+### Loading standard materials
 
-You can directly load color materials if you enable the feature `render`. For a complete example please take a look at [color_material.rs](/bevy_asset_loader/examples/color_material.rs).
+You can directly load standard materials if you enable the feature `render`. For a complete example please take a look at [standard_material.rs](/bevy_asset_loader/examples/standard_material.rs).
 ```rust no_run
 use bevy::prelude::*;
 use bevy_asset_loader::AssetCollection;
@@ -104,8 +104,8 @@ use bevy_asset_loader::AssetCollection;
 #[derive(AssetCollection)]
 struct MyAssets {
     #[asset(color_material)]
-    #[asset(path = "textures/player.png")]
-    player: Handle<ColorMaterial>,
+    #[asset(path = "images/player.png")]
+    player: Handle<StandardMaterial>,
 }
 ```
 
@@ -119,14 +119,14 @@ use bevy_asset_loader::AssetCollection;
 #[derive(AssetCollection)]
 struct MyAssets {
     #[asset(texture_atlas(tile_size_x = 100., tile_size_y = 96., columns = 8, rows = 1, padding_x = 12., padding_y = 12.))]
-    #[asset(path = "textures/sprite_sheet.png")]
+    #[asset(path = "images/sprite_sheet.png")]
     sprite: Handle<TextureAtlas>,
 }
 ```
 
 ### Initialize FromWorld resources
 
-In situations where you would like to prepare other resources based on your loaded assets you can use `AssetLoader::init_resource` to initialize `FromWorld` resources. See [init_resource.rs](/bevy_asset_loader/examples/init_resource.rs) for an example that loads two textures and then combines their image data into a third texture.
+In situations where you would like to prepare other resources based on your loaded assets you can use `AssetLoader::init_resource` to initialize `FromWorld` resources. See [init_resource.rs](/bevy_asset_loader/examples/init_resource.rs) for an example that loads two images and then combines their pixel data into a third image.
 
 `AssetLoader::init_resource` does the same as Bevy's `App::init_resource`, but at a different point in time. While Bevy inserts your resources at the very beginning, the AssetLoader will do so after having inserted your loaded asset collections. That means that you can use your asset collections in the `FromWorld` implementations.
 

@@ -145,20 +145,20 @@ fn impl_asset_collection(
             let asset_key = dynamic.key.clone();
             quote!(#es #field_ident : asset_server.get_handle(asset_keys.get_path_for_key(#asset_key.into())),)
         }
-        Asset::ColorMaterial(basic) => {
+        Asset::StandardMaterial(basic) => {
             let field_ident = basic.field_ident.clone();
             let asset_path = basic.asset_path.clone();
             quote!(#es #field_ident : materials.add(asset_server.get_handle(#asset_path).into()),)
         }
-        Asset::TextureAtlas(texture_asset) => {
-            let field_ident = texture_asset.field_ident.clone();
-            let asset_path = texture_asset.asset_path.clone();
-            let tile_size_x = texture_asset.tile_size_x;
-            let tile_size_y = texture_asset.tile_size_y;
-            let columns = texture_asset.columns;
-            let rows = texture_asset.rows;
-            let padding_x = texture_asset.padding_x;
-            let padding_y = texture_asset.padding_y;
+        Asset::TextureAtlas(texture_atlas) => {
+            let field_ident = texture_atlas.field_ident.clone();
+            let asset_path = texture_atlas.asset_path.clone();
+            let tile_size_x = texture_atlas.tile_size_x;
+            let tile_size_y = texture_atlas.tile_size_y;
+            let columns = texture_atlas.columns;
+            let rows = texture_atlas.rows;
+            let padding_x = texture_atlas.padding_x;
+            let padding_y = texture_atlas.padding_y;
             quote!(
                 #es #field_ident : {
                 atlases.add(TextureAtlas::from_grid_with_padding(
@@ -189,7 +189,7 @@ fn impl_asset_collection(
             let asset_key = dynamic.key.clone();
             quote!(#es handles.push(asset_server.load_untyped(asset_keys.get_path_for_key(#asset_key.into())));)
         }
-        Asset::ColorMaterial(asset) => {
+        Asset::StandardMaterial(asset) => {
             let asset_path = asset.asset_path.clone();
             quote!(#es handles.push(asset_server.load_untyped(#asset_path));)
         }
@@ -208,8 +208,8 @@ fn impl_asset_collection(
         conditional_asset_collections = quote! {
         #conditional_asset_collections
                 let mut materials = cell
-                    .get_resource_mut::<Assets<ColorMaterial>>()
-                    .expect("Cannot get resource Assets<ColorMaterial>");
+                    .get_resource_mut::<Assets<StandardMaterial>>()
+                    .expect("Cannot get resource Assets<StandardMaterial>");
         };
 
         // texture atlas

@@ -4,14 +4,14 @@ use bevy_asset_loader::{AssetCollection, AssetLoader};
 /// This example demonstrates how you can use [AssetLoader::init_resource] to initialize
 /// assets implementing [FromWorld] after your collections are inserted into the ECS.
 ///
-/// In this showcase we load two textures in an [AssetCollection] and then combine
-/// them by adding up their image data.
+/// In this showcase we load two images in an [AssetCollection] and then combine
+/// them by adding up their pixel data.
 fn main() {
     let mut app = App::new();
     AssetLoader::new(MyStates::AssetLoading)
         .continue_to_state(MyStates::Next)
-        .with_collection::<TextureAssets>()
-        .init_resource::<CombinedTexture>()
+        .with_collection::<ImageAssets>()
+        .init_resource::<CombinedImage>()
         .build(&mut app);
     app.add_state(MyStates::AssetLoading)
         .add_plugins(DefaultPlugins)
@@ -20,63 +20,62 @@ fn main() {
 }
 
 #[derive(AssetCollection)]
-struct TextureAssets {
-    #[asset(path = "textures/player.png")]
-    player: Handle<Texture>,
-    #[asset(path = "textures/tree.png")]
-    tree: Handle<Texture>,
+struct ImageAssets {
+    #[asset(path = "images/player.png")]
+    player: Handle<Image>,
+    #[asset(path = "images/tree.png")]
+    tree: Handle<Image>,
 }
 
-struct CombinedTexture {
-    combined: Handle<Texture>,
+struct CombinedImage {
+    combined: Handle<Image>,
 }
 
-impl FromWorld for CombinedTexture {
+impl FromWorld for CombinedImage {
     fn from_world(world: &mut World) -> Self {
         let cell = world.cell();
-        let mut textures = cell
-            .get_resource_mut::<Assets<Texture>>()
-            .expect("Failed to get Assets<Texture>");
-        let texture_assets = cell
-            .get_resource::<TextureAssets>()
-            .expect("Failed to get SmallPlayerAsset");
-        let player_texture = textures.get(texture_assets.player.clone()).unwrap();
-        let tree_texture = textures.get(texture_assets.tree.clone()).unwrap();
-        let mut combined = player_texture.clone();
+        let mut images = cell
+            .get_resource_mut::<Assets<Image>>()
+            .expect("Failed to get Assets<Image>");
+        let image_assets = cell
+            .get_resource::<ImageAssets>()
+            .expect("Failed to get ImageAssets");
+        let player_image = images.get(image_assets.player.clone()).unwrap();
+        let tree_image = images.get(image_assets.tree.clone()).unwrap();
+        let mut combined = player_image.clone();
         combined.data = combined
             .data
             .drain(..)
             .enumerate()
             .map(|(index, player_value)| {
                 player_value
-                    .checked_add(tree_texture.data[index])
+                    .checked_add(tree_image.data[index])
                     .unwrap_or(u8::MAX)
             })
             .collect();
-        CombinedTexture {
-            combined: textures.add(combined),
+        CombinedImage {
+            combined: images.add(combined),
         }
     }
 }
 
 fn draw(
     mut commands: Commands,
-    combined_texture: Res<CombinedTexture>,
-    texture_assets: Res<TextureAssets>,
-    mut material: ResMut<Assets<ColorMaterial>>,
+    combined_texture: Res<CombinedImage>,
+    image_assets: Res<ImageAssets>,
 ) {
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
     commands.spawn_bundle(SpriteBundle {
-        material: material.add(texture_assets.player.clone().into()),
+        texture: image_assets.player.clone(),
         transform: Transform::from_translation(Vec3::new(-150., 0., 1.)),
         ..Default::default()
     });
     commands.spawn_bundle(SpriteBundle {
-        material: material.add(combined_texture.combined.clone().into()),
+        texture: combined_texture.combined.clone(),
         ..Default::default()
     });
     commands.spawn_bundle(SpriteBundle {
-        material: material.add(texture_assets.tree.clone().into()),
+        texture: image_assets.tree.clone(),
         transform: Transform::from_translation(Vec3::new(150., 0., 1.)),
         ..Default::default()
     });

@@ -10,7 +10,7 @@ fn main() {
         .continue_to_state(MyStates::Next)
         // this collection has a dynamic asset where the file path is resolved at run time
         // => see the TextureAssets definition below
-        .with_collection::<TextureAssets>()
+        .with_collection::<ImageAssets>()
         .with_collection::<AudioAssets>()
         .build(&mut app);
     AssetLoader::new(MyStates::MenuAssetLoading)
@@ -32,26 +32,26 @@ fn main() {
 }
 
 #[derive(AssetCollection)]
-struct TextureAssets {
+struct ImageAssets {
     // This key will be resolved when the collection is loaded.
     // It needs to be registered in the resource bevy_asset_loader::AssetKeys
     // => see the choose_character system below
     #[asset(key = "character")]
-    player: Handle<Texture>,
-    #[asset(path = "textures/tree.png")]
-    tree: Handle<Texture>,
+    player: Handle<Image>,
+    #[asset(path = "images/tree.png")]
+    tree: Handle<Image>,
 }
 
-// This system decides which file to load as the character texture based on some player input
+// This system decides which file to load as the character sprite based on some player input
 fn choose_character(
     mut state: ResMut<State<MyStates>>,
     mut asset_keys: ResMut<AssetKeys>,
     mouse_input: Res<Input<MouseButton>>,
 ) {
     if mouse_input.just_pressed(MouseButton::Left) {
-        asset_keys.set_asset_key("character", "textures/female_adventurer.png")
+        asset_keys.set_asset_key("character", "images/female_adventurer.png")
     } else if mouse_input.just_pressed(MouseButton::Right) {
-        asset_keys.set_asset_key("character", "textures/zombie.png")
+        asset_keys.set_asset_key("character", "images/zombie.png")
     } else {
         return;
     }
@@ -75,23 +75,19 @@ pub struct FontAssets {
     pub fira_sans: Handle<Font>,
 }
 
-fn spawn_player_and_tree(
-    mut commands: Commands,
-    texture_assets: Res<TextureAssets>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-) {
+fn spawn_player_and_tree(mut commands: Commands, image_assets: Res<ImageAssets>) {
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
     let mut transform = Transform::from_translation(Vec3::new(0., 0., 1.));
     transform.scale = Vec3::splat(0.5);
     commands
         .spawn_bundle(SpriteBundle {
-            material: materials.add(texture_assets.player.clone().into()),
+            texture: image_assets.player.clone(),
             transform,
             ..Default::default()
         })
         .insert(Player);
     commands.spawn_bundle(SpriteBundle {
-        material: materials.add(texture_assets.tree.clone().into()),
+        texture: image_assets.tree.clone(),
         transform: Transform::from_translation(Vec3::new(50., 30., 1.)),
         ..Default::default()
     });
@@ -143,9 +139,8 @@ fn menu(mut commands: Commands, font_assets: Res<FontAssets>) {
                 align_items: AlignItems::Center,
                 ..Default::default()
             },
-            visible: Visible {
+            visibility: Visibility {
                 is_visible: false,
-                is_transparent: true,
             },
             ..Default::default()
         })
@@ -156,7 +151,7 @@ fn menu(mut commands: Commands, font_assets: Res<FontAssets>) {
                     sections: vec![TextSection {
                         value:
                             "Choose your character: Adventurer (left click) or Zombie (right click)\n\
-                            Your input will decide which texture file gets loaded"
+                            Your input will decide which image file gets loaded"
                                 .to_string(),
                         style: TextStyle {
                             font: font_assets.fira_sans.clone(),

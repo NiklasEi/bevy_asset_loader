@@ -3,7 +3,7 @@ use bevy_asset_loader::{AssetCollection, AssetLoader};
 
 /// This example demonstrates how to load a texture atlas from a sprite sheet
 ///
-/// Requires the feature 'render' (part of default features)
+/// Requires the feature 'render'
 fn main() {
     let mut app = App::new();
     AssetLoader::new(MyStates::AssetLoading)
@@ -23,7 +23,7 @@ fn main() {
 struct MyAssets {
     // if the sheet would have padding, we could set that with `padding_x` and `padding_y`
     #[asset(texture_atlas(tile_size_x = 100., tile_size_y = 96., columns = 8, rows = 1))]
-    #[asset(path = "textures/female_adventurer_sheet.png")]
+    #[asset(path = "images/female_adventurer_sheet.png")]
     female_adventurer: Handle<TextureAtlas>,
 }
 
@@ -31,15 +31,14 @@ fn draw_atlas(
     mut commands: Commands,
     my_assets: Res<MyAssets>,
     texture_atlases: Res<Assets<TextureAtlas>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
-    // draw the original texture (whole atlas)
+    // draw the original image (whole atlas)
     let atlas = texture_atlases
         .get(my_assets.female_adventurer.clone())
         .expect("Failed to find our atlas");
     commands.spawn_bundle(SpriteBundle {
-        material: materials.add(atlas.texture.clone().into()),
+        texture: atlas.texture.clone(),
         transform: Transform::from_xyz(0., -150., 0.),
         ..Default::default()
     });

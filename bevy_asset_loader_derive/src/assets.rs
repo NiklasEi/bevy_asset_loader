@@ -25,7 +25,7 @@ pub(crate) struct DynamicAsset {
 pub(crate) enum Asset {
     Basic(BasicAsset),
     DynamicAsset(DynamicAsset),
-    ColorMaterial(BasicAsset),
+    StandardMaterial(BasicAsset),
     Folder(BasicAsset),
     TextureAtlas(TextureAtlasAsset),
 }
@@ -108,7 +108,7 @@ impl AssetBuilder {
                 asset_path: self.asset_path.unwrap(),
             };
             if self.is_color_material {
-                return Ok(Asset::ColorMaterial(asset));
+                return Ok(Asset::StandardMaterial(asset));
             }
             return Ok(Asset::Basic(asset));
         }

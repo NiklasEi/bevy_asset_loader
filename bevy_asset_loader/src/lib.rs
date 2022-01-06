@@ -13,7 +13,7 @@
 //!     AssetLoader::new(GameState::Loading)
 //!         .continue_to_state(GameState::Next)
 //!         .with_collection::<AudioAssets>()
-//!         .with_collection::<TextureAssets>()
+//!         .with_collection::<ImageAssets>()
 //!         .build(&mut app);
 //!     app
 //!         .add_state(GameState::Loading)
@@ -38,11 +38,11 @@
 //! }
 //!
 //! #[derive(AssetCollection)]
-//! pub struct TextureAssets {
-//!     #[asset(path = "textures/player.png")]
-//!     pub player: Handle<Texture>,
-//!     #[asset(path = "textures/tree.png")]
-//!     pub tree: Handle<Texture>,
+//! pub struct ImageAssets {
+//!     #[asset(path = "images/player.png")]
+//!     pub player: Handle<Image>,
+//!     #[asset(path = "images/tree.png")]
+//!     pub tree: Handle<Image>,
 //! }
 //!
 //! // since this function runs in MyState::Next, we know our assets are
@@ -81,9 +81,9 @@ use std::marker::PhantomData;
 /// #[derive(AssetCollection)]
 /// struct MyAssets {
 ///     #[asset(path = "player.png")]
-///     player: Handle<Texture>,
+///     player: Handle<Image>,
 ///     #[asset(path = "tree.png")]
-///     tree: Handle<Texture>
+///     tree: Handle<Image>
 /// }
 /// ```
 pub trait AssetCollection: Send + Sync + 'static {
@@ -129,9 +129,9 @@ struct LoadingConfiguration<T> {
 ///     mouse_input: Res<Input<MouseButton>>,
 /// ) {
 ///     if mouse_input.just_pressed(MouseButton::Left) {
-///         asset_keys.set_asset_key("character", "textures/female_adventurer.png")
+///         asset_keys.set_asset_key("character", "images/female_adventurer.png")
 ///     } else if mouse_input.just_pressed(MouseButton::Right) {
-///         asset_keys.set_asset_key("character", "textures/zombie.png")
+///         asset_keys.set_asset_key("character", "images/zombie.png")
 ///     } else {
 ///         return;
 ///     }
@@ -142,9 +142,9 @@ struct LoadingConfiguration<T> {
 /// }
 ///
 /// #[derive(AssetCollection)]
-/// struct TextureAssets {
+/// struct ImageAssets {
 ///     #[asset(key = "character")]
-///     player: Handle<Texture>,
+///     player: Handle<Image>,
 /// }
 /// # #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 /// # enum GameState {
@@ -179,9 +179,9 @@ impl AssetKeys {
     ///     mouse_input: Res<Input<MouseButton>>,
     /// ) {
     ///     if mouse_input.just_pressed(MouseButton::Left) {
-    ///         asset_keys.set_asset_key("character", "textures/female_adventurer.png")
+    ///         asset_keys.set_asset_key("character", "images/female_adventurer.png")
     ///     } else if mouse_input.just_pressed(MouseButton::Right) {
-    ///         asset_keys.set_asset_key("character", "textures/zombie.png")
+    ///         asset_keys.set_asset_key("character", "images/zombie.png")
     ///     } else {
     ///         return;
     ///     }
@@ -192,9 +192,9 @@ impl AssetKeys {
     /// }
     ///
     /// #[derive(AssetCollection)]
-    /// struct TextureAssets {
+    /// struct ImageAssets {
     ///     #[asset(key = "character")]
-    ///     player: Handle<Texture>,
+    ///     player: Handle<Image>,
     /// }
     /// # #[derive(Clone, Eq, PartialEq, Debug, Hash)]
     /// # enum GameState {
@@ -290,7 +290,7 @@ fn init_resource<Asset: FromWorld + Send + Sync + 'static>(world: &mut World) {
 ///     AssetLoader::new(GameState::Loading)
 ///         .continue_to_state(GameState::Menu)
 ///         .with_collection::<AudioAssets>()
-///         .with_collection::<TextureAssets>()
+///         .with_collection::<ImageAssets>()
 ///         .build(&mut app);
 ///
 ///     app.add_state(GameState::Loading)
@@ -320,11 +320,11 @@ fn init_resource<Asset: FromWorld + Send + Sync + 'static>(world: &mut World) {
 /// }
 ///
 /// #[derive(AssetCollection)]
-/// pub struct TextureAssets {
-///     #[asset(path = "textures/player.png")]
-///     pub player: Handle<Texture>,
-///     #[asset(path = "textures/tree.png")]
-///     pub tree: Handle<Texture>,
+/// pub struct ImageAssets {
+///     #[asset(path = "images/player.png")]
+///     pub player: Handle<Image>,
+///     #[asset(path = "images/tree.png")]
+///     pub tree: Handle<Image>,
 /// }
 /// ```
 pub struct AssetLoader<T> {
@@ -354,7 +354,7 @@ where
     ///     AssetLoader::new(GameState::Loading)
     ///         .continue_to_state(GameState::Menu)
     ///         .with_collection::<AudioAssets>()
-    ///         .with_collection::<TextureAssets>()
+    ///         .with_collection::<ImageAssets>()
     ///         .build(&mut app);
     /// #   app
     /// #       .add_state(GameState::Loading)
@@ -374,11 +374,11 @@ where
     /// #     pub background: Handle<AudioSource>,
     /// # }
     /// # #[derive(AssetCollection)]
-    /// # pub struct TextureAssets {
-    /// #     #[asset(path = "textures/player.png")]
-    /// #     pub player: Handle<Texture>,
-    /// #     #[asset(path = "textures/tree.png")]
-    /// #     pub tree: Handle<Texture>,
+    /// # pub struct ImageAssets {
+    /// #     #[asset(path = "images/player.png")]
+    /// #     pub player: Handle<Image>,
+    /// #     #[asset(path = "images/tree.png")]
+    /// #     pub tree: Handle<Image>,
     /// # }
     /// ```
     pub fn new(load: State) -> AssetLoader<State> {
@@ -404,7 +404,7 @@ where
     ///     AssetLoader::new(GameState::Loading)
     ///         .continue_to_state(GameState::Menu)
     ///         .with_collection::<AudioAssets>()
-    ///         .with_collection::<TextureAssets>()
+    ///         .with_collection::<ImageAssets>()
     ///         .build(&mut app);
     /// #   app
     /// #       .add_state(GameState::Loading)
@@ -424,11 +424,11 @@ where
     /// #     pub background: Handle<AudioSource>,
     /// # }
     /// # #[derive(AssetCollection)]
-    /// # pub struct TextureAssets {
-    /// #     #[asset(path = "textures/player.png")]
-    /// #     pub player: Handle<Texture>,
-    /// #     #[asset(path = "textures/tree.png")]
-    /// #     pub tree: Handle<Texture>,
+    /// # pub struct ImageAssets {
+    /// #     #[asset(path = "images/player.png")]
+    /// #     pub player: Handle<Image>,
+    /// #     #[asset(path = "images/tree.png")]
+    /// #     pub tree: Handle<Image>,
     /// # }
     /// ```
     pub fn continue_to_state(mut self, next: State) -> Self {
@@ -449,7 +449,7 @@ where
     ///     AssetLoader::new(GameState::Loading)
     ///         .continue_to_state(GameState::Menu)
     ///         .with_collection::<AudioAssets>()
-    ///         .with_collection::<TextureAssets>()
+    ///         .with_collection::<ImageAssets>()
     ///         .build(&mut app);
     /// #   app
     /// #       .add_state(GameState::Loading)
@@ -469,11 +469,11 @@ where
     /// #     pub background: Handle<AudioSource>,
     /// # }
     /// # #[derive(AssetCollection)]
-    /// # pub struct TextureAssets {
-    /// #     #[asset(path = "textures/player.png")]
-    /// #     pub player: Handle<Texture>,
-    /// #     #[asset(path = "textures/tree.png")]
-    /// #     pub tree: Handle<Texture>,
+    /// # pub struct ImageAssets {
+    /// #     #[asset(path = "images/player.png")]
+    /// #     pub player: Handle<Image>,
+    /// #     #[asset(path = "images/tree.png")]
+    /// #     pub tree: Handle<Image>,
     /// # }
     /// ```
     pub fn with_collection<A: AssetCollection>(mut self) -> Self {
@@ -536,8 +536,8 @@ where
     /// # }
     /// # #[derive(AssetCollection)]
     /// # pub struct TextureForAtlas {
-    /// #     #[asset(path = "textures/female_adventurer.ogg")]
-    /// #     pub array: Handle<Texture>,
+    /// #     #[asset(path = "images/female_adventurer.ogg")]
+    /// #     pub array: Handle<Image>,
     /// # }
     /// ```
     pub fn init_resource<A: FromWorld + Send + Sync + 'static>(mut self) -> Self {
@@ -560,7 +560,7 @@ where
     ///     AssetLoader::new(GameState::Loading)
     ///         .continue_to_state(GameState::Menu)
     ///         .with_collection::<AudioAssets>()
-    ///         .with_collection::<TextureAssets>()
+    ///         .with_collection::<ImageAssets>()
     ///         .build(&mut app);
     /// #   app
     /// #       .add_state(GameState::Loading)
@@ -580,11 +580,11 @@ where
     /// #     pub background: Handle<AudioSource>,
     /// # }
     /// # #[derive(AssetCollection)]
-    /// # pub struct TextureAssets {
-    /// #     #[asset(path = "textures/player.png")]
-    /// #     pub player: Handle<Texture>,
-    /// #     #[asset(path = "textures/tree.png")]
-    /// #     pub tree: Handle<Texture>,
+    /// # pub struct ImageAssets {
+    /// #     #[asset(path = "images/player.png")]
+    /// #     pub player: Handle<Image>,
+    /// #     #[asset(path = "images/tree.png")]
+    /// #     pub tree: Handle<Image>,
     /// # }
     /// ```
     pub fn build(self, app: &mut App) {

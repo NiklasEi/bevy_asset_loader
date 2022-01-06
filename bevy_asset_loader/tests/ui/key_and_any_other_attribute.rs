@@ -16,10 +16,10 @@ struct FolderAndKey {
 }
 
 #[derive(AssetCollection)]
-struct ColorMaterialAndKey {
+struct StandardMaterialAndKey {
     #[asset(color_material)]
     #[asset(key = "test")]
-    test: Handle<ColorMaterial>,
+    test: Handle<StandardMaterial>,
 }
 
 #[derive(AssetCollection)]
