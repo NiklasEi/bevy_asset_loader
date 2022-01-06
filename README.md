@@ -128,7 +128,7 @@ struct TextureAssets {
 
 Take a look at the [dynamic_asset](bevy_asset_loader/examples/dynamic_asset.rs) example to see how this can work in your code.
 
-*There will likely be additions to this feature in the future. There should be first class support to define all the other asset attributes dynamically (e.g., texture atlas options).*
+*There will likely be additions to this feature in the future. The goal is to allow defining all the other asset attributes dynamically, too (e.g., texture atlas options).*
 
 ## License
 
