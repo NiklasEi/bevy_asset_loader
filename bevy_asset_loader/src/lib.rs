@@ -115,6 +115,98 @@ struct LoadingConfiguration<T> {
     count: usize,
 }
 
+/// Resource to dynamically resolve keys to asset paths.
+///
+/// This resource is set by the [AssetLoader] and is read when entering a loading state.
+/// You should set your desired asset key and paths in a previous [bevy_ecs::schedule::State].
+///
+/// ```edition2021
+/// # use bevy::prelude::*;
+/// # use bevy_asset_loader::{AssetKeys, AssetCollection};
+/// fn choose_character(
+///     mut state: ResMut<State<GameState>>,
+///     mut asset_keys: ResMut<AssetKeys>,
+///     mouse_input: Res<Input<MouseButton>>,
+/// ) {
+///     if mouse_input.just_pressed(MouseButton::Left) {
+///         asset_keys.set_asset_key("character", "textures/female_adventurer.png")
+///     } else if mouse_input.just_pressed(MouseButton::Right) {
+///         asset_keys.set_asset_key("character", "textures/zombie.png")
+///     } else {
+///         return;
+///     }
+///
+///     state
+///         .set(GameState::Loading)
+///         .expect("Failed to change state");
+/// }
+///
+/// #[derive(AssetCollection)]
+/// struct TextureAssets {
+///     #[asset(key = "character")]
+///     player: Handle<Texture>,
+/// }
+/// # #[derive(Clone, Eq, PartialEq, Debug, Hash)]
+/// # enum GameState {
+/// #     Loading,
+/// #     Menu
+/// # }
+/// ```
+#[derive(Default)]
+pub struct AssetKeys {
+    keys: HashMap<String, String>,
+}
+
+impl AssetKeys {
+    /// Get the asset path corresponding to the given key.
+    ///
+    /// PANIC: if the key does not exist
+    pub fn get_path_for_key(&self, key: &str) -> &str {
+        self.keys
+            .get(key)
+            .expect(&format!("Failed to get a path for key '{}'", key))
+    }
+
+    /// Set the corresponding asset path for the given key.
+    ///
+    /// In case the key is already known, its value will be overwritten.
+    /// ```edition2021
+    /// # use bevy::prelude::*;
+    /// # use bevy_asset_loader::{AssetKeys, AssetCollection};
+    /// fn choose_character(
+    ///     mut state: ResMut<State<GameState>>,
+    ///     mut asset_keys: ResMut<AssetKeys>,
+    ///     mouse_input: Res<Input<MouseButton>>,
+    /// ) {
+    ///     if mouse_input.just_pressed(MouseButton::Left) {
+    ///         asset_keys.set_asset_key("character", "textures/female_adventurer.png")
+    ///     } else if mouse_input.just_pressed(MouseButton::Right) {
+    ///         asset_keys.set_asset_key("character", "textures/zombie.png")
+    ///     } else {
+    ///         return;
+    ///     }
+    ///
+    ///     state
+    ///         .set(GameState::Loading)
+    ///         .expect("Failed to change state");
+    /// }
+    ///
+    /// #[derive(AssetCollection)]
+    /// struct TextureAssets {
+    ///     #[asset(key = "character")]
+    ///     player: Handle<Texture>,
+    /// }
+    /// # #[derive(Clone, Eq, PartialEq, Debug, Hash)]
+    /// # enum GameState {
+    /// #     Loading,
+    /// #     Menu
+    /// # }
+    /// ```
+    pub fn set_asset_key<T: Into<String>>(&mut self, key: T, value: T) {
+        self.keys.insert(key.into(), value.into());
+    }
+}
+
 fn start_loading<T: StateData, Assets: AssetCollection>(world: &mut World) {
     {
         let cell = world.cell();
@@ -159,11 +251,6 @@ fn check_loading_state<T: StateData, Assets: AssetCollection>(world: &mut World)
             return;
         }
 
-        // Todo: fire events `AssetCollection-` Ready/Loaded/Inserted?
-        // First event when all handles are done
-        // => system checks for events, reduces config count/changes state
-        // => fires event that collection is now inserted
-        // Export labels to sort check_loading_state / insert systems
         let mut state = cell
             .get_resource_mut::<State<T>>()
             .expect("Cannot get State resource");
@@ -243,6 +330,7 @@ fn init_resource<Asset: FromWorld + Send + Sync + 'static>(world: &mut World) {
 pub struct AssetLoader<T> {
     next_state: Option<T>,
     loading_state: T,
+    keys: HashMap<String, String>,
     load: SystemSet,
     check: SystemSet,
     post_process: SystemSet,
@@ -297,6 +385,7 @@ where
         Self {
             next_state: None,
             loading_state: load.clone(),
+            keys: HashMap::default(),
             load: SystemSet::on_enter(load.clone()),
             check: SystemSet::on_update(load.clone()),
             post_process: SystemSet::on_exit(load),
@@ -395,6 +484,15 @@ where
             .check
             .with_system(check_loading_state::<State, A>.exclusive_system());
         self.collection_count += 1;
+
+        self
+    }
+
+    /// Insert a map of asset keys with corresponding asset paths
+    pub fn add_keys(mut self, mut keys: HashMap<String, String>) -> Self {
+        keys.drain().for_each(|(key, value)| {
+            self.keys.insert(key, value);
+        });
 
         self
     }
@@ -508,6 +606,7 @@ where
                 .insert(self.loading_state.clone(), config);
             app.world.insert_resource(asset_loader_configuration);
         }
+        app.init_resource::<AssetKeys>();
         app.add_system_set(self.load)
             .add_system_set(self.check)
             .add_system_set(self.post_process);

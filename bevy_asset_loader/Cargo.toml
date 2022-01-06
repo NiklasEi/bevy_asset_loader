@@ -40,6 +40,10 @@ name = "init_resource"
 path = "examples/init_resource.rs"
 
 [[example]]
+name = "dynamic_asset"
+path = "examples/dynamic_asset.rs"
+
+[[example]]
 name = "color_material"
 path = "examples/color_material.rs"
 required-features = ["sprite"]

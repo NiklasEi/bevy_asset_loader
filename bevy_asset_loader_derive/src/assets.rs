@@ -17,8 +17,14 @@ pub(crate) struct BasicAsset {
     pub asset_path: String,
 }
 
+pub(crate) struct DynamicAsset {
+    pub field_ident: Ident,
+    pub key: String,
+}
+
 pub(crate) enum Asset {
     Basic(BasicAsset),
+    DynamicAsset(DynamicAsset),
     ColorMaterial(BasicAsset),
     Folder(BasicAsset),
     TextureAtlas(TextureAtlasAsset),
@@ -29,6 +35,7 @@ pub(crate) struct AssetBuilder {
     pub field_ident: Option<Ident>,
     pub asset_path: Option<String>,
     pub folder_path: Option<String>,
+    pub key: Option<String>,
     pub tile_size_x: Option<f32>,
     pub tile_size_y: Option<f32>,
     pub columns: Option<usize>,
@@ -69,13 +76,27 @@ impl AssetBuilder {
                 TextureAtlasAttribute::ROWS
             ));
         }
-        if self.asset_path.is_none() && self.folder_path.is_none() {
+        if self.asset_path.is_none() && self.folder_path.is_none() && self.key.is_none() {
             return Err(vec![ParseFieldError::NoAttributes]);
+        }
+        if self.key.is_some()
+            && (self.folder_path.is_some()
+                || self.asset_path.is_some()
+                || missing_fields.len() < 4
+                || self.is_color_material)
+        {
+            return Err(vec![ParseFieldError::KeyAttributeStandsAlone]);
         }
         if self.folder_path.is_some() && self.asset_path.is_some() {
             return Err(vec![ParseFieldError::EitherSingleAssetOrFolder]);
         }
         if missing_fields.len() == 4 {
+            if self.key.is_some() {
+                return Ok(Asset::DynamicAsset(DynamicAsset {
+                    field_ident: self.field_ident.unwrap(),
+                    key: self.key.unwrap(),
+                }));
+            }
             if self.folder_path.is_some() {
                 return Ok(Asset::Folder(BasicAsset {
                     field_ident: self.field_ident.unwrap(),
