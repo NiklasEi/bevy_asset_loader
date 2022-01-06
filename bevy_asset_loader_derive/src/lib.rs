@@ -202,23 +202,22 @@ fn impl_asset_collection(
     #[allow(unused_mut)]
     let mut conditional_asset_collections = quote! {};
 
-    #[cfg(feature = "sprite")]
+    #[cfg(feature = "render")]
     {
+        // color materials
         conditional_asset_collections = quote! {
         #conditional_asset_collections
                 let mut materials = cell
                     .get_resource_mut::<Assets<ColorMaterial>>()
-                    .expect("Cannot get Assets<ColorMaterial>");
+                    .expect("Cannot get resource Assets<ColorMaterial>");
         };
-    }
 
-    #[cfg(feature = "render")]
-    {
+        // texture atlas
         conditional_asset_collections = quote! {
         #conditional_asset_collections
                 let mut atlases = cell
                     .get_resource_mut::<Assets<TextureAtlas>>()
-                    .expect("Cannot get Assets<TextureAtlas>");
+                    .expect("Cannot get resource Assets<TextureAtlas>");
         };
     }
 

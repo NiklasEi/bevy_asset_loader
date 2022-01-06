@@ -81,10 +81,12 @@ fn spawn_player_and_tree(
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
+    let mut transform = Transform::from_translation(Vec3::new(0., 0., 1.));
+    transform.scale = Vec3::splat(0.5);
     commands
         .spawn_bundle(SpriteBundle {
             material: materials.add(texture_assets.player.clone().into()),
-            transform: Transform::from_translation(Vec3::new(0., 0., 1.)),
+            transform,
             ..Default::default()
         })
         .insert(Player);
@@ -154,7 +156,7 @@ fn menu(mut commands: Commands, font_assets: Res<FontAssets>) {
                     sections: vec![TextSection {
                         value:
                             "Choose your character: Adventurer (left click) or Zombie (right click)\n\
-                            this will define which texture file is loaded"
+                            Your input will decide which texture file gets loaded"
                                 .to_string(),
                         style: TextStyle {
                             font: font_assets.fira_sans.clone(),
