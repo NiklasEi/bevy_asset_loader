@@ -13,10 +13,8 @@ categories = ["game-development"]
 readme = "../README.md"
 
 [features]
-# This feature requires bevy's TextureAtlas assets to be available
+# This feature requires bevy's TextureAtlas and ColorMaterial assets to be available ("bevy/render")
 render = ["bevy_asset_loader_derive/render"]
-# This feature requires bevy's ColorMaterial assets to be available
-sprite = ["bevy_asset_loader_derive/sprite"]
 
 [dependencies]
 bevy = { version = "0.5.0", default-features = false }
@@ -46,4 +44,4 @@ path = "examples/dynamic_asset.rs"
 [[example]]
 name = "color_material"
 path = "examples/color_material.rs"
-required-features = ["sprite"]
+required-features = ["render"]

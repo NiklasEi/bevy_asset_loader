@@ -3,7 +3,7 @@ use bevy_asset_loader::{AssetCollection, AssetLoader};
 
 /// This example demonstrates how to load a color material from a .png file
 ///
-/// Requires the feature 'sprite' (part of default features)
+/// Requires the feature 'render' (part of default features)
 fn main() {
     let mut app = App::build();
     AssetLoader::new(MyStates::AssetLoading)
