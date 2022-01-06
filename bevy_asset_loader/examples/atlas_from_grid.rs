@@ -60,7 +60,7 @@ fn animate_sprite_system(time: Res<Time>, mut query: Query<(&mut Timer, &mut Tex
     for (mut timer, mut sprite) in query.iter_mut() {
         timer.tick(time.delta());
         if timer.finished() {
-            sprite.index = ((sprite.index as usize + 1) % 8) as u32;
+            sprite.index = (sprite.index + 1) % 8;
         }
     }
 }

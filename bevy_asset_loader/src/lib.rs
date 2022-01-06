@@ -164,7 +164,7 @@ impl AssetKeys {
     pub fn get_path_for_key(&self, key: &str) -> &str {
         self.keys
             .get(key)
-            .expect(&format!("Failed to get a path for key '{}'", key))
+            .unwrap_or_else(|| panic!("Failed to get a path for key '{}'", key))
     }
 
     /// Set the corresponding asset path for the given key.

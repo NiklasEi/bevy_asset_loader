@@ -140,7 +140,7 @@ fn impl_asset_collection(
             let asset_path = basic.asset_path.clone();
             quote!(#es #field_ident : asset_server.load_folder(#asset_path).unwrap(),)
         }
-        Asset::DynamicAsset(dynamic) => {
+        Asset::Dynamic(dynamic) => {
             let field_ident = dynamic.field_ident.clone();
             let asset_key = dynamic.key.clone();
             quote!(#es #field_ident : asset_server.get_handle(asset_keys.get_path_for_key(#asset_key.into())),)
@@ -185,7 +185,7 @@ fn impl_asset_collection(
             let asset_path = asset.asset_path.clone();
             quote!(#es asset_server.load_folder(#asset_path).unwrap().drain(..).for_each(|handle| handles.push(handle));)
         }
-        Asset::DynamicAsset(dynamic) => {
+        Asset::Dynamic(dynamic) => {
             let asset_key = dynamic.key.clone();
             quote!(#es handles.push(asset_server.load_untyped(asset_keys.get_path_for_key(#asset_key.into())));)
         }
