@@ -1,5 +1,6 @@
 # Changelog
 
+## v0.7.0
 - add support for dynamic asset paths ([#14](https://github.com/NiklasEi/bevy_asset_loader/issues/14))
 - move functionality behind `sprite` feature to `render` feature
   - both features require the bevy feature `render`
