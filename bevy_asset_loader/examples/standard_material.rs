@@ -11,6 +11,7 @@ fn main() {
         .with_collection::<MyAssets>()
         .build(&mut app);
     app.add_state(MyStates::AssetLoading)
+        .insert_resource(Msaa { samples: 1 })
         .insert_resource(AmbientLight {
             color: Color::WHITE,
             brightness: 0.2,
