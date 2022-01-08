@@ -17,8 +17,8 @@ error: The 'key' attribute has to be the only 'asset' attribute on a field
    |
 20 | /     #[asset(color_material)]
 21 | |     #[asset(key = "test")]
-22 | |     test: Handle<ColorMaterial>,
-   | |_______________________________^
+22 | |     test: Handle<StandardMaterial>,
+   | |__________________________________^
 
 error: The 'key' attribute has to be the only 'asset' attribute on a field
   --> tests/ui/key_and_any_other_attribute.rs:27:5

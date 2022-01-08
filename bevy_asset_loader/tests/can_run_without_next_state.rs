@@ -6,7 +6,7 @@ use bevy_asset_loader::{AssetCollection, AssetLoader};
 
 #[test]
 fn single_asset_collection() {
-    let mut app = App::build();
+    let mut app = App::new();
 
     AssetLoader::new(MyStates::Load)
         .with_collection::<MyAssets>()
@@ -19,8 +19,8 @@ fn single_asset_collection() {
         .add_plugin(AudioPlugin::default())
         .add_system_set(
             SystemSet::on_update(MyStates::Load)
-                .with_system(timeout.system())
-                .with_system(expect.system()),
+                .with_system(timeout)
+                .with_system(expect),
         )
         .run();
 }

@@ -5,10 +5,10 @@ const PLAYER_SPEED: f32 = 5.;
 
 /// This example shows how to load multiple asset collections with one [AssetLoader]
 fn main() {
-    let mut app = App::build();
+    let mut app = App::new();
     AssetLoader::new(MyStates::AssetLoading)
         .continue_to_state(MyStates::Next)
-        .with_collection::<TextureAssets>()
+        .with_collection::<ImageAssets>()
         .with_collection::<AudioAssets>()
         .build(&mut app);
     app.add_state(MyStates::AssetLoading)
@@ -29,32 +29,29 @@ struct AudioAssets {
 }
 
 #[derive(AssetCollection)]
-struct TextureAssets {
-    #[asset(path = "textures/player.png")]
-    player: Handle<Texture>,
-    #[asset(path = "textures/tree.png")]
-    tree: Handle<Texture>,
-    #[asset(folder = "textures")]
-    _textures: Vec<HandleUntyped>,
+struct ImageAssets {
+    #[asset(path = "images/player.png")]
+    player: Handle<Image>,
+    #[asset(path = "images/tree.png")]
+    tree: Handle<Image>,
+    #[asset(folder = "images")]
+    _images: Vec<HandleUntyped>,
 }
 
+#[derive(Component)]
 struct Player;
 
-fn spawn_player_and_tree(
-    mut commands: Commands,
-    texture_assets: Res<TextureAssets>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-) {
+fn spawn_player_and_tree(mut commands: Commands, image_assets: Res<ImageAssets>) {
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
     commands
         .spawn_bundle(SpriteBundle {
-            material: materials.add(texture_assets.player.clone().into()),
+            texture: image_assets.player.clone(),
             transform: Transform::from_translation(Vec3::new(0., 0., 1.)),
             ..Default::default()
         })
         .insert(Player);
     commands.spawn_bundle(SpriteBundle {
-        material: materials.add(texture_assets.tree.clone().into()),
+        texture: image_assets.tree.clone(),
         transform: Transform::from_translation(Vec3::new(50., 30., 1.)),
         ..Default::default()
     });
@@ -82,9 +79,8 @@ fn move_player(input: Res<Input<KeyCode>>, mut player: Query<&mut Transform, Wit
         return;
     }
     movement = movement.normalize() * PLAYER_SPEED;
-    if let Ok(mut transform) = player.single_mut() {
-        transform.translation += movement;
-    }
+    let mut transform = player.single_mut();
+    transform.translation += movement;
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]

@@ -9,11 +9,11 @@
 //! # use bevy::prelude::*;
 //! # use bevy::asset::AssetPlugin;
 //! fn main() {
-//!     let mut app = App::build();
+//!     let mut app = App::new();
 //!     AssetLoader::new(GameState::Loading)
 //!         .continue_to_state(GameState::Next)
 //!         .with_collection::<AudioAssets>()
-//!         .with_collection::<TextureAssets>()
+//!         .with_collection::<ImageAssets>()
 //!         .build(&mut app);
 //!     app
 //!         .add_state(GameState::Loading)
@@ -38,11 +38,11 @@
 //! }
 //!
 //! #[derive(AssetCollection)]
-//! pub struct TextureAssets {
-//!     #[asset(path = "textures/player.png")]
-//!     pub player: Handle<Texture>,
-//!     #[asset(path = "textures/tree.png")]
-//!     pub tree: Handle<Texture>,
+//! pub struct ImageAssets {
+//!     #[asset(path = "images/player.png")]
+//!     pub player: Handle<Image>,
+//!     #[asset(path = "images/tree.png")]
+//!     pub tree: Handle<Image>,
 //! }
 //!
 //! // since this function runs in MyState::Next, we know our assets are
@@ -63,15 +63,12 @@
 
 pub use bevy_asset_loader_derive::AssetCollection;
 
-use bevy::app::AppBuilder;
+use bevy::app::App;
 use bevy::asset::{AssetServer, HandleUntyped, LoadState};
-use bevy::ecs::component::Component;
 use bevy::ecs::prelude::IntoExclusiveSystem;
-use bevy::ecs::schedule::State;
+use bevy::ecs::schedule::{State, StateData};
 use bevy::prelude::{FromWorld, SystemSet, World};
 use bevy::utils::HashMap;
-use std::fmt::Debug;
-use std::hash::Hash;
 use std::marker::PhantomData;
 
 /// Trait to mark a struct as a collection of assets
@@ -84,19 +81,19 @@ use std::marker::PhantomData;
 /// #[derive(AssetCollection)]
 /// struct MyAssets {
 ///     #[asset(path = "player.png")]
-///     player: Handle<Texture>,
+///     player: Handle<Image>,
 ///     #[asset(path = "tree.png")]
-///     tree: Handle<Texture>
+///     tree: Handle<Image>
 /// }
 /// ```
-pub trait AssetCollection: Component {
+pub trait AssetCollection: Send + Sync + 'static {
     /// Create a new AssetCollection from the [bevy_asset::AssetServer]
     fn create(world: &mut World) -> Self;
     /// Start loading all the assets in the collection
     fn load(world: &mut World) -> Vec<HandleUntyped>;
 }
 
-struct LoadingAssetHandles<A: Component> {
+struct LoadingAssetHandles<A: AssetCollection> {
     handles: Vec<HandleUntyped>,
     marker: PhantomData<A>,
 }
@@ -132,9 +129,9 @@ struct LoadingConfiguration<T> {
 ///     mouse_input: Res<Input<MouseButton>>,
 /// ) {
 ///     if mouse_input.just_pressed(MouseButton::Left) {
-///         asset_keys.set_asset_key("character", "textures/female_adventurer.png")
+///         asset_keys.set_asset_key("character", "images/female_adventurer.png")
 ///     } else if mouse_input.just_pressed(MouseButton::Right) {
-///         asset_keys.set_asset_key("character", "textures/zombie.png")
+///         asset_keys.set_asset_key("character", "images/zombie.png")
 ///     } else {
 ///         return;
 ///     }
@@ -145,9 +142,9 @@ struct LoadingConfiguration<T> {
 /// }
 ///
 /// #[derive(AssetCollection)]
-/// struct TextureAssets {
+/// struct ImageAssets {
 ///     #[asset(key = "character")]
-///     player: Handle<Texture>,
+///     player: Handle<Image>,
 /// }
 /// # #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 /// # enum GameState {
@@ -167,7 +164,7 @@ impl AssetKeys {
     pub fn get_path_for_key(&self, key: &str) -> &str {
         self.keys
             .get(key)
-            .expect(&format!("Failed to get a path for key '{}'", key))
+            .unwrap_or_else(|| panic!("Failed to get a path for key '{}'", key))
     }
 
     /// Set the corresponding asset path for the given key.
@@ -182,9 +179,9 @@ impl AssetKeys {
     ///     mouse_input: Res<Input<MouseButton>>,
     /// ) {
     ///     if mouse_input.just_pressed(MouseButton::Left) {
-    ///         asset_keys.set_asset_key("character", "textures/female_adventurer.png")
+    ///         asset_keys.set_asset_key("character", "images/female_adventurer.png")
     ///     } else if mouse_input.just_pressed(MouseButton::Right) {
-    ///         asset_keys.set_asset_key("character", "textures/zombie.png")
+    ///         asset_keys.set_asset_key("character", "images/zombie.png")
     ///     } else {
     ///         return;
     ///     }
@@ -195,9 +192,9 @@ impl AssetKeys {
     /// }
     ///
     /// #[derive(AssetCollection)]
-    /// struct TextureAssets {
+    /// struct ImageAssets {
     ///     #[asset(key = "character")]
-    ///     player: Handle<Texture>,
+    ///     player: Handle<Image>,
     /// }
     /// # #[derive(Clone, Eq, PartialEq, Debug, Hash)]
     /// # enum GameState {
@@ -210,9 +207,7 @@ impl AssetKeys {
     }
 }
 
-fn start_loading<T: Component + Debug + Clone + Eq + Hash, Assets: AssetCollection>(
-    world: &mut World,
-) {
+fn start_loading<T: StateData, Assets: AssetCollection>(world: &mut World) {
     {
         let cell = world.cell();
         let mut asset_loader_configuration = cell
@@ -237,9 +232,7 @@ fn start_loading<T: Component + Debug + Clone + Eq + Hash, Assets: AssetCollecti
     world.insert_resource(handles);
 }
 
-fn check_loading_state<T: Component + Debug + Clone + Eq + Hash, Assets: AssetCollection>(
-    world: &mut World,
-) {
+fn check_loading_state<T: StateData, Assets: AssetCollection>(world: &mut World) {
     {
         let cell = world.cell();
 
@@ -281,7 +274,7 @@ fn check_loading_state<T: Component + Debug + Clone + Eq + Hash, Assets: AssetCo
     world.remove_resource::<LoadingAssetHandles<Assets>>();
 }
 
-fn init_resource<Asset: FromWorld + Component>(world: &mut World) {
+fn init_resource<Asset: FromWorld + Send + Sync + 'static>(world: &mut World) {
     let asset = Asset::from_world(world);
     world.insert_resource(asset);
 }
@@ -293,11 +286,11 @@ fn init_resource<Asset: FromWorld + Component>(world: &mut World) {
 /// # use bevy::prelude::*;
 /// # use bevy::asset::AssetPlugin;
 /// fn main() {
-///     let mut app = App::build();
+///     let mut app = App::new();
 ///     AssetLoader::new(GameState::Loading)
 ///         .continue_to_state(GameState::Menu)
 ///         .with_collection::<AudioAssets>()
-///         .with_collection::<TextureAssets>()
+///         .with_collection::<ImageAssets>()
 ///         .build(&mut app);
 ///
 ///     app.add_state(GameState::Loading)
@@ -327,11 +320,11 @@ fn init_resource<Asset: FromWorld + Component>(world: &mut World) {
 /// }
 ///
 /// #[derive(AssetCollection)]
-/// pub struct TextureAssets {
-///     #[asset(path = "textures/player.png")]
-///     pub player: Handle<Texture>,
-///     #[asset(path = "textures/tree.png")]
-///     pub tree: Handle<Texture>,
+/// pub struct ImageAssets {
+///     #[asset(path = "images/player.png")]
+///     pub player: Handle<Image>,
+///     #[asset(path = "images/tree.png")]
+///     pub tree: Handle<Image>,
 /// }
 /// ```
 pub struct AssetLoader<T> {
@@ -346,7 +339,7 @@ pub struct AssetLoader<T> {
 
 impl<State> AssetLoader<State>
 where
-    State: Component + Debug + Clone + Eq + Hash,
+    State: StateData,
 {
     /// Create a new [AssetLoader]
     ///
@@ -357,11 +350,11 @@ where
     /// # use bevy::prelude::*;
     /// # use bevy::asset::AssetPlugin;
     /// # fn main() {
-    ///     let mut app = App::build();
+    ///     let mut app = App::new();
     ///     AssetLoader::new(GameState::Loading)
     ///         .continue_to_state(GameState::Menu)
     ///         .with_collection::<AudioAssets>()
-    ///         .with_collection::<TextureAssets>()
+    ///         .with_collection::<ImageAssets>()
     ///         .build(&mut app);
     /// #   app
     /// #       .add_state(GameState::Loading)
@@ -381,11 +374,11 @@ where
     /// #     pub background: Handle<AudioSource>,
     /// # }
     /// # #[derive(AssetCollection)]
-    /// # pub struct TextureAssets {
-    /// #     #[asset(path = "textures/player.png")]
-    /// #     pub player: Handle<Texture>,
-    /// #     #[asset(path = "textures/tree.png")]
-    /// #     pub tree: Handle<Texture>,
+    /// # pub struct ImageAssets {
+    /// #     #[asset(path = "images/player.png")]
+    /// #     pub player: Handle<Image>,
+    /// #     #[asset(path = "images/tree.png")]
+    /// #     pub tree: Handle<Image>,
     /// # }
     /// ```
     pub fn new(load: State) -> AssetLoader<State> {
@@ -407,11 +400,11 @@ where
     /// # use bevy::prelude::*;
     /// # use bevy::asset::AssetPlugin;
     /// # fn main() {
-    ///     let mut app = App::build();
+    ///     let mut app = App::new();
     ///     AssetLoader::new(GameState::Loading)
     ///         .continue_to_state(GameState::Menu)
     ///         .with_collection::<AudioAssets>()
-    ///         .with_collection::<TextureAssets>()
+    ///         .with_collection::<ImageAssets>()
     ///         .build(&mut app);
     /// #   app
     /// #       .add_state(GameState::Loading)
@@ -431,11 +424,11 @@ where
     /// #     pub background: Handle<AudioSource>,
     /// # }
     /// # #[derive(AssetCollection)]
-    /// # pub struct TextureAssets {
-    /// #     #[asset(path = "textures/player.png")]
-    /// #     pub player: Handle<Texture>,
-    /// #     #[asset(path = "textures/tree.png")]
-    /// #     pub tree: Handle<Texture>,
+    /// # pub struct ImageAssets {
+    /// #     #[asset(path = "images/player.png")]
+    /// #     pub player: Handle<Image>,
+    /// #     #[asset(path = "images/tree.png")]
+    /// #     pub tree: Handle<Image>,
     /// # }
     /// ```
     pub fn continue_to_state(mut self, next: State) -> Self {
@@ -452,11 +445,11 @@ where
     /// # use bevy::prelude::*;
     /// # use bevy::asset::AssetPlugin;
     /// # fn main() {
-    ///     let mut app = App::build();
+    ///     let mut app = App::new();
     ///     AssetLoader::new(GameState::Loading)
     ///         .continue_to_state(GameState::Menu)
     ///         .with_collection::<AudioAssets>()
-    ///         .with_collection::<TextureAssets>()
+    ///         .with_collection::<ImageAssets>()
     ///         .build(&mut app);
     /// #   app
     /// #       .add_state(GameState::Loading)
@@ -476,11 +469,11 @@ where
     /// #     pub background: Handle<AudioSource>,
     /// # }
     /// # #[derive(AssetCollection)]
-    /// # pub struct TextureAssets {
-    /// #     #[asset(path = "textures/player.png")]
-    /// #     pub player: Handle<Texture>,
-    /// #     #[asset(path = "textures/tree.png")]
-    /// #     pub tree: Handle<Texture>,
+    /// # pub struct ImageAssets {
+    /// #     #[asset(path = "images/player.png")]
+    /// #     pub player: Handle<Image>,
+    /// #     #[asset(path = "images/tree.png")]
+    /// #     pub tree: Handle<Image>,
     /// # }
     /// ```
     pub fn with_collection<A: AssetCollection>(mut self) -> Self {
@@ -510,7 +503,7 @@ where
     /// # use bevy::prelude::*;
     /// # use bevy::asset::AssetPlugin;
     /// # fn main() {
-    ///     let mut app = App::build();
+    ///     let mut app = App::new();
     ///     AssetLoader::new(GameState::Loading)
     ///         .continue_to_state(GameState::Menu)
     ///         .with_collection::<TextureForAtlas>()
@@ -543,11 +536,11 @@ where
     /// # }
     /// # #[derive(AssetCollection)]
     /// # pub struct TextureForAtlas {
-    /// #     #[asset(path = "textures/female_adventurer.ogg")]
-    /// #     pub array: Handle<Texture>,
+    /// #     #[asset(path = "images/female_adventurer.ogg")]
+    /// #     pub array: Handle<Image>,
     /// # }
     /// ```
-    pub fn init_resource<A: FromWorld + Component>(mut self) -> Self {
+    pub fn init_resource<A: FromWorld + Send + Sync + 'static>(mut self) -> Self {
         self.post_process = self
             .post_process
             .with_system(init_resource::<A>.exclusive_system());
@@ -563,11 +556,11 @@ where
     /// # use bevy::prelude::*;
     /// # use bevy::asset::AssetPlugin;
     /// # fn main() {
-    ///     let mut app = App::build();
+    ///     let mut app = App::new();
     ///     AssetLoader::new(GameState::Loading)
     ///         .continue_to_state(GameState::Menu)
     ///         .with_collection::<AudioAssets>()
-    ///         .with_collection::<TextureAssets>()
+    ///         .with_collection::<ImageAssets>()
     ///         .build(&mut app);
     /// #   app
     /// #       .add_state(GameState::Loading)
@@ -587,16 +580,16 @@ where
     /// #     pub background: Handle<AudioSource>,
     /// # }
     /// # #[derive(AssetCollection)]
-    /// # pub struct TextureAssets {
-    /// #     #[asset(path = "textures/player.png")]
-    /// #     pub player: Handle<Texture>,
-    /// #     #[asset(path = "textures/tree.png")]
-    /// #     pub tree: Handle<Texture>,
+    /// # pub struct ImageAssets {
+    /// #     #[asset(path = "images/player.png")]
+    /// #     pub player: Handle<Image>,
+    /// #     #[asset(path = "images/tree.png")]
+    /// #     pub tree: Handle<Image>,
     /// # }
     /// ```
-    pub fn build(self, app: &mut AppBuilder) {
+    pub fn build(self, app: &mut App) {
         let asset_loader_configuration = app
-            .world_mut()
+            .world
             .get_resource_mut::<AssetLoaderConfiguration<State>>();
         let config = LoadingConfiguration {
             next: self.next_state.clone(),
@@ -611,7 +604,7 @@ where
             asset_loader_configuration
                 .configuration
                 .insert(self.loading_state.clone(), config);
-            app.world_mut().insert_resource(asset_loader_configuration);
+            app.world.insert_resource(asset_loader_configuration);
         }
         app.init_resource::<AssetKeys>();
         app.add_system_set(self.load)

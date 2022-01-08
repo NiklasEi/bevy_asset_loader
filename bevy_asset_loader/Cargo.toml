@@ -1,6 +1,6 @@
 [package]
 name = "bevy_asset_loader"
-version = "0.7.0"
+version = "0.8.0"
 authors = ["Niklas Eicker <git@nikl.me>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
@@ -13,15 +13,15 @@ categories = ["game-development"]
 readme = "../README.md"
 
 [features]
-# This feature requires bevy's TextureAtlas and ColorMaterial assets to be available ("bevy/render")
+# This feature requires bevy's TextureAtlas and StandardMaterial assets to be available ("bevy/render")
 render = ["bevy_asset_loader_derive/render"]
 
 [dependencies]
-bevy = { version = "0.5.0", default-features = false }
-bevy_asset_loader_derive = { version = "=0.7.0", path = "../bevy_asset_loader_derive" }
+bevy = { version = "0.6", default-features = false }
+bevy_asset_loader_derive = { version = "=0.8.0", path = "../bevy_asset_loader_derive" }
 
 [dev-dependencies]
-bevy = { version = "0.5.0", features = ["vorbis"] }
+bevy = { version = "0.6", features = ["vorbis"] }
 trybuild = "1.0"
 
 [[example]]
@@ -43,5 +43,5 @@ path = "examples/dynamic_asset.rs"
 
 [[example]]
 name = "color_material"
-path = "examples/color_material.rs"
+path = "examples/standard_material.rs"
 required-features = ["render"]
