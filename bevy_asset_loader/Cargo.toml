@@ -17,11 +17,11 @@ readme = "../README.md"
 render = ["bevy_asset_loader_derive/render"]
 
 [dependencies]
-bevy = { path = "../../bevy", default-features = false }
+bevy = { version = "0.6", default-features = false }
 bevy_asset_loader_derive = { version = "=0.8.0", path = "../bevy_asset_loader_derive" }
 
 [dev-dependencies]
-bevy = { path = "../../bevy", features = ["vorbis"] }
+bevy = { version = "0.6", features = ["vorbis"] }
 trybuild = "1.0"
 
 [[example]]
