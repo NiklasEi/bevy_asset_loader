@@ -1,6 +1,6 @@
 [package]
 name = "bevy_asset_loader"
-version = "0.7.0"
+version = "0.8.0"
 authors = ["Niklas Eicker <git@nikl.me>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
@@ -17,11 +17,11 @@ readme = "../README.md"
 render = ["bevy_asset_loader_derive/render"]
 
 [dependencies]
-bevy = { git = "https://github.com/bevyengine/bevy", rev = "507441d96f83355cdab578d85f804f4bf8d835c9", default-features = false }
-bevy_asset_loader_derive = { version = "=0.7.0", path = "../bevy_asset_loader_derive" }
+bevy = { version = "0.6", default-features = false }
+bevy_asset_loader_derive = { version = "=0.8.0", path = "../bevy_asset_loader_derive" }
 
 [dev-dependencies]
-bevy = {git = "https://github.com/bevyengine/bevy", rev = "507441d96f83355cdab578d85f804f4bf8d835c9", features = ["vorbis"] }
+bevy = { version = "0.6", features = ["vorbis"] }
 trybuild = "1.0"
 
 [[example]]

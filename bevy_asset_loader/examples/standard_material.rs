@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_asset_loader::{AssetCollection, AssetLoader};
 
-/// This example demonstrates how to load a color material from a .png file
+/// This example demonstrates how to load a standard material from a .png file
 ///
 /// Requires the feature 'render'
 fn main() {

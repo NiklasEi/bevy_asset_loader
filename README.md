@@ -130,6 +130,18 @@ In situations where you would like to prepare other resources based on your load
 
 `AssetLoader::init_resource` does the same as Bevy's `App::init_resource`, but at a different point in time. While Bevy inserts your resources at the very beginning, the AssetLoader will do so after having inserted your loaded asset collections. That means that you can use your asset collections in the `FromWorld` implementations.
 
+## Compatible Bevy versions
+
+The main branch is compatible with the latest Bevy release, while the branch `bevy_main` tracks the `main` branch of Bevy.
+
+Compatibility of `bevy_asset_loader` versions:
+| `bevy_asset_loader` | `bevy` |
+| :--               | :--    |
+| `0.8`             | `0.6`  |
+| `0.1` - `0.7`     | `0.5`  |
+| `main`            | `0.6`  |
+| `bevy_main`       | `main` |
+
 ## License
 
 Licensed under either of
