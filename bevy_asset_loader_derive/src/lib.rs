@@ -19,7 +19,7 @@ use proc_macro2::Ident;
 use quote::{quote, ToTokens, TokenStreamExt};
 use syn::{Data, Field, Fields, Lit, Meta, NestedMeta};
 
-/// Derive macro for AssetCollection
+/// Derive macro for [bevy_asset_loader::AssetCollection]
 ///
 /// The helper attribute ``asset`` can be used to define the path to the asset file
 /// and other asset options.

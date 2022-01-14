@@ -97,7 +97,7 @@ struct MyAssets {
 ### Loading standard materials
 
 You can directly load standard materials if you enable the feature `render`. For a complete example please take a look at [standard_material.rs](/bevy_asset_loader/examples/standard_material.rs).
-```rust no_run
+```rust
 use bevy::prelude::*;
 use bevy_asset_loader::AssetCollection;
 
@@ -112,7 +112,7 @@ struct MyAssets {
 ### Loading texture atlases
 
 You can directly load texture atlases from sprite sheets if you enable the feature `render`. For a complete example please take a look at [atlas_from_grid.rs](/bevy_asset_loader/examples/atlas_from_grid.rs).
-```rust no_run
+```rust
 use bevy::prelude::*;
 use bevy_asset_loader::AssetCollection;
 
@@ -129,6 +129,31 @@ struct MyAssets {
 In situations where you would like to prepare other resources based on your loaded assets you can use `AssetLoader::init_resource` to initialize `FromWorld` resources. See [init_resource.rs](/bevy_asset_loader/examples/init_resource.rs) for an example that loads two images and then combines their pixel data into a third image.
 
 `AssetLoader::init_resource` does the same as Bevy's `App::init_resource`, but at a different point in time. While Bevy inserts your resources at the very beginning, the AssetLoader will do so after having inserted your loaded asset collections. That means that you can use your asset collections in the `FromWorld` implementations.
+
+## Usage without a loading state
+
+Although the pattern of a loading state is quite nice, you might have reasons not to use it. In this case `bevy_asset_loader` can still be helpful. Deriving `AssetCollection` on a resource can significantly reduce the boilerplate for managing assets.
+
+You can directly initialise asset collections on the bevy App or World. See [no_loading_state.rs](/bevy_asset_loader/examples/no_loading_state.rs) for a complete example.
+
+```rust no_run
+use bevy::prelude::*;
+use bevy_asset_loader::{AssetCollection, AssetCollectionApp};
+
+fn main() {
+    App::new()
+        .add_plugins(DefaultPlugins)
+        .init_collection::<MyAssets>()
+        .run();
+}
+
+#[derive(AssetCollection)]
+struct MyAssets {
+    #[asset(texture_atlas(tile_size_x = 100., tile_size_y = 96., columns = 8, rows = 1, padding_x = 12., padding_y = 12.))]
+    #[asset(path = "images/sprite_sheet.png")]
+    sprite: Handle<TextureAtlas>,
+}
+```
 
 ## Compatible Bevy versions
 

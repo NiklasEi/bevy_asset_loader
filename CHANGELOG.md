@@ -1,5 +1,8 @@
 # Changelog
 
+- Support initialising asset collections directly on the bevy App or World
+  - New example `no_loading_state`
+
 ## v0.7.0
 - update to Bevy version 0.6
 

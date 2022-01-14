@@ -93,6 +93,62 @@ pub trait AssetCollection: Send + Sync + 'static {
     fn load(world: &mut World) -> Vec<HandleUntyped>;
 }
 
+/// Extension trait for [`bevy::app::App`] enabling initialisation of [asset collections](AssetCollection)
+pub trait AssetCollectionApp {
+    /// Initialise an [`AssetCollection`]
+    ///
+    /// This function does not give any guaranties about the loading status of the asset handles.
+    /// If you want to use a loading state, you do not need this function! Instead use an [`AssetLoader`]
+    /// and add collections to it to be prepared during the loading state.
+    fn init_collection<A: AssetCollection>(&mut self) -> &mut Self;
+}
+
+impl AssetCollectionApp for App {
+    fn init_collection<Collection>(&mut self) -> &mut Self
+    where
+        Collection: AssetCollection,
+    {
+        if !self.world.contains_resource::<Collection>() {
+            // This resource is required for loading a collection
+            // Since bevy_asset_loader does not have a "real" Plugin,
+            // we need to make sure the resource exists here
+            self.init_resource::<AssetKeys>();
+            // make sure the assets start to load
+            let _ = Collection::load(&mut self.world);
+            let resource = Collection::create(&mut self.world);
+            self.insert_resource(resource);
+        }
+        self
+    }
+}
+
+/// Extension trait for [`bevy::ecs::world::World`] enabling initialisation of [asset collections](AssetCollection)
+pub trait AssetCollectionWorld {
+    /// Initialise an [`AssetCollection`]
+    ///
+    /// This function does not give any guaranties about the loading status of the asset handles.
+    /// If you want to use a loading state, you do not need this function! Instead use an [`AssetLoader`]
+    /// and add collections to it to be prepared during the loading state.
+    fn init_collection<A: AssetCollection>(&mut self);
+}
+
+impl AssetCollectionWorld for World {
+    fn init_collection<A: AssetCollection>(&mut self) {
+        if self.get_resource::<A>().is_none() {
+            if self.get_resource::<AssetKeys>().is_none() {
+                // This resource is required for loading a collection
+                // Since bevy_asset_loader does not have a "real" Plugin,
+                // we need to make sure the resource exists here
+                self.insert_resource(AssetKeys::default());
+            }
+            // make sure the assets start to load
+            let _ = A::load(self);
+            let collection = A::create(self);
+            self.insert_resource(collection);
+        }
+    }
+}
+
 struct LoadingAssetHandles<A: AssetCollection> {
     handles: Vec<HandleUntyped>,
     marker: PhantomData<A>,

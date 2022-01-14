@@ -9,9 +9,10 @@ Example | Description
 [`dynamic_asset.rs`](dynamic_asset.rs) | Load an image asset from a path resolved at run time
 [`init_resource.rs`](init_resource.rs) | Inserting a `FromWorld` resource when all asset collections are loaded
 [`two_collections.rs`](two_collections.rs) | Load multiple asset collections
+[`no_loading_state.rs`](no_loading_state.rs) | How to use asset collections without a loading state
 
 ## Credits
-The example includes third party assets:
+The examples include third party assets:
 
 Background audio: [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) by [Jay_You](https://freesound.org/people/Jay_You/sounds/460432/)
 
