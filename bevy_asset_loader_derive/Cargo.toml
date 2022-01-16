@@ -13,15 +13,12 @@ categories = ["game-development"]
 readme = "../README.md"
 
 [features]
-serde = []
 render = []
 
 [lib]
 proc-macro = true
 
 [dependencies]
-bevy_asset_loader_dynamic = { version = "=0.9.0-github.main", path = "../bevy_asset_loader_dynamic" }
-
 proc-macro2 = "1.0"
 syn = "1.0"
 quote = "1.0"

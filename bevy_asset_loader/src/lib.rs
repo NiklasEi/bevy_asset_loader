@@ -61,8 +61,10 @@
 #![forbid(unsafe_code)]
 #![warn(unused_imports, missing_docs)]
 
+mod dynamic_asset;
+
+pub use crate::dynamic_asset::DynamicAsset;
 pub use bevy_asset_loader_derive::AssetCollection;
-pub use bevy_asset_loader_dynamic::DynamicAsset;
 
 use bevy::app::App;
 use bevy::asset::{AssetServer, HandleUntyped, LoadState};
@@ -179,16 +181,26 @@ struct LoadingConfiguration<T> {
 ///
 /// ```edition2021
 /// # use bevy::prelude::*;
-/// # use bevy_asset_loader::{AssetKeys, AssetCollection};
+/// # use bevy_asset_loader::{AssetKeys, AssetCollection, DynamicAsset};
 /// fn choose_character(
 ///     mut state: ResMut<State<GameState>>,
 ///     mut asset_keys: ResMut<AssetKeys>,
 ///     mouse_input: Res<Input<MouseButton>>,
 /// ) {
 ///     if mouse_input.just_pressed(MouseButton::Left) {
-///         asset_keys.set_asset_key("character", "images/female_adventurer.png")
+///         asset_keys.register_asset(
+///             "character",
+///             DynamicAsset::File {
+///                 path: "images/female_adventurer.png".to_owned(),
+///             },
+///         );
 ///     } else if mouse_input.just_pressed(MouseButton::Right) {
-///         asset_keys.set_asset_key("character", "images/zombie.png")
+///         asset_keys.register_asset(
+///             "character",
+///             DynamicAsset::File {
+///                 path: "images/zombie.png".to_owned(),
+///             },
+///         );
 ///     } else {
 ///         return;
 ///     }

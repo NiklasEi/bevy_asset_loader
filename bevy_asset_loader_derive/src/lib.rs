@@ -129,6 +129,42 @@ fn impl_asset_collection(
         )]);
     }
 
+    #[allow(unused_mut, unused_assignments)]
+    let mut conditional_asset_collections = quote! {};
+    #[allow(unused_mut, unused_assignments)]
+    let mut conditional_dynamic_asset_collections = quote! {};
+
+    #[cfg(feature = "render")]
+    {
+        // color materials and texture atlas resources
+        conditional_asset_collections = quote! {
+                let mut materials = cell
+                    .get_resource_mut::<Assets<StandardMaterial>>()
+                    .expect("Cannot get resource Assets<StandardMaterial>");
+                let mut atlases = cell
+                    .get_resource_mut::<Assets<TextureAtlas>>()
+                    .expect("Cannot get resource Assets<TextureAtlas>");
+        };
+
+        conditional_dynamic_asset_collections = quote! {
+        bevy_asset_loader::DynamicAsset::TextureAtlas {
+                path,
+                tile_size_x,
+                tile_size_y,
+                columns,
+                rows,
+                padding_x,
+                padding_y,
+            } => atlases.add(TextureAtlas::from_grid_with_padding(
+                asset_server.get_handle(path),
+                Vec2::new(*tile_size_x, *tile_size_y),
+                *columns,
+                *rows,
+                Vec2::new(*padding_x, *padding_y),
+            )).clone_untyped(),
+        bevy_asset_loader::DynamicAsset::StandardMaterial { path } => materials.add(asset_server.get_handle::<bevy::prelude::Image, &String>(path).into()).clone_untyped(),};
+    }
+
     let mut asset_creation = assets.iter().fold(quote!(), |token_stream, asset| match asset {
         AssetField::Basic(basic) => {
             let field_ident = basic.field_ident.clone();
@@ -146,24 +182,8 @@ fn impl_asset_collection(
             quote!(#token_stream #field_ident : {
                 let asset = asset_keys.get_asset(#asset_key.into());
                 let handle = match asset {
-                    DynamicAsset::TextureAtlas {
-                        path,
-                        tile_size_x,
-                        tile_size_y,
-                        columns,
-                        rows,
-                        padding_x,
-                        padding_y,
-                    } => atlases.add(TextureAtlas::from_grid_with_padding(
-                    asset_server.get_handle(path),
-                    Vec2::new(*tile_size_x, *tile_size_y),
-                    *columns,
-                    *rows,
-                    Vec2::new(*padding_x, *padding_y),
-                )).clone_untyped(),
-                    DynamicAsset::StandardMaterial { path } => materials.add(asset_server.get_handle::<bevy::prelude::Image, &String>(path).into()).clone_untyped(),
-                    DynamicAsset::File { path } => asset_server.get_handle_untyped(path),
-                    _ => panic!("Folder assets cannot be dynamic")
+                    bevy_asset_loader::DynamicAsset::File { path } => asset_server.get_handle_untyped(path),
+                    #conditional_dynamic_asset_collections
                 };
                 handle.typed()
             },
@@ -211,13 +231,7 @@ fn impl_asset_collection(
         }
         AssetField::Dynamic(dynamic) => {
             let asset_key = dynamic.key.clone();
-            quote!(#es let asset = asset_keys.get_asset(#asset_key.into());
-                if let bevy_asset_loader::DynamicAsset::Folder{path} = asset {
-                    asset_server.load_folder(path).unwrap().drain(..).for_each(|handle| handles.push(handle));
-                } else {
-                    handles.push(asset_server.load_untyped(asset.get_file_path()));
-                }
-            )
+            quote!(#es handles.push(asset_server.load_untyped(asset_keys.get_asset(#asset_key.into()).get_file_path()));)
         }
         AssetField::StandardMaterial(asset) => {
             let asset_path = asset.asset_path.clone();
@@ -228,28 +242,6 @@ fn impl_asset_collection(
             quote!(#es handles.push(asset_server.load_untyped(#asset_path));)
         }
     });
-
-    #[allow(unused_mut)]
-    let mut conditional_asset_collections = quote! {};
-
-    #[cfg(feature = "render")]
-    {
-        // color materials
-        conditional_asset_collections = quote! {
-        #conditional_asset_collections
-                let mut materials = cell
-                    .get_resource_mut::<Assets<StandardMaterial>>()
-                    .expect("Cannot get resource Assets<StandardMaterial>");
-        };
-
-        // texture atlas
-        conditional_asset_collections = quote! {
-        #conditional_asset_collections
-                let mut atlases = cell
-                    .get_resource_mut::<Assets<TextureAtlas>>()
-                    .expect("Cannot get resource Assets<TextureAtlas>");
-        };
-    }
 
     let create_function = quote! {
             fn create(world: &mut World) -> Self {
