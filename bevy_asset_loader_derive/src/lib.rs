@@ -55,7 +55,7 @@ fn impl_asset_collection(
     let name = &ast.ident;
 
     let mut default_fields: Vec<Ident> = vec![];
-    let mut assets: Vec<Asset> = vec![];
+    let mut assets: Vec<AssetField> = vec![];
     if let Data::Struct(ref data_struct) = ast.data {
         if let Fields::Named(ref named_fields) = data_struct.fields {
             let mut compile_errors = vec![];
@@ -129,28 +129,52 @@ fn impl_asset_collection(
         )]);
     }
 
-    let mut asset_creation = assets.iter().fold(quote!(), |es, asset| match asset {
-        Asset::Basic(basic) => {
+    let mut asset_creation = assets.iter().fold(quote!(), |token_stream, asset| match asset {
+        AssetField::Basic(basic) => {
             let field_ident = basic.field_ident.clone();
             let asset_path = basic.asset_path.clone();
-            quote!(#es #field_ident : asset_server.get_handle(#asset_path),)
+            quote!(#token_stream #field_ident : asset_server.get_handle(#asset_path),)
         }
-        Asset::Folder(basic) => {
+        AssetField::Folder(basic) => {
             let field_ident = basic.field_ident.clone();
             let asset_path = basic.asset_path.clone();
-            quote!(#es #field_ident : asset_server.load_folder(#asset_path).unwrap(),)
+            quote!(#token_stream #field_ident : asset_server.load_folder(#asset_path).unwrap(),)
         }
-        Asset::Dynamic(dynamic) => {
+        AssetField::Dynamic(dynamic) => {
             let field_ident = dynamic.field_ident.clone();
             let asset_key = dynamic.key.clone();
-            quote!(#es #field_ident : asset_server.get_handle(asset_keys.get_path_for_key(#asset_key.into())),)
+            quote!(#token_stream #field_ident : {
+                let asset = asset_keys.get_asset(#asset_key.into());
+                let handle = match asset {
+                    DynamicAsset::TextureAtlas {
+                        path,
+                        tile_size_x,
+                        tile_size_y,
+                        columns,
+                        rows,
+                        padding_x,
+                        padding_y,
+                    } => atlases.add(TextureAtlas::from_grid_with_padding(
+                    asset_server.get_handle(path),
+                    Vec2::new(*tile_size_x, *tile_size_y),
+                    *columns,
+                    *rows,
+                    Vec2::new(*padding_x, *padding_y),
+                )).clone_untyped(),
+                    DynamicAsset::StandardMaterial { path } => materials.add(asset_server.get_handle::<bevy::prelude::Image, &String>(path).into()).clone_untyped(),
+                    DynamicAsset::File { path } => asset_server.get_handle_untyped(path),
+                    _ => panic!("Folder assets cannot be dynamic")
+                };
+                handle.typed()
+            },
+            )
         }
-        Asset::StandardMaterial(basic) => {
+        AssetField::StandardMaterial(basic) => {
             let field_ident = basic.field_ident.clone();
             let asset_path = basic.asset_path.clone();
-            quote!(#es #field_ident : materials.add(asset_server.get_handle(#asset_path).into()),)
+            quote!(#token_stream #field_ident : materials.add(asset_server.get_handle(#asset_path).into()),)
         }
-        Asset::TextureAtlas(texture_atlas) => {
+        AssetField::TextureAtlas(texture_atlas) => {
             let field_ident = texture_atlas.field_ident.clone();
             let asset_path = texture_atlas.asset_path.clone();
             let tile_size_x = texture_atlas.tile_size_x;
@@ -160,7 +184,7 @@ fn impl_asset_collection(
             let padding_x = texture_atlas.padding_x;
             let padding_y = texture_atlas.padding_y;
             quote!(
-                #es #field_ident : {
+                #token_stream #field_ident : {
                 atlases.add(TextureAtlas::from_grid_with_padding(
                     asset_server.get_handle(#asset_path),
                     Vec2::new(#tile_size_x, #tile_size_y),
@@ -177,23 +201,29 @@ fn impl_asset_collection(
     ));
 
     let asset_loading = assets.iter().fold(quote!(), |es, asset| match asset {
-        Asset::Basic(asset) => {
+        AssetField::Basic(asset) => {
             let asset_path = asset.asset_path.clone();
             quote!(#es handles.push(asset_server.load_untyped(#asset_path));)
         }
-        Asset::Folder(asset) => {
+        AssetField::Folder(asset) => {
             let asset_path = asset.asset_path.clone();
             quote!(#es asset_server.load_folder(#asset_path).unwrap().drain(..).for_each(|handle| handles.push(handle));)
         }
-        Asset::Dynamic(dynamic) => {
+        AssetField::Dynamic(dynamic) => {
             let asset_key = dynamic.key.clone();
-            quote!(#es handles.push(asset_server.load_untyped(asset_keys.get_path_for_key(#asset_key.into())));)
+            quote!(#es let asset = asset_keys.get_asset(#asset_key.into());
+                if let bevy_asset_loader::DynamicAsset::Folder{path} = asset {
+                    asset_server.load_folder(path).unwrap().drain(..).for_each(|handle| handles.push(handle));
+                } else {
+                    handles.push(asset_server.load_untyped(asset.get_file_path()));
+                }
+            )
         }
-        Asset::StandardMaterial(asset) => {
+        AssetField::StandardMaterial(asset) => {
             let asset_path = asset.asset_path.clone();
             quote!(#es handles.push(asset_server.load_untyped(#asset_path));)
         }
-        Asset::TextureAtlas(asset) => {
+        AssetField::TextureAtlas(asset) => {
             let asset_path = asset.asset_path.clone();
             quote!(#es handles.push(asset_server.load_untyped(#asset_path));)
         }
@@ -267,7 +297,7 @@ enum ParseFieldError {
     MissingAttributes(Vec<String>),
 }
 
-fn parse_field(field: &Field) -> Result<Asset, Vec<ParseFieldError>> {
+fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
     let mut builder = AssetBuilder::default();
     let mut errors = vec![];
     for attr in field.attrs.iter() {

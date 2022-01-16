@@ -1,8 +1,9 @@
-use crate::{ParseFieldError, TextureAtlasAttribute, TEXTURE_ATLAS_ATTRIBUTE};
 use proc_macro2::Ident;
 
+use crate::{ParseFieldError, TextureAtlasAttribute, TEXTURE_ATLAS_ATTRIBUTE};
+
 #[derive(PartialEq, Debug)]
-pub(crate) struct TextureAtlasAsset {
+pub(crate) struct TextureAtlasAssetField {
     pub field_ident: Ident,
     pub asset_path: String,
     pub tile_size_x: f32,
@@ -14,24 +15,24 @@ pub(crate) struct TextureAtlasAsset {
 }
 
 #[derive(PartialEq, Debug)]
-pub(crate) struct BasicAsset {
+pub(crate) struct BasicAssetField {
     pub field_ident: Ident,
     pub asset_path: String,
 }
 
 #[derive(PartialEq, Debug)]
-pub(crate) struct DynamicAsset {
+pub(crate) struct DynamicAssetField {
     pub field_ident: Ident,
     pub key: String,
 }
 
 #[derive(PartialEq, Debug)]
-pub(crate) enum Asset {
-    Basic(BasicAsset),
-    Dynamic(DynamicAsset),
-    StandardMaterial(BasicAsset),
-    Folder(BasicAsset),
-    TextureAtlas(TextureAtlasAsset),
+pub(crate) enum AssetField {
+    Basic(BasicAssetField),
+    Dynamic(DynamicAssetField),
+    StandardMaterial(BasicAssetField),
+    Folder(BasicAssetField),
+    TextureAtlas(TextureAtlasAssetField),
 }
 
 #[derive(Default)]
@@ -50,7 +51,7 @@ pub(crate) struct AssetBuilder {
 }
 
 impl AssetBuilder {
-    pub(crate) fn build(self) -> Result<Asset, Vec<ParseFieldError>> {
+    pub(crate) fn build(self) -> Result<AssetField, Vec<ParseFieldError>> {
         let mut missing_fields = vec![];
         if self.tile_size_x.is_none() {
             missing_fields.push(format!(
@@ -98,28 +99,28 @@ impl AssetBuilder {
         }
         if missing_fields.len() == 4 {
             if self.key.is_some() {
-                return Ok(Asset::Dynamic(DynamicAsset {
+                return Ok(AssetField::Dynamic(DynamicAssetField {
                     field_ident: self.field_ident.unwrap(),
                     key: self.key.unwrap(),
                 }));
             }
             if self.folder_path.is_some() {
-                return Ok(Asset::Folder(BasicAsset {
+                return Ok(AssetField::Folder(BasicAssetField {
                     field_ident: self.field_ident.unwrap(),
                     asset_path: self.folder_path.unwrap(),
                 }));
             }
-            let asset = BasicAsset {
+            let asset = BasicAssetField {
                 field_ident: self.field_ident.unwrap(),
                 asset_path: self.asset_path.unwrap(),
             };
             if self.is_standard_material {
-                return Ok(Asset::StandardMaterial(asset));
+                return Ok(AssetField::StandardMaterial(asset));
             }
-            return Ok(Asset::Basic(asset));
+            return Ok(AssetField::Basic(asset));
         }
         if missing_fields.is_empty() {
-            return Ok(Asset::TextureAtlas(TextureAtlasAsset {
+            return Ok(AssetField::TextureAtlas(TextureAtlasAssetField {
                 field_ident: self.field_ident.unwrap(),
                 asset_path: self.asset_path.unwrap(),
                 tile_size_x: self.tile_size_x.unwrap(),

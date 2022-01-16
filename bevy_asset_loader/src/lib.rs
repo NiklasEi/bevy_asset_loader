@@ -62,6 +62,7 @@
 #![warn(unused_imports, missing_docs)]
 
 pub use bevy_asset_loader_derive::AssetCollection;
+pub use bevy_asset_loader_dynamic::DynamicAsset;
 
 use bevy::app::App;
 use bevy::asset::{AssetServer, HandleUntyped, LoadState};
@@ -210,17 +211,27 @@ struct LoadingConfiguration<T> {
 /// ```
 #[derive(Default)]
 pub struct AssetKeys {
-    keys: HashMap<String, String>,
+    keys: HashMap<String, DynamicAsset>,
 }
 
 impl AssetKeys {
-    /// Get the asset path corresponding to the given key.
+    /// Get the asset corresponding to the given key.
     ///
     /// PANIC: if the key does not exist
-    pub fn get_path_for_key(&self, key: &str) -> &str {
+    pub fn get_asset(&self, key: &str) -> &DynamicAsset {
         self.keys
             .get(key)
             .unwrap_or_else(|| panic!("Failed to get a path for key '{}'", key))
+    }
+
+    /// Get the asset path corresponding to the given key.
+    ///
+    /// PANIC: if the key does not exist
+    pub fn get_path(&self, key: &str) -> &str {
+        self.keys
+            .get(key)
+            .unwrap_or_else(|| panic!("Failed to get a path for key '{}'", key))
+            .get_file_path()
     }
 
     /// Set the corresponding asset path for the given key.
@@ -228,16 +239,16 @@ impl AssetKeys {
     /// In case the key is already known, its value will be overwritten.
     /// ```edition2021
     /// # use bevy::prelude::*;
-    /// # use bevy_asset_loader::{AssetKeys, AssetCollection};
+    /// # use bevy_asset_loader::{AssetKeys, AssetCollection, DynamicAsset};
     /// fn choose_character(
     ///     mut state: ResMut<State<GameState>>,
     ///     mut asset_keys: ResMut<AssetKeys>,
     ///     mouse_input: Res<Input<MouseButton>>,
     /// ) {
     ///     if mouse_input.just_pressed(MouseButton::Left) {
-    ///         asset_keys.set_asset_key("character", "images/female_adventurer.png")
+    ///         asset_keys.register_asset("character", DynamicAsset::File{path: "images/female_adventurer.png".to_owned()})
     ///     } else if mouse_input.just_pressed(MouseButton::Right) {
-    ///         asset_keys.set_asset_key("character", "images/zombie.png")
+    ///         asset_keys.register_asset("character", DynamicAsset::File{path: "images/zombie.png".to_owned()})
     ///     } else {
     ///         return;
     ///     }
@@ -258,8 +269,8 @@ impl AssetKeys {
     /// #     Menu
     /// # }
     /// ```
-    pub fn set_asset_key<T: Into<String>>(&mut self, key: T, value: T) {
-        self.keys.insert(key.into(), value.into());
+    pub fn register_asset<K: Into<String>>(&mut self, key: K, asset: DynamicAsset) {
+        self.keys.insert(key.into(), asset);
     }
 }
 
@@ -386,7 +397,7 @@ fn init_resource<Asset: FromWorld + Send + Sync + 'static>(world: &mut World) {
 pub struct AssetLoader<T> {
     next_state: Option<T>,
     loading_state: T,
-    keys: HashMap<String, String>,
+    keys: HashMap<String, DynamicAsset>,
     load: SystemSet,
     check: SystemSet,
     post_process: SystemSet,
@@ -544,8 +555,8 @@ where
         self
     }
 
-    /// Insert a map of asset keys with corresponding asset paths
-    pub fn add_keys(mut self, mut keys: HashMap<String, String>) -> Self {
+    /// Insert a map of asset keys with corresponding assets
+    pub fn add_keys(mut self, mut keys: HashMap<String, DynamicAsset>) -> Self {
         keys.drain().for_each(|(key, value)| {
             self.keys.insert(key, value);
         });
@@ -662,7 +673,7 @@ where
                 .insert(self.loading_state.clone(), config);
             app.world.insert_resource(asset_loader_configuration);
         }
-        app.init_resource::<AssetKeys>();
+        app.insert_resource(AssetKeys { keys: self.keys });
         app.add_system_set(self.load)
             .add_system_set(self.check)
             .add_system_set(self.post_process);
