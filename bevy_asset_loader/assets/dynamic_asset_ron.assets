@@ -1,0 +1,11 @@
+{
+    "image.player": File (
+        path: "images/player.png",
+    ),
+    "image.tree": File (
+        path: "images/tree.png",
+    ),
+    "sounds.background": File (
+        path: "audio/background.ogg",
+    ),
+}
