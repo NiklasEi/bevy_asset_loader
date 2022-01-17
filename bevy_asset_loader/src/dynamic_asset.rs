@@ -1,5 +1,12 @@
+use bevy::asset::AssetServer;
+use bevy::ecs::prelude::World;
+use bevy::ecs::schedule::StateData;
+
+use crate::{AssetKeys, AssetLoaderConfiguration};
+
 /// These asset variants can be loaded from configuration files. They will then replace
 /// a dynamic asset based on their keys.
+#[cfg_attr(feature = "dynamic_assets", derive(serde::Deserialize))]
 pub enum DynamicAsset {
     /// A dynamic asset directly loaded from a single file
     File {
@@ -42,5 +49,23 @@ impl DynamicAsset {
             #[cfg(feature = "render")]
             DynamicAsset::TextureAtlas { path, .. } => path,
         }
+    }
+}
+
+#[cfg(feature = "dynamic_assets")]
+pub(crate) fn prepare_asset_keys<State: StateData>(world: &mut World) {
+    println!("prepare_asset_keys");
+    let cell = world.cell();
+    let mut asset_keys = cell.get_resource_mut::<AssetKeys>().unwrap();
+    let mut asset_loader_config = cell
+        .get_resource_mut::<AssetLoaderConfiguration<State>>()
+        .unwrap();
+    let asset_server = cell.get_resource::<AssetServer>().unwrap();
+
+    let files = asset_keys.take_asset_files();
+    for file in files {
+        asset_loader_config
+            .asset_keys
+            .push(asset_server.load(&file));
     }
 }
