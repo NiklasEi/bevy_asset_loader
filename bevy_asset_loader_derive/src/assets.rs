@@ -142,14 +142,16 @@ mod test {
 
     #[test]
     fn basic_asset() {
-        let mut builder = AssetBuilder::default();
-        builder.field_ident = Some(Ident::new("test", Span::call_site()));
-        builder.asset_path = Some("some/image.png".to_owned());
+        let builder = AssetBuilder {
+            field_ident: Some(Ident::new("test", Span::call_site())),
+            asset_path: Some("some/image.png".to_owned()),
+            ..Default::default()
+        };
 
         let asset = builder.build().expect("This should be a valid BasicAsset");
         assert_eq!(
             asset,
-            Asset::Basic(BasicAsset {
+            AssetField::Basic(BasicAssetField {
                 field_ident: Ident::new("test", Span::call_site()),
                 asset_path: "some/image.png".to_owned()
             })
@@ -158,15 +160,17 @@ mod test {
 
     #[test]
     fn standard_material() {
-        let mut builder = AssetBuilder::default();
-        builder.field_ident = Some(Ident::new("test", Span::call_site()));
-        builder.asset_path = Some("some/image.png".to_owned());
-        builder.is_standard_material = true;
+        let builder = AssetBuilder {
+            field_ident: Some(Ident::new("test", Span::call_site())),
+            asset_path: Some("some/image.png".to_owned()),
+            is_standard_material: true,
+            ..Default::default()
+        };
 
         let asset = builder.build().expect("This should be a valid BasicAsset");
         assert_eq!(
             asset,
-            Asset::StandardMaterial(BasicAsset {
+            AssetField::StandardMaterial(BasicAssetField {
                 field_ident: Ident::new("test", Span::call_site()),
                 asset_path: "some/image.png".to_owned()
             })
@@ -175,14 +179,16 @@ mod test {
 
     #[test]
     fn folder() {
-        let mut builder = AssetBuilder::default();
-        builder.field_ident = Some(Ident::new("test", Span::call_site()));
-        builder.folder_path = Some("some/folder".to_owned());
+        let builder = AssetBuilder {
+            field_ident: Some(Ident::new("test", Span::call_site())),
+            folder_path: Some("some/folder.png".to_owned()),
+            ..Default::default()
+        };
 
         let asset = builder.build().expect("This should be a valid BasicAsset");
         assert_eq!(
             asset,
-            Asset::Folder(BasicAsset {
+            AssetField::Folder(BasicAssetField {
                 field_ident: Ident::new("test", Span::call_site()),
                 asset_path: "some/folder".to_owned()
             })
@@ -191,16 +197,18 @@ mod test {
 
     #[test]
     fn dynamic_asset() {
-        let mut builder = AssetBuilder::default();
-        builder.field_ident = Some(Ident::new("test", Span::call_site()));
-        builder.key = Some("some.asset.key".to_owned());
+        let builder = AssetBuilder {
+            field_ident: Some(Ident::new("test", Span::call_site())),
+            key: Some("some.asset.key".to_owned()),
+            ..Default::default()
+        };
 
         let asset = builder
             .build()
             .expect("This should be a valid DynamicAsset");
         assert_eq!(
             asset,
-            Asset::Dynamic(DynamicAsset {
+            AssetField::Dynamic(DynamicAssetField {
                 field_ident: Ident::new("test", Span::call_site()),
                 key: "some.asset.key".to_owned()
             })
@@ -209,21 +217,23 @@ mod test {
 
     #[test]
     fn texture_atlas() {
-        let mut builder = AssetBuilder::default();
-        builder.field_ident = Some(Ident::new("test", Span::call_site()));
-        builder.asset_path = Some("some/folder".to_owned());
-        builder.tile_size_x = Some(100.);
-        builder.tile_size_y = Some(50.);
-        builder.columns = Some(10);
-        builder.rows = Some(5);
-        builder.padding_x = Some(2.);
+        let builder = AssetBuilder {
+            field_ident: Some(Ident::new("test", Span::call_site())),
+            asset_path: Some("some/folder".to_owned()),
+            tile_size_x: Some(100.),
+            tile_size_y: Some(50.),
+            columns: Some(10),
+            rows: Some(5),
+            padding_x: Some(2.),
+            ..Default::default()
+        };
 
         let asset = builder
             .build()
             .expect("This should be a valid TextureAtlasAsset");
         assert_eq!(
             asset,
-            Asset::TextureAtlas(TextureAtlasAsset {
+            AssetField::TextureAtlas(TextureAtlasAssetField {
                 field_ident: Ident::new("test", Span::call_site()),
                 asset_path: "some/folder".to_owned(),
                 tile_size_x: 100.0,
@@ -262,10 +272,10 @@ mod test {
     }
 
     fn asset_builder_dynamic() -> AssetBuilder {
-        let mut builder = AssetBuilder::default();
-        builder.field_ident = Some(Ident::new("test", Span::call_site()));
-        builder.key = Some("some.asset.key".to_owned());
-
-        builder
+        AssetBuilder {
+            field_ident: Some(Ident::new("test", Span::call_site())),
+            key: Some("some.asset.key".to_owned()),
+            ..AssetBuilder::default()
+        }
     }
 }

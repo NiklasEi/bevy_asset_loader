@@ -10,6 +10,12 @@
 //! # use bevy::asset::AssetPlugin;
 //! fn main() {
 //!     let mut app = App::new();
+//!     app
+//! # /*
+//!         .add_plugins(DefaultPlugins)
+//! # */
+//! #       .add_plugins(MinimalPlugins)
+//! #       .add_plugin(AssetPlugin::default());
 //!     AssetLoader::new(GameState::Loading)
 //!         .continue_to_state(GameState::Next)
 //!         .with_collection::<AudioAssets>()
@@ -17,15 +23,10 @@
 //!         .build(&mut app);
 //!     app
 //!         .add_state(GameState::Loading)
-//! # /*
-//!         .add_plugins(DefaultPlugins)
-//! # */
 //!         .add_system_set(SystemSet::on_update(GameState::Next)
 //!             .with_system(use_asset_handles.system())
 //!         )
-//!         # .add_plugins(MinimalPlugins)
-//!         # .add_plugin(AssetPlugin::default())
-//!         # .set_runner(|mut app| app.schedule.run(&mut app.world))
+//! #       .set_runner(|mut app| app.schedule.run(&mut app.world))
 //!         .run();
 //! }
 //!
@@ -334,6 +335,9 @@ impl AssetKeys {
 /// # use bevy::asset::AssetPlugin;
 /// fn main() {
 ///     let mut app = App::new();
+///     app
+///         .add_plugins(MinimalPlugins)
+///         .add_plugin(AssetPlugin::default());
 ///     AssetLoader::new(GameState::Loading)
 ///         .continue_to_state(GameState::Menu)
 ///         .with_collection::<AudioAssets>()
@@ -341,8 +345,6 @@ impl AssetKeys {
 ///         .build(&mut app);
 ///
 ///     app.add_state(GameState::Loading)
-///         .add_plugins(MinimalPlugins)
-///         .add_plugin(AssetPlugin::default())
 ///         .add_system_set(SystemSet::on_enter(GameState::Menu)
 ///             .with_system(play_audio.system())
 ///         )
@@ -402,6 +404,9 @@ where
     /// # use bevy::asset::AssetPlugin;
     /// # fn main() {
     ///     let mut app = App::new();
+    /// #   app
+    /// #       .add_plugins(MinimalPlugins)
+    /// #       .add_plugin(AssetPlugin::default());
     ///     AssetLoader::new(GameState::Loading)
     ///         .continue_to_state(GameState::Menu)
     ///         .with_collection::<AudioAssets>()
@@ -409,8 +414,6 @@ where
     ///         .build(&mut app);
     /// #   app
     /// #       .add_state(GameState::Loading)
-    /// #       .add_plugins(MinimalPlugins)
-    /// #       .add_plugin(AssetPlugin::default())
     /// #       .set_runner(|mut app| app.schedule.run(&mut app.world))
     /// #       .run();
     /// # }
@@ -456,6 +459,9 @@ where
     /// # use bevy::asset::AssetPlugin;
     /// # fn main() {
     ///     let mut app = App::new();
+    /// #   app
+    /// #       .add_plugins(MinimalPlugins)
+    /// #       .add_plugin(AssetPlugin::default());
     ///     AssetLoader::new(GameState::Loading)
     ///         .continue_to_state(GameState::Menu)
     ///         .with_collection::<AudioAssets>()
@@ -463,8 +469,6 @@ where
     ///         .build(&mut app);
     /// #   app
     /// #       .add_state(GameState::Loading)
-    /// #       .add_plugins(MinimalPlugins)
-    /// #       .add_plugin(AssetPlugin::default())
     /// #       .set_runner(|mut app| app.schedule.run(&mut app.world))
     /// #       .run();
     /// # }
@@ -509,6 +513,9 @@ where
     /// # use bevy::asset::AssetPlugin;
     /// # fn main() {
     ///     let mut app = App::new();
+    /// #   app
+    /// #       .add_plugins(MinimalPlugins)
+    /// #       .add_plugin(AssetPlugin::default());
     ///     AssetLoader::new(GameState::Loading)
     ///         .continue_to_state(GameState::Menu)
     ///         .with_collection::<AudioAssets>()
@@ -516,8 +523,6 @@ where
     ///         .build(&mut app);
     /// #   app
     /// #       .add_state(GameState::Loading)
-    /// #       .add_plugins(MinimalPlugins)
-    /// #       .add_plugin(AssetPlugin::default())
     /// #       .set_runner(|mut app| app.schedule.run(&mut app.world))
     /// #       .run();
     /// # }
@@ -564,6 +569,9 @@ where
     /// # use bevy::asset::AssetPlugin;
     /// # fn main() {
     ///     let mut app = App::new();
+    /// #   app
+    /// #       .add_plugins(MinimalPlugins)
+    /// #       .add_plugin(AssetPlugin::default());
     ///     AssetLoader::new(GameState::Loading)
     ///         .continue_to_state(GameState::Menu)
     ///         .with_collection::<TextureForAtlas>()
@@ -571,8 +579,6 @@ where
     ///         .build(&mut app);
     /// #   app
     /// #       .add_state(GameState::Loading)
-    /// #       .add_plugins(MinimalPlugins)
-    /// #       .add_plugin(AssetPlugin::default())
     /// #       .set_runner(|mut app| app.schedule.run(&mut app.world))
     /// #       .run();
     /// # }
@@ -617,6 +623,9 @@ where
     /// # use bevy::asset::AssetPlugin;
     /// # fn main() {
     ///     let mut app = App::new();
+    /// #   app
+    /// #       .add_plugins(MinimalPlugins)
+    /// #       .add_plugin(AssetPlugin::default());
     ///     AssetLoader::new(GameState::Loading)
     ///         .continue_to_state(GameState::Menu)
     ///         .with_collection::<AudioAssets>()
@@ -624,8 +633,6 @@ where
     ///         .build(&mut app);
     /// #   app
     /// #       .add_state(GameState::Loading)
-    /// #       .add_plugins(MinimalPlugins)
-    /// #       .add_plugin(AssetPlugin::default())
     /// #       .set_runner(|mut app| app.schedule.run(&mut app.world))
     /// #       .run();
     /// # }
