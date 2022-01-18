@@ -1,8 +1,12 @@
 use bevy::asset::AssetServer;
 use bevy::ecs::prelude::World;
-use bevy::ecs::schedule::StateData;
+use bevy::ecs::schedule::{State, StateData};
+use bevy::utils::HashMap;
 
-use crate::{AssetKeys, AssetLoaderConfiguration};
+#[cfg(feature = "dynamic_assets")]
+use bevy::reflect::TypeUuid;
+
+use crate::{AssetKeys, AssetLoaderConfiguration, LoadingStatePhase};
 
 /// These asset variants can be loaded from configuration files. They will then replace
 /// a dynamic asset based on their keys.
@@ -53,19 +57,46 @@ impl DynamicAsset {
 }
 
 #[cfg(feature = "dynamic_assets")]
-pub(crate) fn prepare_asset_keys<State: StateData>(world: &mut World) {
+pub(crate) fn prepare_asset_keys<S: StateData>(world: &mut World) {
     println!("prepare_asset_keys");
     let cell = world.cell();
-    let mut asset_keys = cell.get_resource_mut::<AssetKeys>().unwrap();
     let mut asset_loader_config = cell
-        .get_resource_mut::<AssetLoaderConfiguration<State>>()
+        .get_resource_mut::<AssetLoaderConfiguration<S>>()
         .unwrap();
     let asset_server = cell.get_resource::<AssetServer>().unwrap();
+    let state = cell
+        .get_resource::<State<S>>()
+        .expect("Cannot get State resource");
 
-    let files = asset_keys.take_asset_files();
+    let files = asset_loader_config.take_asset_files(state.current());
+    if files.is_empty() {
+        asset_loader_config
+            .phase
+            .insert(state.current().clone(), LoadingStatePhase::StartLoading);
+        return;
+    }
     for file in files {
+        println!("load file {:?}", file);
         asset_loader_config
             .asset_keys
             .push(asset_server.load(&file));
+    }
+    asset_loader_config.phase.insert(
+        state.current().clone(),
+        LoadingStatePhase::PreparingAssetKeys,
+    );
+}
+
+#[derive(serde::Deserialize, TypeUuid)]
+#[uuid = "2df82c01-9c71-4aa8-adc4-71c5824768f1"]
+#[cfg(feature = "dynamic_assets")]
+pub struct DynamicAssetCollection(HashMap<String, DynamicAsset>);
+
+#[cfg(feature = "dynamic_assets")]
+impl DynamicAssetCollection {
+    pub fn apply(self, keys: &mut AssetKeys) {
+        for (key, asset) in self.0 {
+            keys.keys.insert(key, asset);
+        }
     }
 }

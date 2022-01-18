@@ -66,23 +66,23 @@ use std::marker::PhantomData;
 use bevy::app::App;
 #[cfg(feature = "dynamic_assets")]
 use bevy::asset::Handle;
-use bevy::asset::{AssetServer, HandleUntyped, LoadState};
+use bevy::asset::HandleUntyped;
 use bevy::ecs::prelude::IntoExclusiveSystem;
-#[cfg(feature = "dynamic_assets")]
 use bevy::ecs::schedule::ExclusiveSystemDescriptorCoercion;
-use bevy::ecs::schedule::{State, StateData};
+use bevy::ecs::schedule::StateData;
 use bevy::prelude::{FromWorld, SystemSet, World};
-#[cfg(feature = "dynamic_assets")]
-use bevy::reflect::TypeUuid;
 use bevy::utils::HashMap;
 #[cfg(feature = "dynamic_assets")]
 use bevy_asset_ron::RonAssetPlugin;
 
 pub use bevy_asset_loader_derive::AssetCollection;
+#[cfg(feature = "dynamic_assets")]
+use dynamic_asset::DynamicAssetCollection;
 
 pub use crate::dynamic_asset::DynamicAsset;
 
 mod dynamic_asset;
+mod systems;
 
 /// Trait to mark a struct as a collection of assets
 ///
@@ -168,18 +168,45 @@ struct LoadingAssetHandles<A: AssetCollection> {
 
 struct AssetLoaderConfiguration<State> {
     configuration: HashMap<State, LoadingConfiguration<State>>,
+    phase: HashMap<State, LoadingStatePhase>,
     #[cfg(feature = "dynamic_assets")]
     asset_keys: Vec<Handle<DynamicAssetCollection>>,
+    #[cfg(feature = "dynamic_assets")]
+    files: HashMap<State, Vec<String>>,
 }
 
 impl<State> Default for AssetLoaderConfiguration<State> {
     fn default() -> Self {
         AssetLoaderConfiguration {
             configuration: HashMap::default(),
+            phase: HashMap::default(),
             #[cfg(feature = "dynamic_assets")]
             asset_keys: vec![],
+            #[cfg(feature = "dynamic_assets")]
+            files: HashMap::default(),
         }
     }
+}
+
+impl<State: StateData> AssetLoaderConfiguration<State> {
+    /// Todo
+    #[cfg(feature = "dynamic_assets")]
+    pub fn take_asset_files(&mut self, state: &State) -> Vec<String> {
+        self.files
+            .get(state)
+            .unwrap()
+            .iter()
+            .map(|file| file.to_owned())
+            .collect()
+    }
+}
+
+#[derive(Clone, Debug)]
+enum LoadingStatePhase {
+    #[cfg(feature = "dynamic_assets")]
+    PreparingAssetKeys,
+    StartLoading,
+    Loading,
 }
 
 struct LoadingConfiguration<T> {
@@ -237,8 +264,6 @@ struct LoadingConfiguration<T> {
 #[derive(Default)]
 pub struct AssetKeys {
     keys: HashMap<String, DynamicAsset>,
-    #[cfg(feature = "dynamic_assets")]
-    files: Vec<String>,
 }
 
 impl AssetKeys {
@@ -299,84 +324,6 @@ impl AssetKeys {
     pub fn register_asset<K: Into<String>>(&mut self, key: K, asset: DynamicAsset) {
         self.keys.insert(key.into(), asset);
     }
-
-    /// Todo
-    #[cfg(feature = "dynamic_assets")]
-    pub fn take_asset_files(&mut self) -> Vec<String> {
-        self.files.drain(..).collect()
-    }
-}
-
-fn start_loading<S: StateData, Assets: AssetCollection>(world: &mut World) {
-    {
-        let cell = world.cell();
-        let mut asset_loader_configuration = cell
-            .get_resource_mut::<AssetLoaderConfiguration<S>>()
-            .expect("Cannot get AssetLoaderConfiguration");
-        let state = cell.get_resource::<State<S>>().expect("Cannot get state");
-        let mut config = asset_loader_configuration
-            .configuration
-            .get_mut(state.current())
-            .unwrap_or_else(|| {
-                panic!(
-                    "Could not find a loading configuration for state {:?}",
-                    state.current()
-                )
-            });
-        config.count += 1;
-    }
-    let handles = LoadingAssetHandles {
-        handles: Assets::load(world),
-        marker: PhantomData::<Assets>,
-    };
-    world.insert_resource(handles);
-}
-
-fn check_loading_state<T: StateData, Assets: AssetCollection>(world: &mut World) {
-    {
-        let cell = world.cell();
-
-        let loading_asset_handles = cell.get_resource::<LoadingAssetHandles<Assets>>();
-        if loading_asset_handles.is_none() {
-            return;
-        }
-        let loading_asset_handles = loading_asset_handles.unwrap();
-
-        let asset_server = cell
-            .get_resource::<AssetServer>()
-            .expect("Cannot get AssetServer resource");
-        let load_state = asset_server
-            .get_group_load_state(loading_asset_handles.handles.iter().map(|handle| handle.id));
-        if load_state != LoadState::Loaded {
-            return;
-        }
-
-        let mut state = cell
-            .get_resource_mut::<State<T>>()
-            .expect("Cannot get State resource");
-        let mut asset_loader_configuration = cell
-            .get_resource_mut::<AssetLoaderConfiguration<T>>()
-            .expect("Cannot get AssetLoaderConfiguration resource");
-        if let Some(mut config) = asset_loader_configuration
-            .configuration
-            .get_mut(state.current())
-        {
-            config.count -= 1;
-            if config.count == 0 {
-                if let Some(next) = config.next.as_ref() {
-                    state.set(next.clone()).expect("Failed to set next State");
-                }
-            }
-        }
-    }
-    let asset_collection = Assets::create(world);
-    world.insert_resource(asset_collection);
-    world.remove_resource::<LoadingAssetHandles<Assets>>();
-}
-
-fn init_resource<Asset: FromWorld + Send + Sync + 'static>(world: &mut World) {
-    let asset = Asset::from_world(world);
-    world.insert_resource(asset);
 }
 
 /// A Bevy plugin to configure automatic asset loading
@@ -431,9 +378,9 @@ pub struct AssetLoader<State> {
     next_state: Option<State>,
     loading_state: State,
     keys: HashMap<String, DynamicAsset>,
-    load: SystemSet,
-    check: SystemSet,
-    post_process: SystemSet,
+    on_enter: SystemSet,
+    on_update: SystemSet,
+    on_exit: SystemSet,
     #[cfg(feature = "dynamic_assets")]
     asset_file_ending: &'static str,
     #[cfg(feature = "dynamic_assets")]
@@ -490,9 +437,9 @@ where
             next_state: None,
             loading_state: load.clone(),
             keys: HashMap::default(),
-            load: SystemSet::on_enter(load.clone()),
-            check: SystemSet::on_update(load.clone()),
-            post_process: SystemSet::on_exit(load),
+            on_enter: SystemSet::on_enter(load.clone()),
+            on_update: SystemSet::on_update(load.clone()),
+            on_exit: SystemSet::on_exit(load),
             #[cfg(feature = "dynamic_assets")]
             asset_file_ending: "assets",
             #[cfg(feature = "dynamic_assets")]
@@ -547,8 +494,10 @@ where
 
     /// Todo
     #[cfg(feature = "dynamic_assets")]
-    pub fn with_assets(mut self, assets_file: &str) {
+    pub fn with_assets(mut self, assets_file: &str) -> Self {
         self.assets_files.push(assets_file.to_owned());
+
+        self
     }
 
     /// Add an [AssetCollection] to the [AssetLoader]
@@ -591,12 +540,9 @@ where
     /// # }
     /// ```
     pub fn with_collection<A: AssetCollection>(mut self) -> Self {
-        self.load = self
-            .load
-            .with_system(start_loading::<State, A>.exclusive_system());
-        self.check = self
-            .check
-            .with_system(check_loading_state::<State, A>.exclusive_system());
+        self.on_update = self
+            .on_update
+            .with_system(systems::loading_state::<State, A>.exclusive_system());
         self.collection_count += 1;
 
         self
@@ -655,9 +601,9 @@ where
     /// # }
     /// ```
     pub fn init_resource<A: FromWorld + Send + Sync + 'static>(mut self) -> Self {
-        self.post_process = self
-            .post_process
-            .with_system(init_resource::<A>.exclusive_system());
+        self.on_exit = self
+            .on_exit
+            .with_system(systems::init_resource::<A>.exclusive_system());
 
         self
     }
@@ -714,11 +660,25 @@ where
             asset_loader_configuration
                 .configuration
                 .insert(self.loading_state.clone(), config);
+            asset_loader_configuration
+                .phase
+                .insert(self.loading_state.clone(), LoadingStatePhase::StartLoading);
+            #[cfg(feature = "dynamic_assets")]
+            asset_loader_configuration
+                .files
+                .insert(self.loading_state.clone(), self.assets_files);
         } else {
             let mut asset_loader_configuration = AssetLoaderConfiguration::default();
             asset_loader_configuration
                 .configuration
                 .insert(self.loading_state.clone(), config);
+            asset_loader_configuration
+                .phase
+                .insert(self.loading_state.clone(), LoadingStatePhase::StartLoading);
+            #[cfg(feature = "dynamic_assets")]
+            asset_loader_configuration
+                .files
+                .insert(self.loading_state.clone(), self.assets_files);
             app.world.insert_resource(asset_loader_configuration);
         }
         #[cfg(feature = "dynamic_assets")]
@@ -726,27 +686,21 @@ where
             app.add_plugin(RonAssetPlugin::<DynamicAssetCollection>::new(&[
                 self.asset_file_ending
             ]));
-            self.load = self.load.with_system(
+            self.on_enter = self.on_enter.with_system(
                 dynamic_asset::prepare_asset_keys::<State>
                     .exclusive_system()
                     .at_start(),
             );
         }
-        app.insert_resource(AssetKeys {
-            keys: self.keys,
-            #[cfg(feature = "dynamic_assets")]
-            files: self.assets_files,
-        });
-        app.add_system_set(self.load)
-            .add_system_set(self.check)
-            .add_system_set(self.post_process);
+        self.on_update = self
+            .on_update
+            .with_system(systems::phase::<State>.exclusive_system().at_end());
+        app.insert_resource(AssetKeys { keys: self.keys });
+        app.add_system_set(self.on_enter)
+            .add_system_set(self.on_update)
+            .add_system_set(self.on_exit);
     }
 }
-
-#[derive(serde::Deserialize, TypeUuid)]
-#[uuid = "2df82c01-9c71-4aa8-adc4-71c5824768f1"]
-#[cfg(feature = "dynamic_assets")]
-struct DynamicAssetCollection(HashMap<String, DynamicAsset>);
 
 #[cfg(feature = "render")]
 #[doc = include_str!("../../README.md")]

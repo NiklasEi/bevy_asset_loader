@@ -1,4 +1,4 @@
-{
+({
     "image.player": File (
         path: "images/player.png",
     ),
@@ -8,4 +8,4 @@
     "sounds.background": File (
         path: "audio/background.ogg",
     ),
-}
+})
