@@ -181,7 +181,7 @@ mod test {
     fn folder() {
         let builder = AssetBuilder {
             field_ident: Some(Ident::new("test", Span::call_site())),
-            folder_path: Some("some/folder.png".to_owned()),
+            folder_path: Some("some/folder".to_owned()),
             ..Default::default()
         };
 

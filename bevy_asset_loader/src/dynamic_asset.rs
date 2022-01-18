@@ -1,11 +1,16 @@
+#[cfg(feature = "dynamic_assets")]
 use bevy::asset::AssetServer;
+#[cfg(feature = "dynamic_assets")]
 use bevy::ecs::prelude::World;
+#[cfg(feature = "dynamic_assets")]
 use bevy::ecs::schedule::{State, StateData};
+#[cfg(feature = "dynamic_assets")]
 use bevy::utils::HashMap;
 
 #[cfg(feature = "dynamic_assets")]
 use bevy::reflect::TypeUuid;
 
+#[cfg(feature = "dynamic_assets")]
 use crate::{AssetKeys, AssetLoaderConfiguration, LoadingStatePhase};
 
 /// These asset variants can be loaded from configuration files. They will then replace

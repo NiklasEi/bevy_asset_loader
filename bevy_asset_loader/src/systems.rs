@@ -1,14 +1,15 @@
-use std::marker::PhantomData;
-
-use bevy::asset::{AssetServer, Assets, LoadState};
+#[cfg(feature = "dynamic_assets")]
+use bevy::asset::Assets;
+use bevy::asset::{AssetServer, LoadState};
 use bevy::ecs::prelude::{FromWorld, State, World};
 use bevy::ecs::schedule::StateData;
+use std::marker::PhantomData;
 
 #[cfg(feature = "dynamic_assets")]
 use crate::dynamic_asset::DynamicAssetCollection;
-use crate::{
-    AssetCollection, AssetKeys, AssetLoaderConfiguration, LoadingAssetHandles, LoadingStatePhase,
-};
+#[cfg(feature = "dynamic_assets")]
+use crate::AssetKeys;
+use crate::{AssetCollection, AssetLoaderConfiguration, LoadingAssetHandles, LoadingStatePhase};
 
 pub(crate) fn init_resource<Asset: FromWorld + Send + Sync + 'static>(world: &mut World) {
     let asset = Asset::from_world(world);
@@ -29,10 +30,11 @@ pub(crate) fn loading_state<S: StateData, Assets: AssetCollection>(world: &mut W
             .clone()
     };
 
+    #[allow(unreachable_patterns)]
     match phase {
         LoadingStatePhase::StartLoading => start_loading_collections::<S, Assets>(world),
         LoadingStatePhase::Loading => check_loading_state::<S, Assets>(world),
-        _ => (),
+        _ => {}
     }
 }
 
