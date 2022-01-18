@@ -256,6 +256,7 @@ fn impl_asset_collection(
     Ok(impl_asset_collection)
 }
 
+#[derive(Debug)]
 enum ParseFieldError {
     NoAttributes,
     EitherSingleAssetOrFolder,
@@ -315,7 +316,7 @@ fn parse_field(field: &Field) -> Result<Asset, Vec<ParseFieldError>> {
                 } else if let NestedMeta::Meta(Meta::Path(ref meta_path)) = attribute {
                     let path = meta_path.get_ident().unwrap().clone();
                     if path == COLOR_MATERIAL_ATTRIBUTE {
-                        builder.is_color_material = true;
+                        builder.is_standard_material = true;
                     } else {
                         errors.push(ParseFieldError::UnknownAttribute(
                             meta_path.clone().into_token_stream(),
@@ -369,7 +370,7 @@ fn parse_field(field: &Field) -> Result<Asset, Vec<ParseFieldError>> {
                                 } else if path == TextureAtlasAttribute::PADDING_X {
                                     if let Lit::Float(padding_x) = &named_value.lit {
                                         builder.padding_x =
-                                            padding_x.base10_parse::<f32>().unwrap();
+                                            Some(padding_x.base10_parse::<f32>().unwrap());
                                     } else {
                                         errors.push(ParseFieldError::WrongAttributeType(
                                             named_value.clone().into_token_stream(),
@@ -379,7 +380,7 @@ fn parse_field(field: &Field) -> Result<Asset, Vec<ParseFieldError>> {
                                 } else if path == TextureAtlasAttribute::PADDING_Y {
                                     if let Lit::Float(padding_y) = &named_value.lit {
                                         builder.padding_y =
-                                            padding_y.base10_parse::<f32>().unwrap();
+                                            Some(padding_y.base10_parse::<f32>().unwrap());
                                     } else {
                                         errors.push(ParseFieldError::WrongAttributeType(
                                             named_value.clone().into_token_stream(),
