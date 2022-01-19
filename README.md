@@ -103,7 +103,7 @@ use bevy_asset_loader::AssetCollection;
 
 #[derive(AssetCollection)]
 struct MyAssets {
-    #[asset(color_material)]
+    #[asset(standard_material)]
     #[asset(path = "images/player.png")]
     player: Handle<StandardMaterial>,
 }

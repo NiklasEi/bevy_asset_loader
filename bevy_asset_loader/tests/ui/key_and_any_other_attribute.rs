@@ -17,7 +17,7 @@ struct FolderAndKey {
 
 #[derive(AssetCollection)]
 struct StandardMaterialAndKey {
-    #[asset(color_material)]
+    #[asset(standard_material)]
     #[asset(key = "test")]
     test: Handle<StandardMaterial>,
 }

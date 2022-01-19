@@ -54,6 +54,6 @@ name = "no_loading_state"
 path = "examples/no_loading_state.rs"
 
 [[example]]
-name = "color_material"
+name = "standard_material"
 path = "examples/standard_material.rs"
 required-features = ["render"]
