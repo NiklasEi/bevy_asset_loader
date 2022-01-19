@@ -2,6 +2,7 @@
 
 - Support initialising asset collections directly on the bevy App or World
   - New example `no_loading_state`
+- rename derive attribute `color_material` to `standard_material`
 
 ## v0.7.0
 - update to Bevy version 0.6

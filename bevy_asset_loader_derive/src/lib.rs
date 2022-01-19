@@ -47,7 +47,7 @@ impl TextureAtlasAttribute {
 }
 
 pub(crate) const FOLDER_ATTRIBUTE: &str = "folder";
-pub(crate) const COLOR_MATERIAL_ATTRIBUTE: &str = "color_material";
+pub(crate) const COLOR_MATERIAL_ATTRIBUTE: &str = "standard_material";
 
 fn impl_asset_collection(
     ast: syn::DeriveInput,
