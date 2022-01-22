@@ -132,7 +132,7 @@ pub(crate) fn phase<S: StateData>(world: &mut World) {
                 .expect("Cannot get AssetLoaderConfiguration");
             let load_state = asset_server.get_group_load_state(
                 asset_loader_configuration
-                    .asset_keys
+                    .asset_collection_handles
                     .iter()
                     .map(|handle| handle.id),
             );
@@ -143,7 +143,10 @@ pub(crate) fn phase<S: StateData>(world: &mut World) {
                 let state = cell.get_resource::<State<S>>().expect("Cannot get state");
 
                 let mut asset_keys = cell.get_resource_mut::<AssetKeys>().unwrap();
-                for collection in asset_loader_configuration.asset_keys.drain(..) {
+                for collection in asset_loader_configuration
+                    .asset_collection_handles
+                    .drain(..)
+                {
                     let collection = dynamic_asset_collections.remove(collection).unwrap();
                     collection.apply(&mut asset_keys);
                 }

@@ -73,7 +73,7 @@ pub(crate) fn prepare_asset_keys<S: StateData>(world: &mut World) {
         .get_resource::<State<S>>()
         .expect("Cannot get State resource");
 
-    let files = asset_loader_config.take_asset_files(state.current());
+    let files = asset_loader_config.get_asset_collection_files(state.current());
     if files.is_empty() {
         asset_loader_config
             .phase
@@ -83,7 +83,7 @@ pub(crate) fn prepare_asset_keys<S: StateData>(world: &mut World) {
     for file in files {
         println!("load file {:?}", file);
         asset_loader_config
-            .asset_keys
+            .asset_collection_handles
             .push(asset_server.load(&file));
     }
     asset_loader_config.phase.insert(
