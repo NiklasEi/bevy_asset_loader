@@ -1,8 +1,8 @@
-//! The goal of this crate is to offer an easy way for bevy games to load all their assets in a loading [bevy_ecs::schedule::State].
+//! The goal of this crate is to offer an easy way for bevy games to load all their assets in a loading [`State`](bevy_ecs::schedule::State).
 //!
-//! `bevy_asset_loader` introduces the derivable trait [AssetCollection]. Structs with asset handles
-//! can be automatically loaded during a configurable loading [bevy_ecs::schedule::State]. Afterwards they will be inserted as
-//! resources containing loaded handles and the plugin will switch to a second configurable [bevy_ecs::schedule::State].
+//! `bevy_asset_loader` introduces the derivable trait [`AssetCollection`]. Structs with asset handles
+//! can be automatically loaded during a configurable loading [`State`](bevy_ecs::schedule::State). Afterwards they will be inserted as
+//! resources containing loaded handles and the plugin will switch to a second configurable [`State`](bevy_ecs::schedule::State).
 //!
 //! ```edition2021
 //! # use bevy_asset_loader::{AssetLoader, AssetCollection};
@@ -100,13 +100,13 @@ mod systems;
 /// }
 /// ```
 pub trait AssetCollection: Send + Sync + 'static {
-    /// Create a new AssetCollection from the [bevy_asset::AssetServer]
+    /// Create a new asset collection from the [`AssetServer`](bevy_asset::AssetServer)
     fn create(world: &mut World) -> Self;
     /// Start loading all the assets in the collection
     fn load(world: &mut World) -> Vec<HandleUntyped>;
 }
 
-/// Extension trait for [`bevy::app::App`] enabling initialisation of [asset collections](AssetCollection)
+/// Extension trait for [`App`](bevy::app::App) enabling initialisation of [asset collections](AssetCollection)
 pub trait AssetCollectionApp {
     /// Initialise an [`AssetCollection`]
     ///
@@ -135,7 +135,7 @@ impl AssetCollectionApp for App {
     }
 }
 
-/// Extension trait for [`bevy::ecs::world::World`] enabling initialisation of [asset collections](AssetCollection)
+/// Extension trait for [`World`](bevy::ecs::world::World) enabling initialisation of [asset collections](AssetCollection)
 pub trait AssetCollectionWorld {
     /// Initialise an [`AssetCollection`]
     ///
@@ -192,7 +192,7 @@ impl<State> Default for AssetLoaderConfiguration<State> {
 impl<State: StateData> AssetLoaderConfiguration<State> {
     /// Get all asset collection files registered for the given state
     ///
-    /// The files can be loaded as [`dynamic_asset::DynamicAssetCollection`] assets.
+    /// The files can be loaded as [`DynamicAssetCollection`](crate::dynamic_asset::DynamicAssetCollection) assets.
     #[cfg(feature = "dynamic_assets")]
     pub fn get_asset_collection_files(&mut self, state: &State) -> Vec<String> {
         self.asset_collection_files
@@ -219,8 +219,8 @@ struct LoadingConfiguration<T> {
 
 /// Resource to dynamically resolve keys to asset paths.
 ///
-/// This resource is set by the [AssetLoader] and is read when entering a loading state.
-/// You should set your desired asset key and paths in a previous [bevy_ecs::schedule::State].
+/// This resource is set by the [`AssetLoader`] and is read when entering a loading state.
+/// You should set your desired asset key and paths in a previous [`State`](bevy_ecs::schedule::State).
 ///
 /// ```edition2021
 /// # use bevy::prelude::*;
@@ -396,9 +396,9 @@ impl<State> AssetLoader<State>
 where
     State: StateData,
 {
-    /// Create a new [AssetLoader]
+    /// Create a new [`AssetLoader`]
     ///
-    /// This function takes a [bevy_ecs::schedule::State] during which all asset collections will
+    /// This function takes a [`State`](bevy_ecs::schedule::State) during which all asset collections will
     /// be loaded and inserted as resources.
     /// ```edition2021
     /// # use bevy_asset_loader::{AssetLoader, AssetCollection};
@@ -453,7 +453,7 @@ where
         }
     }
 
-    /// The [AssetLoader] will set this [bevy_ecs::schedule::State] after all asset collections
+    /// The [`AssetLoader`] will set this [`State`](bevy_ecs::schedule::State) after all asset collections
     /// are loaded and inserted as resources.
     /// ```edition2021
     /// # use bevy_asset_loader::{AssetLoader, AssetCollection};
@@ -500,7 +500,7 @@ where
 
     /// Register an asset collection file to be loaded and used to define values for dynamic assets.
     ///
-    /// The file will be loaded as [`dynamic_asset::DynamicAssetCollection`].
+    /// The file will be loaded as [`DynamicAssetCollection`](crate::dynamic_asset::DynamicAssetCollection).
     /// It's mapping of asset keys to asset configurations can be used for dynamic assets.
     ///
     /// See the `dynamic_asset_ron` example.
@@ -512,7 +512,7 @@ where
         self
     }
 
-    /// Add an [AssetCollection] to the [AssetLoader]
+    /// Add an [`AssetCollection`] to the [`AssetLoader`]
     ///
     /// The added collection will be loaded and inserted into your Bevy app as a resource.
     /// ```edition2021
@@ -570,7 +570,7 @@ where
         self
     }
 
-    /// Add any [bevy_ecs::world::FromWorld] resource to be initialized after all asset collections are loaded.
+    /// Add any [`FromWorld`](bevy_ecs::world::FromWorld) resource to be initialized after all asset collections are loaded.
     /// ```edition2021
     /// # use bevy_asset_loader::{AssetLoader, AssetCollection};
     /// # use bevy::prelude::*;
@@ -622,7 +622,7 @@ where
         self
     }
 
-    /// Finish configuring the [AssetLoader]
+    /// Finish configuring the [`AssetLoader`]
     ///
     /// Calling this function is required to set up the asset loading.
     /// ```edition2021
