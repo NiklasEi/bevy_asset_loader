@@ -63,7 +63,6 @@ impl DynamicAsset {
 
 #[cfg(feature = "dynamic_assets")]
 pub(crate) fn prepare_asset_keys<S: StateData>(world: &mut World) {
-    println!("prepare_asset_keys");
     let cell = world.cell();
     let mut asset_loader_config = cell
         .get_resource_mut::<AssetLoaderConfiguration<S>>()
@@ -81,7 +80,6 @@ pub(crate) fn prepare_asset_keys<S: StateData>(world: &mut World) {
         return;
     }
     for file in files {
-        println!("load file {:?}", file);
         asset_loader_config
             .asset_collection_handles
             .push(asset_server.load(&file));

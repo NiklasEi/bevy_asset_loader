@@ -119,7 +119,6 @@ pub(crate) fn phase<S: StateData>(world: &mut World) {
             .clone()
     };
 
-    println!("{:?}", phase);
     match phase {
         #[cfg(feature = "dynamic_assets")]
         LoadingStatePhase::PreparingAssetKeys => {
