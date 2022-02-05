@@ -54,13 +54,19 @@ fn draw_atlas(
             texture_atlas: my_assets.female_adventurer.clone(),
             ..Default::default()
         })
-        .insert(Timer::from_seconds(0.1, true));
+        .insert(AnimationTimer(Timer::from_seconds(0.1, true)));
 }
 
-fn animate_sprite_system(time: Res<Time>, mut query: Query<(&mut Timer, &mut TextureAtlasSprite)>) {
+#[derive(Component)]
+struct AnimationTimer(Timer);
+
+fn animate_sprite_system(
+    time: Res<Time>,
+    mut query: Query<(&mut AnimationTimer, &mut TextureAtlasSprite)>,
+) {
     for (mut timer, mut sprite) in query.iter_mut() {
-        timer.tick(time.delta());
-        if timer.finished() {
+        timer.0.tick(time.delta());
+        if timer.0.finished() {
             sprite.index = (sprite.index + 1) % 8;
         }
     }
