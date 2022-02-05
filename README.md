@@ -7,7 +7,7 @@
 
 This [Bevy][bevy] plugin reduces boilerplate when loading game assets. The crate offers the `AssetCollection` trait and can automatically load structs that implement it. The trait can be derived.
 
-*The `main` branch and all current releases support Bevy version 0.5. If you like living on the edge, take a look at the `bevy_main` branch, which tries to stay close to Bevy's development.*
+*The `main` branch and the latest release (see [version table](#compatible-bevy-versions)) support Bevy version `0.6`. If you like living on the edge, take a look at the `bevy_main` branch, which tries to stay close to Bevy's development.*
 
 ## How to use
 
