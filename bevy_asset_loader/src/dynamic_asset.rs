@@ -28,7 +28,7 @@ pub enum DynamicAsset {
         /// Asset file path
         path: String,
     },
-    /// A dynamic texture atlas asset loaded form a sprite sheet
+    /// A dynamic texture atlas asset loaded from a sprite sheet
     #[cfg(feature = "render")]
     TextureAtlas {
         /// Asset file path

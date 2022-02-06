@@ -42,12 +42,14 @@ impl TextureAtlasAttribute {
     pub const TILE_SIZE_Y: &'static str = "tile_size_y";
     pub const COLUMNS: &'static str = "columns";
     pub const ROWS: &'static str = "rows";
+    #[allow(dead_code)]
     pub const PADDING_X: &'static str = "padding_x";
+    #[allow(dead_code)]
     pub const PADDING_Y: &'static str = "padding_y";
 }
 
 pub(crate) const FOLDER_ATTRIBUTE: &str = "folder";
-pub(crate) const COLOR_MATERIAL_ATTRIBUTE: &str = "standard_material";
+pub(crate) const STANDARD_MATERIAL_ATTRIBUTE: &str = "standard_material";
 
 fn impl_asset_collection(
     ast: syn::DeriveInput,
@@ -60,8 +62,7 @@ fn impl_asset_collection(
         if let Fields::Named(ref named_fields) = data_struct.fields {
             let mut compile_errors = vec![];
             for field in named_fields.named.iter() {
-                let asset = parse_field(field);
-                match asset {
+                match parse_field(field) {
                     Ok(asset) => assets.push(asset),
                     Err(errors) => {
                         for error in errors {
@@ -108,6 +109,12 @@ fn impl_asset_collection(
                                         "Unknown attribute",
                                     ));
                                 }
+                                ParseFieldError::MissingRenderFeature(token_stream) => {
+                                    compile_errors.push(syn::Error::new_spanned(
+                                        token_stream,
+                                        "This attribute requires the 'render' feature",
+                                    ));
+                                }
                             }
                         }
                     }
@@ -136,7 +143,7 @@ fn impl_asset_collection(
 
     #[cfg(feature = "render")]
     {
-        // color materials and texture atlas resources
+        // standard materials and texture atlas resources
         conditional_asset_collections = quote! {
                 let mut materials = cell
                     .get_resource_mut::<Assets<StandardMaterial>>()
@@ -287,6 +294,8 @@ enum ParseFieldError {
     UnknownAttributeType(proc_macro2::TokenStream),
     UnknownAttribute(proc_macro2::TokenStream),
     MissingAttributes(Vec<String>),
+    #[allow(dead_code)]
+    MissingRenderFeature(proc_macro2::TokenStream),
 }
 
 fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
@@ -308,7 +317,7 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                             builder.asset_path = Some(path_literal.value());
                         } else {
                             errors.push(ParseFieldError::WrongAttributeType(
-                                named_value.clone().into_token_stream(),
+                                named_value.into_token_stream(),
                                 "str",
                             ));
                         }
@@ -317,7 +326,7 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                             builder.folder_path = Some(path_literal.value());
                         } else {
                             errors.push(ParseFieldError::WrongAttributeType(
-                                named_value.clone().into_token_stream(),
+                                named_value.into_token_stream(),
                                 "str",
                             ));
                         }
@@ -326,27 +335,39 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                             builder.key = Some(path_literal.value());
                         } else {
                             errors.push(ParseFieldError::WrongAttributeType(
-                                named_value.clone().into_token_stream(),
+                                named_value.into_token_stream(),
                                 "str",
                             ));
                         }
                     } else {
                         errors.push(ParseFieldError::UnknownAttribute(
-                            named_value.clone().into_token_stream(),
+                            named_value.into_token_stream(),
                         ))
                     }
                 } else if let NestedMeta::Meta(Meta::Path(ref meta_path)) = attribute {
                     let path = meta_path.get_ident().unwrap().clone();
-                    if path == COLOR_MATERIAL_ATTRIBUTE {
-                        builder.is_standard_material = true;
+                    if path == STANDARD_MATERIAL_ATTRIBUTE {
+                        #[cfg(not(feature = "render"))]
+                        errors.push(ParseFieldError::MissingRenderFeature(
+                            meta_path.into_token_stream(),
+                        ));
+                        #[cfg(feature = "render")]
+                        {
+                            builder.is_standard_material = true;
+                        }
                     } else {
                         errors.push(ParseFieldError::UnknownAttribute(
-                            meta_path.clone().into_token_stream(),
+                            meta_path.into_token_stream(),
                         ))
                     }
                 } else if let NestedMeta::Meta(Meta::List(ref meta_list)) = attribute {
                     let path = meta_list.path.get_ident().unwrap().clone();
                     if path == TEXTURE_ATLAS_ATTRIBUTE {
+                        #[cfg(not(feature = "render"))]
+                        errors.push(ParseFieldError::MissingRenderFeature(
+                            meta_list.into_token_stream(),
+                        ));
+                        #[cfg(feature = "render")]
                         for attribute in meta_list.nested.iter() {
                             if let NestedMeta::Meta(Meta::NameValue(ref named_value)) = attribute {
                                 let path = named_value.path.get_ident().unwrap().clone();
@@ -356,7 +377,7 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                                             Some(width.base10_parse::<f32>().unwrap());
                                     } else {
                                         errors.push(ParseFieldError::WrongAttributeType(
-                                            named_value.clone().into_token_stream(),
+                                            named_value.into_token_stream(),
                                             "float",
                                         ));
                                     }
@@ -366,7 +387,7 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                                             Some(height.base10_parse::<f32>().unwrap());
                                     } else {
                                         errors.push(ParseFieldError::WrongAttributeType(
-                                            named_value.clone().into_token_stream(),
+                                            named_value.into_token_stream(),
                                             "float",
                                         ));
                                     }
@@ -376,7 +397,7 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                                             Some(columns.base10_parse::<usize>().unwrap());
                                     } else {
                                         errors.push(ParseFieldError::WrongAttributeType(
-                                            named_value.clone().into_token_stream(),
+                                            named_value.into_token_stream(),
                                             "integer",
                                         ));
                                     }
@@ -385,7 +406,7 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                                         builder.rows = Some(rows.base10_parse::<usize>().unwrap());
                                     } else {
                                         errors.push(ParseFieldError::WrongAttributeType(
-                                            named_value.clone().into_token_stream(),
+                                            named_value.into_token_stream(),
                                             "integer",
                                         ));
                                     }
@@ -395,7 +416,7 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                                             Some(padding_x.base10_parse::<f32>().unwrap());
                                     } else {
                                         errors.push(ParseFieldError::WrongAttributeType(
-                                            named_value.clone().into_token_stream(),
+                                            named_value.into_token_stream(),
                                             "float",
                                         ));
                                     }
@@ -405,25 +426,25 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                                             Some(padding_y.base10_parse::<f32>().unwrap());
                                     } else {
                                         errors.push(ParseFieldError::WrongAttributeType(
-                                            named_value.clone().into_token_stream(),
+                                            named_value.into_token_stream(),
                                             "float",
                                         ));
                                     }
                                 } else {
                                     errors.push(ParseFieldError::UnknownAttribute(
-                                        named_value.clone().into_token_stream(),
+                                        named_value.into_token_stream(),
                                     ));
                                 }
                             }
                         }
                     } else {
                         errors.push(ParseFieldError::UnknownAttribute(
-                            meta_list.clone().into_token_stream(),
+                            meta_list.into_token_stream(),
                         ))
                     }
                 } else {
                     errors.push(ParseFieldError::UnknownAttributeType(
-                        attribute.clone().into_token_stream(),
+                        attribute.into_token_stream(),
                     ));
                 }
             }

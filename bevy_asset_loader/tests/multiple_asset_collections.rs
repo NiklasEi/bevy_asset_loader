@@ -1,10 +1,12 @@
+#![allow(dead_code)]
+
 use bevy::app::AppExit;
 use bevy::asset::AssetPlugin;
 use bevy::audio::AudioPlugin;
 use bevy::prelude::*;
 use bevy_asset_loader::{AssetCollection, AssetLoader};
 
-#[test]
+#[cfg_attr(not(feature = "render"), test)]
 fn multiple_asset_collections() {
     let mut app = App::new();
 
