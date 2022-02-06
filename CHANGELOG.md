@@ -1,5 +1,8 @@
 # Changelog
 
+- Improved compile error if the `texture_atlas` or `standard_material` attributes are used without the render feature
+- Support loading keys for dynamic assets from ron files
+  - New example `dynamic_asset_ron`
 - Support initialising asset collections directly on the bevy App or World
   - New example `no_loading_state`
 - rename derive attribute `color_material` to `standard_material`
