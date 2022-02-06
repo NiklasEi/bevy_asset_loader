@@ -1,11 +1,13 @@
+#![allow(dead_code)]
+
 use bevy::app::AppExit;
 use bevy::asset::AssetPlugin;
 use bevy::audio::AudioPlugin;
 use bevy::prelude::*;
 use bevy_asset_loader::{AssetCollection, AssetLoader};
 
-#[test]
-fn single_asset_collection() {
+#[cfg_attr(not(feature = "render"), test)]
+fn can_run_without_next_state() {
     let mut app = App::new();
 
     AssetLoader::new(MyStates::Load)

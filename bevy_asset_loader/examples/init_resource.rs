@@ -1,10 +1,10 @@
 use bevy::prelude::*;
 use bevy_asset_loader::{AssetCollection, AssetLoader};
 
-/// This example demonstrates how you can use [AssetLoader::init_resource] to initialize
-/// assets implementing [FromWorld] after your collections are inserted into the ECS.
+/// This example demonstrates how you can use [`AssetLoader::init_resource`] to initialize
+/// assets implementing [`FromWorld`] after your collections are inserted into the ECS.
 ///
-/// In this showcase we load two images in an [AssetCollection] and then combine
+/// In this showcase we load two images in an [`AssetCollection`] and then combine
 /// them by adding up their pixel data.
 fn main() {
     let mut app = App::new();

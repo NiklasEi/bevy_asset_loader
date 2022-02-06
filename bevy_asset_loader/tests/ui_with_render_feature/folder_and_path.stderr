@@ -1,5 +1,5 @@
 error: You can only specify one of 'folder' or 'path'
- --> tests/ui/folder_and_path.rs:8:5
+ --> $DIR/folder_and_path.rs:8:5
   |
 8 | /     #[asset(path = "test.ogg", folder = "test")]
 9 | |     test: Handle<AudioSource>,

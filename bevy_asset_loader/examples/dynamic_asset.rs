@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_asset_loader::{AssetCollection, AssetKeys, AssetLoader};
+use bevy_asset_loader::{AssetCollection, AssetKeys, AssetLoader, DynamicAsset};
 
 const PLAYER_SPEED: f32 = 5.;
 
@@ -50,9 +50,19 @@ fn choose_character(
     mouse_input: Res<Input<MouseButton>>,
 ) {
     if mouse_input.just_pressed(MouseButton::Left) {
-        asset_keys.set_asset_key("character", "images/female_adventurer.png")
+        asset_keys.register_asset(
+            "character",
+            DynamicAsset::File {
+                path: "images/female_adventurer.png".to_owned(),
+            },
+        );
     } else if mouse_input.just_pressed(MouseButton::Right) {
-        asset_keys.set_asset_key("character", "images/zombie.png")
+        asset_keys.register_asset(
+            "character",
+            DynamicAsset::File {
+                path: "images/zombie.png".to_owned(),
+            },
+        );
     } else {
         return;
     }

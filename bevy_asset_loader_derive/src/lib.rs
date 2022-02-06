@@ -1,4 +1,4 @@
-//! This crate adds support for auto deriving [bevy_asset_loader::AssetCollection]
+//! This crate adds support for auto deriving [`AssetCollection`](bevy_asset_loader::AssetCollection)
 //!
 //! You do not have to use it directly. Just import ``AssetCollection`` from ``bevy_asset_loader``
 //! and use ``#[derive(AssetCollection)]`` to derive the trait.
@@ -19,7 +19,7 @@ use proc_macro2::Ident;
 use quote::{quote, ToTokens, TokenStreamExt};
 use syn::{Data, Field, Fields, Lit, Meta, NestedMeta};
 
-/// Derive macro for [bevy_asset_loader::AssetCollection]
+/// Derive macro for [`AssetCollection`](bevy_asset_loader::AssetCollection)
 ///
 /// The helper attribute ``asset`` can be used to define the path to the asset file
 /// and other asset options.
@@ -42,12 +42,14 @@ impl TextureAtlasAttribute {
     pub const TILE_SIZE_Y: &'static str = "tile_size_y";
     pub const COLUMNS: &'static str = "columns";
     pub const ROWS: &'static str = "rows";
+    #[allow(dead_code)]
     pub const PADDING_X: &'static str = "padding_x";
+    #[allow(dead_code)]
     pub const PADDING_Y: &'static str = "padding_y";
 }
 
 pub(crate) const FOLDER_ATTRIBUTE: &str = "folder";
-pub(crate) const COLOR_MATERIAL_ATTRIBUTE: &str = "standard_material";
+pub(crate) const STANDARD_MATERIAL_ATTRIBUTE: &str = "standard_material";
 
 fn impl_asset_collection(
     ast: syn::DeriveInput,
@@ -55,13 +57,12 @@ fn impl_asset_collection(
     let name = &ast.ident;
 
     let mut default_fields: Vec<Ident> = vec![];
-    let mut assets: Vec<Asset> = vec![];
+    let mut assets: Vec<AssetField> = vec![];
     if let Data::Struct(ref data_struct) = ast.data {
         if let Fields::Named(ref named_fields) = data_struct.fields {
             let mut compile_errors = vec![];
             for field in named_fields.named.iter() {
-                let asset = parse_field(field);
-                match asset {
+                match parse_field(field) {
                     Ok(asset) => assets.push(asset),
                     Err(errors) => {
                         for error in errors {
@@ -108,6 +109,12 @@ fn impl_asset_collection(
                                         "Unknown attribute",
                                     ));
                                 }
+                                ParseFieldError::MissingRenderFeature(token_stream) => {
+                                    compile_errors.push(syn::Error::new_spanned(
+                                        token_stream,
+                                        "This attribute requires the 'render' feature",
+                                    ));
+                                }
                             }
                         }
                     }
@@ -129,28 +136,72 @@ fn impl_asset_collection(
         )]);
     }
 
-    let mut asset_creation = assets.iter().fold(quote!(), |es, asset| match asset {
-        Asset::Basic(basic) => {
+    #[allow(unused_mut, unused_assignments)]
+    let mut conditional_asset_collections = quote! {};
+    #[allow(unused_mut, unused_assignments)]
+    let mut conditional_dynamic_asset_collections = quote! {};
+
+    #[cfg(feature = "render")]
+    {
+        // standard materials and texture atlas resources
+        conditional_asset_collections = quote! {
+                let mut materials = cell
+                    .get_resource_mut::<Assets<StandardMaterial>>()
+                    .expect("Cannot get resource Assets<StandardMaterial>");
+                let mut atlases = cell
+                    .get_resource_mut::<Assets<TextureAtlas>>()
+                    .expect("Cannot get resource Assets<TextureAtlas>");
+        };
+
+        conditional_dynamic_asset_collections = quote! {
+        bevy_asset_loader::DynamicAsset::TextureAtlas {
+                path,
+                tile_size_x,
+                tile_size_y,
+                columns,
+                rows,
+                padding_x,
+                padding_y,
+            } => atlases.add(TextureAtlas::from_grid_with_padding(
+                asset_server.get_handle(path),
+                Vec2::new(*tile_size_x, *tile_size_y),
+                *columns,
+                *rows,
+                Vec2::new(*padding_x, *padding_y),
+            )).clone_untyped(),
+        bevy_asset_loader::DynamicAsset::StandardMaterial { path } => materials.add(asset_server.get_handle::<bevy::prelude::Image, &String>(path).into()).clone_untyped(),};
+    }
+
+    let mut asset_creation = assets.iter().fold(quote!(), |token_stream, asset| match asset {
+        AssetField::Basic(basic) => {
             let field_ident = basic.field_ident.clone();
             let asset_path = basic.asset_path.clone();
-            quote!(#es #field_ident : asset_server.get_handle(#asset_path),)
+            quote!(#token_stream #field_ident : asset_server.get_handle(#asset_path),)
         }
-        Asset::Folder(basic) => {
+        AssetField::Folder(basic) => {
             let field_ident = basic.field_ident.clone();
             let asset_path = basic.asset_path.clone();
-            quote!(#es #field_ident : asset_server.load_folder(#asset_path).unwrap(),)
+            quote!(#token_stream #field_ident : asset_server.load_folder(#asset_path).unwrap(),)
         }
-        Asset::Dynamic(dynamic) => {
+        AssetField::Dynamic(dynamic) => {
             let field_ident = dynamic.field_ident.clone();
             let asset_key = dynamic.key.clone();
-            quote!(#es #field_ident : asset_server.get_handle(asset_keys.get_path_for_key(#asset_key.into())),)
+            quote!(#token_stream #field_ident : {
+                let asset = asset_keys.get_asset(#asset_key.into());
+                let handle = match asset {
+                    bevy_asset_loader::DynamicAsset::File { path } => asset_server.get_handle_untyped(path),
+                    #conditional_dynamic_asset_collections
+                };
+                handle.typed()
+            },
+            )
         }
-        Asset::StandardMaterial(basic) => {
+        AssetField::StandardMaterial(basic) => {
             let field_ident = basic.field_ident.clone();
             let asset_path = basic.asset_path.clone();
-            quote!(#es #field_ident : materials.add(asset_server.get_handle(#asset_path).into()),)
+            quote!(#token_stream #field_ident : materials.add(asset_server.get_handle(#asset_path).into()),)
         }
-        Asset::TextureAtlas(texture_atlas) => {
+        AssetField::TextureAtlas(texture_atlas) => {
             let field_ident = texture_atlas.field_ident.clone();
             let asset_path = texture_atlas.asset_path.clone();
             let tile_size_x = texture_atlas.tile_size_x;
@@ -160,7 +211,7 @@ fn impl_asset_collection(
             let padding_x = texture_atlas.padding_x;
             let padding_y = texture_atlas.padding_y;
             quote!(
-                #es #field_ident : {
+                #token_stream #field_ident : {
                 atlases.add(TextureAtlas::from_grid_with_padding(
                     asset_server.get_handle(#asset_path),
                     Vec2::new(#tile_size_x, #tile_size_y),
@@ -177,49 +228,27 @@ fn impl_asset_collection(
     ));
 
     let asset_loading = assets.iter().fold(quote!(), |es, asset| match asset {
-        Asset::Basic(asset) => {
+        AssetField::Basic(asset) => {
             let asset_path = asset.asset_path.clone();
             quote!(#es handles.push(asset_server.load_untyped(#asset_path));)
         }
-        Asset::Folder(asset) => {
+        AssetField::Folder(asset) => {
             let asset_path = asset.asset_path.clone();
             quote!(#es asset_server.load_folder(#asset_path).unwrap().drain(..).for_each(|handle| handles.push(handle));)
         }
-        Asset::Dynamic(dynamic) => {
+        AssetField::Dynamic(dynamic) => {
             let asset_key = dynamic.key.clone();
-            quote!(#es handles.push(asset_server.load_untyped(asset_keys.get_path_for_key(#asset_key.into())));)
+            quote!(#es handles.push(asset_server.load_untyped(asset_keys.get_asset(#asset_key.into()).get_file_path()));)
         }
-        Asset::StandardMaterial(asset) => {
+        AssetField::StandardMaterial(asset) => {
             let asset_path = asset.asset_path.clone();
             quote!(#es handles.push(asset_server.load_untyped(#asset_path));)
         }
-        Asset::TextureAtlas(asset) => {
+        AssetField::TextureAtlas(asset) => {
             let asset_path = asset.asset_path.clone();
             quote!(#es handles.push(asset_server.load_untyped(#asset_path));)
         }
     });
-
-    #[allow(unused_mut)]
-    let mut conditional_asset_collections = quote! {};
-
-    #[cfg(feature = "render")]
-    {
-        // color materials
-        conditional_asset_collections = quote! {
-        #conditional_asset_collections
-                let mut materials = cell
-                    .get_resource_mut::<Assets<StandardMaterial>>()
-                    .expect("Cannot get resource Assets<StandardMaterial>");
-        };
-
-        // texture atlas
-        conditional_asset_collections = quote! {
-        #conditional_asset_collections
-                let mut atlases = cell
-                    .get_resource_mut::<Assets<TextureAtlas>>()
-                    .expect("Cannot get resource Assets<TextureAtlas>");
-        };
-    }
 
     let create_function = quote! {
             fn create(world: &mut World) -> Self {
@@ -265,9 +294,11 @@ enum ParseFieldError {
     UnknownAttributeType(proc_macro2::TokenStream),
     UnknownAttribute(proc_macro2::TokenStream),
     MissingAttributes(Vec<String>),
+    #[allow(dead_code)]
+    MissingRenderFeature(proc_macro2::TokenStream),
 }
 
-fn parse_field(field: &Field) -> Result<Asset, Vec<ParseFieldError>> {
+fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
     let mut builder = AssetBuilder::default();
     let mut errors = vec![];
     for attr in field.attrs.iter() {
@@ -286,7 +317,7 @@ fn parse_field(field: &Field) -> Result<Asset, Vec<ParseFieldError>> {
                             builder.asset_path = Some(path_literal.value());
                         } else {
                             errors.push(ParseFieldError::WrongAttributeType(
-                                named_value.clone().into_token_stream(),
+                                named_value.into_token_stream(),
                                 "str",
                             ));
                         }
@@ -295,7 +326,7 @@ fn parse_field(field: &Field) -> Result<Asset, Vec<ParseFieldError>> {
                             builder.folder_path = Some(path_literal.value());
                         } else {
                             errors.push(ParseFieldError::WrongAttributeType(
-                                named_value.clone().into_token_stream(),
+                                named_value.into_token_stream(),
                                 "str",
                             ));
                         }
@@ -304,27 +335,39 @@ fn parse_field(field: &Field) -> Result<Asset, Vec<ParseFieldError>> {
                             builder.key = Some(path_literal.value());
                         } else {
                             errors.push(ParseFieldError::WrongAttributeType(
-                                named_value.clone().into_token_stream(),
+                                named_value.into_token_stream(),
                                 "str",
                             ));
                         }
                     } else {
                         errors.push(ParseFieldError::UnknownAttribute(
-                            named_value.clone().into_token_stream(),
+                            named_value.into_token_stream(),
                         ))
                     }
                 } else if let NestedMeta::Meta(Meta::Path(ref meta_path)) = attribute {
                     let path = meta_path.get_ident().unwrap().clone();
-                    if path == COLOR_MATERIAL_ATTRIBUTE {
-                        builder.is_standard_material = true;
+                    if path == STANDARD_MATERIAL_ATTRIBUTE {
+                        #[cfg(not(feature = "render"))]
+                        errors.push(ParseFieldError::MissingRenderFeature(
+                            meta_path.into_token_stream(),
+                        ));
+                        #[cfg(feature = "render")]
+                        {
+                            builder.is_standard_material = true;
+                        }
                     } else {
                         errors.push(ParseFieldError::UnknownAttribute(
-                            meta_path.clone().into_token_stream(),
+                            meta_path.into_token_stream(),
                         ))
                     }
                 } else if let NestedMeta::Meta(Meta::List(ref meta_list)) = attribute {
                     let path = meta_list.path.get_ident().unwrap().clone();
                     if path == TEXTURE_ATLAS_ATTRIBUTE {
+                        #[cfg(not(feature = "render"))]
+                        errors.push(ParseFieldError::MissingRenderFeature(
+                            meta_list.into_token_stream(),
+                        ));
+                        #[cfg(feature = "render")]
                         for attribute in meta_list.nested.iter() {
                             if let NestedMeta::Meta(Meta::NameValue(ref named_value)) = attribute {
                                 let path = named_value.path.get_ident().unwrap().clone();
@@ -334,7 +377,7 @@ fn parse_field(field: &Field) -> Result<Asset, Vec<ParseFieldError>> {
                                             Some(width.base10_parse::<f32>().unwrap());
                                     } else {
                                         errors.push(ParseFieldError::WrongAttributeType(
-                                            named_value.clone().into_token_stream(),
+                                            named_value.into_token_stream(),
                                             "float",
                                         ));
                                     }
@@ -344,7 +387,7 @@ fn parse_field(field: &Field) -> Result<Asset, Vec<ParseFieldError>> {
                                             Some(height.base10_parse::<f32>().unwrap());
                                     } else {
                                         errors.push(ParseFieldError::WrongAttributeType(
-                                            named_value.clone().into_token_stream(),
+                                            named_value.into_token_stream(),
                                             "float",
                                         ));
                                     }
@@ -354,7 +397,7 @@ fn parse_field(field: &Field) -> Result<Asset, Vec<ParseFieldError>> {
                                             Some(columns.base10_parse::<usize>().unwrap());
                                     } else {
                                         errors.push(ParseFieldError::WrongAttributeType(
-                                            named_value.clone().into_token_stream(),
+                                            named_value.into_token_stream(),
                                             "integer",
                                         ));
                                     }
@@ -363,7 +406,7 @@ fn parse_field(field: &Field) -> Result<Asset, Vec<ParseFieldError>> {
                                         builder.rows = Some(rows.base10_parse::<usize>().unwrap());
                                     } else {
                                         errors.push(ParseFieldError::WrongAttributeType(
-                                            named_value.clone().into_token_stream(),
+                                            named_value.into_token_stream(),
                                             "integer",
                                         ));
                                     }
@@ -373,7 +416,7 @@ fn parse_field(field: &Field) -> Result<Asset, Vec<ParseFieldError>> {
                                             Some(padding_x.base10_parse::<f32>().unwrap());
                                     } else {
                                         errors.push(ParseFieldError::WrongAttributeType(
-                                            named_value.clone().into_token_stream(),
+                                            named_value.into_token_stream(),
                                             "float",
                                         ));
                                     }
@@ -383,25 +426,25 @@ fn parse_field(field: &Field) -> Result<Asset, Vec<ParseFieldError>> {
                                             Some(padding_y.base10_parse::<f32>().unwrap());
                                     } else {
                                         errors.push(ParseFieldError::WrongAttributeType(
-                                            named_value.clone().into_token_stream(),
+                                            named_value.into_token_stream(),
                                             "float",
                                         ));
                                     }
                                 } else {
                                     errors.push(ParseFieldError::UnknownAttribute(
-                                        named_value.clone().into_token_stream(),
+                                        named_value.into_token_stream(),
                                     ));
                                 }
                             }
                         }
                     } else {
                         errors.push(ParseFieldError::UnknownAttribute(
-                            meta_list.clone().into_token_stream(),
+                            meta_list.into_token_stream(),
                         ))
                     }
                 } else {
                     errors.push(ParseFieldError::UnknownAttributeType(
-                        attribute.clone().into_token_stream(),
+                        attribute.into_token_stream(),
                     ));
                 }
             }
