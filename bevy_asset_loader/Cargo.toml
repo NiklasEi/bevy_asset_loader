@@ -15,10 +15,13 @@ readme = "../README.md"
 [features]
 # This feature requires bevy's TextureAtlas and StandardMaterial assets to be available ("bevy/render")
 render = ["bevy_asset_loader_derive/render"]
+dynamic_assets = ["bevy_asset_ron", "serde"]
 
 [dependencies]
 bevy = { git = "https://github.com/bevyengine/bevy", rev = "385a2b189528d0c6c706f7d25969414b61450774", default-features = false }
 bevy_asset_loader_derive = { version = "=0.9.0-github.main", path = "../bevy_asset_loader_derive" }
+bevy_asset_ron = { version = "0.3.0", optional = true }
+serde = { version = "1", optional = true }
 
 [dev-dependencies]
 bevy = { git = "https://github.com/bevyengine/bevy", rev = "385a2b189528d0c6c706f7d25969414b61450774", features = ["vorbis"] }
@@ -40,6 +43,11 @@ path = "examples/init_resource.rs"
 [[example]]
 name = "dynamic_asset"
 path = "examples/dynamic_asset.rs"
+
+[[example]]
+name = "dynamic_asset_ron"
+path = "examples/dynamic_asset_ron.rs"
+required-features = ["render", "dynamic_assets"]
 
 [[example]]
 name = "no_loading_state"

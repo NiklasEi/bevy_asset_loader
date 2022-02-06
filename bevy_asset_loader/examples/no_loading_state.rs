@@ -5,15 +5,21 @@ use bevy_asset_loader::{AssetCollection, AssetCollectionApp, AssetCollectionWorl
 /// Asset collections can still be used as a convenient method to define resources containing
 /// asset handles. You just need to initialise them either on the [`App`] or the [`World`].
 ///
-/// There are two asset collection in this example. On startup `ImageAssets` are initialised.
+/// The big difference to using a loading state is, that the here presented approach
+/// does not give any guaranties about the loading status of the assets. Here, the asset
+/// collections being available as resource does not automatically mean that all their asset
+/// handles finished loading.
+///
+/// There are two asset collections in this example. On startup `ImageAssets` are initialised.
 /// `AudioAssets` are initialised on the world based on user input (mouse click).
 fn main() {
     App::new()
         .insert_resource(Msaa { samples: 1 })
         .add_plugins(DefaultPlugins)
         // Initialising the asset collection on the App:
-        // The assets will now start loading as soon as your application starts.
+        // The assets will start loading as soon as your application fires up.
         // The resource `ImageAssets` will be available from the beginning.
+        // This requires the extension trait `AssetCollectionApp` to be in scope.
         .init_collection::<ImageAssets>()
         // This system listens for mouse clicks and then loads + inserts the AudioAssets collection
         .add_system(load_and_play_audio.exclusive_system())
@@ -27,6 +33,7 @@ fn load_and_play_audio(world: &mut World) {
         // Initialize the collection on the world.
         // This will start loading the assets in this moment and directly inserts
         // the collection as resource.
+        // This requires the extension trait `AssetCollectionWorld` to be in scope.
         world.init_collection::<AudioAssets>();
 
         let audio_assets = world.get_resource::<AudioAssets>().unwrap();

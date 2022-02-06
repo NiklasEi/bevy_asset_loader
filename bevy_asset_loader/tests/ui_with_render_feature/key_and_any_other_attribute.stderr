@@ -1,19 +1,19 @@
 error: The 'key' attribute has to be the only 'asset' attribute on a field
- --> tests/ui/key_and_any_other_attribute.rs:8:5
+ --> $DIR/key_and_any_other_attribute.rs:8:5
   |
 8 | /     #[asset(path = "test.ogg", key = "test")]
 9 | |     test: Handle<AudioSource>,
   | |_____________________________^
 
 error: The 'key' attribute has to be the only 'asset' attribute on a field
-  --> tests/ui/key_and_any_other_attribute.rs:14:5
+  --> $DIR/key_and_any_other_attribute.rs:14:5
    |
 14 | /     #[asset(folder = "folder", key = "test")]
 15 | |     test: Handle<AudioSource>,
    | |_____________________________^
 
 error: The 'key' attribute has to be the only 'asset' attribute on a field
-  --> tests/ui/key_and_any_other_attribute.rs:20:5
+  --> $DIR/key_and_any_other_attribute.rs:20:5
    |
 20 | /     #[asset(standard_material)]
 21 | |     #[asset(key = "test")]
@@ -21,7 +21,7 @@ error: The 'key' attribute has to be the only 'asset' attribute on a field
    | |__________________________________^
 
 error: The 'key' attribute has to be the only 'asset' attribute on a field
-  --> tests/ui/key_and_any_other_attribute.rs:27:5
+  --> $DIR/key_and_any_other_attribute.rs:27:5
    |
 27 | /     #[asset(texture_atlas(tile_size_x = 100., tile_size_y = 100., columns = 1, rows = 1))]
 28 | |     #[asset(key = "test")]
