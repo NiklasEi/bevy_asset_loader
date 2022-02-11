@@ -167,7 +167,7 @@ fn impl_asset_collection(
                 Vec2::new(*tile_size_x, *tile_size_y),
                 *columns,
                 *rows,
-                Vec2::new(*padding_x, *padding_y),
+                Vec2::new(padding_x.unwrap_or(0.), padding_y.unwrap_or(0.)),
             )).clone_untyped(),
         bevy_asset_loader::DynamicAsset::StandardMaterial { path } => materials.add(asset_server.get_handle::<bevy::prelude::Image, &String>(path).into()).clone_untyped(),};
     }

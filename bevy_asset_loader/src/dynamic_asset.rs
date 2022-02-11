@@ -42,9 +42,9 @@ pub enum DynamicAsset {
         /// Rows on the sprite sheet
         rows: usize,
         /// Padding between columns in pixels
-        padding_x: f32,
+        padding_x: Option<f32>,
         /// Padding between rows in pixels
-        padding_y: f32,
+        padding_y: Option<f32>,
     },
 }
 
