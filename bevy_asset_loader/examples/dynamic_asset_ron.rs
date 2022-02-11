@@ -17,16 +17,17 @@ fn main() {
         .insert_resource(Msaa { samples: 1 })
         .add_system_set(
             SystemSet::on_enter(MyStates::Next)
-                .with_system(spawn_player_and_tree.system())
-                .with_system(play_background_audio.system()),
+                .with_system(spawn_player_and_tree)
+                .with_system(play_background_audio),
         )
+        .add_system_set(SystemSet::on_update(MyStates::Next).with_system(animate_sprite_system))
         .run();
 }
 
 #[derive(AssetCollection)]
 struct ImageAssets {
     #[asset(key = "image.player")]
-    player: Handle<Image>,
+    player: Handle<TextureAtlas>,
     #[asset(key = "image.tree")]
     tree: Handle<Image>,
 }
@@ -42,11 +43,16 @@ fn spawn_player_and_tree(mut commands: Commands, image_assets: Res<ImageAssets>)
     let mut transform = Transform::from_translation(Vec3::new(0., 0., 1.));
     transform.scale = Vec3::splat(0.5);
     commands
-        .spawn_bundle(SpriteBundle {
-            texture: image_assets.player.clone(),
-            transform,
+        .spawn_bundle(SpriteSheetBundle {
+            transform: Transform {
+                translation: Vec3::new(0., 150., 0.),
+                ..Default::default()
+            },
+            sprite: TextureAtlasSprite::new(0),
+            texture_atlas: image_assets.player.clone(),
             ..Default::default()
         })
+        .insert(AnimationTimer(Timer::from_seconds(0.1, true)))
         .insert(Player);
     commands.spawn_bundle(SpriteBundle {
         texture: image_assets.tree.clone(),
@@ -67,3 +73,18 @@ enum MyStates {
 
 #[derive(Component)]
 struct Player;
+
+#[derive(Component)]
+struct AnimationTimer(Timer);
+
+fn animate_sprite_system(
+    time: Res<Time>,
+    mut query: Query<(&mut AnimationTimer, &mut TextureAtlasSprite)>,
+) {
+    for (mut timer, mut sprite) in query.iter_mut() {
+        timer.0.tick(time.delta());
+        if timer.0.finished() {
+            sprite.index = (sprite.index + 1) % 8;
+        }
+    }
+}
