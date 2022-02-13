@@ -30,6 +30,7 @@ pub(crate) struct DynamicAssetField {
 pub(crate) enum AssetField {
     Basic(BasicAssetField),
     Dynamic(DynamicAssetField),
+    OptionalDynamic(DynamicAssetField),
     StandardMaterial(BasicAssetField),
     Folder(BasicAssetField),
     TextureAtlas(TextureAtlasAssetField),
@@ -41,6 +42,7 @@ pub(crate) struct AssetBuilder {
     pub asset_path: Option<String>,
     pub folder_path: Option<String>,
     pub is_standard_material: bool,
+    pub is_optional: bool,
     pub key: Option<String>,
     pub tile_size_x: Option<f32>,
     pub tile_size_y: Option<f32>,
@@ -97,12 +99,22 @@ impl AssetBuilder {
         if self.folder_path.is_some() && self.asset_path.is_some() {
             return Err(vec![ParseFieldError::EitherSingleAssetOrFolder]);
         }
+        if self.is_optional && self.key.is_none() {
+            return Err(vec![ParseFieldError::OnlyDynamicCanBeOptional]);
+        }
         if missing_fields.len() == 4 {
             if self.key.is_some() {
-                return Ok(AssetField::Dynamic(DynamicAssetField {
-                    field_ident: self.field_ident.unwrap(),
-                    key: self.key.unwrap(),
-                }));
+                return if self.is_optional {
+                    Ok(AssetField::OptionalDynamic(DynamicAssetField {
+                        field_ident: self.field_ident.unwrap(),
+                        key: self.key.unwrap(),
+                    }))
+                } else {
+                    Ok(AssetField::Dynamic(DynamicAssetField {
+                        field_ident: self.field_ident.unwrap(),
+                        key: self.key.unwrap(),
+                    }))
+                };
             }
             if self.folder_path.is_some() {
                 return Ok(AssetField::Folder(BasicAssetField {

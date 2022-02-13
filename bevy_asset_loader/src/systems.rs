@@ -142,6 +142,7 @@ pub(crate) fn phase<S: StateData>(world: &mut World) {
                 let state = cell.get_resource::<State<S>>().expect("Cannot get state");
 
                 let mut asset_keys = cell.get_resource_mut::<AssetKeys>().unwrap();
+                // Todo: why add the manual dynamic assets to all loaded collections?
                 for collection in asset_loader_configuration
                     .asset_collection_handles
                     .drain(..)

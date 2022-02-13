@@ -8,8 +8,9 @@ fn main() {
     let mut app = App::new();
     AssetLoader::new(MyStates::AssetLoading)
         .continue_to_state(MyStates::Next)
-        // this collection has a dynamic asset where the file path is resolved at run time
-        // => see the TextureAssets definition below
+        // This collection has a dynamic asset where the file path is resolved at run time
+        // and one optional image asset for the background.
+        // => see the ImageAssets definition below
         .with_collection::<ImageAssets>()
         .with_collection::<AudioAssets>()
         .build(&mut app);
@@ -19,16 +20,22 @@ fn main() {
         .build(&mut app);
     app.add_state(MyStates::MenuAssetLoading)
         .insert_resource(Msaa { samples: 1 })
+        .insert_resource(ShowBackground(false))
         .add_plugins(DefaultPlugins)
         .add_system_set(
             SystemSet::on_enter(MyStates::Next)
-                .with_system(spawn_player_and_tree.system())
-                .with_system(play_background_audio.system()),
+                .with_system(spawn_player_and_tree)
+                .with_system(play_background_audio),
         )
-        .add_system_set(SystemSet::on_enter(MyStates::Menu).with_system(menu.system()))
-        .add_system_set(SystemSet::on_update(MyStates::Menu).with_system(choose_character.system()))
-        .add_system_set(SystemSet::on_exit(MyStates::Menu).with_system(exit_menu.system()))
-        .add_system_set(SystemSet::on_update(MyStates::Next).with_system(move_player.system()))
+        .add_system_set(SystemSet::on_enter(MyStates::Menu).with_system(menu))
+        .add_system_set(
+            SystemSet::on_update(MyStates::Menu)
+                .with_system(character_setup)
+                .with_system(update_menu),
+        )
+        .add_system_set(SystemSet::on_exit(MyStates::Menu).with_system(exit_menu))
+        .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(render_optional_background))
+        .add_system_set(SystemSet::on_update(MyStates::Next).with_system(move_player))
         .run();
 }
 
@@ -39,17 +46,25 @@ struct ImageAssets {
     // => see the choose_character system below
     #[asset(key = "character")]
     player: Handle<Image>,
+    // This optional image is only loaded if background is toggled 'On'
+    #[asset(key = "background", optional)]
+    background: Option<Handle<Image>>,
     #[asset(path = "images/tree.png")]
     tree: Handle<Image>,
 }
 
 // This system decides which file to load as the character sprite based on some player input
-fn choose_character(
+fn character_setup(
     mut state: ResMut<State<MyStates>>,
     mut asset_keys: ResMut<AssetKeys>,
+    mut show_background: ResMut<ShowBackground>,
     mouse_input: Res<Input<MouseButton>>,
+    keyboard_input: Res<Input<KeyCode>>,
 ) {
     if mouse_input.just_pressed(MouseButton::Left) {
+        // Most of the time you don't want to do this manually,
+        // but load dynamic asset collections from a file.
+        // See the `dynamic_asset_ron` example
         asset_keys.register_asset(
             "character",
             DynamicAsset::File {
@@ -63,14 +78,27 @@ fn choose_character(
                 path: "images/zombie.png".to_owned(),
             },
         );
+    } else if keyboard_input.just_pressed(KeyCode::B) {
+        show_background.0 = !show_background.0;
+        return;
     } else {
         return;
     }
 
+    if show_background.0 {
+        asset_keys.register_asset(
+            "background",
+            DynamicAsset::File {
+                path: "images/background.png".to_owned(),
+            },
+        );
+    }
     state
         .set(MyStates::AssetLoading)
         .expect("Failed to change state");
 }
+
+struct ShowBackground(bool);
 
 // Rest of example setup
 
@@ -102,6 +130,15 @@ fn spawn_player_and_tree(mut commands: Commands, image_assets: Res<ImageAssets>)
         transform: Transform::from_translation(Vec3::new(50., 30., 1.)),
         ..Default::default()
     });
+}
+
+fn render_optional_background(mut commands: Commands, image_assets: Res<ImageAssets>) {
+    if let Some(background) = &image_assets.background {
+        commands.spawn_bundle(SpriteBundle {
+            texture: background.clone(),
+            ..Default::default()
+        });
+    }
 }
 
 fn play_background_audio(audio_assets: Res<AudioAssets>, audio: Res<Audio>) {
@@ -148,6 +185,7 @@ fn menu(mut commands: Commands, font_assets: Res<FontAssets>) {
                 margin: Rect::all(Val::Auto),
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
+                flex_direction: FlexDirection::ColumnReverse,
                 ..Default::default()
             },
             visibility: Visibility {
@@ -162,7 +200,9 @@ fn menu(mut commands: Commands, font_assets: Res<FontAssets>) {
                     sections: vec![TextSection {
                         value:
                             "Choose your character: Adventurer (left click) or Zombie (right click)\n\
-                            Your input will decide which image file gets loaded"
+                            Your input will decide which image file gets loaded\n\n\
+                            Press 'B' to toggle background\n\
+                            The background image is optional and not loaded if not needed"
                                 .to_string(),
                         style: TextStyle {
                             font: font_assets.fira_sans.clone(),
@@ -177,7 +217,41 @@ fn menu(mut commands: Commands, font_assets: Res<FontAssets>) {
                 },
                 ..Default::default()
             });
+            parent.spawn_bundle(TextBundle {
+                text: Text {
+                    sections: vec![TextSection {
+                        value: "Background currently Off".to_string(),
+                        style: TextStyle {
+                            font: font_assets.fira_sans.clone(),
+                            font_size: 30.0,
+                            color: Color::rgb(1., 1., 1.),
+                        },
+                    }],
+                    alignment: TextAlignment {
+                        vertical: VerticalAlign::Center,
+                        horizontal: HorizontalAlign::Center,
+                    },
+                },
+                ..Default::default()
+            }).insert(BackgroundText);
         });
+}
+
+fn update_menu(
+    mut background_text: Query<&mut Text, With<BackgroundText>>,
+    show_background: Res<ShowBackground>,
+) {
+    if show_background.is_changed() {
+        background_text
+            .single_mut()
+            .sections
+            .get_mut(0)
+            .unwrap()
+            .value = format!(
+            "Background is {}",
+            if show_background.0 { "On" } else { "Off" }
+        )
+    }
 }
 
 fn exit_menu(mut commands: Commands, ui: Query<Entity, With<MenuUi>>) {
@@ -188,6 +262,9 @@ fn exit_menu(mut commands: Commands, ui: Query<Entity, With<MenuUi>>) {
 
 #[derive(Component)]
 struct Player;
+
+#[derive(Component)]
+struct BackgroundText;
 
 #[derive(Component)]
 struct MenuUi;

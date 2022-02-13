@@ -99,7 +99,7 @@ pub struct DynamicAssetCollection(HashMap<String, DynamicAsset>);
 impl DynamicAssetCollection {
     pub fn apply(self, keys: &mut AssetKeys) {
         for (key, asset) in self.0 {
-            keys.keys.insert(key, asset);
+            keys.key_asset_map.insert(key, asset);
         }
     }
 }

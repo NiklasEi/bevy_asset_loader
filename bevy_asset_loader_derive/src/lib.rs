@@ -34,6 +34,7 @@ pub fn asset_collection_derive(input: TokenStream) -> TokenStream {
 pub(crate) const ASSET_ATTRIBUTE: &str = "asset";
 pub(crate) const PATH_ATTRIBUTE: &str = "path";
 pub(crate) const KEY_ATTRIBUTE: &str = "key";
+pub(crate) const OPTIONAL_ATTRIBUTE: &str = "optional";
 
 pub(crate) const TEXTURE_ATLAS_ATTRIBUTE: &str = "texture_atlas";
 pub(crate) struct TextureAtlasAttribute;
@@ -79,7 +80,13 @@ fn impl_asset_collection(
                                 ParseFieldError::KeyAttributeStandsAlone => {
                                     compile_errors.push(syn::Error::new_spanned(
                                         field.into_token_stream(),
-                                        "The 'key' attribute has to be the only 'asset' attribute on a field",
+                                        "The 'key' attribute cannot be combined with any other asset defining attributes",
+                                    ));
+                                }
+                                ParseFieldError::OnlyDynamicCanBeOptional => {
+                                    compile_errors.push(syn::Error::new_spanned(
+                                        field.into_token_stream(),
+                                        "Only a dynamic asset (with 'key' attribute) can be optional",
                                     ));
                                 }
                                 ParseFieldError::MissingAttributes(missing_attributes) => {
@@ -187,12 +194,27 @@ fn impl_asset_collection(
             let field_ident = dynamic.field_ident.clone();
             let asset_key = dynamic.key.clone();
             quote!(#token_stream #field_ident : {
-                let asset = asset_keys.get_asset(#asset_key.into());
+                let asset = asset_keys.get_asset(#asset_key.into()).unwrap_or_else(|| panic!("Failed to get asset for key '{}'", #asset_key));
                 let handle = match asset {
                     bevy_asset_loader::DynamicAsset::File { path } => asset_server.get_handle_untyped(path),
                     #conditional_dynamic_asset_collections
                 };
                 handle.typed()
+            },
+            )
+        }
+        AssetField::OptionalDynamic(dynamic) => {
+            let field_ident = dynamic.field_ident.clone();
+            let asset_key = dynamic.key.clone();
+            quote!(#token_stream #field_ident : {
+                let asset = asset_keys.get_asset(#asset_key.into());
+                asset.map(|asset| {
+                    let handle = match asset {
+                        bevy_asset_loader::DynamicAsset::File { path } => asset_server.get_handle_untyped(path),
+                        #conditional_dynamic_asset_collections
+                    };
+                    handle.typed()
+                })
             },
             )
         }
@@ -238,7 +260,23 @@ fn impl_asset_collection(
         }
         AssetField::Dynamic(dynamic) => {
             let asset_key = dynamic.key.clone();
-            quote!(#es handles.push(asset_server.load_untyped(asset_keys.get_asset(#asset_key.into()).get_file_path()));)
+            quote!(
+                #es handles.push({
+                    let dynamic_asset = asset_keys.get_asset(#asset_key.into()).unwrap_or_else(|| panic!("Failed to get asset for key '{}'", #asset_key));
+                    asset_server.load_untyped(dynamic_asset.get_file_path())
+                });
+            )
+        }
+        AssetField::OptionalDynamic(dynamic) => {
+            let asset_key = dynamic.key.clone();
+            quote!(
+                #es {
+                    let dynamic_asset = asset_keys.get_asset(#asset_key.into());
+                    if let Some(dynamic_asset) = dynamic_asset {
+                        handles.push(asset_server.load_untyped(dynamic_asset.get_file_path()));
+                    }
+                }
+            )
         }
         AssetField::StandardMaterial(asset) => {
             let asset_path = asset.asset_path.clone();
@@ -290,6 +328,7 @@ enum ParseFieldError {
     NoAttributes,
     EitherSingleAssetOrFolder,
     KeyAttributeStandsAlone,
+    OnlyDynamicCanBeOptional,
     WrongAttributeType(proc_macro2::TokenStream, &'static str),
     UnknownAttributeType(proc_macro2::TokenStream),
     UnknownAttribute(proc_macro2::TokenStream),
@@ -355,6 +394,8 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                         {
                             builder.is_standard_material = true;
                         }
+                    } else if path == OPTIONAL_ATTRIBUTE {
+                        builder.is_optional = true;
                     } else {
                         errors.push(ParseFieldError::UnknownAttribute(
                             meta_path.into_token_stream(),

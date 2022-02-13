@@ -266,27 +266,13 @@ struct LoadingConfiguration<T> {
 /// ```
 #[derive(Default)]
 pub struct AssetKeys {
-    keys: HashMap<String, DynamicAsset>,
+    key_asset_map: HashMap<String, DynamicAsset>,
 }
 
 impl AssetKeys {
     /// Get the asset corresponding to the given key.
-    ///
-    /// PANIC: if the key does not exist
-    pub fn get_asset(&self, key: &str) -> &DynamicAsset {
-        self.keys
-            .get(key)
-            .unwrap_or_else(|| panic!("Failed to get a path for key '{}'", key))
-    }
-
-    /// Get the asset path corresponding to the given key.
-    ///
-    /// PANIC: if the key does not exist
-    pub fn get_path(&self, key: &str) -> &str {
-        self.keys
-            .get(key)
-            .unwrap_or_else(|| panic!("Failed to get a path for key '{}'", key))
-            .get_file_path()
+    pub fn get_asset(&self, key: &str) -> Option<&DynamicAsset> {
+        self.key_asset_map.get(key)
     }
 
     /// Set the corresponding dynamic asset for the given key.
@@ -325,7 +311,7 @@ impl AssetKeys {
     /// # }
     /// ```
     pub fn register_asset<K: Into<String>>(&mut self, key: K, asset: DynamicAsset) {
-        self.keys.insert(key.into(), asset);
+        self.key_asset_map.insert(key.into(), asset);
     }
 }
 
@@ -498,7 +484,7 @@ where
         self
     }
 
-    /// Register an asset collection file to be loaded and used to define values for dynamic assets.
+    /// Register an asset collection file to be loaded and used to define dynamic assets.
     ///
     /// The file will be loaded as [`DynamicAssetCollection`](crate::dynamic_asset::DynamicAssetCollection).
     /// It's mapping of asset keys to asset configurations can be used for dynamic assets.
@@ -705,7 +691,7 @@ where
         self.on_update = self
             .on_update
             .with_system(systems::phase::<State>.exclusive_system().at_end());
-        app.insert_resource(AssetKeys { keys: self.keys });
+        app.insert_resource(AssetKeys { key_asset_map: self.keys });
         app.add_system_set(self.on_enter)
             .add_system_set(self.on_update)
             .add_system_set(self.on_exit);

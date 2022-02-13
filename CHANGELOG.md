@@ -1,5 +1,6 @@
 # Changelog
 
+- Support optional dynamic assets in collections
 - Improved compile error if the `texture_atlas` or `standard_material` attributes are used without the render feature
 - Support loading keys for dynamic assets from ron files
   - New example `dynamic_asset_ron`
