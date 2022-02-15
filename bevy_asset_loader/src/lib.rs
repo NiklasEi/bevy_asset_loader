@@ -691,7 +691,9 @@ where
         self.on_update = self
             .on_update
             .with_system(systems::phase::<State>.exclusive_system().at_end());
-        app.insert_resource(AssetKeys { key_asset_map: self.keys });
+        app.insert_resource(AssetKeys {
+            key_asset_map: self.keys,
+        });
         app.add_system_set(self.on_enter)
             .add_system_set(self.on_update)
             .add_system_set(self.on_exit);
