@@ -35,7 +35,7 @@ struct ImageAssets {
     player: Handle<Image>,
     #[asset(path = "images/tree.png")]
     tree: Handle<Image>,
-    #[asset(folder = "images")]
+    #[asset(path = "images", folder)]
     _images: Vec<HandleUntyped>,
 }
 

@@ -31,6 +31,7 @@ pub(crate) enum AssetField {
     Basic(BasicAssetField),
     Dynamic(DynamicAssetField),
     OptionalDynamic(DynamicAssetField),
+    DynamicFolder(DynamicAssetField),
     StandardMaterial(BasicAssetField),
     Folder(BasicAssetField),
     TextureAtlas(TextureAtlasAssetField),
@@ -40,9 +41,9 @@ pub(crate) enum AssetField {
 pub(crate) struct AssetBuilder {
     pub field_ident: Option<Ident>,
     pub asset_path: Option<String>,
-    pub folder_path: Option<String>,
     pub is_standard_material: bool,
     pub is_optional: bool,
+    pub is_folder: bool,
     pub key: Option<String>,
     pub tile_size_x: Option<f32>,
     pub tile_size_y: Option<f32>,
@@ -83,12 +84,11 @@ impl AssetBuilder {
                 TextureAtlasAttribute::ROWS
             ));
         }
-        if self.asset_path.is_none() && self.folder_path.is_none() && self.key.is_none() {
+        if self.asset_path.is_none() && self.key.is_none() {
             return Err(vec![ParseFieldError::NoAttributes]);
         }
         if self.key.is_some()
-            && (self.folder_path.is_some()
-                || self.asset_path.is_some()
+            && (self.asset_path.is_some()
                 || missing_fields.len() < 4
                 || self.padding_x.is_some()
                 || self.padding_y.is_some()
@@ -96,16 +96,19 @@ impl AssetBuilder {
         {
             return Err(vec![ParseFieldError::KeyAttributeStandsAlone]);
         }
-        if self.folder_path.is_some() && self.asset_path.is_some() {
-            return Err(vec![ParseFieldError::EitherSingleAssetOrFolder]);
-        }
         if self.is_optional && self.key.is_none() {
             return Err(vec![ParseFieldError::OnlyDynamicCanBeOptional]);
         }
         if missing_fields.len() == 4 {
             if self.key.is_some() {
                 return if self.is_optional {
+                    // Todo support optional folder?
                     Ok(AssetField::OptionalDynamic(DynamicAssetField {
+                        field_ident: self.field_ident.unwrap(),
+                        key: self.key.unwrap(),
+                    }))
+                } else if self.is_folder {
+                    Ok(AssetField::DynamicFolder(DynamicAssetField {
                         field_ident: self.field_ident.unwrap(),
                         key: self.key.unwrap(),
                     }))
@@ -116,10 +119,10 @@ impl AssetBuilder {
                     }))
                 };
             }
-            if self.folder_path.is_some() {
+            if self.is_folder {
                 return Ok(AssetField::Folder(BasicAssetField {
                     field_ident: self.field_ident.unwrap(),
-                    asset_path: self.folder_path.unwrap(),
+                    asset_path: self.asset_path.unwrap(),
                 }));
             }
             let asset = BasicAssetField {
@@ -193,7 +196,8 @@ mod test {
     fn folder() {
         let builder = AssetBuilder {
             field_ident: Some(Ident::new("test", Span::call_site())),
-            folder_path: Some("some/folder".to_owned()),
+            asset_path: Some("some/folder".to_owned()),
+            is_folder: true,
             ..Default::default()
         };
 
@@ -259,13 +263,9 @@ mod test {
     }
 
     #[test]
-    fn dynamic_asset_does_not_accept_more_attributes() {
+    fn dynamic_asset_does_only_accept_some_attributes() {
         let mut builder = asset_builder_dynamic();
         builder.asset_path = Some("path".to_owned());
-        assert!(builder.build().is_err());
-
-        let mut builder = asset_builder_dynamic();
-        builder.folder_path = Some("path".to_owned());
         assert!(builder.build().is_err());
 
         let mut builder = asset_builder_dynamic();
@@ -281,6 +281,34 @@ mod test {
         let mut builder = asset_builder_dynamic();
         builder.padding_y = Some(5.0);
         assert!(builder.build().is_err());
+
+        let mut builder = asset_builder_dynamic();
+        builder.is_optional = true;
+        let asset = builder
+            .build()
+            .expect("This should be a valid TextureAtlasAsset");
+        assert_eq!(
+            asset,
+            AssetField::OptionalDynamic(DynamicAssetField {
+                field_ident: Ident::new("test", Span::call_site()),
+                key: "some.asset.key".to_owned(),
+            }),
+            "Dynamic asset with 'optional' attribute should yield 'AssetField::OptionalDynamic'"
+        );
+
+        let mut builder = asset_builder_dynamic();
+        builder.is_folder = true;
+        let asset = builder
+            .build()
+            .expect("This should be a valid TextureAtlasAsset");
+        assert_eq!(
+            asset,
+            AssetField::DynamicFolder(DynamicAssetField {
+                field_ident: Ident::new("test", Span::call_site()),
+                key: "some.asset.key".to_owned(),
+            }),
+            "Dynamic asset with 'folder' attribute should yield 'AssetField::DynamicFolder'"
+        );
     }
 
     fn asset_builder_dynamic() -> AssetBuilder {

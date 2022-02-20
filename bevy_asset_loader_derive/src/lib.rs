@@ -71,12 +71,6 @@ fn impl_asset_collection(
                                 ParseFieldError::NoAttributes => {
                                     default_fields.push(field.clone().ident.unwrap())
                                 }
-                                ParseFieldError::EitherSingleAssetOrFolder => {
-                                    compile_errors.push(syn::Error::new_spanned(
-                                        field.into_token_stream(),
-                                        "You can only specify one of 'folder' or 'path'",
-                                    ));
-                                }
                                 ParseFieldError::KeyAttributeStandsAlone => {
                                     compile_errors.push(syn::Error::new_spanned(
                                         field.into_token_stream(),
@@ -200,8 +194,7 @@ fn impl_asset_collection(
                     #conditional_dynamic_asset_collections
                 };
                 handle.typed()
-            },
-            )
+            },)
         }
         AssetField::OptionalDynamic(dynamic) => {
             let field_ident = dynamic.field_ident.clone();
@@ -215,8 +208,18 @@ fn impl_asset_collection(
                     };
                     handle.typed()
                 })
-            },
-            )
+            },)
+        }
+        AssetField::DynamicFolder(dynamic) => {
+            let field_ident = dynamic.field_ident.clone();
+            let asset_key = dynamic.key.clone();
+            quote!(#token_stream #field_ident : {
+                let asset = asset_keys.get_asset(#asset_key.into()).unwrap_or_else(|| panic!("Failed to get asset for key '{}'", #asset_key));
+                    match asset {
+                        bevy_asset_loader::DynamicAsset::File { path } => asset_server.load_folder(path),
+                        _ => panic!("The asset '{}' cannot be loaded as a folder, because it is not of the type 'File'", #asset_key)
+                    }
+            },)
         }
         AssetField::StandardMaterial(basic) => {
             let field_ident = basic.field_ident.clone();
@@ -278,6 +281,15 @@ fn impl_asset_collection(
                 }
             )
         }
+        AssetField::DynamicFolder(dynamic) => {
+            let asset_key = dynamic.key.clone();
+            quote!(
+                #es {
+                    let dynamic_asset = asset_keys.get_asset(#asset_key.into()).unwrap_or_else(|| panic!("Failed to get asset for key '{}'", #asset_key));
+                    asset_server.load_folder(dynamic_asset.get_file_path()).unwrap().drain(..).for_each(|handle| handles.push(handle));
+                }
+            )
+        }
         AssetField::StandardMaterial(asset) => {
             let asset_path = asset.asset_path.clone();
             quote!(#es handles.push(asset_server.load_untyped(#asset_path));)
@@ -326,7 +338,6 @@ fn impl_asset_collection(
 #[derive(Debug)]
 enum ParseFieldError {
     NoAttributes,
-    EitherSingleAssetOrFolder,
     KeyAttributeStandsAlone,
     OnlyDynamicCanBeOptional,
     WrongAttributeType(proc_macro2::TokenStream, &'static str),
@@ -360,15 +371,6 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                                 "str",
                             ));
                         }
-                    } else if path == FOLDER_ATTRIBUTE {
-                        if let Lit::Str(path_literal) = &named_value.lit {
-                            builder.folder_path = Some(path_literal.value());
-                        } else {
-                            errors.push(ParseFieldError::WrongAttributeType(
-                                named_value.into_token_stream(),
-                                "str",
-                            ));
-                        }
                     } else if path == KEY_ATTRIBUTE {
                         if let Lit::Str(path_literal) = &named_value.lit {
                             builder.key = Some(path_literal.value());
@@ -396,6 +398,8 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                         }
                     } else if path == OPTIONAL_ATTRIBUTE {
                         builder.is_optional = true;
+                    } else if path == FOLDER_ATTRIBUTE {
+                        builder.is_folder = true;
                     } else {
                         errors.push(ParseFieldError::UnknownAttribute(
                             meta_path.into_token_stream(),

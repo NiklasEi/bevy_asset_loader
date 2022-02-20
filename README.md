@@ -89,7 +89,7 @@ use bevy_asset_loader::AssetCollection;
 
 #[derive(AssetCollection)]
 struct MyAssets {
-    #[asset(folder = "images")]
+    #[asset(path = "images", folder)]
     folder: Vec<HandleUntyped>,
 }
 ```

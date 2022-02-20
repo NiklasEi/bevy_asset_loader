@@ -28,3 +28,10 @@ struct AssetCollectionAndKey {
     #[asset(key = "test")]
     test: Handle<TextureAtlas>,
 }
+
+// This combination is allowed for optional dynamic assets
+#[derive(AssetCollection)]
+struct OptionalDynamic {
+    #[asset(key = "test", dsad)]
+    test: Handle<TextureAtlas>,
+}
