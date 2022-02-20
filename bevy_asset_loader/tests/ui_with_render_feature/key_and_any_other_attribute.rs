@@ -10,12 +10,6 @@ struct PathAndKey {
 }
 
 #[derive(AssetCollection)]
-struct FolderAndKey {
-    #[asset(folder = "folder", key = "test")]
-    test: Handle<AudioSource>,
-}
-
-#[derive(AssetCollection)]
 struct StandardMaterialAndKey {
     #[asset(standard_material)]
     #[asset(key = "test")]
@@ -32,6 +26,13 @@ struct AssetCollectionAndKey {
 // This combination is allowed for optional dynamic assets
 #[derive(AssetCollection)]
 struct OptionalDynamic {
-    #[asset(key = "test", dsad)]
-    test: Handle<TextureAtlas>,
+    #[asset(key = "test", optional)]
+    test: Option<Handle<TextureAtlas>>,
+}
+
+// dynamic folder
+#[derive(AssetCollection)]
+struct FolderAndKey {
+    #[asset(folder, key = "test")]
+    test: Vec<HandleUntyped>,
 }

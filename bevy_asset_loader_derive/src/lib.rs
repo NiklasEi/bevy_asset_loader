@@ -215,10 +215,10 @@ fn impl_asset_collection(
             let asset_key = dynamic.key.clone();
             quote!(#token_stream #field_ident : {
                 let asset = asset_keys.get_asset(#asset_key.into()).unwrap_or_else(|| panic!("Failed to get asset for key '{}'", #asset_key));
-                    match asset {
-                        bevy_asset_loader::DynamicAsset::File { path } => asset_server.load_folder(path),
-                        _ => panic!("The asset '{}' cannot be loaded as a folder, because it is not of the type 'File'", #asset_key)
-                    }
+                match asset {
+                    bevy_asset_loader::DynamicAsset::File { path } => asset_server.load_folder(path).unwrap(),
+                    _ => panic!("The asset '{}' cannot be loaded as a folder, because it is not of the type 'File'", #asset_key)
+                }
             },)
         }
         AssetField::StandardMaterial(basic) => {

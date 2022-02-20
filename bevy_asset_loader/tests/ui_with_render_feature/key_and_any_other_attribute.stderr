@@ -8,22 +8,15 @@ error: The 'key' attribute cannot be combined with any other asset defining attr
 error: The 'key' attribute cannot be combined with any other asset defining attributes
   --> $DIR/key_and_any_other_attribute.rs:14:5
    |
-14 | /     #[asset(folder = "folder", key = "test")]
-15 | |     test: Handle<AudioSource>,
-   | |_____________________________^
-
-error: The 'key' attribute cannot be combined with any other asset defining attributes
-  --> $DIR/key_and_any_other_attribute.rs:20:5
-   |
-20 | /     #[asset(standard_material)]
-21 | |     #[asset(key = "test")]
-22 | |     test: Handle<StandardMaterial>,
+14 | /     #[asset(standard_material)]
+15 | |     #[asset(key = "test")]
+16 | |     test: Handle<StandardMaterial>,
    | |__________________________________^
 
 error: The 'key' attribute cannot be combined with any other asset defining attributes
-  --> $DIR/key_and_any_other_attribute.rs:27:5
+  --> $DIR/key_and_any_other_attribute.rs:21:5
    |
-27 | /     #[asset(texture_atlas(tile_size_x = 100., tile_size_y = 100., columns = 1, rows = 1))]
-28 | |     #[asset(key = "test")]
-29 | |     test: Handle<TextureAtlas>,
+21 | /     #[asset(texture_atlas(tile_size_x = 100., tile_size_y = 100., columns = 1, rows = 1))]
+22 | |     #[asset(key = "test")]
+23 | |     test: Handle<TextureAtlas>,
    | |______________________________^
