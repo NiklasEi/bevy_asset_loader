@@ -9,6 +9,7 @@ fn main() {
     app.add_plugins(DefaultPlugins);
     AssetLoader::new(MyStates::AssetLoading)
         .continue_to_state(MyStates::Next)
+        // this call can be repeated for multiple `.assets` files
         .with_asset_collection_file("dynamic_asset_ron.assets")
         .with_collection::<ImageAssets>()
         .with_collection::<AudioAssets>()
