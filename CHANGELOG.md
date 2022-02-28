@@ -4,7 +4,7 @@
 - Folder assets are now marked with the `folder` attribute. The path is defined as for any other asset in `path`.
   - This adds support for dynamic folders in asset collections ([#28](https://github.com/NiklasEi/bevy_asset_loader/issues/28))
 - Support optional dynamic assets in collections ([#24](https://github.com/NiklasEi/bevy_asset_loader/issues/24))
-- Improved compile error if the `texture_atlas` or `standard_material` attributes are used without the render feature
+- Improved compile error if the `texture_atlas` or `standard_material` attributes are used without the render feature (related to [#27](https://github.com/NiklasEi/bevy_asset_loader/issues/27))
 - Support loading keys for dynamic assets from ron files
   - New example `dynamic_asset_ron`
 - Support initialising asset collections directly on the bevy App or World
