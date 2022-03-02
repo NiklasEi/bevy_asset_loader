@@ -1,6 +1,7 @@
 # Changelog
 
 - Support loading folders as vectors of typed handles ([#30](https://github.com/NiklasEi/bevy_asset_loader/issues/30))
+- 'Folder' can be used as alias for 'File' in dynamic asset collection ron files
 
 ## v0.9.0
 - Folder assets are now marked with the `folder` attribute. The path is defined as for any other asset in `path`.
