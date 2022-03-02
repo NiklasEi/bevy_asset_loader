@@ -31,10 +31,25 @@ pub(crate) enum AssetField {
     Basic(BasicAssetField),
     Dynamic(DynamicAssetField),
     OptionalDynamic(DynamicAssetField),
-    DynamicFolder(DynamicAssetField),
+    DynamicFolder(DynamicAssetField, Typed),
     StandardMaterial(BasicAssetField),
-    Folder(BasicAssetField),
+    Folder(BasicAssetField, Typed),
     TextureAtlas(TextureAtlasAssetField),
+}
+
+#[derive(PartialEq, Debug)]
+pub(crate) enum Typed {
+    Yes,
+    No,
+}
+
+impl From<bool> for Typed {
+    fn from(flag: bool) -> Self {
+        match flag {
+            true => Typed::Yes,
+            false => Typed::No,
+        }
+    }
 }
 
 impl AssetField {
@@ -72,47 +87,72 @@ impl AssetField {
                 let asset_path = basic.asset_path.clone();
                 quote!(#token_stream #field_ident : asset_server.get_handle(#asset_path),)
             }
-            AssetField::Folder(basic) => {
+            AssetField::Folder(basic, typed) => {
                 let field_ident = basic.field_ident.clone();
                 let asset_path = basic.asset_path.clone();
-                quote!(#token_stream #field_ident : asset_server.load_folder(#asset_path).unwrap(),)
+                match typed {
+                    Typed::Yes => {
+                        quote!(#token_stream #field_ident : asset_server.load_folder(#asset_path)
+                            .unwrap()
+                            .drain(..)
+                            .map(|handle| handle.typed())
+                            .collect(),
+                        )
+                    }
+                    Typed::No => {
+                        quote!(#token_stream #field_ident : asset_server.load_folder(#asset_path).unwrap(),)
+                    }
+                }
             }
             AssetField::Dynamic(dynamic) => {
                 let field_ident = dynamic.field_ident.clone();
                 let asset_key = dynamic.key.clone();
                 quote!(#token_stream #field_ident : {
-                let asset = asset_keys.get_asset(#asset_key.into()).unwrap_or_else(|| panic!("Failed to get asset for key '{}'", #asset_key));
-                let handle = match asset {
-                    bevy_asset_loader::DynamicAsset::File { path } => asset_server.get_handle_untyped(path),
-                    #conditional_dynamic_asset_collections
-                };
-                handle.typed()
-            },)
-            }
-            AssetField::OptionalDynamic(dynamic) => {
-                let field_ident = dynamic.field_ident.clone();
-                let asset_key = dynamic.key.clone();
-                quote!(#token_stream #field_ident : {
-                let asset = asset_keys.get_asset(#asset_key.into());
-                asset.map(|asset| {
+                    let asset = asset_keys.get_asset(#asset_key.into()).unwrap_or_else(|| panic!("Failed to get asset for key '{}'", #asset_key));
                     let handle = match asset {
                         bevy_asset_loader::DynamicAsset::File { path } => asset_server.get_handle_untyped(path),
                         #conditional_dynamic_asset_collections
                     };
                     handle.typed()
-                })
-            },)
+                },)
             }
-            AssetField::DynamicFolder(dynamic) => {
+            AssetField::OptionalDynamic(dynamic) => {
                 let field_ident = dynamic.field_ident.clone();
                 let asset_key = dynamic.key.clone();
                 quote!(#token_stream #field_ident : {
-                let asset = asset_keys.get_asset(#asset_key.into()).unwrap_or_else(|| panic!("Failed to get asset for key '{}'", #asset_key));
-                match asset {
-                    bevy_asset_loader::DynamicAsset::File { path } => asset_server.load_folder(path).unwrap(),
-                    _ => panic!("The asset '{}' cannot be loaded as a folder, because it is not of the type 'File'", #asset_key)
-                }
-            },)
+                    let asset = asset_keys.get_asset(#asset_key.into());
+                    asset.map(|asset| {
+                        let handle = match asset {
+                            bevy_asset_loader::DynamicAsset::File { path } => asset_server.get_handle_untyped(path),
+                            #conditional_dynamic_asset_collections
+                        };
+                        handle.typed()
+                    })
+                },)
+            }
+            AssetField::DynamicFolder(dynamic, typed) => {
+                let field_ident = dynamic.field_ident.clone();
+                let asset_key = dynamic.key.clone();
+                let load = match typed {
+                    Typed::Yes => {
+                        quote!(bevy_asset_loader::DynamicAsset::File { path } => asset_server.load_folder(path)
+                            .unwrap()
+                            .drain(..)
+                            .map(|handle| handle.typed())
+                            .collect()
+                        )
+                    }
+                    Typed::No => {
+                        quote!(bevy_asset_loader::DynamicAsset::File { path } => asset_server.load_folder(path).unwrap())
+                    }
+                };
+                quote!(#token_stream #field_ident : {
+                    let asset = asset_keys.get_asset(#asset_key.into()).unwrap_or_else(|| panic!("Failed to get asset for key '{}'", #asset_key));
+                    match asset {
+                        #load,
+                        _ => panic!("The asset '{}' cannot be loaded as a folder, because it is not of the type 'File'", #asset_key)
+                    }
+                },)
             }
             AssetField::StandardMaterial(basic) => {
                 let field_ident = basic.field_ident.clone();
@@ -148,7 +188,7 @@ impl AssetField {
                 let asset_path = asset.asset_path.clone();
                 quote!(#token_stream handles.push(asset_server.load_untyped(#asset_path));)
             }
-            AssetField::Folder(asset) => {
+            AssetField::Folder(asset, _) => {
                 let asset_path = asset.asset_path.clone();
                 quote!(#token_stream asset_server.load_folder(#asset_path).unwrap().drain(..).for_each(|handle| handles.push(handle));)
             }
@@ -172,7 +212,7 @@ impl AssetField {
                     }
                 )
             }
-            AssetField::DynamicFolder(dynamic) => {
+            AssetField::DynamicFolder(dynamic, _) => {
                 let asset_key = dynamic.key.clone();
                 quote!(
                     #token_stream {
@@ -200,6 +240,7 @@ pub(crate) struct AssetBuilder {
     pub is_standard_material: bool,
     pub is_optional: bool,
     pub is_folder: bool,
+    pub is_typed_folder: bool,
     pub key: Option<String>,
     pub tile_size_x: Option<f32>,
     pub tile_size_y: Option<f32>,
@@ -264,10 +305,13 @@ impl AssetBuilder {
                         key: self.key.unwrap(),
                     }))
                 } else if self.is_folder {
-                    Ok(AssetField::DynamicFolder(DynamicAssetField {
-                        field_ident: self.field_ident.unwrap(),
-                        key: self.key.unwrap(),
-                    }))
+                    Ok(AssetField::DynamicFolder(
+                        DynamicAssetField {
+                            field_ident: self.field_ident.unwrap(),
+                            key: self.key.unwrap(),
+                        },
+                        self.is_typed_folder.into(),
+                    ))
                 } else {
                     Ok(AssetField::Dynamic(DynamicAssetField {
                         field_ident: self.field_ident.unwrap(),
@@ -276,10 +320,13 @@ impl AssetBuilder {
                 };
             }
             if self.is_folder {
-                return Ok(AssetField::Folder(BasicAssetField {
-                    field_ident: self.field_ident.unwrap(),
-                    asset_path: self.asset_path.unwrap(),
-                }));
+                return Ok(AssetField::Folder(
+                    BasicAssetField {
+                        field_ident: self.field_ident.unwrap(),
+                        asset_path: self.asset_path.unwrap(),
+                    },
+                    self.is_typed_folder.into(),
+                ));
             }
             let asset = BasicAssetField {
                 field_ident: self.field_ident.unwrap(),
@@ -360,10 +407,33 @@ mod test {
         let asset = builder.build().expect("This should be a valid BasicAsset");
         assert_eq!(
             asset,
-            AssetField::Folder(BasicAssetField {
-                field_ident: Ident::new("test", Span::call_site()),
-                asset_path: "some/folder".to_owned()
-            })
+            AssetField::Folder(
+                BasicAssetField {
+                    field_ident: Ident::new("test", Span::call_site()),
+                    asset_path: "some/folder".to_owned()
+                },
+                Typed::No
+            )
+        );
+
+        let builder = AssetBuilder {
+            field_ident: Some(Ident::new("test", Span::call_site())),
+            asset_path: Some("some/folder".to_owned()),
+            is_folder: true,
+            is_typed_folder: true,
+            ..Default::default()
+        };
+
+        let asset = builder.build().expect("This should be a valid BasicAsset");
+        assert_eq!(
+            asset,
+            AssetField::Folder(
+                BasicAssetField {
+                    field_ident: Ident::new("test", Span::call_site()),
+                    asset_path: "some/folder".to_owned()
+                },
+                Typed::Yes
+            )
         );
     }
 
@@ -459,10 +529,31 @@ mod test {
             .expect("This should be a valid TextureAtlasAsset");
         assert_eq!(
             asset,
-            AssetField::DynamicFolder(DynamicAssetField {
-                field_ident: Ident::new("test", Span::call_site()),
-                key: "some.asset.key".to_owned(),
-            }),
+            AssetField::DynamicFolder(
+                DynamicAssetField {
+                    field_ident: Ident::new("test", Span::call_site()),
+                    key: "some.asset.key".to_owned(),
+                },
+                Typed::No
+            ),
+            "Dynamic asset with 'folder' attribute should yield 'AssetField::DynamicFolder'"
+        );
+
+        let mut builder = asset_builder_dynamic();
+        builder.is_folder = true;
+        builder.is_typed_folder = true;
+        let asset = builder
+            .build()
+            .expect("This should be a valid TextureAtlasAsset");
+        assert_eq!(
+            asset,
+            AssetField::DynamicFolder(
+                DynamicAssetField {
+                    field_ident: Ident::new("test", Span::call_site()),
+                    key: "some.asset.key".to_owned(),
+                },
+                Typed::Yes
+            ),
             "Dynamic asset with 'folder' attribute should yield 'AssetField::DynamicFolder'"
         );
     }

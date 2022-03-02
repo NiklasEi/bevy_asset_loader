@@ -13,6 +13,7 @@ fn main() {
         .with_asset_collection_file("dynamic_asset_ron.assets")
         .with_collection::<ImageAssets>()
         .with_collection::<AudioAssets>()
+        .with_collection::<TypedFolder>()
         .build(&mut app);
     app.add_state(MyStates::AssetLoading)
         .insert_resource(Msaa { samples: 1 })
@@ -21,7 +22,11 @@ fn main() {
                 .with_system(spawn_player_and_tree)
                 .with_system(play_background_audio),
         )
-        .add_system_set(SystemSet::on_update(MyStates::Next).with_system(animate_sprite_system))
+        .add_system_set(
+            SystemSet::on_update(MyStates::Next)
+                .with_system(animate_sprite_system)
+                .with_system(play),
+        )
         .run();
 }
 

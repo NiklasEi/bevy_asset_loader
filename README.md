@@ -111,6 +111,18 @@ struct MyAssets {
 }
 ```
 
+If all assets in the folder have the same type you can load the folder as `Vec<Handle<T>>`. Just set `typed` in the `folder` attribute and adapt the type of the field.
+```rust
+use bevy::prelude::*;
+use bevy_asset_loader::AssetCollection;
+
+#[derive(AssetCollection)]
+struct MyAssets {
+    #[asset(path = "images", folder(typed))]
+    folder: Vec<Handle<Image>>,
+}
+```
+
 ### Loading standard materials
 
 You can directly load standard materials if you enable the feature `render`. For a complete example please take a look at [standard_material.rs](/bevy_asset_loader/examples/standard_material.rs).

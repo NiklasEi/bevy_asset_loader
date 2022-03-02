@@ -50,6 +50,7 @@ impl TextureAtlasAttribute {
 }
 
 pub(crate) const FOLDER_ATTRIBUTE: &str = "folder";
+pub(crate) const FOLDER_TYPED_ATTRIBUTE: &str = "typed";
 pub(crate) const STANDARD_MATERIAL_ATTRIBUTE: &str = "standard_material";
 
 fn impl_asset_collection(
@@ -342,6 +343,28 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                                         named_value.into_token_stream(),
                                     ));
                                 }
+                            } else {
+                                errors.push(ParseFieldError::UnknownAttributeType(
+                                    attribute.into_token_stream(),
+                                ));
+                            }
+                        }
+                    } else if path == FOLDER_ATTRIBUTE {
+                        for attribute in meta_list.nested.iter() {
+                            if let NestedMeta::Meta(Meta::Path(ref meta_path)) = attribute {
+                                let path = meta_path.get_ident().unwrap().clone();
+                                if path == FOLDER_TYPED_ATTRIBUTE {
+                                    builder.is_folder = true;
+                                    builder.is_typed_folder = true;
+                                } else {
+                                    errors.push(ParseFieldError::UnknownAttribute(
+                                        meta_path.into_token_stream(),
+                                    ))
+                                }
+                            } else {
+                                errors.push(ParseFieldError::UnknownAttributeType(
+                                    attribute.into_token_stream(),
+                                ));
                             }
                         }
                     } else {

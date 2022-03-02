@@ -1,5 +1,7 @@
 # Changelog
 
+- Support loading folders as vectors of typed handles ([#30](https://github.com/NiklasEi/bevy_asset_loader/issues/30))
+
 ## v0.9.0
 - Folder assets are now marked with the `folder` attribute. The path is defined as for any other asset in `path`.
   - This adds support for dynamic folders in asset collections ([#28](https://github.com/NiklasEi/bevy_asset_loader/issues/28))
