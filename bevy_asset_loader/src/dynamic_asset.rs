@@ -18,7 +18,7 @@ use crate::{AssetKeys, AssetLoaderConfiguration, LoadingStatePhase};
 #[cfg_attr(feature = "dynamic_assets", derive(serde::Deserialize))]
 pub enum DynamicAsset {
     /// A dynamic asset directly loaded from a single file
-    #[serde(alias = "Folder")]
+    #[cfg_attr(feature = "dynamic_assets", serde(alias = "Folder"))]
     File {
         /// Asset file path
         path: String,
