@@ -69,9 +69,8 @@ use bevy::app::App;
 use bevy::asset::Handle;
 use bevy::asset::HandleUntyped;
 use bevy::ecs::prelude::IntoExclusiveSystem;
-use bevy::ecs::schedule::ExclusiveSystemDescriptorCoercion;
 use bevy::ecs::schedule::StateData;
-use bevy::prelude::{FromWorld, SystemSet, World};
+use bevy::prelude::{FromWorld, ResMut, Schedule, State, SystemSet, SystemStage, World};
 use bevy::utils::HashMap;
 #[cfg(feature = "dynamic_assets")]
 use bevy_asset_ron::RonAssetPlugin;
@@ -81,6 +80,7 @@ pub use bevy_asset_loader_derive::AssetCollection;
 use dynamic_asset::DynamicAssetCollection;
 
 pub use crate::dynamic_asset::DynamicAsset;
+use crate::systems::{finish_loading_state, initialize_loading_state, run_loading_state};
 
 mod dynamic_asset;
 mod systems;
@@ -125,7 +125,7 @@ impl AssetCollectionApp for App {
             // This resource is required for loading a collection
             // Since bevy_asset_loader does not have a "real" Plugin,
             // we need to make sure the resource exists here
-            self.init_resource::<AssetKeys>();
+            self.init_resource::<DynamicAssets>();
             // make sure the assets start to load
             let _ = Collection::load(&mut self.world);
             let resource = Collection::create(&mut self.world);
@@ -148,11 +148,11 @@ pub trait AssetCollectionWorld {
 impl AssetCollectionWorld for World {
     fn init_collection<A: AssetCollection>(&mut self) {
         if self.get_resource::<A>().is_none() {
-            if self.get_resource::<AssetKeys>().is_none() {
+            if self.get_resource::<DynamicAssets>().is_none() {
                 // This resource is required for loading a collection
                 // Since bevy_asset_loader does not have a "real" Plugin,
                 // we need to make sure the resource exists here
-                self.insert_resource(AssetKeys::default());
+                self.insert_resource(DynamicAssets::default());
             }
             // make sure the assets start to load
             let _ = A::load(self);
@@ -169,7 +169,6 @@ struct LoadingAssetHandles<A: AssetCollection> {
 
 struct AssetLoaderConfiguration<State> {
     configuration: HashMap<State, LoadingConfiguration<State>>,
-    phase: HashMap<State, LoadingStatePhase>,
     #[cfg(feature = "dynamic_assets")]
     asset_collection_handles: Vec<Handle<DynamicAssetCollection>>,
     #[cfg(feature = "dynamic_assets")]
@@ -180,7 +179,6 @@ impl<State> Default for AssetLoaderConfiguration<State> {
     fn default() -> Self {
         AssetLoaderConfiguration {
             configuration: HashMap::default(),
-            phase: HashMap::default(),
             #[cfg(feature = "dynamic_assets")]
             asset_collection_handles: vec![],
             #[cfg(feature = "dynamic_assets")]
@@ -204,12 +202,19 @@ impl<State: StateData> AssetLoaderConfiguration<State> {
     }
 }
 
-#[derive(Clone, Debug)]
-enum LoadingStatePhase {
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+enum LoadingState {
+    /// Starting point. Here it will be decided whether or not dynamic asset collections need to be loaded.
+    Initialize,
+    /// Load dynamic asset collections and configure their key <-> asset mapping
     #[cfg(feature = "dynamic_assets")]
-    PreparingAssetKeys,
-    StartLoading,
-    Loading,
+    LoadingDynamicAssetCollections,
+    /// Load the actual asset collections and check their status every frame.
+    LoadingAssets,
+    /// All collections are loaded and inserted. Time to e.g. run custom [insert_resource](bevy_asset_loader::AssetLoader::insert_resource).
+    Finalize,
+    /// A 'parking' state in case no next state is defined
+    Done,
 }
 
 struct LoadingConfiguration<T> {
@@ -224,10 +229,10 @@ struct LoadingConfiguration<T> {
 ///
 /// ```edition2021
 /// # use bevy::prelude::*;
-/// # use bevy_asset_loader::{AssetKeys, AssetCollection, DynamicAsset};
+/// # use bevy_asset_loader::{DynamicAssets, AssetCollection, DynamicAsset};
 /// fn choose_character(
 ///     mut state: ResMut<State<GameState>>,
-///     mut asset_keys: ResMut<AssetKeys>,
+///     mut asset_keys: ResMut<DynamicAssets>,
 ///     mouse_input: Res<Input<MouseButton>>,
 /// ) {
 ///     if mouse_input.just_pressed(MouseButton::Left) {
@@ -265,11 +270,11 @@ struct LoadingConfiguration<T> {
 /// # }
 /// ```
 #[derive(Default)]
-pub struct AssetKeys {
+pub struct DynamicAssets {
     key_asset_map: HashMap<String, DynamicAsset>,
 }
 
-impl AssetKeys {
+impl DynamicAssets {
     /// Get the asset corresponding to the given key.
     pub fn get_asset(&self, key: &str) -> Option<&DynamicAsset> {
         self.key_asset_map.get(key)
@@ -280,10 +285,10 @@ impl AssetKeys {
     /// In case the key is already known, its value will be overwritten.
     /// ```edition2021
     /// # use bevy::prelude::*;
-    /// # use bevy_asset_loader::{AssetKeys, AssetCollection, DynamicAsset};
+    /// # use bevy_asset_loader::{DynamicAssets, AssetCollection, DynamicAsset};
     /// fn choose_character(
     ///     mut state: ResMut<State<GameState>>,
-    ///     mut asset_keys: ResMut<AssetKeys>,
+    ///     mut asset_keys: ResMut<DynamicAssets>,
     ///     mouse_input: Res<Input<MouseButton>>,
     /// ) {
     ///     if mouse_input.just_pressed(MouseButton::Left) {
@@ -312,6 +317,17 @@ impl AssetKeys {
     /// ```
     pub fn register_asset<K: Into<String>>(&mut self, key: K, asset: DynamicAsset) {
         self.key_asset_map.insert(key.into(), asset);
+    }
+
+    /// Register all asset keys and their values
+    #[cfg(feature = "dynamic_assets")]
+    pub fn register_dynamic_collection(
+        &mut self,
+        dynamic_asset_collection: DynamicAssetCollection,
+    ) {
+        for (key, asset) in dynamic_asset_collection.0 {
+            self.key_asset_map.insert(key, asset);
+        }
     }
 }
 
@@ -367,20 +383,20 @@ impl AssetKeys {
 pub struct AssetLoader<State> {
     next_state: Option<State>,
     loading_state: State,
-    keys: HashMap<String, DynamicAsset>,
-    on_enter: SystemSet,
-    on_update: SystemSet,
-    on_exit: SystemSet,
+    dynamic_assets: HashMap<String, DynamicAsset>,
     collection_count: usize,
+    start_loading_assets: SystemSet,
+    check_loading_assets: SystemSet,
+    initialize_resources: SystemSet,
     #[cfg(feature = "dynamic_assets")]
     asset_collection_file_ending: &'static str,
     #[cfg(feature = "dynamic_assets")]
     asset_collection_files: Vec<String>,
 }
 
-impl<State> AssetLoader<State>
+impl<S> AssetLoader<S>
 where
-    State: StateData,
+    S: StateData,
 {
     /// Create a new [`AssetLoader`]
     ///
@@ -423,15 +439,15 @@ where
     /// #     pub tree: Handle<Image>,
     /// # }
     /// ```
-    pub fn new(load: State) -> AssetLoader<State> {
+    pub fn new(load: S) -> AssetLoader<S> {
         Self {
             next_state: None,
             loading_state: load.clone(),
-            keys: HashMap::default(),
-            on_enter: SystemSet::on_enter(load.clone()),
-            on_update: SystemSet::on_update(load.clone()),
-            on_exit: SystemSet::on_exit(load),
+            dynamic_assets: HashMap::default(),
             collection_count: 0,
+            start_loading_assets: SystemSet::on_enter(LoadingState::LoadingAssets),
+            check_loading_assets: SystemSet::on_update(LoadingState::LoadingAssets),
+            initialize_resources: SystemSet::on_enter(LoadingState::Finalize),
             #[cfg(feature = "dynamic_assets")]
             asset_collection_file_ending: "assets",
             #[cfg(feature = "dynamic_assets")]
@@ -478,7 +494,7 @@ where
     /// #     pub tree: Handle<Image>,
     /// # }
     /// ```
-    pub fn continue_to_state(mut self, next: State) -> Self {
+    pub fn continue_to_state(mut self, next: S) -> Self {
         self.next_state = Some(next);
 
         self
@@ -487,7 +503,7 @@ where
     /// Register an asset collection file to be loaded and used to define dynamic assets.
     ///
     /// The file will be loaded as [`DynamicAssetCollection`](crate::dynamic_asset::DynamicAssetCollection).
-    /// It's mapping of asset keys to asset configurations can be used for dynamic assets.
+    /// It's mapping of asset keys to dynamic assets will be used during the loading state to resolve asset keys.
     ///
     /// See the `dynamic_asset_ron` example.
     #[cfg(feature = "dynamic_assets")]
@@ -539,18 +555,21 @@ where
     /// # }
     /// ```
     pub fn with_collection<A: AssetCollection>(mut self) -> Self {
-        self.on_update = self
-            .on_update
-            .with_system(systems::loading_state::<State, A>.exclusive_system());
+        self.start_loading_assets = self
+            .start_loading_assets
+            .with_system(systems::start_loading_collection::<S, A>.exclusive_system());
+        self.check_loading_assets = self
+            .check_loading_assets
+            .with_system(systems::check_loading_collection::<S, A>.exclusive_system());
         self.collection_count += 1;
 
         self
     }
 
-    /// Insert a map of asset keys with corresponding assets
-    pub fn add_keys(mut self, mut keys: HashMap<String, DynamicAsset>) -> Self {
-        keys.drain().for_each(|(key, value)| {
-            self.keys.insert(key, value);
+    /// Insert a map of asset keys with corresponding dynamic assets
+    pub fn add_dynamic_assets(mut self, mut dynamic_assets: HashMap<String, DynamicAsset>) -> Self {
+        dynamic_assets.drain().for_each(|(key, value)| {
+            self.dynamic_assets.insert(key, value);
         });
 
         self
@@ -601,8 +620,8 @@ where
     /// # }
     /// ```
     pub fn init_resource<A: FromWorld + Send + Sync + 'static>(mut self) -> Self {
-        self.on_exit = self
-            .on_exit
+        self.initialize_resources = self
+            .initialize_resources
             .with_system(systems::init_resource::<A>.exclusive_system());
 
         self
@@ -650,12 +669,13 @@ where
     /// ```
     #[allow(unused_mut)]
     pub fn build(mut self, app: &mut App) {
-        if !app
-            .world
-            .contains_resource::<AssetLoaderConfiguration<State>>()
-        {
+        if !app.world.contains_resource::<AssetLoaderConfiguration<S>>() {
             app.world
-                .insert_resource(AssetLoaderConfiguration::<State>::default());
+                .insert_resource(AssetLoaderConfiguration::<S>::default());
+        }
+        if !app.world.contains_resource::<LoadingStateSchedules<S>>() {
+            app.world
+                .insert_resource(LoadingStateSchedules::<S>::default());
         }
         let config = LoadingConfiguration {
             next: self.next_state.clone(),
@@ -664,39 +684,90 @@ where
         {
             let mut asset_loader_configuration = app
                 .world
-                .get_resource_mut::<AssetLoaderConfiguration<State>>()
+                .get_resource_mut::<AssetLoaderConfiguration<S>>()
                 .unwrap();
             asset_loader_configuration
                 .configuration
                 .insert(self.loading_state.clone(), config);
-            asset_loader_configuration
-                .phase
-                .insert(self.loading_state.clone(), LoadingStatePhase::StartLoading);
             #[cfg(feature = "dynamic_assets")]
             asset_loader_configuration
                 .asset_collection_files
                 .insert(self.loading_state.clone(), self.asset_collection_files);
         }
+
+        let mut loading_schedule = Schedule::default();
+        let mut update = SystemStage::parallel();
+
         #[cfg(feature = "dynamic_assets")]
         {
             app.add_plugin(RonAssetPlugin::<DynamicAssetCollection>::new(&[
                 self.asset_collection_file_ending
             ]));
-            self.on_enter = self.on_enter.with_system(
-                dynamic_asset::prepare_asset_keys::<State>
-                    .exclusive_system()
-                    .at_start(),
+
+            update.add_system_set(
+                SystemSet::on_enter(LoadingState::LoadingDynamicAssetCollections).with_system(
+                    dynamic_asset::load_dynamic_asset_collections::<S>.exclusive_system(),
+                ),
+            );
+            update.add_system_set(
+                SystemSet::on_update(LoadingState::LoadingDynamicAssetCollections).with_system(
+                    dynamic_asset::check_dynamic_asset_collections::<S>.exclusive_system(),
+                ),
             );
         }
-        self.on_update = self
-            .on_update
-            .with_system(systems::phase::<State>.exclusive_system().at_end());
-        app.insert_resource(AssetKeys {
-            key_asset_map: self.keys,
+        app.insert_resource(DynamicAssets {
+            key_asset_map: self.dynamic_assets,
         });
-        app.add_system_set(self.on_enter)
-            .add_system_set(self.on_update)
-            .add_system_set(self.on_exit);
+
+        update.add_system_set(
+            SystemSet::on_update(LoadingState::Initialize).with_system(initialize_loading_state),
+        );
+        update.add_system_set(self.start_loading_assets);
+        update.add_system_set(self.check_loading_assets);
+        update.add_system_set(self.initialize_resources);
+        update.add_system_set(
+            SystemSet::on_update(LoadingState::Finalize).with_system(finish_loading_state::<S>),
+        );
+
+        loading_schedule.add_stage("update", update);
+
+        app.insert_resource(State::new(LoadingState::Initialize));
+        loading_schedule.add_system_set_to_stage("update", State::<LoadingState>::get_driver());
+
+        let mut loading_state_schedules = app
+            .world
+            .get_resource_mut::<LoadingStateSchedules<S>>()
+            .unwrap();
+        loading_state_schedules
+            .schedules
+            .insert(self.loading_state.clone(), loading_schedule);
+
+        app.add_system_set(
+            SystemSet::on_enter(self.loading_state.clone()).with_system(reset_loading_state),
+        );
+        app.add_system_set(
+            SystemSet::on_update(self.loading_state)
+                .with_system(run_loading_state::<S>.exclusive_system()),
+        );
+    }
+}
+
+fn reset_loading_state(mut state: ResMut<State<LoadingState>>) {
+    // we can ignore the error, because it means we are already in the correct state
+    let _ = state.overwrite_set(LoadingState::Initialize);
+}
+
+/// Resource to store the schedules for loading states
+pub struct LoadingStateSchedules<State: StateData> {
+    /// Map to store a schedule per loading state
+    pub schedules: HashMap<State, Schedule>,
+}
+
+impl<State: StateData> Default for LoadingStateSchedules<State> {
+    fn default() -> Self {
+        LoadingStateSchedules {
+            schedules: HashMap::default(),
+        }
     }
 }
 

@@ -67,7 +67,7 @@ See [two_collections.rs](/bevy_asset_loader/examples/two_collections.rs) for a c
 
 ### Dynamic assets
 
-It is possible to decide asset configurations at run-time. This is done via the resource `AssetKeys` which is basically a map of asset keys to their configurations. The `AssetLoader` initializes the resource and reads it during the loading state.
+It is possible to decide asset configurations at run-time. This is done via the resource `DynamicAssets` which is basically a map of asset keys to their configurations. The `AssetLoader` initializes the resource and reads it during the loading state.
 
 ```rust
 use bevy::prelude::*;
@@ -82,7 +82,7 @@ struct ImageAssets {
 }
 ```
 
-The key `player` in the above example should be either set manually in the `AssetKeys` resource before the loading state (see the [dynamic_asset](bevy_asset_loader/examples/dynamic_asset.rs) example), or should be part of a `.assets` file in ron format (the file ending can be configured):
+The key `player` in the above example should be either set manually in the `DynamicAssets` resource before the loading state (see the [dynamic_asset](bevy_asset_loader/examples/dynamic_asset.rs) example), or should be part of a `.assets` file in ron format (the file ending can be configured):
 
 ```ron
 ({

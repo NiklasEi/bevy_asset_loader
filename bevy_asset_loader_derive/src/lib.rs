@@ -145,7 +145,7 @@ fn impl_asset_collection(
             fn load(world: &mut World) -> Vec<HandleUntyped> {
                 let cell = world.cell();
                 let asset_server = cell.get_resource::<AssetServer>().expect("Cannot get AssetServer");
-                let asset_keys = cell.get_resource::<bevy_asset_loader::AssetKeys>().expect("Cannot get bevy_asset_loader::AssetKeys");
+                let asset_keys = cell.get_resource::<bevy_asset_loader::DynamicAssets>().expect("Cannot get bevy_asset_loader::DynamicAssets");
                 let mut handles = vec![];
                 #asset_loading
                 handles
@@ -178,7 +178,7 @@ fn impl_asset_collection(
             fn create(world: &mut World) -> Self {
                 let cell = world.cell();
                 let asset_server = cell.get_resource::<AssetServer>().expect("Cannot get AssetServer");
-                let asset_keys = cell.get_resource::<bevy_asset_loader::AssetKeys>().expect("Cannot get bevy_asset_loader::AssetKeys");
+                let asset_keys = cell.get_resource::<bevy_asset_loader::DynamicAssets>().expect("Cannot get bevy_asset_loader::DynamicAssets");
                 #conditional_asset_collections
                 #name {
                     #asset_creation
