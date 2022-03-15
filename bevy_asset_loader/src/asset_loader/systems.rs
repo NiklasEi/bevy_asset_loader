@@ -1,18 +1,12 @@
-#[cfg(feature = "dynamic_assets")]
-use bevy::asset::Assets;
 use bevy::asset::{AssetServer, LoadState};
 use bevy::ecs::prelude::{FromWorld, State, World};
 use bevy::ecs::schedule::StateData;
 use bevy::prelude::{Mut, Res, ResMut, Stage};
 use std::marker::PhantomData;
 
-#[cfg(feature = "dynamic_assets")]
-use crate::dynamic_asset::DynamicAssetCollection;
-#[cfg(feature = "dynamic_assets")]
-use crate::DynamicAssets;
-use crate::{
-    AssetCollection, AssetLoaderConfiguration, LoadingAssetHandles, LoadingState,
-    LoadingStateSchedules,
+use crate::asset_collection::AssetCollection;
+use crate::asset_loader::{
+    AssetLoaderConfiguration, LoadingAssetHandles, LoadingState, LoadingStateSchedules,
 };
 
 pub(crate) fn init_resource<Asset: FromWorld + Send + Sync + 'static>(world: &mut World) {
@@ -132,4 +126,9 @@ pub(crate) fn run_loading_state<S: StateData>(world: &mut World) {
             }
         },
     );
+}
+
+pub(crate) fn reset_loading_state(mut state: ResMut<State<LoadingState>>) {
+    // we can ignore the error, because it means we are already in the correct state
+    let _ = state.overwrite_set(LoadingState::Initialize);
 }
