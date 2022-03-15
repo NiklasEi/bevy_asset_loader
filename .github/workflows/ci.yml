@@ -28,10 +28,11 @@ jobs:
       - name: Install alsa and udev
         run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
         if: runner.os == 'linux'
-      - name: Build & run tests
-        run: cargo test
-      - name: Build & run tests with render feature
-        run: cargo test --features render
+      - name: Install cargo-hack
+        run: |
+          cargo install cargo-hack
+      - name: Build & run tests for all feature combinations
+        run: cargo hack test --feature-powerset
   lint:
     runs-on: ubuntu-latest
     steps:

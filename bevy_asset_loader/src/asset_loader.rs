@@ -135,7 +135,7 @@ where
     pub fn new(load: S) -> AssetLoader<S> {
         Self {
             next_state: None,
-            loading_state: load.clone(),
+            loading_state: load,
             dynamic_assets: HashMap::default(),
             collection_count: 0,
             start_loading_assets: SystemSet::on_enter(LoadingState::LoadingAssets),

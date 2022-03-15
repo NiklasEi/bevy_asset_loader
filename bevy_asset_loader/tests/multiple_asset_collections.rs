@@ -9,6 +9,9 @@ use bevy_asset_loader::{AssetCollection, AssetLoader};
 #[cfg_attr(not(feature = "render"), test)]
 fn multiple_asset_collections() {
     let mut app = App::new();
+    app.add_plugins(MinimalPlugins)
+        .add_plugin(AssetPlugin::default())
+        .add_plugin(AudioPlugin::default());
 
     AssetLoader::new(MyStates::Load)
         .continue_to_state(MyStates::Next)
@@ -17,9 +20,6 @@ fn multiple_asset_collections() {
         .build(&mut app);
 
     app.add_state(MyStates::Load)
-        .add_plugins(MinimalPlugins)
-        .add_plugin(AssetPlugin::default())
-        .add_plugin(AudioPlugin::default())
         .add_system_set(SystemSet::on_update(MyStates::Load).with_system(timeout.system()))
         .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(expect.system()))
         .run();
