@@ -13,8 +13,16 @@ categories = ["game-development"]
 readme = "../README.md"
 
 [features]
-# This feature requires bevy's TextureAtlas and StandardMaterial assets to be available ("bevy/render")
-render = ["bevy_asset_loader_derive/render"]
+# This feature adds support for bevy's TextureAtlas assets
+2d = [
+    "bevy/bevy_sprite",
+    "bevy_asset_loader_derive/2d",
+]
+# This feature adds support for bevy's StandardMaterial assets
+3d = [
+    "bevy/bevy_pbr",
+    "bevy_asset_loader_derive/3d",
+]
 dynamic_assets = ["bevy_asset_ron", "serde"]
 
 [dependencies]
