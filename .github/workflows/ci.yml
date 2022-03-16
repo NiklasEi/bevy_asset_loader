@@ -31,7 +31,7 @@ jobs:
       - name: Build & run tests
         run: cargo test
       - name: Build & run tests with 2d and 3d features
-        run: cargo test --features 2d,3d
+        run: cargo test --features "2d","3d"
   lint:
     runs-on: ubuntu-latest
     steps:
