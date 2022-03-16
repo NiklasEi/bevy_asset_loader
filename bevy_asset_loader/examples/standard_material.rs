@@ -3,7 +3,7 @@ use bevy_asset_loader::{AssetCollection, AssetLoader};
 
 /// This example demonstrates how to load a standard material from a .png file
 ///
-/// Requires the feature 'render'
+/// Requires the feature '3d'
 fn main() {
     let mut app = App::new();
     AssetLoader::new(MyStates::AssetLoading)
