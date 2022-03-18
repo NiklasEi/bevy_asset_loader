@@ -13,8 +13,16 @@ categories = ["game-development"]
 readme = "../README.md"
 
 [features]
-# This feature requires bevy's TextureAtlas and StandardMaterial assets to be available ("bevy/render")
-render = ["bevy_asset_loader_derive/render"]
+# This feature adds support for bevy's TextureAtlas assets
+2d = [
+    "bevy/bevy_sprite",
+    "bevy_asset_loader_derive/2d",
+]
+# This feature adds support for bevy's StandardMaterial assets
+3d = [
+    "bevy/bevy_pbr",
+    "bevy_asset_loader_derive/3d",
+]
 dynamic_assets = ["bevy_asset_ron", "serde"]
 
 [dependencies]
@@ -34,7 +42,7 @@ path = "examples/two_collections.rs"
 [[example]]
 name = "atlas_from_grid"
 path = "examples/atlas_from_grid.rs"
-required-features = ["render"]
+required-features = ["2d"]
 
 [[example]]
 name = "init_resource"
@@ -47,7 +55,7 @@ path = "examples/dynamic_asset.rs"
 [[example]]
 name = "dynamic_asset_ron"
 path = "examples/dynamic_asset_ron.rs"
-required-features = ["render", "dynamic_assets"]
+required-features = ["2d", "dynamic_assets"]
 
 [[example]]
 name = "no_loading_state"
@@ -56,4 +64,4 @@ path = "examples/no_loading_state.rs"
 [[example]]
 name = "standard_material"
 path = "examples/standard_material.rs"
-required-features = ["render"]
+required-features = ["3d"]

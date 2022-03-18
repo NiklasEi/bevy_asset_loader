@@ -60,9 +60,9 @@ impl AssetField {
         #[allow(unused_mut, unused_assignments)]
         let mut conditional_dynamic_asset_collections = quote! {};
 
-        #[cfg(feature = "render")]
+        #[cfg(feature = "2d")]
         {
-            conditional_dynamic_asset_collections = quote! {
+            let conditional_2d = quote! {
             bevy_asset_loader::DynamicAsset::TextureAtlas {
                 path,
                 tile_size_x,
@@ -78,7 +78,16 @@ impl AssetField {
                 *rows,
                 Vec2::new(padding_x.unwrap_or(0.), padding_y.unwrap_or(0.)),
             )).clone_untyped(),
-            bevy_asset_loader::DynamicAsset::StandardMaterial { path } => materials.add(asset_server.get_handle::<bevy::prelude::Image, &String>(path).into()).clone_untyped(),};
+            };
+            conditional_dynamic_asset_collections.extend(conditional_2d);
+        }
+        #[cfg(feature = "3d")]
+        {
+            let conditional_3d = quote! {
+            bevy_asset_loader::DynamicAsset::StandardMaterial { path } =>
+                materials.add(asset_server.get_handle::<bevy::prelude::Image, &String>(path).into()).clone_untyped(),
+            };
+            conditional_dynamic_asset_collections.extend(conditional_3d);
         }
 
         match self {

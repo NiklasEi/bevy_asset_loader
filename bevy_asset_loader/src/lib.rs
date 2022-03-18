@@ -700,7 +700,7 @@ where
     }
 }
 
-#[cfg(feature = "render")]
+#[cfg(all(feature = "2d", feature = "3d"))]
 #[doc = include_str!("../../README.md")]
 #[cfg(doctest)]
 struct ReadmeDoctests;
