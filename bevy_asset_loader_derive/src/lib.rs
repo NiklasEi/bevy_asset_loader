@@ -111,10 +111,16 @@ fn impl_asset_collection(
                                         "Unknown attribute",
                                     ));
                                 }
-                                ParseFieldError::MissingRenderFeature(token_stream) => {
+                                ParseFieldError::Missing2dFeature(token_stream) => {
                                     compile_errors.push(syn::Error::new_spanned(
                                         token_stream,
-                                        "This attribute requires the 'render' feature",
+                                        "This attribute requires the '2d' feature",
+                                    ));
+                                }
+                                ParseFieldError::Missing3dFeature(token_stream) => {
+                                    compile_errors.push(syn::Error::new_spanned(
+                                        token_stream,
+                                        "This attribute requires the '3d' feature",
                                     ));
                                 }
                             }
@@ -154,17 +160,25 @@ fn impl_asset_collection(
 
     #[allow(unused_mut, unused_assignments)]
     let mut conditional_asset_collections = quote! {};
-    #[cfg(feature = "render")]
+    #[cfg(feature = "2d")]
     {
-        // standard materials and texture atlas resources
-        conditional_asset_collections = quote! {
-                let mut materials = cell
-                    .get_resource_mut::<Assets<StandardMaterial>>()
-                    .expect("Cannot get resource Assets<StandardMaterial>");
+        // texture atlas resources
+        let conditional_2d = quote! {
                 let mut atlases = cell
                     .get_resource_mut::<Assets<TextureAtlas>>()
                     .expect("Cannot get resource Assets<TextureAtlas>");
         };
+        conditional_asset_collections.extend(conditional_2d);
+    }
+    #[cfg(feature = "3d")]
+    {
+        // standard materials
+        let conditional_3d = quote! {
+                let mut materials = cell
+                    .get_resource_mut::<Assets<StandardMaterial>>()
+                    .expect("Cannot get resource Assets<StandardMaterial>");
+        };
+        conditional_asset_collections.extend(conditional_3d);
     }
 
     let mut asset_creation = assets.iter().fold(quote!(), |token_stream, asset| {
@@ -208,7 +222,9 @@ enum ParseFieldError {
     UnknownAttribute(proc_macro2::TokenStream),
     MissingAttributes(Vec<String>),
     #[allow(dead_code)]
-    MissingRenderFeature(proc_macro2::TokenStream),
+    Missing2dFeature(proc_macro2::TokenStream),
+    #[allow(dead_code)]
+    Missing3dFeature(proc_macro2::TokenStream),
 }
 
 fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
@@ -251,11 +267,11 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                 } else if let NestedMeta::Meta(Meta::Path(ref meta_path)) = attribute {
                     let path = meta_path.get_ident().unwrap().clone();
                     if path == STANDARD_MATERIAL_ATTRIBUTE {
-                        #[cfg(not(feature = "render"))]
-                        errors.push(ParseFieldError::MissingRenderFeature(
+                        #[cfg(not(feature = "3d"))]
+                        errors.push(ParseFieldError::Missing3dFeature(
                             meta_path.into_token_stream(),
                         ));
-                        #[cfg(feature = "render")]
+                        #[cfg(feature = "3d")]
                         {
                             builder.is_standard_material = true;
                         }
@@ -271,11 +287,11 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                 } else if let NestedMeta::Meta(Meta::List(ref meta_list)) = attribute {
                     let path = meta_list.path.get_ident().unwrap().clone();
                     if path == TEXTURE_ATLAS_ATTRIBUTE {
-                        #[cfg(not(feature = "render"))]
-                        errors.push(ParseFieldError::MissingRenderFeature(
+                        #[cfg(not(feature = "2d"))]
+                        errors.push(ParseFieldError::Missing2dFeature(
                             meta_list.into_token_stream(),
                         ));
-                        #[cfg(feature = "render")]
+                        #[cfg(feature = "2d")]
                         for attribute in meta_list.nested.iter() {
                             if let NestedMeta::Meta(Meta::NameValue(ref named_value)) = attribute {
                                 let path = named_value.path.get_ident().unwrap().clone();

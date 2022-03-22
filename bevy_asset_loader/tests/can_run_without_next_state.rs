@@ -6,7 +6,7 @@ use bevy::audio::AudioPlugin;
 use bevy::prelude::*;
 use bevy_asset_loader::{AssetCollection, AssetLoader};
 
-#[cfg_attr(not(feature = "render"), test)]
+#[cfg_attr(all(not(feature = "2d"), not(feature = "3d")), test)]
 fn can_run_without_next_state() {
     let mut app = App::new();
     app.add_state(MyStates::Load)

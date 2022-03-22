@@ -1,11 +1,11 @@
-#[cfg(feature = "render")]
+#[cfg(all(feature = "2d", feature = "3d"))]
 #[test]
-fn ui_with_render_feature() {
+fn ui_with_2d_3d_features() {
     let t = trybuild::TestCases::new();
-    t.compile_fail("tests/ui_with_render_feature/*.rs");
+    t.compile_fail("tests/ui_with_2d_3d_features/*.rs");
 }
 
-#[cfg(not(feature = "render"))]
+#[cfg(all(not(feature = "2d"), not(feature = "3d")))]
 #[test]
 fn ui() {
     let t = trybuild::TestCases::new();

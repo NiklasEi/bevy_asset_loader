@@ -70,7 +70,7 @@ pub use crate::asset_loader::{AssetLoader, DynamicAsset, DynamicAssets};
 
 pub use bevy_asset_loader_derive::AssetCollection;
 
-#[cfg(feature = "render")]
+#[cfg(all(feature = "2d", feature = "3d"))]
 #[doc = include_str!("../../README.md")]
 #[cfg(doctest)]
 struct ReadmeDoctests;

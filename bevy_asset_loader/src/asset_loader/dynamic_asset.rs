@@ -14,13 +14,13 @@ pub enum DynamicAsset {
         path: String,
     },
     /// A dynamic standard material asset directly loaded from an image file
-    #[cfg(feature = "render")]
+    #[cfg(feature = "3d")]
     StandardMaterial {
         /// Asset file path
         path: String,
     },
     /// A dynamic texture atlas asset loaded from a sprite sheet
-    #[cfg(feature = "render")]
+    #[cfg(feature = "2d")]
     TextureAtlas {
         /// Asset file path
         path: String,
@@ -44,9 +44,9 @@ impl DynamicAsset {
     pub fn get_file_path(&self) -> &str {
         match self {
             DynamicAsset::File { path } => path,
-            #[cfg(feature = "render")]
+            #[cfg(feature = "3d")]
             DynamicAsset::StandardMaterial { path } => path,
-            #[cfg(feature = "render")]
+            #[cfg(feature = "2d")]
             DynamicAsset::TextureAtlas { path, .. } => path,
         }
     }
