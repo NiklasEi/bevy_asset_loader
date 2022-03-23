@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_asset_loader::{AssetCollection, AssetKeys, AssetLoader, DynamicAsset};
+use bevy_asset_loader::{AssetCollection, AssetLoader, DynamicAsset, DynamicAssets};
 
 const PLAYER_SPEED: f32 = 5.;
 
@@ -42,7 +42,7 @@ fn main() {
 #[derive(AssetCollection)]
 struct ImageAssets {
     // This key will be resolved when the collection is loaded.
-    // It needs to be registered in the resource bevy_asset_loader::AssetKeys
+    // It needs to be registered in the resource bevy_asset_loader::DynamicAssets
     // => see the choose_character system below
     #[asset(key = "character")]
     player: Handle<Image>,
@@ -56,7 +56,7 @@ struct ImageAssets {
 // This system decides which file to load as the character sprite based on some player input
 fn character_setup(
     mut state: ResMut<State<MyStates>>,
-    mut asset_keys: ResMut<AssetKeys>,
+    mut asset_keys: ResMut<DynamicAssets>,
     mut show_background: ResMut<ShowBackground>,
     mouse_input: Res<Input<MouseButton>>,
     keyboard_input: Res<Input<KeyCode>>,
