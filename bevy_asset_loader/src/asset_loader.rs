@@ -43,7 +43,7 @@ pub use dynamic_asset::{DynamicAsset, DynamicAssets};
 ///
 ///     app.add_state(GameState::Loading)
 ///         .add_system_set(SystemSet::on_enter(GameState::Menu)
-///             .with_system(play_audio.system())
+///             .with_system(play_audio)
 ///         )
 /// #       .set_runner(|mut app| app.schedule.run(&mut app.world))
 ///         .run();

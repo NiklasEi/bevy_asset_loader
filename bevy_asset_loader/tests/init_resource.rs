@@ -20,8 +20,8 @@ fn init_resource() {
         .build(&mut app);
 
     app.add_state(MyStates::Load)
-        .add_system_set(SystemSet::on_update(MyStates::Load).with_system(timeout.system()))
-        .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(expect.system()))
+        .add_system_set(SystemSet::on_update(MyStates::Load).with_system(timeout))
+        .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(expect))
         .run();
 }
 

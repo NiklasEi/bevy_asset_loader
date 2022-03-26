@@ -16,7 +16,7 @@ fn main() {
     app.add_state(MyStates::AssetLoading)
         .insert_resource(Msaa { samples: 1 })
         .add_plugins(DefaultPlugins)
-        .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(draw.system()))
+        .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(draw))
         .run();
 }
 

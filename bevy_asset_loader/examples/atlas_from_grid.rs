@@ -13,10 +13,8 @@ fn main() {
     app.add_state(MyStates::AssetLoading)
         .insert_resource(Msaa { samples: 1 })
         .add_plugins(DefaultPlugins)
-        .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(draw_atlas.system()))
-        .add_system_set(
-            SystemSet::on_update(MyStates::Next).with_system(animate_sprite_system.system()),
-        )
+        .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(draw_atlas))
+        .add_system_set(SystemSet::on_update(MyStates::Next).with_system(animate_sprite_system))
         .run();
 }
 

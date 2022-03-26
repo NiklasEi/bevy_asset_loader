@@ -16,10 +16,10 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_system_set(
             SystemSet::on_enter(MyStates::Next)
-                .with_system(spawn_player_and_tree.system())
-                .with_system(play_background_audio.system()),
+                .with_system(spawn_player_and_tree)
+                .with_system(play_background_audio),
         )
-        .add_system_set(SystemSet::on_update(MyStates::Next).with_system(move_player.system()))
+        .add_system_set(SystemSet::on_update(MyStates::Next).with_system(move_player))
         .run();
 }
 
