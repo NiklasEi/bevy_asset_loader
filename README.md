@@ -11,7 +11,7 @@ The plugin supports different paths for asset collections to be loaded. The most
 
 Asset configurations, like their file path or tile dimensions for sprite sheets, can be resolved at compile time (through derive macro attributes), or at run time (see ["Dynamic assets"](#dynamic-assets)). The second allows managing asset configurations as assets. This means you can keep a list of your asset files and their properties in asset files (at the moment only `ron` files are supported).
 
-*The `main` branch and the latest release (see [version table](#compatible-bevy-versions)) support Bevy version `0.6`. If you like living on the edge, take a look at the `bevy_main` branch, which tries to stay close to Bevy's development.*
+*The `main` branch and the latest release support Bevy version `0.6` (see [version table](#compatible-bevy-versions)). If you like living on the edge, take a look at the `bevy_main` branch, which tries to stay close to Bevy's development.*
 
 ## How to use
 
