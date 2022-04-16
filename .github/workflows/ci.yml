@@ -30,7 +30,7 @@ jobs:
         if: runner.os == 'linux'
       - name: Install cargo-hack
         run: |
-          cargo install cargo-hack
+          cargo install cargo-hack --force
       - name: Build & run tests for all feature combinations
         run: cargo hack test --feature-powerset
   lint:

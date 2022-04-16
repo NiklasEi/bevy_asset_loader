@@ -1,6 +1,7 @@
 use bevy::asset::{AssetServer, LoadState};
 use bevy::ecs::prelude::{FromWorld, State, World};
 use bevy::ecs::schedule::StateData;
+use bevy::ecs::system::SystemState;
 use bevy::prelude::{Mut, Res, ResMut, Stage};
 use std::marker::PhantomData;
 
@@ -15,23 +16,20 @@ pub(crate) fn init_resource<Asset: FromWorld + Send + Sync + 'static>(world: &mu
 }
 
 pub(crate) fn start_loading_collection<S: StateData, Assets: AssetCollection>(world: &mut World) {
-    {
-        let cell = world.cell();
-        let mut asset_loader_configuration = cell
-            .get_resource_mut::<AssetLoaderConfiguration<S>>()
-            .expect("Cannot get AssetLoaderConfiguration");
-        let state = cell.get_resource::<State<S>>().expect("Cannot get state");
-        let mut config = asset_loader_configuration
-            .configuration
-            .get_mut(state.current())
-            .unwrap_or_else(|| {
-                panic!(
-                    "Could not find a loading configuration for state {:?}",
-                    state.current()
-                )
-            });
-        config.count += 1;
-    }
+    let mut system_state: SystemState<(ResMut<AssetLoaderConfiguration<S>>, Res<State<S>>)> =
+        SystemState::new(world);
+    let (mut asset_loader_configuration, state) = system_state.get_mut(world);
+
+    let mut config = asset_loader_configuration
+        .configuration
+        .get_mut(state.current())
+        .unwrap_or_else(|| {
+            panic!(
+                "Could not find a loading configuration for state {:?}",
+                state.current()
+            )
+        });
+    config.count += 1;
     let handles = LoadingAssetHandles {
         handles: Assets::load(world),
         marker: PhantomData::<Assets>,
