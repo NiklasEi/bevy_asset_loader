@@ -1,6 +1,6 @@
 [package]
 name = "bevy_asset_loader"
-version = "0.10.0"
+version = "0.11.0-github.main"
 authors = ["Niklas Eicker <git@nikl.me>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
@@ -27,7 +27,7 @@ dynamic_assets = ["bevy_asset_ron", "serde"]
 
 [dependencies]
 bevy = { version = "0.7", default-features = false }
-bevy_asset_loader_derive = { version = "=0.10.0", path = "../bevy_asset_loader_derive" }
+bevy_asset_loader_derive = { version = "=0.11.0-github.main", path = "../bevy_asset_loader_derive" }
 bevy_asset_ron = { version = "0.4", optional = true }
 serde = { version = "1", optional = true }
 
