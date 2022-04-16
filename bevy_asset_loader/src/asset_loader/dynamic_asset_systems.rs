@@ -7,21 +7,20 @@ use bevy::asset::LoadState;
 #[cfg(feature = "dynamic_assets")]
 use bevy::ecs::schedule::StateData;
 #[cfg(feature = "dynamic_assets")]
-use bevy::prelude::{AssetServer, Assets, State, World};
+use bevy::ecs::system::SystemState;
+#[cfg(feature = "dynamic_assets")]
+use bevy::prelude::{AssetServer, Assets, Query, Res, ResMut, State, World};
 
 #[cfg(feature = "dynamic_assets")]
 pub(crate) fn load_dynamic_asset_collections<S: StateData>(world: &mut World) {
-    let cell = world.cell();
-    let mut asset_loader_config = cell
-        .get_resource_mut::<AssetLoaderConfiguration<S>>()
-        .unwrap();
-    let asset_server = cell.get_resource::<AssetServer>().unwrap();
-    let state = cell
-        .get_resource::<State<S>>()
-        .expect("Cannot get State resource");
-    let mut loading_state = cell
-        .get_resource_mut::<State<LoadingState>>()
-        .expect("Cannot get LoadingStatePhase");
+    let mut system_state: SystemState<(
+        ResMut<AssetLoaderConfiguration<S>>,
+        ResMut<State<LoadingState>>,
+        Res<AssetServer>,
+        Res<State<S>>,
+    )> = SystemState::new(world);
+    let (mut asset_loader_config, mut loading_state, asset_server, state) =
+        system_state.get_mut(world);
 
     let files = asset_loader_config.get_asset_collection_files(state.current());
     if files.is_empty() {
@@ -39,39 +38,37 @@ pub(crate) fn load_dynamic_asset_collections<S: StateData>(world: &mut World) {
 
 #[cfg(feature = "dynamic_assets")]
 pub(crate) fn check_dynamic_asset_collections<S: StateData>(world: &mut World) {
-    {
-        let cell = world.cell();
-        let asset_server = cell
-            .get_resource::<AssetServer>()
-            .expect("Cannot get AssetServer resource");
-        let mut asset_loader_configuration = cell
-            .get_resource_mut::<AssetLoaderConfiguration<S>>()
-            .expect("Cannot get AssetLoaderConfiguration");
-        let mut loading_state = cell
-            .get_resource_mut::<State<LoadingState>>()
-            .expect("Failed to get loading state");
-        let collections_load_state = asset_server.get_group_load_state(
-            asset_loader_configuration
-                .asset_collection_handles
-                .iter()
-                .map(|handle| handle.id),
-        );
-        if collections_load_state == LoadState::Loaded {
-            let mut dynamic_asset_collections = cell
-                .get_resource_mut::<Assets<DynamicAssetCollection>>()
-                .expect("Cannot get AssetServer resource");
+    let mut system_state: SystemState<(
+        Res<AssetServer>,
+        ResMut<AssetLoaderConfiguration<S>>,
+        ResMut<State<LoadingState>>,
+        ResMut<Assets<DynamicAssetCollection>>,
+        ResMut<DynamicAssets>,
+    )> = SystemState::new(world);
+    let (
+        asset_server,
+        mut asset_loader_configuration,
+        mut loading_state,
+        mut dynamic_asset_collections,
+        mut asset_keys,
+    ) = system_state.get_mut(world);
 
-            let mut asset_keys = cell.get_resource_mut::<DynamicAssets>().unwrap();
-            for collection in asset_loader_configuration
-                .asset_collection_handles
-                .drain(..)
-            {
-                let collection = dynamic_asset_collections.remove(collection).unwrap();
-                asset_keys.register_dynamic_collection(collection);
-            }
-            loading_state
-                .set(LoadingState::LoadingAssets)
-                .expect("Failed to set loading state");
+    let collections_load_state = asset_server.get_group_load_state(
+        asset_loader_configuration
+            .asset_collection_handles
+            .iter()
+            .map(|handle| handle.id),
+    );
+    if collections_load_state == LoadState::Loaded {
+        for collection in asset_loader_configuration
+            .asset_collection_handles
+            .drain(..)
+        {
+            let collection = dynamic_asset_collections.remove(collection).unwrap();
+            asset_keys.register_dynamic_collection(collection);
         }
+        loading_state
+            .set(LoadingState::LoadingAssets)
+            .expect("Failed to set loading state");
     }
 }
