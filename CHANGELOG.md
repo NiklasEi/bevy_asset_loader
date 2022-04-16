@@ -1,5 +1,6 @@
 # Changelog
 
+- Bump Bevy to version `0.7`
 - Split `render` feature into `2d` (for texture atlas support) and `3d` (standard material support)
 - Support loading folders as vectors of typed handles ([#30](https://github.com/NiklasEi/bevy_asset_loader/issues/30))
 - 'Folder' can be used as alias for 'File' in dynamic asset collection ron files
