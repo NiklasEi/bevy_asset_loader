@@ -9,7 +9,7 @@ use bevy::ecs::schedule::StateData;
 #[cfg(feature = "dynamic_assets")]
 use bevy::ecs::system::SystemState;
 #[cfg(feature = "dynamic_assets")]
-use bevy::prelude::{AssetServer, Assets, Query, Res, ResMut, State, World};
+use bevy::prelude::{AssetServer, Assets, Res, ResMut, State, World};
 
 #[cfg(feature = "dynamic_assets")]
 pub(crate) fn load_dynamic_asset_collections<S: StateData>(world: &mut World) {

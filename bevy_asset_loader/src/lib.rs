@@ -15,6 +15,7 @@
 //!         .add_plugins(DefaultPlugins)
 //! # */
 //! #       .add_plugins(MinimalPlugins)
+//! #       .init_resource::<bevy_loading::ProgressCounter>()
 //! #       .add_plugin(AssetPlugin::default());
 //!     AssetLoader::new(GameState::Loading)
 //!         .continue_to_state(GameState::Next)

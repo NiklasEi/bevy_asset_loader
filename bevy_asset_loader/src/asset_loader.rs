@@ -4,7 +4,9 @@ mod systems;
 
 use bevy::app::App;
 use bevy::asset::HandleUntyped;
-use bevy::ecs::schedule::{Schedule, State, StateData, SystemSet, SystemStage};
+use bevy::ecs::schedule::{
+    ExclusiveSystemDescriptorCoercion, Schedule, State, StateData, SystemSet, SystemStage,
+};
 use bevy::ecs::system::IntoExclusiveSystem;
 use bevy::ecs::world::FromWorld;
 use bevy::utils::HashMap;
@@ -22,6 +24,9 @@ use bevy_asset_ron::RonAssetPlugin;
 #[cfg(feature = "dynamic_assets")]
 use dynamic_asset::DynamicAssetCollection;
 
+#[cfg(feature = "progress_tracking")]
+use bevy_loading::ProgressTracking;
+
 pub use dynamic_asset::{DynamicAsset, DynamicAssets};
 
 /// A Bevy plugin to configure automatic asset loading
@@ -34,6 +39,7 @@ pub use dynamic_asset::{DynamicAsset, DynamicAssets};
 ///     let mut app = App::new();
 ///     app
 ///         .add_plugins(MinimalPlugins)
+/// #       .init_resource::<bevy_loading::ProgressCounter>()
 ///         .add_plugin(AssetPlugin::default());
 ///     AssetLoader::new(GameState::Loading)
 ///         .continue_to_state(GameState::Menu)
@@ -103,6 +109,7 @@ where
     ///     let mut app = App::new();
     /// #   app
     /// #       .add_plugins(MinimalPlugins)
+    /// #       .init_resource::<bevy_loading::ProgressCounter>()
     /// #       .add_plugin(AssetPlugin::default());
     ///     AssetLoader::new(GameState::Loading)
     ///         .continue_to_state(GameState::Menu)
@@ -158,6 +165,7 @@ where
     ///     let mut app = App::new();
     /// #   app
     /// #       .add_plugins(MinimalPlugins)
+    /// #       .init_resource::<bevy_loading::ProgressCounter>()
     /// #       .add_plugin(AssetPlugin::default());
     ///     AssetLoader::new(GameState::Loading)
     ///         .continue_to_state(GameState::Menu)
@@ -218,6 +226,7 @@ where
     ///     let mut app = App::new();
     /// #   app
     /// #       .add_plugins(MinimalPlugins)
+    /// #       .init_resource::<bevy_loading::ProgressCounter>()
     /// #       .add_plugin(AssetPlugin::default());
     ///     AssetLoader::new(GameState::Loading)
     ///         .continue_to_state(GameState::Menu)
@@ -277,6 +286,7 @@ where
     ///     let mut app = App::new();
     /// #   app
     /// #       .add_plugins(MinimalPlugins)
+    /// #       .init_resource::<bevy_loading::ProgressCounter>()
     /// #       .add_plugin(AssetPlugin::default());
     ///     AssetLoader::new(GameState::Loading)
     ///         .continue_to_state(GameState::Menu)
@@ -331,6 +341,7 @@ where
     ///     let mut app = App::new();
     /// #   app
     /// #       .add_plugins(MinimalPlugins)
+    /// #       .init_resource::<bevy_loading::ProgressCounter>()
     /// #       .add_plugin(AssetPlugin::default());
     ///     AssetLoader::new(GameState::Loading)
     ///         .continue_to_state(GameState::Menu)
@@ -438,9 +449,17 @@ where
         app.add_system_set(
             SystemSet::on_enter(self.loading_state.clone()).with_system(reset_loading_state),
         );
+
+        #[cfg(feature = "progress_tracking")]
+        let loading_state_system = run_loading_state::<S>
+            .exclusive_system()
+            .at_start()
+            .after(ProgressTracking::Preparation);
+        #[cfg(not(feature = "progress_tracking"))]
+        let loading_state_system = run_loading_state::<S>.exclusive_system().at_start();
+
         app.add_system_set(
-            SystemSet::on_update(self.loading_state)
-                .with_system(run_loading_state::<S>.exclusive_system()),
+            SystemSet::on_update(self.loading_state).with_system(loading_state_system),
         );
     }
 }
