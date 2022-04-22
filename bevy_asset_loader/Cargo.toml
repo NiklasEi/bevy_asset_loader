@@ -31,11 +31,11 @@ bevy = { version = "0.7", default-features = false }
 bevy_asset_loader_derive = { version = "=0.11.0-github.main", path = "../bevy_asset_loader_derive" }
 bevy_asset_ron = { version = "0.4", optional = true }
 serde = { version = "1", optional = true }
-iyes_progress = { git = "https://github.com/IyesGames/iyes_progress", optional = true }
+iyes_progress = { version = "0.3", optional = true }
 
 [dev-dependencies]
 bevy = { version = "0.7", features = ["vorbis"] }
-iyes_progress = { git = "https://github.com/IyesGames/iyes_progress" }
+iyes_progress = { version = "0.3" }
 trybuild = "1.0"
 
 [[example]]
