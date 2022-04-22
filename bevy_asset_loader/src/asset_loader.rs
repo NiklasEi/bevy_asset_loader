@@ -25,7 +25,7 @@ use bevy_asset_ron::RonAssetPlugin;
 use dynamic_asset::DynamicAssetCollection;
 
 #[cfg(feature = "progress_tracking")]
-use bevy_loading::ProgressTracking;
+use iyes_progress::ProgressSystemLabel;
 
 pub use dynamic_asset::{DynamicAsset, DynamicAssets};
 
@@ -39,7 +39,7 @@ pub use dynamic_asset::{DynamicAsset, DynamicAssets};
 ///     let mut app = App::new();
 ///     app
 ///         .add_plugins(MinimalPlugins)
-/// #       .init_resource::<bevy_loading::ProgressCounter>()
+/// #       .init_resource::<iyes_progress::ProgressCounter>()
 ///         .add_plugin(AssetPlugin::default());
 ///     AssetLoader::new(GameState::Loading)
 ///         .continue_to_state(GameState::Menu)
@@ -109,7 +109,7 @@ where
     ///     let mut app = App::new();
     /// #   app
     /// #       .add_plugins(MinimalPlugins)
-    /// #       .init_resource::<bevy_loading::ProgressCounter>()
+    /// #       .init_resource::<iyes_progress::ProgressCounter>()
     /// #       .add_plugin(AssetPlugin::default());
     ///     AssetLoader::new(GameState::Loading)
     ///         .continue_to_state(GameState::Menu)
@@ -165,7 +165,7 @@ where
     ///     let mut app = App::new();
     /// #   app
     /// #       .add_plugins(MinimalPlugins)
-    /// #       .init_resource::<bevy_loading::ProgressCounter>()
+    /// #       .init_resource::<iyes_progress::ProgressCounter>()
     /// #       .add_plugin(AssetPlugin::default());
     ///     AssetLoader::new(GameState::Loading)
     ///         .continue_to_state(GameState::Menu)
@@ -226,7 +226,7 @@ where
     ///     let mut app = App::new();
     /// #   app
     /// #       .add_plugins(MinimalPlugins)
-    /// #       .init_resource::<bevy_loading::ProgressCounter>()
+    /// #       .init_resource::<iyes_progress::ProgressCounter>()
     /// #       .add_plugin(AssetPlugin::default());
     ///     AssetLoader::new(GameState::Loading)
     ///         .continue_to_state(GameState::Menu)
@@ -286,7 +286,7 @@ where
     ///     let mut app = App::new();
     /// #   app
     /// #       .add_plugins(MinimalPlugins)
-    /// #       .init_resource::<bevy_loading::ProgressCounter>()
+    /// #       .init_resource::<iyes_progress::ProgressCounter>()
     /// #       .add_plugin(AssetPlugin::default());
     ///     AssetLoader::new(GameState::Loading)
     ///         .continue_to_state(GameState::Menu)
@@ -341,7 +341,7 @@ where
     ///     let mut app = App::new();
     /// #   app
     /// #       .add_plugins(MinimalPlugins)
-    /// #       .init_resource::<bevy_loading::ProgressCounter>()
+    /// #       .init_resource::<iyes_progress::ProgressCounter>()
     /// #       .add_plugin(AssetPlugin::default());
     ///     AssetLoader::new(GameState::Loading)
     ///         .continue_to_state(GameState::Menu)
@@ -454,7 +454,7 @@ where
         let loading_state_system = run_loading_state::<S>
             .exclusive_system()
             .at_start()
-            .after(ProgressTracking::Preparation);
+            .after(ProgressSystemLabel::Preparation);
         #[cfg(not(feature = "progress_tracking"))]
         let loading_state_system = run_loading_state::<S>.exclusive_system().at_start();
 

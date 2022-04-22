@@ -7,7 +7,7 @@ use bevy::prelude::{Mut, Res, ResMut, Stage};
 use std::marker::PhantomData;
 
 #[cfg(feature = "progress_tracking")]
-use bevy_loading::{Progress, ProgressCounter};
+use iyes_progress::{Progress, ProgressCounter};
 
 use crate::asset_collection::AssetCollection;
 use crate::asset_loader::{

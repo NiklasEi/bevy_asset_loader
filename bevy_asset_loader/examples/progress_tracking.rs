@@ -1,13 +1,13 @@
 use bevy::app::AppExit;
 use bevy::prelude::*;
 use bevy_asset_loader::{AssetCollection, AssetLoader};
-use bevy_loading::{LoadingPlugin, ProgressCounter};
+use iyes_progress::{ProgressCounter, ProgressPlugin};
 
-/// This example shows how to track the loading progress of your collections using `bevy_loading`
+/// This example shows how to track the loading progress of your collections using `iyes_progress`
 ///
 /// Running it will print the current progress for every frame. The five assets from
 /// the two collections will be loaded rather quickly (one or two frames). The final task
-/// completes after three seconds. At that point `bevy_loading` will progress to the next state
+/// completes after one second. At that point, `iyes_progress` will continue to the next state
 /// and the app will terminate.
 fn main() {
     let mut app = App::new();
@@ -18,7 +18,7 @@ fn main() {
     app.add_state(MyStates::AssetLoading)
         .add_plugins(DefaultPlugins)
         // track progress during `MyStates::AssetLoading` and continue to `MyStates::Next` when progress is completed
-        .add_plugin(LoadingPlugin::new(MyStates::AssetLoading).continue_to(MyStates::Next))
+        .add_plugin(ProgressPlugin::new(MyStates::AssetLoading).continue_to(MyStates::Next))
         // gracefully quit the app when `MyStates::Next` is reached
         .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(quit))
         .add_system_set(
@@ -47,7 +47,7 @@ struct TextureAssets {
 }
 
 fn track_fake_long_task(time: Res<Time>, progress: Res<ProgressCounter>) {
-    if time.seconds_since_startup() > 2. {
+    if time.seconds_since_startup() > 1. {
         info!("done");
         progress.manually_track(true.into());
     } else {
