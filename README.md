@@ -82,7 +82,7 @@ struct ImageAssets {
 }
 ```
 
-The key `player` in the above example should be either set manually in the `DynamicAssets` resource before the loading state (see the [dynamic_asset](bevy_asset_loader/examples/dynamic_asset.rs) example), or should be part of a `.assets` file in ron format (the file ending can be configured):
+The key `player` in the above example should be either set manually in the `DynamicAssets` resource before the loading state (see the [dynamic_asset](/bevy_asset_loader/examples/dynamic_asset.rs) example), or should be part of a `.assets` file in ron format (the file ending can be configured):
 
 ```ron
 ({
@@ -95,7 +95,7 @@ The key `player` in the above example should be either set manually in the `Dyna
 })
 ```
 
-Loading dynamic assets from such a `.ron` file requires the feature `dynamic_assets` and a little setup. Take a look at the [dynamic_asset_ron](bevy_asset_loader/examples/dynamic_asset_ron.rs) example to see what this can look like in your game.
+Loading dynamic assets from such a `.ron` file requires the feature `dynamic_assets` and a little setup. Take a look at the [dynamic_asset_ron](/bevy_asset_loader/examples/dynamic_asset_ron.rs) example to see what this can look like in your game.
 
 ### Loading a folder as asset
 
@@ -185,6 +185,12 @@ In situations where you would like to prepare other resources based on your load
 
 `AssetLoader::init_resource` does the same as Bevy's `App::init_resource`, but at a different point in time. While Bevy inserts your resources at the very beginning, the AssetLoader will do so after having inserted your loaded asset collections. That means that you can use your asset collections in the `FromWorld` implementations.
 
+## Progress tracking
+
+With the feature `progress_tracking`, you can integrate with [`iyes_progress`][iyes_progress] to track asset loading during a loading state. This, for example, enables progress bars.
+
+See [`progress_tracking`](/bevy_asset_loader/examples/progress_tracking.rs) for a complete example.
+
 ## Usage without a loading state
 
 Although the pattern of a loading state is quite nice, you might have reasons not to use it. In this case `bevy_asset_loader` can still be helpful. Deriving `AssetCollection` on a resource can significantly reduce the boilerplate for managing assets.
@@ -227,12 +233,12 @@ Compatibility of `bevy_asset_loader` versions:
 
 Licensed under either of
 
-* Apache License, Version 2.0, ([LICENSE-APACHE](LICENSE-APACHE) or https://www.apache.org/licenses/LICENSE-2.0)
-* MIT license ([LICENSE-MIT](LICENSE-MIT) or https://opensource.org/licenses/MIT)
+* Apache License, Version 2.0, ([LICENSE-APACHE](/LICENSE-APACHE) or https://www.apache.org/licenses/LICENSE-2.0)
+* MIT license ([LICENSE-MIT](/LICENSE-MIT) or https://opensource.org/licenses/MIT)
 
 at your option.
 
-Assets in the examples might be distributed under different terms. See the [readme](bevy_asset_loader/examples/README.md#credits) in the `bevy_asset_loader/examples` directory.
+Assets in the examples might be distributed under different terms. See the [readme](/bevy_asset_loader/examples/README.md#credits) in the `bevy_asset_loader/examples` directory.
 
 ## Contribution
 
@@ -242,3 +248,4 @@ additional terms or conditions.
 
 [bevy]: https://bevyengine.org/
 [cheatbook-states]: https://bevy-cheatbook.github.io/programming/states.html
+[iyes_progress]: https://github.com/IyesGames/iyes_progress
