@@ -82,7 +82,7 @@ pub struct AssetLoader<State> {
     check_loading_assets: SystemSet,
     initialize_resources: SystemSet,
     #[cfg(feature = "dynamic_assets")]
-    asset_collection_file_ending: &'static str,
+    asset_collection_file_endings: Vec<&'static str>,
     #[cfg(feature = "dynamic_assets")]
     asset_collection_files: Vec<String>,
 }
@@ -142,7 +142,7 @@ where
             check_loading_assets: SystemSet::on_update(LoadingState::LoadingAssets),
             initialize_resources: SystemSet::on_enter(LoadingState::Finalize),
             #[cfg(feature = "dynamic_assets")]
-            asset_collection_file_ending: "assets",
+            asset_collection_file_endings: vec!["assets"],
             #[cfg(feature = "dynamic_assets")]
             asset_collection_files: vec![],
         }
@@ -320,6 +320,16 @@ where
         self
     }
 
+    /// Set all file endings loaded as dynamic asset collections.
+    ///
+    /// The default file ending is `.assets`
+    #[cfg(feature = "dynamic_assets")]
+    pub fn set_asset_collection_file_endings(mut self, endings: Vec<&'static str>) -> Self {
+        self.asset_collection_file_endings = endings;
+
+        self
+    }
+
     /// Finish configuring the [`AssetLoader`]
     ///
     /// Calling this function is required to set up the asset loading.
@@ -393,9 +403,9 @@ where
 
         #[cfg(feature = "dynamic_assets")]
         {
-            app.add_plugin(RonAssetPlugin::<DynamicAssetCollection>::new(&[
-                self.asset_collection_file_ending
-            ]));
+            app.add_plugin(RonAssetPlugin::<DynamicAssetCollection>::new(
+                &self.asset_collection_file_endings,
+            ));
 
             update.add_system_set(
                 SystemSet::on_enter(LoadingState::LoadingDynamicAssetCollections).with_system(
