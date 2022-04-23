@@ -1,5 +1,7 @@
 # Changelog
 
+- Make file endings for dynamic asset collections configurable ([#38](https://github.com/NiklasEi/bevy_asset_loader/issues/38))
+
 ## v0.10.0
 - Bump Bevy to version `0.7`
 - Split `render` feature into `2d` (for texture atlas support) and `3d` (standard material support)
