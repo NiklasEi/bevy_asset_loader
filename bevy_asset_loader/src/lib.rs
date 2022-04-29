@@ -69,6 +69,9 @@ mod asset_loader;
 pub use crate::asset_collection::{AssetCollection, AssetCollectionApp, AssetCollectionWorld};
 pub use crate::asset_loader::{AssetLoader, DynamicAsset, DynamicAssets};
 
+#[cfg(feature = "dynamic_assets")]
+pub use crate::asset_loader::DynamicAssetCollections;
+
 pub use bevy_asset_loader_derive::AssetCollection;
 
 #[cfg(all(feature = "2d", feature = "3d"))]

@@ -82,7 +82,7 @@ struct ImageAssets {
 }
 ```
 
-The key `player` in the above example should be either set manually in the `DynamicAssets` resource before the loading state (see the [dynamic_asset](/bevy_asset_loader/examples/dynamic_asset.rs) example), or should be part of a `.assets` file in ron format (the file ending can be configured):
+The key `player` in the above example should be either set manually in the `DynamicAssets` resource before the loading state (see the [dynamic_asset](/bevy_asset_loader/examples/dynamic_asset.rs) example), or should be part of a `.assets` file in ron format (supported file endings can be configured with `AssetLoader::set_dynamic_asset_collection_file_endings`):
 
 ```ron
 ({
@@ -95,7 +95,7 @@ The key `player` in the above example should be either set manually in the `Dyna
 })
 ```
 
-Loading dynamic assets from such a `.ron` file requires the feature `dynamic_assets` and a little setup. Take a look at the [dynamic_asset_ron](/bevy_asset_loader/examples/dynamic_asset_ron.rs) example to see what this can look like in your game.
+Loading dynamic assets from such a ron file requires the feature `dynamic_assets` and a little setup. Take a look at the [dynamic_asset_ron](/bevy_asset_loader/examples/dynamic_asset_ron.rs) example to see what this can look like in your game.
 
 ### Loading a folder as asset
 

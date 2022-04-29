@@ -9,8 +9,10 @@ fn main() {
     app.add_plugins(DefaultPlugins);
     AssetLoader::new(MyStates::AssetLoading)
         .continue_to_state(MyStates::Next)
-        // this call can be repeated for multiple `.assets` files
-        .with_asset_collection_file("dynamic_asset_ron.assets")
+        // This call can be repeated for multiple `.assets` files
+        // You can also directly add files to the `DynamicAssetCollections<MyStates>`
+        // resource in systems running before the loading state
+        .with_dynamic_asset_collection_file("dynamic_asset_ron.assets")
         .with_collection::<ImageAssets>()
         .with_collection::<AudioAssets>()
         .build(&mut app);
@@ -25,6 +27,7 @@ fn main() {
         .run();
 }
 
+// The keys used here are defined in `assets/dynamic_asset_ron.assets`
 #[derive(AssetCollection)]
 struct ImageAssets {
     #[asset(key = "image.player")]
