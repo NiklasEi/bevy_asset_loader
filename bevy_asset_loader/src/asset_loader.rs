@@ -199,7 +199,10 @@ where
     /// The file will be loaded as [`DynamicAssetCollection`](crate::dynamic_asset::DynamicAssetCollection).
     /// It's mapping of asset keys to dynamic assets will be used during the loading state to resolve asset keys.
     #[cfg(feature = "dynamic_assets")]
-    pub fn with_dynamic_asset_collection_file(mut self, dynamic_asset_collection_file: &str) -> Self {
+    pub fn with_dynamic_asset_collection_file(
+        mut self,
+        dynamic_asset_collection_file: &str,
+    ) -> Self {
         self.dynamic_asset_collections
             .push(dynamic_asset_collection_file.to_owned());
 
