@@ -191,6 +191,10 @@ With the feature `progress_tracking`, you can integrate with [`iyes_progress`][i
 
 See [`progress_tracking`](/bevy_asset_loader/examples/progress_tracking.rs) for a complete example.
 
+### A note on system ordering
+
+The loading state runs in a single exclusive system `at_start`. This means that any parallel system in the loading state will always run after all asset handles have been checked for their status. You can thus read the current progress in each frame in a parallel system without worrying about frame lag. 
+
 ## Usage without a loading state
 
 Although the pattern of a loading state is quite nice, you might have reasons not to use it. In this case `bevy_asset_loader` can still be helpful. Deriving `AssetCollection` on a resource can significantly reduce the boilerplate for managing assets.
