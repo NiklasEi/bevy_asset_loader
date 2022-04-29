@@ -1,7 +1,11 @@
 use bevy::utils::HashMap;
 
 #[cfg(feature = "dynamic_assets")]
+use bevy::ecs::schedule::StateData;
+#[cfg(feature = "dynamic_assets")]
 use bevy::reflect::TypeUuid;
+#[cfg(feature = "dynamic_assets")]
+use std::marker::PhantomData;
 
 /// These asset variants can be loaded from configuration files. They will then replace
 /// a dynamic asset based on their keys.
@@ -157,6 +161,27 @@ impl DynamicAssets {
     ) {
         for (key, asset) in dynamic_asset_collection.0 {
             self.key_asset_map.insert(key, asset);
+        }
+    }
+}
+
+/// Resource keeping track of dynamic asset files for different loading states
+#[cfg(feature = "dynamic_assets")]
+pub struct DynamicAssetCollections<State: StateData> {
+    /// Dynamic asset files for different loading states.
+    ///
+    /// The file lists get loaded and emptied at the beginning of the loading states.
+    /// Make sure to add any file you would like to load before entering the loading state!
+    pub files: HashMap<State, Vec<String>>,
+    pub(crate) _marker: PhantomData<State>,
+}
+
+#[cfg(feature = "dynamic_assets")]
+impl<State: StateData> Default for DynamicAssetCollections<State> {
+    fn default() -> Self {
+        DynamicAssetCollections {
+            files: HashMap::default(),
+            _marker: PhantomData::default(),
         }
     }
 }
