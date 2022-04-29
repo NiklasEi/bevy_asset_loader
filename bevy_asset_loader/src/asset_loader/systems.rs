@@ -29,7 +29,7 @@ pub(crate) fn start_loading_collection<S: StateData, Assets: AssetCollection>(wo
                 state.current()
             )
         });
-    config.count += 1;
+    config.loading_collections += 1;
     let handles = LoadingAssetHandles {
         handles: Assets::load(world),
         marker: PhantomData::<Assets>,
@@ -69,8 +69,8 @@ pub(crate) fn check_loading_collection<S: StateData, Assets: AssetCollection>(wo
             .configuration
             .get_mut(state.current())
         {
-            config.count -= 1;
-            if config.count == 0 {
+            config.loading_collections -= 1;
+            if config.loading_collections == 0 {
                 loading_state
                     .set(LoadingState::Finalize)
                     .expect("Failed to set loading State");

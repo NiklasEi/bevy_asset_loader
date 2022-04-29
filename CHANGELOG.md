@@ -1,5 +1,6 @@
 # Changelog
 
+- Allow adding dynamic asset collection files to a resource instead of only the Plugin builder
 - Make file endings for dynamic asset collections configurable ([#38](https://github.com/NiklasEi/bevy_asset_loader/issues/38))
 
 ## v0.10.0

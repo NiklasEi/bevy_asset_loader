@@ -16,11 +16,12 @@ use systems::{
 };
 
 #[cfg(feature = "dynamic_assets")]
-use bevy::asset::Handle;
-#[cfg(feature = "dynamic_assets")]
 use bevy_asset_ron::RonAssetPlugin;
 #[cfg(feature = "dynamic_assets")]
 use dynamic_asset::DynamicAssetCollection;
+
+#[cfg(feature = "dynamic_assets")]
+pub use dynamic_asset::DynamicAssetCollections;
 
 pub use dynamic_asset::{DynamicAsset, DynamicAssets};
 
@@ -82,9 +83,9 @@ pub struct AssetLoader<State> {
     check_loading_assets: SystemSet,
     initialize_resources: SystemSet,
     #[cfg(feature = "dynamic_assets")]
-    asset_collection_file_endings: Vec<&'static str>,
+    dynamic_asset_collection_file_endings: Vec<&'static str>,
     #[cfg(feature = "dynamic_assets")]
-    asset_collection_files: Vec<String>,
+    dynamic_asset_collections: Vec<String>,
 }
 
 impl<S> AssetLoader<S>
@@ -142,9 +143,9 @@ where
             check_loading_assets: SystemSet::on_update(LoadingState::LoadingAssets),
             initialize_resources: SystemSet::on_enter(LoadingState::Finalize),
             #[cfg(feature = "dynamic_assets")]
-            asset_collection_file_endings: vec!["assets"],
+            dynamic_asset_collection_file_endings: vec!["assets"],
             #[cfg(feature = "dynamic_assets")]
-            asset_collection_files: vec![],
+            dynamic_asset_collections: vec![],
         }
     }
 
@@ -193,16 +194,14 @@ where
         self
     }
 
-    /// Register an asset collection file to be loaded and used to define dynamic assets.
+    /// Register a dynamic asset collection file to be loaded and used for resolving asset keys.
     ///
     /// The file will be loaded as [`DynamicAssetCollection`](crate::dynamic_asset::DynamicAssetCollection).
     /// It's mapping of asset keys to dynamic assets will be used during the loading state to resolve asset keys.
-    ///
-    /// See the `dynamic_asset_ron` example.
     #[cfg(feature = "dynamic_assets")]
-    pub fn with_asset_collection_file(mut self, asset_collection_file_path: &str) -> Self {
-        self.asset_collection_files
-            .push(asset_collection_file_path.to_owned());
+    pub fn with_dynamic_asset_collection_file(mut self, dynamic_asset_collection_file: &str) -> Self {
+        self.dynamic_asset_collections
+            .push(dynamic_asset_collection_file.to_owned());
 
         self
     }
@@ -324,8 +323,8 @@ where
     ///
     /// The default file ending is `.assets`
     #[cfg(feature = "dynamic_assets")]
-    pub fn set_asset_collection_file_endings(mut self, endings: Vec<&'static str>) -> Self {
-        self.asset_collection_file_endings = endings;
+    pub fn set_dynamic_asset_collection_file_endings(mut self, endings: Vec<&'static str>) -> Self {
+        self.dynamic_asset_collection_file_endings = endings;
 
         self
     }
@@ -372,30 +371,20 @@ where
     /// ```
     #[allow(unused_mut)]
     pub fn build(mut self, app: &mut App) {
-        if !app.world.contains_resource::<AssetLoaderConfiguration<S>>() {
-            app.world
-                .insert_resource(AssetLoaderConfiguration::<S>::default());
-        }
-        if !app.world.contains_resource::<LoadingStateSchedules<S>>() {
-            app.world
-                .insert_resource(LoadingStateSchedules::<S>::default());
-        }
-        let config = LoadingConfiguration {
-            next: self.next_state.clone(),
-            count: 0,
-        };
+        app.init_resource::<AssetLoaderConfiguration<S>>();
+        app.init_resource::<LoadingStateSchedules<S>>();
         {
             let mut asset_loader_configuration = app
                 .world
                 .get_resource_mut::<AssetLoaderConfiguration<S>>()
                 .unwrap();
-            asset_loader_configuration
-                .configuration
-                .insert(self.loading_state.clone(), config);
-            #[cfg(feature = "dynamic_assets")]
-            asset_loader_configuration
-                .asset_collection_files
-                .insert(self.loading_state.clone(), self.asset_collection_files);
+            asset_loader_configuration.configuration.insert(
+                self.loading_state.clone(),
+                LoadingConfiguration {
+                    next: self.next_state.clone(),
+                    loading_collections: 0,
+                },
+            );
         }
 
         let mut loading_schedule = Schedule::default();
@@ -404,9 +393,8 @@ where
         #[cfg(feature = "dynamic_assets")]
         {
             app.add_plugin(RonAssetPlugin::<DynamicAssetCollection>::new(
-                &self.asset_collection_file_endings,
+                &self.dynamic_asset_collection_file_endings,
             ));
-
             update.add_system_set(
                 SystemSet::on_enter(LoadingState::LoadingDynamicAssetCollections).with_system(
                     dynamic_asset_systems::load_dynamic_asset_collections::<S>.exclusive_system(),
@@ -417,6 +405,16 @@ where
                     dynamic_asset_systems::check_dynamic_asset_collections::<S>.exclusive_system(),
                 ),
             );
+            app.insert_resource(LoadingAssetHandles {
+                handles: Default::default(),
+                marker: PhantomData::<S>,
+            });
+            app.init_resource::<DynamicAssetCollections<S>>();
+            app.world
+                .get_resource_mut::<DynamicAssetCollections<S>>()
+                .unwrap()
+                .files
+                .insert(self.loading_state.clone(), self.dynamic_asset_collections);
         }
         app.insert_resource(DynamicAssets {
             key_asset_map: self.dynamic_assets,
@@ -455,43 +453,22 @@ where
     }
 }
 
-struct LoadingAssetHandles<A: AssetCollection> {
+/// This resource is used for handles from asset collections and loading dynamic asset collection files.
+/// The generic will be the AssetCollection type for the first and the State for the second.
+struct LoadingAssetHandles<T> {
     handles: Vec<HandleUntyped>,
-    marker: PhantomData<A>,
+    marker: PhantomData<T>,
 }
 
-pub(crate) struct AssetLoaderConfiguration<State> {
+pub struct AssetLoaderConfiguration<State: StateData> {
     configuration: HashMap<State, LoadingConfiguration<State>>,
-    #[cfg(feature = "dynamic_assets")]
-    asset_collection_handles: Vec<Handle<DynamicAssetCollection>>,
-    #[cfg(feature = "dynamic_assets")]
-    asset_collection_files: HashMap<State, Vec<String>>,
 }
 
-impl<State> Default for AssetLoaderConfiguration<State> {
+impl<State: StateData> Default for AssetLoaderConfiguration<State> {
     fn default() -> Self {
         AssetLoaderConfiguration {
             configuration: HashMap::default(),
-            #[cfg(feature = "dynamic_assets")]
-            asset_collection_handles: vec![],
-            #[cfg(feature = "dynamic_assets")]
-            asset_collection_files: HashMap::default(),
         }
-    }
-}
-
-impl<State: StateData> AssetLoaderConfiguration<State> {
-    /// Get all asset collection files registered for the given state
-    ///
-    /// The files can be loaded as [`DynamicAssetCollection`](crate::dynamic_asset::DynamicAssetCollection) assets.
-    #[cfg(feature = "dynamic_assets")]
-    pub fn get_asset_collection_files(&mut self, state: &State) -> Vec<String> {
-        self.asset_collection_files
-            .remove(state)
-            .unwrap()
-            .iter()
-            .map(|file| file.to_owned())
-            .collect()
     }
 }
 
@@ -510,9 +487,9 @@ pub(crate) enum LoadingState {
     Done,
 }
 
-struct LoadingConfiguration<T> {
-    next: Option<T>,
-    count: usize,
+struct LoadingConfiguration<State: StateData> {
+    next: Option<State>,
+    loading_collections: usize,
 }
 
 /// Resource to store the schedules for loading states
