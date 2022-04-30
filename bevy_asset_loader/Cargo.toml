@@ -24,15 +24,18 @@ readme = "../README.md"
     "bevy_asset_loader_derive/3d",
 ]
 dynamic_assets = ["bevy_asset_ron", "serde"]
+progress_tracking = ["iyes_progress"]
 
 [dependencies]
 bevy = { version = "0.7", default-features = false }
 bevy_asset_loader_derive = { version = "=0.11.0-github.main", path = "../bevy_asset_loader_derive" }
 bevy_asset_ron = { version = "0.4", optional = true }
 serde = { version = "1", optional = true }
+iyes_progress = { version = "0.3", optional = true }
 
 [dev-dependencies]
 bevy = { version = "0.7", features = ["vorbis"] }
+iyes_progress = { version = "0.3" }
 trybuild = "1.0"
 
 [[example]]
@@ -65,3 +68,8 @@ path = "examples/no_loading_state.rs"
 name = "standard_material"
 path = "examples/standard_material.rs"
 required-features = ["3d"]
+
+[[example]]
+name = "progress_tracking"
+path = "examples/progress_tracking.rs"
+required-features = ["progress_tracking"]

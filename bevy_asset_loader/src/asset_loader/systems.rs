@@ -2,8 +2,12 @@ use bevy::asset::{AssetServer, LoadState};
 use bevy::ecs::prelude::{FromWorld, State, World};
 use bevy::ecs::schedule::StateData;
 use bevy::ecs::system::SystemState;
+use bevy::ecs::world::WorldCell;
 use bevy::prelude::{Mut, Res, ResMut, Stage};
 use std::marker::PhantomData;
+
+#[cfg(feature = "progress_tracking")]
+use iyes_progress::{Progress, ProgressCounter};
 
 use crate::asset_collection::AssetCollection;
 use crate::asset_loader::{
@@ -38,48 +42,67 @@ pub(crate) fn start_loading_collection<S: StateData, Assets: AssetCollection>(wo
 }
 
 pub(crate) fn check_loading_collection<S: StateData, Assets: AssetCollection>(world: &mut World) {
-    {
-        let cell = world.cell();
+    if let Some((done, total)) = count_loaded_handles::<S, Assets>(world.cell()) {
+        if total == done {
+            let asset_collection = Assets::create(world);
+            world.insert_resource(asset_collection);
+            world.remove_resource::<LoadingAssetHandles<Assets>>();
 
-        let loading_asset_handles = cell.get_resource::<LoadingAssetHandles<Assets>>();
-        if loading_asset_handles.is_none() {
-            return;
-        }
-        let loading_asset_handles = loading_asset_handles.unwrap();
-
-        let asset_server = cell
-            .get_resource::<AssetServer>()
-            .expect("Cannot get AssetServer resource");
-        let load_state = asset_server
-            .get_group_load_state(loading_asset_handles.handles.iter().map(|handle| handle.id));
-        if load_state != LoadState::Loaded {
-            return;
-        }
-
-        let state = cell
-            .get_resource::<State<S>>()
-            .expect("Cannot get State resource");
-        let mut loading_state = cell
-            .get_resource_mut::<State<LoadingState>>()
-            .expect("Cannot get LoadingStatePhase");
-        let mut asset_loader_configuration = cell
-            .get_resource_mut::<AssetLoaderConfiguration<S>>()
-            .expect("Cannot get AssetLoaderConfiguration resource");
-        if let Some(mut config) = asset_loader_configuration
-            .configuration
-            .get_mut(state.current())
-        {
-            config.loading_collections -= 1;
-            if config.loading_collections == 0 {
-                loading_state
-                    .set(LoadingState::Finalize)
-                    .expect("Failed to set loading State");
-            }
+            #[cfg(feature = "progress_tracking")]
+            world
+                .resource_mut::<ProgressCounter>()
+                .persist_progress(Progress { done, total });
+        } else {
+            #[cfg(feature = "progress_tracking")]
+            world
+                .resource::<ProgressCounter>()
+                .manually_track(Progress { done, total });
         }
     }
-    let asset_collection = Assets::create(world);
-    world.insert_resource(asset_collection);
-    world.remove_resource::<LoadingAssetHandles<Assets>>();
+}
+
+fn count_loaded_handles<S: StateData, Assets: AssetCollection>(
+    cell: WorldCell,
+) -> Option<(u32, u32)> {
+    let loading_asset_handles = cell.get_resource::<LoadingAssetHandles<Assets>>()?;
+    let total = loading_asset_handles.handles.len();
+
+    let asset_server = cell
+        .get_resource::<AssetServer>()
+        .expect("Cannot get AssetServer resource");
+    let done = loading_asset_handles
+        .handles
+        .iter()
+        .map(|handle| handle.id)
+        .map(|handle_id| asset_server.get_load_state(handle_id))
+        .filter(|state| state == &LoadState::Loaded)
+        .count();
+    if done < total {
+        return Some((done as u32, total as u32));
+    }
+
+    let state = cell
+        .get_resource::<State<S>>()
+        .expect("Cannot get State resource");
+    let mut loading_state = cell
+        .get_resource_mut::<State<LoadingState>>()
+        .expect("Cannot get LoadingStatePhase");
+    let mut asset_loader_configuration = cell
+        .get_resource_mut::<AssetLoaderConfiguration<S>>()
+        .expect("Cannot get AssetLoaderConfiguration resource");
+    if let Some(mut config) = asset_loader_configuration
+        .configuration
+        .get_mut(state.current())
+    {
+        config.loading_collections -= 1;
+        if config.loading_collections == 0 {
+            loading_state
+                .set(LoadingState::Finalize)
+                .expect("Failed to set loading State");
+        }
+    }
+
+    return Some((done as u32, total as u32));
 }
 
 pub(crate) fn initialize_loading_state(mut loading_state: ResMut<State<LoadingState>>) {

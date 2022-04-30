@@ -25,14 +25,14 @@ jobs:
         with:
           toolchain: stable
           override: true
+      - uses: taiki-e/install-action@v1
+        with:
+          tool: cargo-hack
       - name: Install alsa and udev
         run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
         if: runner.os == 'linux'
-      - name: Install cargo-hack
-        run: |
-          cargo install cargo-hack --force
       - name: Build & run tests for all feature combinations
-        run: cargo hack test --feature-powerset
+        run: cargo hack test --feature-powerset --group-features "2d","3d"
   lint:
     runs-on: ubuntu-latest
     steps:
