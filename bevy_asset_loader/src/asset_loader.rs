@@ -1,4 +1,5 @@
 mod dynamic_asset;
+#[cfg(feature = "dynamic_assets")]
 mod dynamic_asset_systems;
 mod systems;
 
@@ -19,11 +20,9 @@ use systems::{
 
 #[cfg(feature = "dynamic_assets")]
 use bevy_asset_ron::RonAssetPlugin;
-#[cfg(feature = "dynamic_assets")]
-use dynamic_asset::DynamicAssetCollection;
 
 #[cfg(feature = "dynamic_assets")]
-pub use dynamic_asset::DynamicAssetCollections;
+pub use dynamic_asset::{DynamicAssetCollection, DynamicAssetCollections};
 
 #[cfg(feature = "progress_tracking")]
 use iyes_progress::ProgressSystemLabel;
@@ -100,7 +99,7 @@ where
 {
     /// Create a new [`AssetLoader`]
     ///
-    /// This function takes a [`State`](bevy_ecs::schedule::State) during which all asset collections will
+    /// This function takes a [`State`] during which all asset collections will
     /// be loaded and inserted as resources.
     /// ```edition2021
     /// # use bevy_asset_loader::{AssetLoader, AssetCollection};
@@ -156,7 +155,7 @@ where
         }
     }
 
-    /// The [`AssetLoader`] will set this [`State`](bevy_ecs::schedule::State) after all asset collections
+    /// The [`AssetLoader`] will set this [`State`] after all asset collections
     /// are loaded and inserted as resources.
     /// ```edition2021
     /// # use bevy_asset_loader::{AssetLoader, AssetCollection};
@@ -198,21 +197,6 @@ where
     /// ```
     pub fn continue_to_state(mut self, next: S) -> Self {
         self.next_state = Some(next);
-
-        self
-    }
-
-    /// Register a dynamic asset collection file to be loaded and used for resolving asset keys.
-    ///
-    /// The file will be loaded as [`DynamicAssetCollection`](crate::dynamic_asset::DynamicAssetCollection).
-    /// It's mapping of asset keys to dynamic assets will be used during the loading state to resolve asset keys.
-    #[cfg(feature = "dynamic_assets")]
-    pub fn with_dynamic_asset_collection_file(
-        mut self,
-        dynamic_asset_collection_file: &str,
-    ) -> Self {
-        self.dynamic_asset_collections
-            .push(dynamic_asset_collection_file.to_owned());
 
         self
     }
@@ -279,7 +263,7 @@ where
         self
     }
 
-    /// Add any [`FromWorld`](bevy_ecs::world::FromWorld) resource to be initialized after all asset collections are loaded.
+    /// Add any [`FromWorld`] resource to be initialized after all asset collections are loaded.
     /// ```edition2021
     /// # use bevy_asset_loader::{AssetLoader, AssetCollection};
     /// # use bevy::prelude::*;
@@ -332,9 +316,26 @@ where
         self
     }
 
+    /// Register a dynamic asset collection file to be loaded and used for resolving asset keys.
+    ///
+    /// The file will be loaded as [`DynamicAssetCollection`].
+    /// It's mapping of asset keys to dynamic assets will be used during the loading state to resolve asset keys.
+    #[cfg_attr(docsrs, doc(cfg(feature = "dynamic_assets")))]
+    #[cfg(feature = "dynamic_assets")]
+    pub fn with_dynamic_asset_collection_file(
+        mut self,
+        dynamic_asset_collection_file: &str,
+    ) -> Self {
+        self.dynamic_asset_collections
+            .push(dynamic_asset_collection_file.to_owned());
+
+        self
+    }
+
     /// Set all file endings loaded as dynamic asset collections.
     ///
     /// The default file ending is `.assets`
+    #[cfg_attr(docsrs, doc(cfg(feature = "dynamic_assets")))]
     #[cfg(feature = "dynamic_assets")]
     pub fn set_dynamic_asset_collection_file_endings(mut self, endings: Vec<&'static str>) -> Self {
         self.dynamic_asset_collection_file_endings = endings;

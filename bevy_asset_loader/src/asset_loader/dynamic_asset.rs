@@ -58,8 +58,8 @@ impl DynamicAsset {
 
 /// Resource to dynamically resolve keys to asset paths.
 ///
-/// This resource is set by the [`AssetLoader`] and is read when entering a loading state.
-/// You should set your desired asset key and paths in a previous [`State`](bevy_ecs::schedule::State).
+/// This resource is set by the [`AssetLoader`](crate::AssetLoader) and is read when entering a loading state.
+/// You should set your desired asset key and paths in a previous [`State`](::bevy::ecs::schedule::State).
 ///
 /// ```edition2021
 /// # use bevy::prelude::*;
@@ -165,10 +165,11 @@ impl DynamicAssets {
     }
 }
 
-/// Resource keeping track of dynamic asset files for different loading states
+/// Resource keeping track of dynamic asset collection files for different loading states
+#[cfg_attr(docsrs, doc(cfg(feature = "dynamic_assets")))]
 #[cfg(feature = "dynamic_assets")]
 pub struct DynamicAssetCollections<State: StateData> {
-    /// Dynamic asset files for different loading states.
+    /// Dynamic asset collection files for different loading states.
     ///
     /// The file lists get loaded and emptied at the beginning of the loading states.
     /// Make sure to add any file you would like to load before entering the loading state!
@@ -186,7 +187,12 @@ impl<State: StateData> Default for DynamicAssetCollections<State> {
     }
 }
 
+/// The asset defining a mapping from asset keys to dynamic assets
+///
+/// These assets are loaded at the beginning of a loading state
+/// and combined in [`DynamicAssets`](DynamicAssets).
 #[derive(serde::Deserialize, TypeUuid)]
 #[uuid = "2df82c01-9c71-4aa8-adc4-71c5824768f1"]
+#[cfg_attr(docsrs, doc(cfg(feature = "dynamic_assets")))]
 #[cfg(feature = "dynamic_assets")]
-pub struct DynamicAssetCollection(pub(crate) HashMap<String, DynamicAsset>);
+pub struct DynamicAssetCollection(pub HashMap<String, DynamicAsset>);

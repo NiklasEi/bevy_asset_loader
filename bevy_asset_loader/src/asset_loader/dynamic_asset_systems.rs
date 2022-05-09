@@ -1,17 +1,11 @@
-#[cfg(feature = "dynamic_assets")]
 use crate::asset_loader::dynamic_asset::{DynamicAssetCollection, DynamicAssetCollections};
-#[cfg(feature = "dynamic_assets")]
 use crate::asset_loader::{DynamicAssets, LoadingAssetHandles, LoadingState};
-#[cfg(feature = "dynamic_assets")]
-use bevy::asset::LoadState;
-#[cfg(feature = "dynamic_assets")]
-use bevy::ecs::schedule::StateData;
-#[cfg(feature = "dynamic_assets")]
-use bevy::ecs::system::SystemState;
-#[cfg(feature = "dynamic_assets")]
-use bevy::prelude::{AssetServer, Assets, Res, ResMut, State, World};
+use bevy::asset::{AssetServer, Assets, LoadState};
+use bevy::ecs::change_detection::ResMut;
+use bevy::ecs::schedule::{State, StateData};
+use bevy::ecs::system::{Res, SystemState};
+use bevy::ecs::world::World;
 
-#[cfg(feature = "dynamic_assets")]
 pub(crate) fn load_dynamic_asset_collections<S: StateData>(world: &mut World) {
     let mut system_state: SystemState<(
         ResMut<DynamicAssetCollections<S>>,
@@ -45,7 +39,6 @@ pub(crate) fn load_dynamic_asset_collections<S: StateData>(world: &mut World) {
     }
 }
 
-#[cfg(feature = "dynamic_assets")]
 pub(crate) fn check_dynamic_asset_collections<S: StateData>(world: &mut World) {
     let mut system_state: SystemState<(
         Res<AssetServer>,
