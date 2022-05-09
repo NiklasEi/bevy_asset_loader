@@ -1,4 +1,4 @@
-//! This crate adds support for auto deriving [`AssetCollection`](bevy_asset_loader::AssetCollection)
+//! This crate adds support for auto deriving [`AssetCollection`]
 //!
 //! You do not have to use it directly. Just import ``AssetCollection`` from ``bevy_asset_loader``
 //! and use ``#[derive(AssetCollection)]`` to derive the trait.
@@ -19,7 +19,7 @@ use proc_macro2::Ident;
 use quote::{quote, ToTokens, TokenStreamExt};
 use syn::{Data, Field, Fields, Lit, Meta, NestedMeta};
 
-/// Derive macro for [`AssetCollection`](bevy_asset_loader::AssetCollection)
+/// Derive macro for [`AssetCollection`]
 ///
 /// The helper attribute ``asset`` can be used to define the path to the asset file
 /// and other asset options.

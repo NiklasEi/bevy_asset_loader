@@ -1,8 +1,8 @@
-//! The goal of this crate is to offer an easy way for bevy games to load all their assets in a loading [`State`](bevy_ecs::schedule::State).
+//! The goal of this crate is to offer an easy way for bevy games to load all their assets in a loading [`State`](::bevy::ecs::schedule::State).
 //!
 //! `bevy_asset_loader` introduces the derivable trait [`AssetCollection`]. Structs with asset handles
-//! can be automatically loaded during a configurable loading [`State`](bevy_ecs::schedule::State). Afterwards they will be inserted as
-//! resources containing loaded handles and the plugin will switch to a second configurable [`State`](bevy_ecs::schedule::State).
+//! can be automatically loaded during a configurable loading [`State`](::bevy::ecs::schedule::State). Afterwards they will be inserted as
+//! resources containing loaded handles and the plugin will switch to a second configurable [`State`](::bevy::ecs::schedule::State).
 //!
 //! ```edition2021
 //! # use bevy_asset_loader::{AssetLoader, AssetCollection};
@@ -62,6 +62,7 @@
 
 #![forbid(unsafe_code)]
 #![warn(unused_imports, missing_docs)]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 mod asset_collection;
 mod asset_loader;
@@ -70,7 +71,7 @@ pub use crate::asset_collection::{AssetCollection, AssetCollectionApp, AssetColl
 pub use crate::asset_loader::{AssetLoader, DynamicAsset, DynamicAssets};
 
 #[cfg(feature = "dynamic_assets")]
-pub use crate::asset_loader::DynamicAssetCollections;
+pub use crate::asset_loader::{DynamicAssetCollection, DynamicAssetCollections};
 
 pub use bevy_asset_loader_derive::AssetCollection;
 

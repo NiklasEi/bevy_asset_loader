@@ -18,7 +18,7 @@ use bevy::prelude::World;
 /// }
 /// ```
 pub trait AssetCollection: Send + Sync + 'static {
-    /// Create a new asset collection from the [`AssetServer`](bevy_asset::AssetServer)
+    /// Create a new asset collection from the [`AssetServer`](::bevy::asset::AssetServer)
     fn create(world: &mut World) -> Self;
     /// Start loading all the assets in the collection
     fn load(world: &mut World) -> Vec<HandleUntyped>;
@@ -29,7 +29,7 @@ pub trait AssetCollectionApp {
     /// Initialise an [`AssetCollection`]
     ///
     /// This function does not give any guaranties about the loading status of the asset handles.
-    /// If you want to use a loading state, you do not need this function! Instead use an [`AssetLoader`]
+    /// If you want to use a loading state, you do not need this function! Instead use an [`AssetLoader`](crate::AssetLoader)
     /// and add collections to it to be prepared during the loading state.
     fn init_collection<A: AssetCollection>(&mut self) -> &mut Self;
 }
@@ -58,7 +58,7 @@ pub trait AssetCollectionWorld {
     /// Initialise an [`AssetCollection`]
     ///
     /// This function does not give any guaranties about the loading status of the asset handles.
-    /// If you want to use a loading state, you do not need this function! Instead use an [`AssetLoader`]
+    /// If you want to use a loading state, you do not need this function! Instead use an [`AssetLoader`](crate::AssetLoader)
     /// and add collections to it to be prepared during the loading state.
     fn init_collection<A: AssetCollection>(&mut self);
 }
