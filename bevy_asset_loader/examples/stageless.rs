@@ -1,6 +1,6 @@
 use bevy::prelude::*;
-use iyes_loopless::prelude::*;
 use bevy_asset_loader::{AssetCollection, AssetLoader};
+use iyes_loopless::prelude::*;
 
 const PLAYER_SPEED: f32 = 5.;
 
@@ -12,8 +12,7 @@ fn main() {
         .with_collection::<ImageAssets>()
         .with_collection::<AudioAssets>()
         .build(&mut app);
-    app
-        .add_loopless_state(MyStates::AssetLoading)
+    app.add_loopless_state(MyStates::AssetLoading)
         .insert_resource(Msaa { samples: 1 })
         .add_plugins(DefaultPlugins)
         .add_system_set(

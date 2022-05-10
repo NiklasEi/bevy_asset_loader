@@ -3,6 +3,7 @@
 - Support progress tracking through `iyes_progress` ([#6](https://github.com/NiklasEi/bevy_asset_loader/issues/6))
 - Allow adding dynamic asset collection files to a resource instead of only the Plugin builder
 - Make file endings for dynamic asset collections configurable ([#38](https://github.com/NiklasEi/bevy_asset_loader/issues/38))
+- Expose `DynamicAssetCollection` to give access to the Bevy `Assets<DynamicAssetCollection>` resource
 
 ## v0.10.0
 - Bump Bevy to version `0.7`

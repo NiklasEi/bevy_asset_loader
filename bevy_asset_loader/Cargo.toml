@@ -41,6 +41,10 @@ iyes_progress = { version = "0.3" }
 iyes_loopless = { version = "0.5" }
 trybuild = "1.0"
 
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
 [[example]]
 name = "two_collections"
 path = "examples/two_collections.rs"
