@@ -7,20 +7,22 @@ const PLAYER_SPEED: f32 = 5.;
 /// This example shows how to use `iyes_loopless` with `bevy_asset_loader`
 fn main() {
     let mut app = App::new();
+    app.add_loopless_state(MyStates::AssetLoading);
     AssetLoader::new(MyStates::AssetLoading)
         .continue_to_state(MyStates::Next)
         .with_collection::<ImageAssets>()
         .with_collection::<AudioAssets>()
         .build(&mut app);
-    app.add_loopless_state(MyStates::AssetLoading)
-        .insert_resource(Msaa { samples: 1 })
+    app.insert_resource(Msaa { samples: 1 })
         .add_plugins(DefaultPlugins)
+        .add_enter_system(MyStates::Next, spawn_player_and_tree)
+        .add_enter_system(MyStates::Next, play_background_audio)
         .add_system_set(
-            SystemSet::on_enter(MyStates::Next)
-                .with_system(spawn_player_and_tree)
-                .with_system(play_background_audio),
+            ConditionSet::new()
+                .run_in_state(MyStates::Next)
+                .with_system(move_player)
+                .into(),
         )
-        .add_system_set(SystemSet::on_update(MyStates::Next).with_system(move_player))
         .run();
 }
 
