@@ -21,6 +21,12 @@ pub(crate) struct BasicAssetField {
 }
 
 #[derive(PartialEq, Debug)]
+pub(crate) struct MultipleFilesField {
+    pub field_ident: Ident,
+    pub asset_paths: Vec<String>,
+}
+
+#[derive(PartialEq, Debug)]
 pub(crate) struct DynamicAssetField {
     pub field_ident: Ident,
     pub key: String,
@@ -34,6 +40,7 @@ pub(crate) enum AssetField {
     DynamicFolder(DynamicAssetField, Typed),
     StandardMaterial(BasicAssetField),
     Folder(BasicAssetField, Typed),
+    Files(MultipleFilesField, Typed),
     TextureAtlas(TextureAtlasAssetField),
 }
 
@@ -188,6 +195,18 @@ impl AssetField {
                     ))},
                 )
             }
+            AssetField::Files(files, typed) => {
+                let field_ident = files.field_ident.clone();
+                let asset_paths = files.asset_paths.clone();
+                match typed {
+                    Typed::Yes => {
+                        quote!(#token_stream #field_ident : vec![#(asset_server.load(#asset_paths)),*],)
+                    }
+                    Typed::No => {
+                        quote!(#token_stream #field_ident : vec![#(asset_server.load_untyped(#asset_paths)),*],)
+                    }
+                }
+            }
         }
     }
 
@@ -238,18 +257,23 @@ impl AssetField {
                 let asset_path = asset.asset_path.clone();
                 quote!(#token_stream handles.push(asset_server.load_untyped(#asset_path));)
             }
+            AssetField::Files(assets, _) => {
+                let asset_paths = assets.asset_paths.clone();
+                quote!(#token_stream #(handles.push(asset_server.load_untyped(#asset_paths)));*;)
+            }
         }
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub(crate) struct AssetBuilder {
     pub field_ident: Option<Ident>,
     pub asset_path: Option<String>,
+    pub asset_paths: Option<Vec<String>>,
     pub is_standard_material: bool,
     pub is_optional: bool,
     pub is_folder: bool,
-    pub is_typed_folder: bool,
+    pub is_typed: bool,
     pub key: Option<String>,
     pub tile_size_x: Option<f32>,
     pub tile_size_y: Option<f32>,
@@ -290,11 +314,12 @@ impl AssetBuilder {
                 TextureAtlasAttribute::ROWS
             ));
         }
-        if self.asset_path.is_none() && self.key.is_none() {
+        if self.asset_path.is_none() && self.asset_paths.is_none() && self.key.is_none() {
             return Err(vec![ParseFieldError::NoAttributes]);
         }
         if self.key.is_some()
             && (self.asset_path.is_some()
+                || self.asset_paths.is_some()
                 || missing_fields.len() < 4
                 || self.padding_x.is_some()
                 || self.padding_y.is_some()
@@ -304,6 +329,9 @@ impl AssetBuilder {
         }
         if self.is_optional && self.key.is_none() {
             return Err(vec![ParseFieldError::OnlyDynamicCanBeOptional]);
+        }
+        if self.asset_path.is_some() && self.asset_paths.is_some() {
+            return Err(vec![ParseFieldError::PathAndPathsAreExclusive]);
         }
         if missing_fields.len() == 4 {
             if self.key.is_some() {
@@ -319,7 +347,7 @@ impl AssetBuilder {
                             field_ident: self.field_ident.unwrap(),
                             key: self.key.unwrap(),
                         },
-                        self.is_typed_folder.into(),
+                        self.is_typed.into(),
                     ))
                 } else {
                     Ok(AssetField::Dynamic(DynamicAssetField {
@@ -328,13 +356,22 @@ impl AssetBuilder {
                     }))
                 };
             }
+            if self.asset_paths.is_some() {
+                return Ok(AssetField::Files(
+                    MultipleFilesField {
+                        field_ident: self.field_ident.unwrap(),
+                        asset_paths: self.asset_paths.unwrap(),
+                    },
+                    self.is_typed.into(),
+                ));
+            }
             if self.is_folder {
                 return Ok(AssetField::Folder(
                     BasicAssetField {
                         field_ident: self.field_ident.unwrap(),
                         asset_path: self.asset_path.unwrap(),
                     },
-                    self.is_typed_folder.into(),
+                    self.is_typed.into(),
                 ));
             }
             let asset = BasicAssetField {
@@ -429,7 +466,7 @@ mod test {
             field_ident: Some(Ident::new("test", Span::call_site())),
             asset_path: Some("some/folder".to_owned()),
             is_folder: true,
-            is_typed_folder: true,
+            is_typed: true,
             ..Default::default()
         };
 
@@ -463,6 +500,62 @@ mod test {
                 field_ident: Ident::new("test", Span::call_site()),
                 key: "some.asset.key".to_owned()
             })
+        );
+    }
+
+    #[test]
+    fn paths_and_path_exclusive() {
+        let builder = AssetBuilder {
+            field_ident: Some(Ident::new("test", Span::call_site())),
+            asset_path: Some("some.asset".to_owned()),
+            asset_paths: Some(vec!["some.asset".to_owned()]),
+            ..Default::default()
+        };
+
+        let asset = builder.build().expect_err("Should be pasing error");
+        assert!(variant_eq(
+            asset.get(0).unwrap(),
+            &ParseFieldError::PathAndPathsAreExclusive
+        ));
+    }
+
+    #[test]
+    fn multiple_files() {
+        let builder = AssetBuilder {
+            field_ident: Some(Ident::new("test", Span::call_site())),
+            asset_paths: Some(vec!["some.asset".to_owned()]),
+            ..Default::default()
+        };
+
+        let asset = builder.build().expect("This should be a valid Files asset");
+        assert_eq!(
+            asset,
+            AssetField::Files(
+                MultipleFilesField {
+                    field_ident: Ident::new("test", Span::call_site()),
+                    asset_paths: vec!["some.asset".to_owned()]
+                },
+                Typed::No
+            )
+        );
+
+        let builder = AssetBuilder {
+            field_ident: Some(Ident::new("test", Span::call_site())),
+            asset_paths: Some(vec!["some.asset".to_owned()]),
+            is_typed: true,
+            ..Default::default()
+        };
+
+        let asset = builder.build().expect("This should be a valid Files asset");
+        assert_eq!(
+            asset,
+            AssetField::Files(
+                MultipleFilesField {
+                    field_ident: Ident::new("test", Span::call_site()),
+                    asset_paths: vec!["some.asset".to_owned()]
+                },
+                Typed::Yes
+            )
         );
     }
 
@@ -550,7 +643,7 @@ mod test {
 
         let mut builder = asset_builder_dynamic();
         builder.is_folder = true;
-        builder.is_typed_folder = true;
+        builder.is_typed = true;
         let asset = builder
             .build()
             .expect("This should be a valid TextureAtlasAsset");
@@ -573,5 +666,9 @@ mod test {
             key: Some("some.asset.key".to_owned()),
             ..AssetBuilder::default()
         }
+    }
+
+    fn variant_eq<T>(a: &T, b: &T) -> bool {
+        std::mem::discriminant(a) == std::mem::discriminant(b)
     }
 }
