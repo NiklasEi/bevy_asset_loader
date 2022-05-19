@@ -240,7 +240,7 @@ Note that currently you must initialize loopless state before you initialize `As
 
 When using with `progress_tracking`, remember to enable `progress_tracking_stageless` feature too.
 
-```rust no_run
+```rust ignore
 use bevy::prelude::*;
 use bevy_asset_loader::{AssetCollection, AssetLoader};
 use iyes_loopless::prelude::*;

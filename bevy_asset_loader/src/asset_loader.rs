@@ -48,6 +48,10 @@ pub use dynamic_asset::{DynamicAsset, DynamicAssets};
 /// # use bevy_asset_loader::{AssetLoader, AssetCollection};
 /// # use bevy::prelude::*;
 /// # use bevy::asset::AssetPlugin;
+/// # #[cfg(feature="stageless")]
+/// # use iyes_loopless::prelude::*;
+///
+/// # #[cfg(not(feature="stageless"))]
 /// fn main() {
 ///     let mut app = App::new();
 ///     app
@@ -66,6 +70,26 @@ pub use dynamic_asset::{DynamicAsset, DynamicAssets};
 ///         )
 /// #       .set_runner(|mut app| app.schedule.run(&mut app.world))
 ///         .run();
+/// }
+///
+/// # #[cfg(feature="stageless")]
+/// # fn main() {
+/// #    let mut app = App::new();
+/// #    app
+/// #        .add_loopless_state(GameState::Loading)
+/// #        .add_plugins(MinimalPlugins)
+/// #       .init_resource::<iyes_progress::ProgressCounter>()
+/// #        .add_plugin(AssetPlugin::default());
+/// #    AssetLoader::new(GameState::Loading)
+/// #        .continue_to_state(GameState::Menu)
+/// #        .with_collection::<AudioAssets>()
+/// #        .with_collection::<ImageAssets>()
+/// #        .build(&mut app);
+/// #
+/// #   app
+/// #       .add_enter_system(GameState::Menu, play_audio)
+/// #       .set_runner(|mut app| app.schedule.run(&mut app.world))
+/// #        .run();
 /// }
 ///
 /// fn play_audio(audio_assets: Res<AudioAssets>, audio: Res<Audio>) {
@@ -183,9 +207,11 @@ where
     /// # use bevy_asset_loader::{AssetLoader, AssetCollection};
     /// # use bevy::prelude::*;
     /// # use bevy::asset::AssetPlugin;
+    /// # use iyes_loopless::prelude::*;
     /// # fn main() {
     ///     let mut app = App::new();
     /// #   app
+    /// #       .add_loopless_state(GameState::Loading)
     /// #       .add_plugins(MinimalPlugins)
     /// #       .init_resource::<iyes_progress::ProgressCounter>()
     /// #       .add_plugin(AssetPlugin::default());
@@ -195,7 +221,6 @@ where
     ///         .with_collection::<ImageAssets>()
     ///         .build(&mut app);
     /// #   app
-    /// #       .add_state(GameState::Loading)
     /// #       .set_runner(|mut app| app.schedule.run(&mut app.world))
     /// #       .run();
     /// # }
@@ -241,9 +266,11 @@ where
     /// # use bevy_asset_loader::{AssetLoader, AssetCollection};
     /// # use bevy::prelude::*;
     /// # use bevy::asset::AssetPlugin;
+    /// # use iyes_loopless::prelude::*;
     /// # fn main() {
     ///     let mut app = App::new();
     /// #   app
+    /// #       .add_loopless_state(GameState::Loading)
     /// #       .add_plugins(MinimalPlugins)
     /// #       .init_resource::<iyes_progress::ProgressCounter>()
     /// #       .add_plugin(AssetPlugin::default());
@@ -342,9 +369,11 @@ where
     /// # use bevy_asset_loader::{AssetLoader, AssetCollection};
     /// # use bevy::prelude::*;
     /// # use bevy::asset::AssetPlugin;
+    /// # use iyes_loopless::prelude::*;
     /// # fn main() {
     ///     let mut app = App::new();
     /// #   app
+    /// #       .add_loopless_state(GameState::Loading)
     /// #       .add_plugins(MinimalPlugins)
     /// #       .init_resource::<iyes_progress::ProgressCounter>()
     /// #       .add_plugin(AssetPlugin::default());
@@ -354,7 +383,6 @@ where
     ///         .with_collection::<ImageAssets>()
     ///         .build(&mut app);
     /// #   app
-    /// #       .add_state(GameState::Loading)
     /// #       .set_runner(|mut app| app.schedule.run(&mut app.world))
     /// #       .run();
     /// # }
@@ -458,9 +486,11 @@ where
     /// # use bevy_asset_loader::{AssetLoader, AssetCollection};
     /// # use bevy::prelude::*;
     /// # use bevy::asset::AssetPlugin;
+    /// # use iyes_loopless::prelude::*;
     /// # fn main() {
     ///     let mut app = App::new();
     /// #   app
+    /// #       .add_loopless_state(GameState::Loading)
     /// #       .add_plugins(MinimalPlugins)
     /// #       .init_resource::<iyes_progress::ProgressCounter>()
     /// #       .add_plugin(AssetPlugin::default());
@@ -470,7 +500,6 @@ where
     ///         .init_resource::<TextureAtlasFromWorld>()
     ///         .build(&mut app);
     /// #   app
-    /// #       .add_state(GameState::Loading)
     /// #       .set_runner(|mut app| app.schedule.run(&mut app.world))
     /// #       .run();
     /// # }
@@ -674,9 +703,11 @@ where
     /// # use bevy_asset_loader::{AssetLoader, AssetCollection};
     /// # use bevy::prelude::*;
     /// # use bevy::asset::AssetPlugin;
+    /// # use iyes_loopless::prelude::*;
     /// # fn main() {
     ///     let mut app = App::new();
     /// #   app
+    /// #       .add_loopless_state(GameState::Loading)
     /// #       .add_plugins(MinimalPlugins)
     /// #       .init_resource::<iyes_progress::ProgressCounter>()
     /// #       .add_plugin(AssetPlugin::default());
@@ -686,7 +717,6 @@ where
     ///         .with_collection::<ImageAssets>()
     ///         .build(&mut app);
     /// #   app
-    /// #       .add_state(GameState::Loading)
     /// #       .set_runner(|mut app| app.schedule.run(&mut app.world))
     /// #       .run();
     /// # }

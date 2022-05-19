@@ -5,19 +5,20 @@ use bevy::asset::AssetPlugin;
 use bevy::audio::AudioPlugin;
 use bevy::prelude::*;
 use bevy_asset_loader::{AssetCollection, AssetLoader};
+use iyes_loopless::prelude::*;
 
 #[cfg_attr(
     all(
         not(feature = "2d"),
         not(feature = "3d"),
         not(feature = "progress_tracking"),
-        not(feature = "stageless")
+        feature = "stageless"
     ),
     test
 )]
 fn can_run_without_next_state() {
     let mut app = App::new();
-    app.add_state(MyStates::Load)
+    app.add_loopless_state(MyStates::Load)
         .add_plugins(MinimalPlugins)
         .add_plugin(AssetPlugin::default())
         .add_plugin(AudioPlugin::default());
@@ -28,9 +29,11 @@ fn can_run_without_next_state() {
 
     app.init_resource::<TestState>()
         .add_system_set(
-            SystemSet::on_update(MyStates::Load)
+            ConditionSet::new()
+                .run_in_state(MyStates::Load)
                 .with_system(timeout)
-                .with_system(expect),
+                .with_system(expect)
+                .into(),
         )
         .run();
 }

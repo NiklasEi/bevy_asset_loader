@@ -5,13 +5,14 @@ use bevy::asset::AssetPlugin;
 use bevy::audio::AudioPlugin;
 use bevy::prelude::*;
 use bevy_asset_loader::{AssetCollection, AssetLoader};
+use iyes_loopless::prelude::*;
 
 #[cfg_attr(
     all(
         not(feature = "2d"),
         not(feature = "3d"),
         not(feature = "progress_tracking"),
-        not(feature = "stageless")
+        feature = "stageless"
     ),
     test
 )]
@@ -19,17 +20,16 @@ fn init_resource() {
     let mut app = App::new();
     app.add_plugins(MinimalPlugins)
         .add_plugin(AssetPlugin::default())
-        .add_plugin(AudioPlugin::default());
-
+        .add_plugin(AudioPlugin::default())
+        .add_loopless_state(MyStates::Load);
     AssetLoader::new(MyStates::Load)
         .continue_to_state(MyStates::Next)
         .with_collection::<MyAssets>()
         .init_resource::<PostProcessed>()
         .build(&mut app);
 
-    app.add_state(MyStates::Load)
-        .add_system_set(SystemSet::on_update(MyStates::Load).with_system(timeout))
-        .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(expect))
+    app.add_system(timeout.run_in_state(MyStates::Load))
+        .add_enter_system(MyStates::Next, expect)
         .run();
 }
 
