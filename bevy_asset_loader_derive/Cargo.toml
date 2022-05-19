@@ -15,6 +15,8 @@ readme = "../README.md"
 [features]
 2d = []
 3d = []
+stageless = []
+progress_tracking_stageless = []
 
 [lib]
 proc-macro = true
