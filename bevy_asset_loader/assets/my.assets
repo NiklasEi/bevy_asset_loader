@@ -1,0 +1,27 @@
+({
+    "single_file": File (
+        path: "audio/background.ogg",
+    ),
+    "standard_material": StandardMaterial (
+        path: "images/tree.png",
+    ),
+    "texture_atlas": TextureAtlas (
+        path: "images/female_adventurer_sheet.png",
+        tile_size_x: 96.,
+        tile_size_y: 99.,
+        columns: 8,
+        rows: 1
+    ),
+    "folder_untyped": Folder (
+        path: "audio",
+    ),
+    "folder_typed": Folder (
+        path: "images",
+    ),
+    "files_untyped": Files (
+        paths: ["images/tree.png", "images/player.png"],
+    ),
+    "files_typed": Files (
+        paths: ["images/tree.png", "images/player.png"],
+    ),
+})

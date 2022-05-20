@@ -1,5 +1,6 @@
 use bevy::utils::HashMap;
 
+use bevy::asset::{AssetServer, HandleUntyped};
 #[cfg(feature = "dynamic_assets")]
 use bevy::ecs::schedule::StateData;
 #[cfg(feature = "dynamic_assets")]
@@ -12,10 +13,23 @@ use std::marker::PhantomData;
 #[cfg_attr(feature = "dynamic_assets", derive(serde::Deserialize))]
 pub enum DynamicAsset {
     /// A dynamic asset directly loaded from a single file
-    #[cfg_attr(feature = "dynamic_assets", serde(alias = "Folder"))]
     File {
         /// Asset file path
         path: String,
+    },
+    /// A folder to load all including asset files from
+    ///
+    /// Subdirectories are also included.
+    /// This is not supported for web builds! If you need compatibility with web builds,
+    /// consider using [`DynamicAsset::Files`] instead.
+    Folder {
+        /// Asset file folder path
+        path: String,
+    },
+    /// A list of files to be loaded as a vector of handles
+    Files {
+        /// Asset file paths
+        paths: Vec<String>,
     },
     /// A dynamic standard material asset directly loaded from an image file
     #[cfg(feature = "3d")]
@@ -44,14 +58,21 @@ pub enum DynamicAsset {
 }
 
 impl DynamicAsset {
-    /// Path to the asset file of the dynamic asset
-    pub fn get_file_path(&self) -> &str {
+    /// Return handles to all contained asset paths
+    pub fn load_untyped(&self, asset_server: &AssetServer) -> Vec<HandleUntyped> {
         match self {
-            DynamicAsset::File { path } => path,
+            DynamicAsset::File { path } => vec![asset_server.load_untyped(path)],
+            DynamicAsset::Folder { path } => asset_server
+                .load_folder(path)
+                .expect(&format!("Failed to load '{}' as a folder", path)),
+            DynamicAsset::Files { paths } => paths
+                .iter()
+                .map(|path| asset_server.load_untyped(path))
+                .collect(),
             #[cfg(feature = "3d")]
-            DynamicAsset::StandardMaterial { path } => path,
+            DynamicAsset::StandardMaterial { path } => vec![asset_server.load_untyped(path)],
             #[cfg(feature = "2d")]
-            DynamicAsset::TextureAtlas { path, .. } => path,
+            DynamicAsset::TextureAtlas { path, .. } => vec![asset_server.load_untyped(path)],
         }
     }
 }

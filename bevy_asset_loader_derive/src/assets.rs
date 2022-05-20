@@ -32,16 +32,20 @@ pub(crate) struct DynamicAssetField {
     pub key: String,
 }
 
+/// Enum describing an asset field at compile-time
+///
+/// Variants are created from derive attributes.
 #[derive(PartialEq, Debug)]
 pub(crate) enum AssetField {
     Basic(BasicAssetField),
-    Dynamic(DynamicAssetField),
-    OptionalDynamic(DynamicAssetField),
-    DynamicFolder(DynamicAssetField, Typed),
-    StandardMaterial(BasicAssetField),
     Folder(BasicAssetField, Typed),
     Files(MultipleFilesField, Typed),
     TextureAtlas(TextureAtlasAssetField),
+    StandardMaterial(BasicAssetField),
+    Dynamic(DynamicAssetField),
+    OptionalDynamic(DynamicAssetField),
+    DynamicFolder(DynamicAssetField, Typed),
+    DynamicFiles(DynamicAssetField, Typed),
 }
 
 #[derive(PartialEq, Debug)]
@@ -70,7 +74,7 @@ impl AssetField {
         #[cfg(feature = "2d")]
         {
             let conditional_2d = quote! {
-            bevy_asset_loader::DynamicAsset::TextureAtlas {
+            ::bevy_asset_loader::DynamicAsset::TextureAtlas {
                 path,
                 tile_size_x,
                 tile_size_y,
@@ -91,7 +95,7 @@ impl AssetField {
         #[cfg(feature = "3d")]
         {
             let conditional_3d = quote! {
-            bevy_asset_loader::DynamicAsset::StandardMaterial { path } =>
+            ::bevy_asset_loader::DynamicAsset::StandardMaterial { path } =>
                 materials.add(asset_server.get_handle::<bevy::prelude::Image, &String>(path).into()).clone_untyped(),
             };
             conditional_dynamic_asset_collections.extend(conditional_3d);
@@ -126,8 +130,9 @@ impl AssetField {
                 quote!(#token_stream #field_ident : {
                     let asset = asset_keys.get_asset(#asset_key.into()).unwrap_or_else(|| panic!("Failed to get asset for key '{}'", #asset_key));
                     let handle = match asset {
-                        bevy_asset_loader::DynamicAsset::File { path } => asset_server.get_handle_untyped(path),
+                        ::bevy_asset_loader::DynamicAsset::File { path } => asset_server.get_handle_untyped(path),
                         #conditional_dynamic_asset_collections
+                        _ => panic!("The dynamic asset '{}' cannot be created (expected `File`, `StandardMaterial`, or `TextureAtlas`)", #asset_key)
                     };
                     handle.typed()
                 },)
@@ -139,8 +144,9 @@ impl AssetField {
                     let asset = asset_keys.get_asset(#asset_key.into());
                     asset.map(|asset| {
                         let handle = match asset {
-                            bevy_asset_loader::DynamicAsset::File { path } => asset_server.get_handle_untyped(path),
+                            ::bevy_asset_loader::DynamicAsset::File { path } => asset_server.get_handle_untyped(path),
                             #conditional_dynamic_asset_collections
+                            _ => panic!("The dynamic asset '{}' cannot be created (expected `File`, `StandardMaterial`, or `TextureAtlas`)", #asset_key)
                         };
                         handle.typed()
                     })
@@ -151,7 +157,7 @@ impl AssetField {
                 let asset_key = dynamic.key.clone();
                 let load = match typed {
                     Typed::Yes => {
-                        quote!(bevy_asset_loader::DynamicAsset::File { path } => asset_server.load_folder(path)
+                        quote!(::bevy_asset_loader::DynamicAsset::Folder { path } => asset_server.load_folder(path)
                             .unwrap()
                             .drain(..)
                             .map(|handle| handle.typed())
@@ -159,14 +165,43 @@ impl AssetField {
                         )
                     }
                     Typed::No => {
-                        quote!(bevy_asset_loader::DynamicAsset::File { path } => asset_server.load_folder(path).unwrap())
+                        quote!(::bevy_asset_loader::DynamicAsset::Folder { path } => asset_server.load_folder(path).unwrap())
                     }
                 };
                 quote!(#token_stream #field_ident : {
                     let asset = asset_keys.get_asset(#asset_key.into()).unwrap_or_else(|| panic!("Failed to get asset for key '{}'", #asset_key));
                     match asset {
                         #load,
-                        _ => panic!("The asset '{}' cannot be loaded as a folder, because it is not of the type 'File'", #asset_key)
+                        _ => panic!("The dynamic asset '{}' cannot be created (expected `Folder`)", #asset_key)
+                    }
+                },)
+            }
+            AssetField::DynamicFiles(dynamic, typed) => {
+                let field_ident = dynamic.field_ident.clone();
+                let asset_key = dynamic.key.clone();
+                let load = match typed {
+                    Typed::Yes => {
+                        quote!(::bevy_asset_loader::DynamicAsset::Files { paths } => paths
+                            .iter()
+                            .map(|path| asset_server.load_untyped(path))
+                            .drain(..)
+                            .map(|handle| handle.typed())
+                            .collect()
+                        )
+                    }
+                    Typed::No => {
+                        quote!(::bevy_asset_loader::DynamicAsset::Files { paths } => paths
+                            .iter()
+                            .map(|path| asset_server.load(path))
+                            .collect()
+                        )
+                    }
+                };
+                quote!(#token_stream #field_ident : {
+                    let asset = asset_keys.get_asset(#asset_key.into()).unwrap_or_else(|| panic!("Failed to get asset for key '{}'", #asset_key));
+                    match asset {
+                        #load,
+                        _ => panic!("The dynamic asset '{}' cannot be loaded (expected `Files`)", #asset_key)
                     }
                 },)
             }
@@ -220,32 +255,25 @@ impl AssetField {
                 let asset_path = asset.asset_path.clone();
                 quote!(#token_stream asset_server.load_folder(#asset_path).unwrap().drain(..).for_each(|handle| handles.push(handle));)
             }
-            AssetField::Dynamic(dynamic) => {
-                let asset_key = dynamic.key.clone();
-                quote!(
-                    #token_stream handles.push({
-                        let dynamic_asset = asset_keys.get_asset(#asset_key.into()).unwrap_or_else(|| panic!("Failed to get asset for key '{}'", #asset_key));
-                        asset_server.load_untyped(dynamic_asset.get_file_path())
-                    });
-                )
-            }
             AssetField::OptionalDynamic(dynamic) => {
                 let asset_key = dynamic.key.clone();
                 quote!(
                     #token_stream {
                         let dynamic_asset = asset_keys.get_asset(#asset_key.into());
                         if let Some(dynamic_asset) = dynamic_asset {
-                            handles.push(asset_server.load_untyped(dynamic_asset.get_file_path()));
+                            handles.extend(dynamic_asset.load_untyped(&asset_server));
                         }
                     }
                 )
             }
-            AssetField::DynamicFolder(dynamic, _) => {
+            AssetField::Dynamic(dynamic)
+            | AssetField::DynamicFolder(dynamic, _)
+            | AssetField::DynamicFiles(dynamic, _) => {
                 let asset_key = dynamic.key.clone();
                 quote!(
                     #token_stream {
                         let dynamic_asset = asset_keys.get_asset(#asset_key.into()).unwrap_or_else(|| panic!("Failed to get asset for key '{}'", #asset_key));
-                        asset_server.load_folder(dynamic_asset.get_file_path()).unwrap().drain(..).for_each(|handle| handles.push(handle));
+                        handles.extend(dynamic_asset.load_untyped(&asset_server));
                     }
                 )
             }
