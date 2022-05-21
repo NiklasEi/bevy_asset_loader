@@ -65,7 +65,7 @@ impl DynamicAsset {
             DynamicAsset::File { path } => vec![asset_server.load_untyped(path)],
             DynamicAsset::Folder { path } => asset_server
                 .load_folder(path)
-                .expect(&format!("Failed to load '{}' as a folder", path)),
+                .unwrap_or_else(|_| panic!("Failed to load '{}' as a folder", path)),
             DynamicAsset::Files { paths } => paths
                 .iter()
                 .map(|path| asset_server.load_untyped(path))
