@@ -1,3 +1,5 @@
+use bevy::app::AppExit;
+use bevy::asset::LoadState;
 use bevy::prelude::*;
 use bevy_asset_loader::{AssetCollection, AssetLoader};
 
@@ -10,8 +12,74 @@ fn main() {
         .with_collection::<MyAssets>()
         .build(&mut app);
     app.add_state(MyStates::AssetLoading)
-        .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(spawn_player_and_tree))
+        .add_system_set(SystemSet::on_update(MyStates::Next).with_system(expectations))
         .run();
+}
+
+fn expectations(
+    assets: Res<MyAssets>,
+    asset_server: Res<AssetServer>,
+    standard_materials: Res<Assets<StandardMaterial>>,
+    texture_atlases: Res<Assets<TextureAtlas>>,
+    mut quit: EventWriter<AppExit>,
+) {
+    println!("Done loading the collection. Checking expectations...");
+
+    assert_eq!(
+        asset_server.get_load_state(assets.single_file.clone()),
+        LoadState::Loaded
+    );
+    let material = standard_materials
+        .get(assets.standard_material.clone())
+        .expect("Standard material should be added to its assets resource.");
+    assert_eq!(
+        asset_server.get_load_state(
+            material
+                .base_color_texture
+                .clone()
+                .expect("Material should have image as base color texture")
+        ),
+        LoadState::Loaded
+    );
+    let atlas = texture_atlases
+        .get(assets.texture_atlas.clone())
+        .expect("Texture atlas should be added to its assets resource.");
+    assert_eq!(
+        asset_server.get_load_state(atlas.texture.clone()),
+        LoadState::Loaded
+    );
+    assert_eq!(assets.folder_untyped.len(), 6);
+    for handle in assets.folder_untyped.iter() {
+        assert_eq!(
+            asset_server.get_load_state(handle.clone()),
+            LoadState::Loaded
+        );
+    }
+    assert_eq!(assets.folder_typed.len(), 6);
+    for handle in assets.folder_typed.iter() {
+        assert_eq!(
+            asset_server.get_load_state(handle.clone()),
+            LoadState::Loaded
+        );
+    }
+    assert_eq!(assets.files_untyped.len(), 2);
+    for handle in assets.files_untyped.iter() {
+        assert_eq!(
+            asset_server.get_load_state(handle.clone()),
+            LoadState::Loaded
+        );
+    }
+    assert_eq!(assets.files_typed.len(), 2);
+    for handle in assets.files_typed.iter() {
+        assert_eq!(
+            asset_server.get_load_state(handle.clone()),
+            LoadState::Loaded
+        );
+    }
+
+    println!("Everything looks good!");
+    println!("Quitting the application...");
+    quit.send(AppExit);
 }
 
 #[allow(dead_code)]
@@ -19,34 +87,18 @@ fn main() {
 struct MyAssets {
     #[asset(key = "single_file")]
     single_file: Handle<AudioSource>,
-    #[asset(key = "standard_material")] // todo: why doesn't need `standard_material`?
+    #[asset(key = "standard_material")]
     standard_material: Handle<StandardMaterial>,
-    #[asset(key = "texture_atlas")] // todo: why doesn't need `texture_atlas`?
+    #[asset(key = "texture_atlas")]
     texture_atlas: Handle<TextureAtlas>,
-    #[asset(key = "folder_untyped", folder)]
+    #[asset(key = "folder_untyped", collection)]
     folder_untyped: Vec<HandleUntyped>,
-    #[asset(key = "folder_typed", folder(typed))]
+    #[asset(key = "folder_typed", collection(typed))]
     folder_typed: Vec<Handle<Image>>,
     #[asset(key = "files_untyped", collection)]
-    // Todo: `collection`? Need to separate from other field types at compile time.
-    // Or do I? Can I combine more field types in the code generation like for loading? Should be able to only have one asset type per field type => Folder = Files
     files_untyped: Vec<HandleUntyped>,
     #[asset(key = "files_typed", collection(typed))]
     files_typed: Vec<Handle<Image>>,
-}
-
-fn spawn_player_and_tree(mut commands: Commands, image_assets: Res<MyAssets>) {
-    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
-    commands.spawn_bundle(SpriteBundle {
-        texture: image_assets.files_typed[0].clone(),
-        transform: Transform::from_translation(Vec3::new(0., 0., 1.)),
-        ..Default::default()
-    });
-    commands.spawn_bundle(SpriteBundle {
-        texture: image_assets.files_typed[1].clone(),
-        transform: Transform::from_translation(Vec3::new(50., 30., 1.)),
-        ..Default::default()
-    });
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]

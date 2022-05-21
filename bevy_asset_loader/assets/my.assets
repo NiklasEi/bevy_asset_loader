@@ -13,7 +13,7 @@
         rows: 1
     ),
     "folder_untyped": Folder (
-        path: "audio",
+        path: "images",
     ),
     "folder_typed": Folder (
         path: "images",

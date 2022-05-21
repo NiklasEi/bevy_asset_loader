@@ -49,7 +49,7 @@ impl TextureAtlasAttribute {
     pub const PADDING_Y: &'static str = "padding_y";
 }
 
-pub(crate) const FOLDER_ATTRIBUTE: &str = "folder";
+pub(crate) const COLLECTION_ATTRIBUTE: &str = "collection";
 pub(crate) const PATHS_ATTRIBUTE: &str = "paths";
 pub(crate) const TYPED_ATTRIBUTE: &str = "typed";
 pub(crate) const STANDARD_MATERIAL_ATTRIBUTE: &str = "standard_material";
@@ -285,8 +285,8 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                         }
                     } else if path == OPTIONAL_ATTRIBUTE {
                         builder.is_optional = true;
-                    } else if path == FOLDER_ATTRIBUTE {
-                        builder.is_folder = true;
+                    } else if path == COLLECTION_ATTRIBUTE {
+                        builder.is_collection = true;
                     } else if path == TYPED_ATTRIBUTE {
                         builder.is_typed = true;
                     } else {
@@ -375,12 +375,12 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                                 ));
                             }
                         }
-                    } else if path == FOLDER_ATTRIBUTE {
+                    } else if path == COLLECTION_ATTRIBUTE {
                         for attribute in meta_list.nested.iter() {
                             if let NestedMeta::Meta(Meta::Path(ref meta_path)) = attribute {
                                 let path = meta_path.get_ident().unwrap().clone();
                                 if path == TYPED_ATTRIBUTE {
-                                    builder.is_folder = true;
+                                    builder.is_collection = true;
                                     builder.is_typed = true;
                                 } else {
                                     errors.push(ParseFieldError::UnknownAttribute(

@@ -9,7 +9,7 @@ This [Bevy][bevy] plugin reduces boilerplate for handling game assets. The crate
 
 The plugin supports different paths for asset collections to be loaded. The most common one is a loading state (think loading screen). During this state, all assets are loaded. Only when all asset collections can be build with fully loaded asset handles, the collections are inserted as resources. If you do not want to use a loading state, asset collections can still result in cleaner code and improved maintainability for projects with a lot of assets (see ["Usage without a loading state"](#usage-without-a-loading-state)).
 
-Asset configurations, like their file path or tile dimensions for sprite sheets, can be resolved at compile time (through derive macro attributes), or at run time (see ["Dynamic assets"](#dynamic-assets)). The second allows managing asset configurations as assets. This means you can keep a list of your asset files and their properties in asset files (at the moment only `ron` files are supported).
+Asset configurations, like their file path or tile dimensions for sprite sheets, can be resolved at compile time (through derive macro attributes), or at run time (see ["Dynamic assets"](#dynamic-assets)). The second allows managing asset configurations as assets. This means you can keep a list of your asset files and their properties in asset files (at the moment only `ron` files are supported). The main benefit of dynamic asset collections is a clean split of code and asset configuration leading to less recompiles while working on your assets.
 
 *The `main` branch and the latest release support Bevy version `0.7` (see [version table](#compatible-bevy-versions)). If you like living on the edge, take a look at the `bevy_main` branch, which tries to stay close to Bevy's development.*
 
@@ -67,8 +67,9 @@ See [two_collections.rs](/bevy_asset_loader/examples/two_collections.rs) for a c
 
 ### Dynamic assets
 
-It is possible to decide asset configurations at run-time. This is done via the resource `DynamicAssets` which is basically a map of asset keys to their configurations. The `AssetLoader` initializes the resource and reads it during the loading state.
+It is possible to decide asset configurations at run-time. This is done via the resource `DynamicAssets` which is a map of asset keys to their configurations. The `AssetLoader` initializes the resource and reads it during the loading state.
 
+To create a dynamic asset collection, give your asset fields `keys`.
 ```rust
 use bevy::prelude::*;
 use bevy_asset_loader::AssetCollection;
@@ -82,7 +83,7 @@ struct ImageAssets {
 }
 ```
 
-The key `player` in the above example should be either set manually in the `DynamicAssets` resource before the loading state (see the [dynamic_asset](/bevy_asset_loader/examples/dynamic_asset.rs) example), or should be part of a `.assets` file in ron format (supported file endings can be configured with `AssetLoader::set_dynamic_asset_collection_file_endings`):
+The key `player` in the example above should be either set manually in the `DynamicAssets` resource before the loading state (see the [dynamic_asset](/bevy_asset_loader/examples/dynamic_asset.rs) example), or should be part of a `.assets` file in ron format (this requires the feature `dynamic_assets`):
 
 ```ron
 ({
@@ -95,7 +96,11 @@ The key `player` in the above example should be either set manually in the `Dyna
 })
 ```
 
-Loading dynamic assets from such a ron file requires the feature `dynamic_assets` and a little setup. Take a look at the [dynamic_asset_ron](/bevy_asset_loader/examples/dynamic_asset_ron.rs) example to see what this can look like in your game.
+Loading dynamic assets from such a ron file requires little setup. Take a look at the [dynamic_asset_ron](/bevy_asset_loader/examples/dynamic_asset_ron.rs) example to see what it can look like in your game.
+
+The file ending is `.assets` by default, but can be configured via `AssetLoader::set_dynamic_asset_collection_file_endings`.
+
+The following sections describe more types of asset fields that you can add to your collections. All of them can be used as dynamic assets. The example [full_dynamic_collection](/bevy_asset_loader/examples/full_dynamic_collection.rs) displays all supported field types.
 
 ### Loading a folder as asset
 
@@ -106,7 +111,7 @@ use bevy_asset_loader::AssetCollection;
 
 #[derive(AssetCollection)]
 struct MyAssets {
-    #[asset(path = "images", folder)]
+    #[asset(path = "images", collection)]
     folder: Vec<HandleUntyped>,
 }
 ```
@@ -120,9 +125,74 @@ use bevy_asset_loader::AssetCollection;
 
 #[derive(AssetCollection)]
 struct MyAssets {
-    #[asset(path = "images", folder(typed))]
+    #[asset(path = "images", collection(typed))]
     folder: Vec<Handle<Image>>,
 }
+```
+
+Folders are also supported as a dynamic asset:
+```rust ignore
+#[derive(AssetCollection)]
+struct MyAssets {
+    #[asset(key = "my.images", collection(typed))]
+    images: Vec<Handle<Image>>,
+}
+```
+```ron
+({
+    "my.images": Folder (
+        path: "images",
+    ),
+})
+```
+
+Loading folders is not supported for web builds. If you need Wasm support, load you handles from a list of paths (see next section).
+
+### Loading a list of paths
+
+If you want load a list of asset files with the same type into a vector of `Handle<T>`, you can list their paths in an attribute:
+```rust
+use bevy::prelude::*;
+use bevy_asset_loader::AssetCollection;
+
+#[derive(AssetCollection)]
+struct MyAssets {
+    #[asset(paths("images/player.png", "images/tree.png"), collection(typed))]
+    files_typed: Vec<Handle<Image>>,
+}
+```
+
+In case you do not know their types, or they might have different types, the handles can also be untyped:
+```rust
+use bevy::prelude::*;
+use bevy_asset_loader::AssetCollection;
+
+#[derive(AssetCollection)]
+struct MyAssets {
+    #[asset(paths("images/player.png", "sound/background.ogg"), collection)]
+    files_untyped: Vec<HandleUntyped>,
+}
+```
+
+As dynamic assets, these two asset collection fields will look like this:
+```rust ignore
+#[derive(AssetCollection)]
+struct MyAssets {
+    #[asset(key = "files_untyped", collection)]
+    files_untyped: Vec<HandleUntyped>,
+    #[asset(key = "files_typed", collection(typed))]
+    files_typed: Vec<Handle<Image>>,
+}
+```
+```ron
+({
+    "files_untyped": Files (
+        paths: ["images/tree.png", "images/player.png"],
+    ),
+    "files_typed": Files (
+        paths: ["images/tree.png", "images/player.png"],
+    ),
+})
 ```
 
 ### Loading standard materials
@@ -141,10 +211,17 @@ struct MyAssets {
 ```
 
 This is also supported as a dynamic asset:
+```rust ignore
+#[derive(AssetCollection)]
+struct MyAssets {
+    #[asset(key = "image.player")]
+    player: Handle<StandardMaterial>,
+}
+```
 ```ron
 ({
-    "image.tree": StandardMaterial (
-        path: "images/tree.png",
+    "image.player": StandardMaterial (
+        path: "images/player.png",
     ),
 })
 ```
@@ -165,6 +242,13 @@ struct MyAssets {
 ```
 
 This is also supported as a dynamic asset:
+```rust ignore
+#[derive(AssetCollection)]
+struct MyAssets {
+    #[asset(key = "image.player")]
+    sprite: Handle<TextureAtlas>,
+}
+```
 ```ron
 ({
     "image.player": TextureAtlas (

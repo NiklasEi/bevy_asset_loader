@@ -10,6 +10,7 @@ use std::marker::PhantomData;
 
 /// These asset variants can be loaded from configuration files. They will then replace
 /// a dynamic asset based on their keys.
+#[derive(Debug)]
 #[cfg_attr(feature = "dynamic_assets", derive(serde::Deserialize))]
 pub enum DynamicAsset {
     /// A dynamic asset directly loaded from a single file
