@@ -15,22 +15,31 @@ fn main() {
         .run();
 }
 
-#[allow(dead_code)]
 #[derive(AssetCollection)]
 struct MyAssets {
+    // Any file that can be loaded to a Handle<T>
     #[asset(path = "audio/background.ogg")]
     single_file: Handle<AudioSource>,
+    // Any file that can be loaded and turned into a standard material
     #[asset(path = "images/player.png", standard_material)]
     standard_material: Handle<StandardMaterial>,
+    // Any file that can be loaded and turned into a texture atlas
     #[asset(texture_atlas(tile_size_x = 96., tile_size_y = 99., columns = 8, rows = 1))]
     #[asset(path = "images/female_adventurer_sheet.png")]
     texture_atlas: Handle<TextureAtlas>,
+
+    // Load collections of assets
+
+    // A folder (not supported on the web)
     #[asset(path = "images", collection)]
     folder_untyped: Vec<HandleUntyped>,
+    // A folder loaded to typed asset handles (not supported on the web)
     #[asset(path = "images", collection(typed))]
     folder_typed: Vec<Handle<Image>>,
+    // A collection of asset files
     #[asset(paths("images/player.png", "images/tree.png"), collection)]
     files_untyped: Vec<HandleUntyped>,
+    // A collection of asset files loaded to typed asset handles
     #[asset(paths("images/player.png", "images/tree.png"), collection(typed))]
     files_typed: Vec<Handle<Image>>,
 }
