@@ -49,8 +49,9 @@ impl TextureAtlasAttribute {
     pub const PADDING_Y: &'static str = "padding_y";
 }
 
-pub(crate) const FOLDER_ATTRIBUTE: &str = "folder";
-pub(crate) const FOLDER_TYPED_ATTRIBUTE: &str = "typed";
+pub(crate) const COLLECTION_ATTRIBUTE: &str = "collection";
+pub(crate) const PATHS_ATTRIBUTE: &str = "paths";
+pub(crate) const TYPED_ATTRIBUTE: &str = "typed";
 pub(crate) const STANDARD_MATERIAL_ATTRIBUTE: &str = "standard_material";
 
 fn impl_asset_collection(
@@ -121,6 +122,12 @@ fn impl_asset_collection(
                                     compile_errors.push(syn::Error::new_spanned(
                                         token_stream,
                                         "This attribute requires the '3d' feature",
+                                    ));
+                                }
+                                ParseFieldError::PathAndPathsAreExclusive => {
+                                    compile_errors.push(syn::Error::new_spanned(
+                                        field.into_token_stream(),
+                                        "Either specify 'path' OR 'paths'",
                                     ));
                                 }
                             }
@@ -217,6 +224,7 @@ enum ParseFieldError {
     NoAttributes,
     KeyAttributeStandsAlone,
     OnlyDynamicCanBeOptional,
+    PathAndPathsAreExclusive,
     WrongAttributeType(proc_macro2::TokenStream, &'static str),
     UnknownAttributeType(proc_macro2::TokenStream),
     UnknownAttribute(proc_macro2::TokenStream),
@@ -235,11 +243,11 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
             if *asset_meta_list.path.get_ident().unwrap() != ASSET_ATTRIBUTE {
                 continue;
             }
+            builder.field_ident = Some(field.clone().ident.unwrap());
 
             for attribute in asset_meta_list.nested.iter() {
                 if let NestedMeta::Meta(Meta::NameValue(ref named_value)) = attribute {
                     let path = named_value.path.get_ident().unwrap().clone();
-                    builder.field_ident = Some(field.clone().ident.unwrap());
 
                     if path == PATH_ATTRIBUTE {
                         if let Lit::Str(path_literal) = &named_value.lit {
@@ -277,8 +285,10 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                         }
                     } else if path == OPTIONAL_ATTRIBUTE {
                         builder.is_optional = true;
-                    } else if path == FOLDER_ATTRIBUTE {
-                        builder.is_folder = true;
+                    } else if path == COLLECTION_ATTRIBUTE {
+                        builder.is_collection = true;
+                    } else if path == TYPED_ATTRIBUTE {
+                        builder.is_typed = true;
                     } else {
                         errors.push(ParseFieldError::UnknownAttribute(
                             meta_path.into_token_stream(),
@@ -365,13 +375,13 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                                 ));
                             }
                         }
-                    } else if path == FOLDER_ATTRIBUTE {
+                    } else if path == COLLECTION_ATTRIBUTE {
                         for attribute in meta_list.nested.iter() {
                             if let NestedMeta::Meta(Meta::Path(ref meta_path)) = attribute {
                                 let path = meta_path.get_ident().unwrap().clone();
-                                if path == FOLDER_TYPED_ATTRIBUTE {
-                                    builder.is_folder = true;
-                                    builder.is_typed_folder = true;
+                                if path == TYPED_ATTRIBUTE {
+                                    builder.is_collection = true;
+                                    builder.is_typed = true;
                                 } else {
                                     errors.push(ParseFieldError::UnknownAttribute(
                                         meta_path.into_token_stream(),
@@ -383,6 +393,18 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                                 ));
                             }
                         }
+                    } else if path == PATHS_ATTRIBUTE {
+                        let mut paths = vec![];
+                        for attribute in meta_list.nested.iter() {
+                            if let NestedMeta::Lit(Lit::Str(path)) = attribute {
+                                paths.push(path.value());
+                            } else {
+                                errors.push(ParseFieldError::UnknownAttributeType(
+                                    attribute.into_token_stream(),
+                                ));
+                            }
+                        }
+                        builder.asset_paths = Some(paths);
                     } else {
                         errors.push(ParseFieldError::UnknownAttribute(
                             meta_list.into_token_stream(),

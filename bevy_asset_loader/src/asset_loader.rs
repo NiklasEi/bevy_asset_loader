@@ -477,7 +477,7 @@ where
 }
 
 /// This resource is used for handles from asset collections and loading dynamic asset collection files.
-/// The generic will be the AssetCollection type for the first and the State for the second.
+/// The generic will be the [`AssetCollection`] type for the first and the State for the second.
 struct LoadingAssetHandles<T> {
     handles: Vec<HandleUntyped>,
     marker: PhantomData<T>,

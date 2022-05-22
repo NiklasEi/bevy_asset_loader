@@ -33,6 +33,6 @@ struct OptionalDynamic {
 // dynamic folder
 #[derive(AssetCollection)]
 struct FolderAndKey {
-    #[asset(folder, key = "test")]
+    #[asset(collection, key = "test")]
     test: Vec<HandleUntyped>,
 }

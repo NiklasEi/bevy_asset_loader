@@ -21,20 +21,30 @@ pub(crate) struct BasicAssetField {
 }
 
 #[derive(PartialEq, Debug)]
+pub(crate) struct MultipleFilesField {
+    pub field_ident: Ident,
+    pub asset_paths: Vec<String>,
+}
+
+#[derive(PartialEq, Debug)]
 pub(crate) struct DynamicAssetField {
     pub field_ident: Ident,
     pub key: String,
 }
 
+/// Enum describing an asset field at compile-time
+///
+/// Variants are created from derive attributes.
 #[derive(PartialEq, Debug)]
 pub(crate) enum AssetField {
     Basic(BasicAssetField),
+    Folder(BasicAssetField, Typed),
+    Files(MultipleFilesField, Typed),
+    TextureAtlas(TextureAtlasAssetField),
+    StandardMaterial(BasicAssetField),
     Dynamic(DynamicAssetField),
     OptionalDynamic(DynamicAssetField),
-    DynamicFolder(DynamicAssetField, Typed),
-    StandardMaterial(BasicAssetField),
-    Folder(BasicAssetField, Typed),
-    TextureAtlas(TextureAtlasAssetField),
+    DynamicFileCollection(DynamicAssetField, Typed),
 }
 
 #[derive(PartialEq, Debug)]
@@ -63,7 +73,7 @@ impl AssetField {
         #[cfg(feature = "2d")]
         {
             let conditional_2d = quote! {
-            bevy_asset_loader::DynamicAsset::TextureAtlas {
+            ::bevy_asset_loader::DynamicAsset::TextureAtlas {
                 path,
                 tile_size_x,
                 tile_size_y,
@@ -84,7 +94,7 @@ impl AssetField {
         #[cfg(feature = "3d")]
         {
             let conditional_3d = quote! {
-            bevy_asset_loader::DynamicAsset::StandardMaterial { path } =>
+            ::bevy_asset_loader::DynamicAsset::StandardMaterial { path } =>
                 materials.add(asset_server.get_handle::<bevy::prelude::Image, &String>(path).into()).clone_untyped(),
             };
             conditional_dynamic_asset_collections.extend(conditional_3d);
@@ -119,8 +129,9 @@ impl AssetField {
                 quote!(#token_stream #field_ident : {
                     let asset = asset_keys.get_asset(#asset_key.into()).unwrap_or_else(|| panic!("Failed to get asset for key '{}'", #asset_key));
                     let handle = match asset {
-                        bevy_asset_loader::DynamicAsset::File { path } => asset_server.get_handle_untyped(path),
+                        ::bevy_asset_loader::DynamicAsset::File { path } => asset_server.get_handle_untyped(path),
                         #conditional_dynamic_asset_collections
+                        _ => panic!("The dynamic asset '{}' cannot be created (expected `File`, `StandardMaterial`, or `TextureAtlas`), got {:?}", #asset_key, asset)
                     };
                     handle.typed()
                 },)
@@ -132,34 +143,46 @@ impl AssetField {
                     let asset = asset_keys.get_asset(#asset_key.into());
                     asset.map(|asset| {
                         let handle = match asset {
-                            bevy_asset_loader::DynamicAsset::File { path } => asset_server.get_handle_untyped(path),
+                            ::bevy_asset_loader::DynamicAsset::File { path } => asset_server.get_handle_untyped(path),
                             #conditional_dynamic_asset_collections
+                            _ => panic!("The dynamic asset '{}' cannot be created (expected `File`, `StandardMaterial`, or `TextureAtlas`), got {:?}", #asset_key, asset)
                         };
                         handle.typed()
                     })
                 },)
             }
-            AssetField::DynamicFolder(dynamic, typed) => {
+            AssetField::DynamicFileCollection(dynamic, typed) => {
                 let field_ident = dynamic.field_ident.clone();
                 let asset_key = dynamic.key.clone();
                 let load = match typed {
                     Typed::Yes => {
-                        quote!(bevy_asset_loader::DynamicAsset::File { path } => asset_server.load_folder(path)
-                            .unwrap()
-                            .drain(..)
-                            .map(|handle| handle.typed())
-                            .collect()
+                        quote!(
+                            ::bevy_asset_loader::DynamicAsset::Folder { path } => asset_server.load_folder(path)
+                                .unwrap()
+                                .drain(..)
+                                .map(|handle| handle.typed())
+                                .collect(),
+                            ::bevy_asset_loader::DynamicAsset::Files { paths } => paths
+                                .iter()
+                                .map(|path| asset_server.load(path))
+                                .collect()
                         )
                     }
                     Typed::No => {
-                        quote!(bevy_asset_loader::DynamicAsset::File { path } => asset_server.load_folder(path).unwrap())
+                        quote!(
+                            ::bevy_asset_loader::DynamicAsset::Folder { path } => asset_server.load_folder(path).unwrap(),
+                            ::bevy_asset_loader::DynamicAsset::Files { paths } => paths
+                                .iter()
+                                .map(|path| asset_server.load_untyped(path))
+                                .collect()
+                        )
                     }
                 };
                 quote!(#token_stream #field_ident : {
                     let asset = asset_keys.get_asset(#asset_key.into()).unwrap_or_else(|| panic!("Failed to get asset for key '{}'", #asset_key));
                     match asset {
                         #load,
-                        _ => panic!("The asset '{}' cannot be loaded as a folder, because it is not of the type 'File'", #asset_key)
+                        _ => panic!("The dynamic asset '{}' cannot be created (expected `Folder` or `Files`), got {:?}", #asset_key, asset)
                     }
                 },)
             }
@@ -188,6 +211,18 @@ impl AssetField {
                     ))},
                 )
             }
+            AssetField::Files(files, typed) => {
+                let field_ident = files.field_ident.clone();
+                let asset_paths = files.asset_paths.clone();
+                match typed {
+                    Typed::Yes => {
+                        quote!(#token_stream #field_ident : vec![#(asset_server.load(#asset_paths)),*],)
+                    }
+                    Typed::No => {
+                        quote!(#token_stream #field_ident : vec![#(asset_server.load_untyped(#asset_paths)),*],)
+                    }
+                }
+            }
         }
     }
 
@@ -201,32 +236,23 @@ impl AssetField {
                 let asset_path = asset.asset_path.clone();
                 quote!(#token_stream asset_server.load_folder(#asset_path).unwrap().drain(..).for_each(|handle| handles.push(handle));)
             }
-            AssetField::Dynamic(dynamic) => {
-                let asset_key = dynamic.key.clone();
-                quote!(
-                    #token_stream handles.push({
-                        let dynamic_asset = asset_keys.get_asset(#asset_key.into()).unwrap_or_else(|| panic!("Failed to get asset for key '{}'", #asset_key));
-                        asset_server.load_untyped(dynamic_asset.get_file_path())
-                    });
-                )
-            }
             AssetField::OptionalDynamic(dynamic) => {
                 let asset_key = dynamic.key.clone();
                 quote!(
                     #token_stream {
                         let dynamic_asset = asset_keys.get_asset(#asset_key.into());
                         if let Some(dynamic_asset) = dynamic_asset {
-                            handles.push(asset_server.load_untyped(dynamic_asset.get_file_path()));
+                            handles.extend(dynamic_asset.load_untyped(&asset_server));
                         }
                     }
                 )
             }
-            AssetField::DynamicFolder(dynamic, _) => {
+            AssetField::Dynamic(dynamic) | AssetField::DynamicFileCollection(dynamic, _) => {
                 let asset_key = dynamic.key.clone();
                 quote!(
                     #token_stream {
                         let dynamic_asset = asset_keys.get_asset(#asset_key.into()).unwrap_or_else(|| panic!("Failed to get asset for key '{}'", #asset_key));
-                        asset_server.load_folder(dynamic_asset.get_file_path()).unwrap().drain(..).for_each(|handle| handles.push(handle));
+                        handles.extend(dynamic_asset.load_untyped(&asset_server));
                     }
                 )
             }
@@ -238,18 +264,23 @@ impl AssetField {
                 let asset_path = asset.asset_path.clone();
                 quote!(#token_stream handles.push(asset_server.load_untyped(#asset_path));)
             }
+            AssetField::Files(assets, _) => {
+                let asset_paths = assets.asset_paths.clone();
+                quote!(#token_stream #(handles.push(asset_server.load_untyped(#asset_paths)));*;)
+            }
         }
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub(crate) struct AssetBuilder {
     pub field_ident: Option<Ident>,
     pub asset_path: Option<String>,
+    pub asset_paths: Option<Vec<String>>,
     pub is_standard_material: bool,
     pub is_optional: bool,
-    pub is_folder: bool,
-    pub is_typed_folder: bool,
+    pub is_collection: bool,
+    pub is_typed: bool,
     pub key: Option<String>,
     pub tile_size_x: Option<f32>,
     pub tile_size_y: Option<f32>,
@@ -290,11 +321,12 @@ impl AssetBuilder {
                 TextureAtlasAttribute::ROWS
             ));
         }
-        if self.asset_path.is_none() && self.key.is_none() {
+        if self.asset_path.is_none() && self.asset_paths.is_none() && self.key.is_none() {
             return Err(vec![ParseFieldError::NoAttributes]);
         }
         if self.key.is_some()
             && (self.asset_path.is_some()
+                || self.asset_paths.is_some()
                 || missing_fields.len() < 4
                 || self.padding_x.is_some()
                 || self.padding_y.is_some()
@@ -305,6 +337,9 @@ impl AssetBuilder {
         if self.is_optional && self.key.is_none() {
             return Err(vec![ParseFieldError::OnlyDynamicCanBeOptional]);
         }
+        if self.asset_path.is_some() && self.asset_paths.is_some() {
+            return Err(vec![ParseFieldError::PathAndPathsAreExclusive]);
+        }
         if missing_fields.len() == 4 {
             if self.key.is_some() {
                 return if self.is_optional {
@@ -313,13 +348,13 @@ impl AssetBuilder {
                         field_ident: self.field_ident.unwrap(),
                         key: self.key.unwrap(),
                     }))
-                } else if self.is_folder {
-                    Ok(AssetField::DynamicFolder(
+                } else if self.is_collection {
+                    Ok(AssetField::DynamicFileCollection(
                         DynamicAssetField {
                             field_ident: self.field_ident.unwrap(),
                             key: self.key.unwrap(),
                         },
-                        self.is_typed_folder.into(),
+                        self.is_typed.into(),
                     ))
                 } else {
                     Ok(AssetField::Dynamic(DynamicAssetField {
@@ -328,13 +363,22 @@ impl AssetBuilder {
                     }))
                 };
             }
-            if self.is_folder {
+            if self.asset_paths.is_some() {
+                return Ok(AssetField::Files(
+                    MultipleFilesField {
+                        field_ident: self.field_ident.unwrap(),
+                        asset_paths: self.asset_paths.unwrap(),
+                    },
+                    self.is_typed.into(),
+                ));
+            }
+            if self.is_collection {
                 return Ok(AssetField::Folder(
                     BasicAssetField {
                         field_ident: self.field_ident.unwrap(),
                         asset_path: self.asset_path.unwrap(),
                     },
-                    self.is_typed_folder.into(),
+                    self.is_typed.into(),
                 ));
             }
             let asset = BasicAssetField {
@@ -409,7 +453,7 @@ mod test {
         let builder = AssetBuilder {
             field_ident: Some(Ident::new("test", Span::call_site())),
             asset_path: Some("some/folder".to_owned()),
-            is_folder: true,
+            is_collection: true,
             ..Default::default()
         };
 
@@ -428,8 +472,8 @@ mod test {
         let builder = AssetBuilder {
             field_ident: Some(Ident::new("test", Span::call_site())),
             asset_path: Some("some/folder".to_owned()),
-            is_folder: true,
-            is_typed_folder: true,
+            is_collection: true,
+            is_typed: true,
             ..Default::default()
         };
 
@@ -463,6 +507,62 @@ mod test {
                 field_ident: Ident::new("test", Span::call_site()),
                 key: "some.asset.key".to_owned()
             })
+        );
+    }
+
+    #[test]
+    fn paths_and_path_exclusive() {
+        let builder = AssetBuilder {
+            field_ident: Some(Ident::new("test", Span::call_site())),
+            asset_path: Some("some.asset".to_owned()),
+            asset_paths: Some(vec!["some.asset".to_owned()]),
+            ..Default::default()
+        };
+
+        let asset = builder.build().expect_err("Should be pasing error");
+        assert!(variant_eq(
+            asset.get(0).unwrap(),
+            &ParseFieldError::PathAndPathsAreExclusive
+        ));
+    }
+
+    #[test]
+    fn multiple_files() {
+        let builder = AssetBuilder {
+            field_ident: Some(Ident::new("test", Span::call_site())),
+            asset_paths: Some(vec!["some.asset".to_owned()]),
+            ..Default::default()
+        };
+
+        let asset = builder.build().expect("This should be a valid Files asset");
+        assert_eq!(
+            asset,
+            AssetField::Files(
+                MultipleFilesField {
+                    field_ident: Ident::new("test", Span::call_site()),
+                    asset_paths: vec!["some.asset".to_owned()]
+                },
+                Typed::No
+            )
+        );
+
+        let builder = AssetBuilder {
+            field_ident: Some(Ident::new("test", Span::call_site())),
+            asset_paths: Some(vec!["some.asset".to_owned()]),
+            is_typed: true,
+            ..Default::default()
+        };
+
+        let asset = builder.build().expect("This should be a valid Files asset");
+        assert_eq!(
+            asset,
+            AssetField::Files(
+                MultipleFilesField {
+                    field_ident: Ident::new("test", Span::call_site()),
+                    asset_paths: vec!["some.asset".to_owned()]
+                },
+                Typed::Yes
+            )
         );
     }
 
@@ -532,13 +632,13 @@ mod test {
         );
 
         let mut builder = asset_builder_dynamic();
-        builder.is_folder = true;
+        builder.is_collection = true;
         let asset = builder
             .build()
             .expect("This should be a valid TextureAtlasAsset");
         assert_eq!(
             asset,
-            AssetField::DynamicFolder(
+            AssetField::DynamicFileCollection(
                 DynamicAssetField {
                     field_ident: Ident::new("test", Span::call_site()),
                     key: "some.asset.key".to_owned(),
@@ -549,14 +649,14 @@ mod test {
         );
 
         let mut builder = asset_builder_dynamic();
-        builder.is_folder = true;
-        builder.is_typed_folder = true;
+        builder.is_collection = true;
+        builder.is_typed = true;
         let asset = builder
             .build()
             .expect("This should be a valid TextureAtlasAsset");
         assert_eq!(
             asset,
-            AssetField::DynamicFolder(
+            AssetField::DynamicFileCollection(
                 DynamicAssetField {
                     field_ident: Ident::new("test", Span::call_site()),
                     key: "some.asset.key".to_owned(),
@@ -573,5 +673,9 @@ mod test {
             key: Some("some.asset.key".to_owned()),
             ..AssetBuilder::default()
         }
+    }
+
+    fn variant_eq<T>(a: &T, b: &T) -> bool {
+        std::mem::discriminant(a) == std::mem::discriminant(b)
     }
 }

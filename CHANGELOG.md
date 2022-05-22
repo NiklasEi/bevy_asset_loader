@@ -2,8 +2,11 @@
 
 - Support progress tracking through `iyes_progress` ([#6](https://github.com/NiklasEi/bevy_asset_loader/issues/6))
 - Allow adding dynamic asset collection files to a resource instead of only the Plugin builder
-- Make file endings for dynamic asset collections configurable ([#38](https://github.com/NiklasEi/bevy_asset_loader/issues/38))
+- Make file endings for dynamic asset collection files configurable ([#38](https://github.com/NiklasEi/bevy_asset_loader/issues/38))
 - Expose `DynamicAssetCollection` to give access to the Bevy `Assets<DynamicAssetCollection>` resource
+- Support loading lists of files as `Vec<HandleUntyped>` or `Vec<Handle<T>>` ([#48](https://github.com/NiklasEi/bevy_asset_loader/issues/48))
+  - Also supported as dynamic asset
+- `folder` attribute is now called `collection`
 
 ## v0.10.0
 - Bump Bevy to version `0.7`
