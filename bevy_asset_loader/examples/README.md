@@ -14,7 +14,7 @@ These examples are simple Bevy Apps illustrating the capabilities of `bevy_asset
 
 ## Examples for stageless
 
-Those are examples using `iyes_loopless` implementation of Bevy's Stageless RFC. All need ot be run with `stageless` feature.
+The following examples use `iyes_loopless`, which implements ideas from Bevy's [Stageless RFC](https://github.com/bevyengine/rfcs/pull/45). All examples require the `stageless` feature.
 Note that progress tracking needs `progress_tracking_stageless` feature together with `progress_tracking`.
 
 | Example                                                    | Description                                      |
