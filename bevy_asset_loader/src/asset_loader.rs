@@ -1,7 +1,12 @@
 mod dynamic_asset;
-#[cfg(feature = "dynamic_assets")]
+#[cfg(all(feature = "dynamic_assets", not(feature = "stageless")))]
 mod dynamic_asset_systems;
+
+#[cfg(not(feature = "stageless"))]
 mod systems;
+
+#[cfg(feature = "stageless")]
+mod stageless;
 
 use bevy::app::App;
 use bevy::asset::HandleUntyped;
@@ -18,8 +23,23 @@ use bevy::utils::HashMap;
 use std::marker::PhantomData;
 
 use crate::asset_collection::AssetCollection;
+#[cfg(feature = "stageless")]
+use stageless::systems::{
+    check_loading_collection, finish_loading_state, init_resource, initialize_loading_state,
+    reset_loading_state, run_loading_state, start_loading_collection,
+};
+#[cfg(not(feature = "stageless"))]
 use systems::{
-    finish_loading_state, initialize_loading_state, reset_loading_state, run_loading_state,
+    check_loading_collection, finish_loading_state, init_resource, initialize_loading_state,
+    reset_loading_state, run_loading_state, start_loading_collection,
+};
+
+#[cfg(all(feature = "dynamic_assets", not(feature = "stageless")))]
+use dynamic_asset_systems::{check_dynamic_asset_collections, load_dynamic_asset_collections};
+
+#[cfg(all(feature = "dynamic_assets", feature = "stageless"))]
+use stageless::dynamic_asset_systems::{
+    check_dynamic_asset_collections, load_dynamic_asset_collections,
 };
 
 #[cfg(feature = "dynamic_assets")]
@@ -353,10 +373,10 @@ where
     pub fn with_collection<A: AssetCollection>(mut self) -> Self {
         self.start_loading_assets = self
             .start_loading_assets
-            .with_system(systems::start_loading_collection::<S, A>.exclusive_system());
+            .with_system(start_loading_collection::<S, A>.exclusive_system());
         self.check_loading_assets = self
             .check_loading_assets
-            .with_system(systems::check_loading_collection::<S, A>.exclusive_system());
+            .with_system(check_loading_collection::<S, A>.exclusive_system());
         self.collection_count += 1;
 
         self
@@ -408,11 +428,11 @@ where
     pub fn with_collection<A: AssetCollection>(mut self) -> Self {
         self.loading_transition_stage.add_enter_system(
             LoadingState::LoadingAssets,
-            systems::start_loading_collection::<S, A>.exclusive_system(),
+            start_loading_collection::<S, A>.exclusive_system(),
         );
         self.check_loading_assets = self
             .check_loading_assets
-            .with_system(systems::check_loading_collection::<S, A>.exclusive_system());
+            .with_system(check_loading_collection::<S, A>.exclusive_system());
         self.collection_count += 1;
 
         self
@@ -476,7 +496,7 @@ where
     pub fn init_resource<A: FromWorld + Send + Sync + 'static>(mut self) -> Self {
         self.initialize_resources = self
             .initialize_resources
-            .with_system(systems::init_resource::<A>.exclusive_system());
+            .with_system(init_resource::<A>.exclusive_system());
 
         self
     }
@@ -531,7 +551,7 @@ where
     pub fn init_resource<A: FromWorld + Send + Sync + 'static>(mut self) -> Self {
         self.loading_transition_stage.add_enter_system(
             LoadingState::Finalize,
-            systems::init_resource::<A>.exclusive_system(),
+            init_resource::<A>.exclusive_system(),
         );
 
         self
@@ -633,14 +653,12 @@ where
                 &self.dynamic_asset_collection_file_endings,
             ));
             update.add_system_set(
-                SystemSet::on_enter(LoadingState::LoadingDynamicAssetCollections).with_system(
-                    dynamic_asset_systems::load_dynamic_asset_collections::<S>.exclusive_system(),
-                ),
+                SystemSet::on_enter(LoadingState::LoadingDynamicAssetCollections)
+                    .with_system(load_dynamic_asset_collections::<S>.exclusive_system()),
             );
             update.add_system_set(
-                SystemSet::on_update(LoadingState::LoadingDynamicAssetCollections).with_system(
-                    dynamic_asset_systems::check_dynamic_asset_collections::<S>.exclusive_system(),
-                ),
+                SystemSet::on_update(LoadingState::LoadingDynamicAssetCollections)
+                    .with_system(check_dynamic_asset_collections::<S>.exclusive_system()),
             );
             app.insert_resource(LoadingAssetHandles {
                 handles: Default::default(),
@@ -767,12 +785,12 @@ where
             ));
             self.loading_transition_stage.add_enter_system(
                 LoadingState::LoadingDynamicAssetCollections,
-                dynamic_asset_systems::load_dynamic_asset_collections::<S>.exclusive_system(),
+                load_dynamic_asset_collections::<S>.exclusive_system(),
             );
             // I think it's a bug in iyes, but you need this kind of cast to make it become a descriptor
             update.add_system(
                 iyes_loopless::condition::IntoConditionalExclusiveSystem::run_in_state(
-                    dynamic_asset_systems::check_dynamic_asset_collections::<S>,
+                    check_dynamic_asset_collections::<S>,
                     LoadingState::LoadingDynamicAssetCollections,
                 )
                 .label("iyes_loopless::condition::IntoConditionalExclusiveSystem::cast"),

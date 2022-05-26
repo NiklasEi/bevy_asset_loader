@@ -240,7 +240,7 @@ Note that currently you must initialize loopless state before you initialize `As
 
 When using with `progress_tracking`, remember to enable `progress_tracking_stageless` feature too.
 
-```rust ignore
+```rust no_run
 use bevy::prelude::*;
 use bevy_asset_loader::{AssetCollection, AssetLoader};
 use iyes_loopless::prelude::*;
@@ -249,14 +249,14 @@ use iyes_loopless::prelude::*;
 fn main() {
     let mut app = App::new();
     app.add_loopless_state(GameState::AssetLoading);
-    AssetLoader::new(GameState::AssetLoading)
-        .continue_to_state(GameState::Next)
+    AssetLoader::new(MyStates::AssetLoading)
+        .continue_to_state(MyStates::Next)
         .with_collection::<ImageAssets>()
         .with_collection::<AudioAssets>()
         .build(&mut app);
     app
         .add_plugins(DefaultPlugins)
-        .add_enter_system(GameState::Next, use_my_assets)
+        .add_enter_system(MyStates::Next, use_my_assets)
         .run();
 }
 

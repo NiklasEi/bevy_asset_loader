@@ -88,7 +88,11 @@ required-features = ["stageless"]
 [[example]]
 name = "stageless_progress"
 path = "examples/stageless_progress.rs"
-required-features = ["progress_tracking_stageless", "stageless"]
+required-features = [
+  "progress_tracking_stageless",
+  "stageless",
+  "progress_tracking"
+]
 
 [[example]]
 name = "stageless_dynamic_ron"

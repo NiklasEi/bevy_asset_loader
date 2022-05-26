@@ -7,15 +7,7 @@ use bevy::prelude::*;
 use bevy_asset_loader::{AssetCollection, AssetLoader};
 use iyes_loopless::prelude::*;
 
-#[cfg_attr(
-    all(
-        not(feature = "2d"),
-        not(feature = "3d"),
-        not(feature = "progress_tracking"),
-        feature = "stageless"
-    ),
-    test
-)]
+#[test]
 fn init_resource() {
     let mut app = App::new();
     app.add_plugins(MinimalPlugins)
