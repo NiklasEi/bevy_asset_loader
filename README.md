@@ -248,7 +248,7 @@ use iyes_loopless::prelude::*;
 /// This example shows how to use `iyes_loopless` with `bevy_asset_loader`
 fn main() {
     let mut app = App::new();
-    app.add_loopless_state(GameState::AssetLoading);
+    app.add_loopless_state(MyStates::AssetLoading);
     AssetLoader::new(MyStates::AssetLoading)
         .continue_to_state(MyStates::Next)
         .with_collection::<ImageAssets>()

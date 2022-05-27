@@ -7,7 +7,6 @@ use bevy::ecs::schedule::StateData;
 use bevy::ecs::system::{Res, SystemState};
 use bevy::ecs::world::World;
 
-
 pub(crate) fn load_dynamic_asset_collections<S: StateData>(world: &mut World) {
     let mut system_state: SystemState<(
         ResMut<DynamicAssetCollections<S>>,
@@ -41,7 +40,6 @@ pub(crate) fn load_dynamic_asset_collections<S: StateData>(world: &mut World) {
     }
 }
 
-
 pub(crate) fn check_dynamic_asset_collections<S: StateData>(world: &mut World) {
     let mut system_state: SystemState<(
         Res<AssetServer>,
@@ -70,4 +68,3 @@ pub(crate) fn check_dynamic_asset_collections<S: StateData>(world: &mut World) {
             .expect("Failed to set loading state");
     }
 }
-
