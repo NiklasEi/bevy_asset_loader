@@ -31,8 +31,38 @@ jobs:
       - name: Install alsa and udev
         run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
         if: runner.os == 'linux'
-      - name: Build & run tests for all feature combinations
-        run: cargo hack test --feature-powerset --group-features "2d","3d"
+      - name: Build & run tests for feature combinations
+        run: cargo hack test --keep-going --feature-powerset --group-features "2d","3d","dynamic_assets" --exclude-features "stageless","progress_tracking_stageless" -p bevy_asset_loader
+      - name: Build & run tests for derive package
+        run: cargo hack test --keep-going --feature-powerset  --group-features "2d","3d" -p bevy_asset_loader_derive
+  stageless-tests:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-build-stable-stageless-${{ hashFiles('**/Cargo.toml') }}
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - uses: taiki-e/install-action@v1
+        with:
+          tool: cargo-hack
+      - name: Install alsa and udev
+        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
+        if: runner.os == 'linux'
+      - name: Build & run tests for feature combinations
+        run: cargo hack test --keep-going --feature-powerset --group-features "2d","3d","dynamic_assets" --features "stageless","progress_tracking_stageless" -p bevy_asset_loader
   lint:
     runs-on: ubuntu-latest
     steps:

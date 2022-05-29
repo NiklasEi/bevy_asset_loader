@@ -13,18 +13,13 @@ categories = ["game-development"]
 readme = "../README.md"
 
 [features]
-# This feature adds support for bevy's TextureAtlas assets
-2d = [
-    "bevy/bevy_sprite",
-    "bevy_asset_loader_derive/2d",
-]
+2d = ["bevy/bevy_sprite", "bevy_asset_loader_derive/2d"]
 # This feature adds support for bevy's StandardMaterial assets
-3d = [
-    "bevy/bevy_pbr",
-    "bevy_asset_loader_derive/3d",
-]
+3d = ["bevy/bevy_pbr", "bevy_asset_loader_derive/3d"]
 dynamic_assets = ["bevy_asset_ron", "serde"]
 progress_tracking = ["iyes_progress"]
+progress_tracking_stageless = ["iyes_progress/iyes_loopless"]
+stageless = ["iyes_loopless"]
 
 [dependencies]
 bevy = { version = "0.7", default-features = false }
@@ -32,10 +27,12 @@ bevy_asset_loader_derive = { version = "=0.11.0-github.main", path = "../bevy_as
 bevy_asset_ron = { version = "0.4", optional = true }
 serde = { version = "1", optional = true }
 iyes_progress = { version = "0.3", optional = true }
+iyes_loopless = { version = "0.5", optional = true }
 
 [dev-dependencies]
 bevy = { version = "0.7", features = ["vorbis"] }
 iyes_progress = { version = "0.3" }
+iyes_loopless = { version = "0.5" }
 trybuild = { version = "1.0" }
 bevy-inspector-egui = { version = "0.10.0" }
 
@@ -78,6 +75,30 @@ required-features = ["3d"]
 name = "progress_tracking"
 path = "examples/progress_tracking.rs"
 required-features = ["progress_tracking"]
+
+[[example]]
+name = "stageless"
+path = "examples/stageless.rs"
+required-features = ["stageless"]
+
+[[example]]
+name = "stageless_dynamic_asset"
+path = "examples/stageless_dynamic_asset.rs"
+required-features = ["stageless"]
+
+[[example]]
+name = "stageless_progress"
+path = "examples/stageless_progress.rs"
+required-features = [
+  "progress_tracking_stageless",
+  "stageless",
+  "progress_tracking"
+]
+
+[[example]]
+name = "stageless_dynamic_ron"
+path = "examples/stageless_dynamic_ron.rs"
+required-features = ["2d", "dynamic_assets", "stageless"]
 
 [[example]]
 name = "full_collection"

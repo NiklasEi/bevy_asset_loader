@@ -11,7 +11,9 @@ The plugin supports different paths for asset collections to be loaded. The most
 
 Asset configurations, like their file path or tile dimensions for sprite sheets, can be resolved at compile time (through derive macro attributes), or at run time (see ["Dynamic assets"](#dynamic-assets)). The second allows managing asset configurations as assets. This means you can keep a list of your asset files and their properties in asset files (at the moment only `ron` files are supported). The main benefit of dynamic asset collections is a clean split of code and asset configuration leading to less recompiles while working on your assets.
 
-*The `main` branch and the latest release support Bevy version `0.7` (see [version table](#compatible-bevy-versions)). If you like living on the edge, take a look at the `bevy_main` branch, which tries to stay close to Bevy's development.*
+Asset loader also supports `iyes_loopless` states via [`stageless`](#stageless) feature.
+
+_The `main` branch and the latest release support Bevy version `0.7` (see [version table](#compatible-bevy-versions)). If you like living on the edge, take a look at the `bevy_main` branch, which tries to stay close to Bevy's development._
 
 ## How to use
 
@@ -77,7 +79,7 @@ use bevy_asset_loader::AssetCollection;
 #[derive(AssetCollection)]
 struct ImageAssets {
   #[asset(key = "player")]
-  player: Handle<Image>, 
+  player: Handle<Image>,
   #[asset(key = "tree")]
   tree: Handle<Image>,
 }
@@ -105,6 +107,7 @@ The following sections describe more types of asset fields that you can add to y
 ### Loading a folder as asset
 
 You can load all assets in a folder and keep them in an `AssetCollection` as a vector of untyped handles.
+
 ```rust
 use bevy::prelude::*;
 use bevy_asset_loader::AssetCollection;
@@ -119,6 +122,7 @@ struct MyAssets {
 Just like Bevy's `load_folder`, this will also recursively load sub folders.
 
 If all assets in the folder have the same type you can load the folder as `Vec<Handle<T>>`. Just set `typed` in the `folder` attribute and adapt the type of the asset collection field.
+
 ```rust
 use bevy::prelude::*;
 use bevy_asset_loader::AssetCollection;
@@ -198,6 +202,7 @@ struct MyAssets {
 ### Loading standard materials
 
 You can directly load standard materials if you enable the feature `render`. For a complete example please take a look at [standard_material.rs](/bevy_asset_loader/examples/standard_material.rs).
+
 ```rust
 use bevy::prelude::*;
 use bevy_asset_loader::AssetCollection;
@@ -211,6 +216,7 @@ struct MyAssets {
 ```
 
 This is also supported as a dynamic asset:
+
 ```rust ignore
 #[derive(AssetCollection)]
 struct MyAssets {
@@ -218,6 +224,7 @@ struct MyAssets {
     player: Handle<StandardMaterial>,
 }
 ```
+
 ```ron
 ({
     "image.player": StandardMaterial (
@@ -229,6 +236,7 @@ struct MyAssets {
 ### Loading texture atlases
 
 You can directly load texture atlases from sprite sheets if you enable the feature `render`. For a complete example please take a look at [atlas_from_grid.rs](/bevy_asset_loader/examples/atlas_from_grid.rs).
+
 ```rust
 use bevy::prelude::*;
 use bevy_asset_loader::AssetCollection;
@@ -242,6 +250,7 @@ struct MyAssets {
 ```
 
 This is also supported as a dynamic asset:
+
 ```rust ignore
 #[derive(AssetCollection)]
 struct MyAssets {
@@ -249,6 +258,7 @@ struct MyAssets {
     sprite: Handle<TextureAtlas>,
 }
 ```
+
 ```ron
 ({
     "image.player": TextureAtlas (
@@ -277,9 +287,11 @@ With the feature `progress_tracking`, you can integrate with [`iyes_progress`][i
 
 See [`progress_tracking`](/bevy_asset_loader/examples/progress_tracking.rs) for a complete example.
 
+When using `stageless` feature, you need to add `progress_tracking_stageless` feature in addition to `progress_tracking`.
+
 ### A note on system ordering
 
-The loading state runs in a single exclusive system `at_start`. This means that any parallel system in the loading state will always run after all asset handles have been checked for their status. You can thus read the current progress in each frame in a parallel system without worrying about frame lag. 
+The loading state runs in a single exclusive system `at_start`. This means that any parallel system in the loading state will always run after all asset handles have been checked for their status. You can thus read the current progress in each frame in a parallel system without worrying about frame lag.
 
 ## Usage without a loading state
 
@@ -306,6 +318,51 @@ struct MyAssets {
 }
 ```
 
+## Stageless
+
+Asset loader can integrate with `iyes_loopless`, which implements ideas from Bevy's [Stageless RFC](https://github.com/bevyengine/rfcs/pull/45). The integration can be enabled with the `stageless` feature.
+
+Currently, you must initialize the loopless state before you initialize your `AssetLoader`. This is a limitation due to the way `iyes_loopless` works. The following is a minimal example of integrating `bevy_asset_loader` with `iyes_loopless`:
+
+```rust no_run
+use bevy::prelude::*;
+use bevy_asset_loader::{AssetCollection, AssetLoader};
+use iyes_loopless::prelude::*;
+
+fn main() {
+    let mut app = App::new();
+    app.add_loopless_state(MyStates::AssetLoading);
+    AssetLoader::new(MyStates::AssetLoading)
+        .continue_to_state(MyStates::Next)
+        .with_collection::<AudioAssets>()
+        .build(&mut app);
+    app
+        .add_plugins(DefaultPlugins)
+        .add_enter_system(MyStates::Next, use_my_assets)
+        .run();
+}
+
+#[derive(AssetCollection)]
+struct AudioAssets {
+    #[asset(path = "audio/background.ogg")]
+    background: Handle<AudioSource>,
+}
+
+fn use_my_assets(_audio_assets: Res<AudioAssets>) {
+  // do something using the asset handles from the resources
+}
+
+#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+enum MyStates {
+    AssetLoading,
+    Next,
+}
+```
+
+When using with `progress_tracking`, remember to enable `progress_tracking_stageless` feature too.
+
+See [the stageless examples](/bevy_asset_loader/examples/README.md#examples-for-stageless) for more code.
+
 ## Compatible Bevy versions
 
 The main branch is compatible with the latest Bevy release, while the branch `bevy_main` tracks the `main` branch of Bevy.
@@ -323,8 +380,8 @@ Compatibility of `bevy_asset_loader` versions:
 
 Licensed under either of
 
-* Apache License, Version 2.0, ([LICENSE-APACHE](/LICENSE-APACHE) or https://www.apache.org/licenses/LICENSE-2.0)
-* MIT license ([LICENSE-MIT](/LICENSE-MIT) or https://opensource.org/licenses/MIT)
+- Apache License, Version 2.0, ([LICENSE-APACHE](/LICENSE-APACHE) or https://www.apache.org/licenses/LICENSE-2.0)
+- MIT license ([LICENSE-MIT](/LICENSE-MIT) or https://opensource.org/licenses/MIT)
 
 at your option.
 
