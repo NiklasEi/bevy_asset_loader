@@ -24,8 +24,11 @@ pub(crate) fn init_resource<Asset: FromWorld + Send + Sync + 'static>(world: &mu
 }
 
 pub(crate) fn start_loading_collection<S: StateData, Assets: AssetCollection>(world: &mut World) {
-    let mut system_state: SystemState<(ResMut<AssetLoaderConfiguration<S>>, Res<CurrentState<S>>)> =
-        SystemState::new(world);
+    #[allow(clippy::type_complexity)]
+    let mut system_state: SystemState<(
+        ResMut<AssetLoaderConfiguration<S>>,
+        Res<CurrentState<S>>,
+    )> = SystemState::new(world);
     let (mut asset_loader_configuration, state) = system_state.get_mut(world);
 
     let mut config = asset_loader_configuration

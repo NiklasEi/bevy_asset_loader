@@ -10,6 +10,7 @@ use bevy::ecs::world::World;
 use iyes_loopless::prelude::{CurrentState, NextState};
 
 pub(crate) fn load_dynamic_asset_collections<S: StateData>(world: &mut World) {
+    #[allow(clippy::type_complexity)]
     let mut system_state: SystemState<(
         ResMut<DynamicAssetCollections<S>>,
         ResMut<LoadingAssetHandles<S>>,
@@ -35,6 +36,7 @@ pub(crate) fn load_dynamic_asset_collections<S: StateData>(world: &mut World) {
 }
 
 pub(crate) fn check_dynamic_asset_collections<S: StateData>(world: &mut World) {
+    #[allow(clippy::type_complexity)]
     let mut system_state: SystemState<(
         Res<AssetServer>,
         ResMut<LoadingAssetHandles<S>>,
