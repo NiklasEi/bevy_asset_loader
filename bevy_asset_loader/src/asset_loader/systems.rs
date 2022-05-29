@@ -23,6 +23,7 @@ pub(crate) fn init_resource<Asset: FromWorld + Send + Sync + 'static>(world: &mu
 }
 
 pub(crate) fn start_loading_collection<S: StateData, Assets: AssetCollection>(world: &mut World) {
+    #[allow(clippy::type_complexity)]
     let mut system_state: SystemState<(ResMut<AssetLoaderConfiguration<S>>, Res<State<S>>)> =
         SystemState::new(world);
     let (mut asset_loader_configuration, state) = system_state.get_mut(world);
@@ -105,7 +106,7 @@ fn count_loaded_handles<S: StateData, Assets: AssetCollection>(
         }
     }
 
-    return Some((done as u32, total as u32));
+    Some((done as u32, total as u32))
 }
 
 pub(crate) fn initialize_loading_state(mut loading_state: ResMut<State<LoadingState>>) {
