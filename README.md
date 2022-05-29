@@ -320,24 +320,20 @@ struct MyAssets {
 
 ## Stageless
 
-Asset loader supports Stageless RFC via `iyes_loopless`. It can be enabled with `stageless` feature.
+Asset loader can integrate with `iyes_loopless`, which implements ideas from Bevy's [Stageless RFC](https://github.com/bevyengine/rfcs/pull/45). The integration can be enabled with the `stageless` feature.
 
-Note that currently you must initialize loopless state before you initialize `AssetLoader`. This is a limitation due to the way `iyes_loopless` works.
-
-When using with `progress_tracking`, remember to enable `progress_tracking_stageless` feature too.
+Currently, you must initialize the loopless state before you initialize your `AssetLoader`. This is a limitation due to the way `iyes_loopless` works. The following is a minimal example of integrating `bevy_asset_loader` with `iyes_loopless`:
 
 ```rust no_run
 use bevy::prelude::*;
 use bevy_asset_loader::{AssetCollection, AssetLoader};
 use iyes_loopless::prelude::*;
 
-/// This example shows how to use `iyes_loopless` with `bevy_asset_loader`
 fn main() {
     let mut app = App::new();
     app.add_loopless_state(MyStates::AssetLoading);
     AssetLoader::new(MyStates::AssetLoading)
         .continue_to_state(MyStates::Next)
-        .with_collection::<ImageAssets>()
         .with_collection::<AudioAssets>()
         .build(&mut app);
     app
@@ -352,18 +348,7 @@ struct AudioAssets {
     background: Handle<AudioSource>,
 }
 
-#[derive(AssetCollection)]
-struct ImageAssets {
-    #[asset(path = "images/player.png")]
-    player: Handle<Image>,
-    #[asset(path = "images/tree.png")]
-    tree: Handle<Image>,
-    #[asset(path = "images", collection)]
-    _images: Vec<HandleUntyped>,
-}
-
-
-fn use_my_assets(_image_assets: Res<ImageAssets>, _audio_assets: Res<AudioAssets>) {
+fn use_my_assets(_audio_assets: Res<AudioAssets>) {
   // do something using the asset handles from the resources
 }
 
@@ -373,6 +358,10 @@ enum MyStates {
     Next,
 }
 ```
+
+When using with `progress_tracking`, remember to enable `progress_tracking_stageless` feature too.
+
+See [the stageless examples](/bevy_asset_loader/examples/README.md#examples-for-stageless) for more code.
 
 ## Compatible Bevy versions
 
