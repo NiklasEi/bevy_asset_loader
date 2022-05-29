@@ -19,7 +19,7 @@ _The `main` branch and the latest release support Bevy version `0.7` (see [versi
 
 An `AssetLoader` is responsible for managing the loading process during a configurable loading state (see [the cheatbook on states][cheatbook-states]). A second state can be configured to move on to, when all assets are loaded and the collections were inserted as resources.
 
-For structs with named fields that are either asset handles, implement default, or are of another supported type, `AssetCollection` can be derived. You can add as many asset collections to the loader as you want by chaining `with_collection` calls. To finish the setup, call the `build` function with your `AppBuilder`.
+For structs with named fields that are either asset handles, implement `FromWorld`, or are of another supported type, `AssetCollection` can be derived. You can add as many asset collections to the loader as you want by chaining `with_collection` calls. To finish the setup, call the `build` function with your `AppBuilder`.
 
 Now you can start your game logic from the second configured state and use the asset collections as resources in your systems. The `AssetLoader` guarantees that all handles in your collections are fully loaded at the time the second state starts.
 

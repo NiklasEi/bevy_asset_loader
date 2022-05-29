@@ -11,6 +11,7 @@ fn main() {
         .with_collection::<MyAssets>()
         .build(&mut app);
     app.add_state(MyStates::AssetLoading)
+        .insert_resource("from_world test value".to_owned())
         .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(expectations))
         .run();
 }
@@ -27,6 +28,8 @@ struct MyAssets {
     #[asset(texture_atlas(tile_size_x = 96., tile_size_y = 99., columns = 8, rows = 1))]
     #[asset(path = "images/female_adventurer_sheet.png")]
     texture_atlas: Handle<TextureAtlas>,
+    // A field that implements `FromWorld`
+    from_world: FromWorldTest,
 
     // Load collections of assets
 
@@ -76,6 +79,10 @@ fn expectations(
         asset_server.get_load_state(atlas.texture.clone()),
         LoadState::Loaded
     );
+    assert_eq!(
+        assets.from_world.test_value,
+        "from_world test value".to_owned()
+    );
     assert_eq!(assets.folder_untyped.len(), 6);
     for handle in assets.folder_untyped.iter() {
         assert_eq!(
@@ -108,6 +115,18 @@ fn expectations(
     println!("Everything looks good!");
     println!("Quitting the application...");
     quit.send(AppExit);
+}
+
+struct FromWorldTest {
+    test_value: String,
+}
+
+impl FromWorld for FromWorldTest {
+    fn from_world(world: &mut World) -> Self {
+        FromWorldTest {
+            test_value: world.get_resource::<String>().unwrap().clone(),
+        }
+    }
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]

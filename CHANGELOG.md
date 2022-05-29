@@ -1,5 +1,6 @@
 # Changelog
 
+- Use `FromWorld` instead of `Default` for fields without attributes
 - Support `iyes_stageless`, which implements ideas from Bevy's [Stageless RFC](https://github.com/bevyengine/rfcs/pull/45)
   - requires the `stageless` feature
   - note that progress tracking needs the `progress_tracking_stageless` feature together with `progress_tracking`. ([#43](https://github.com/NiklasEi/bevy_asset_loader/issues/43))

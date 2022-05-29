@@ -17,7 +17,7 @@ use std::result::Result::{Err, Ok};
 use crate::assets::*;
 use proc_macro2::Ident;
 use quote::{quote, ToTokens, TokenStreamExt};
-use syn::{Data, Field, Fields, Lit, Meta, NestedMeta};
+use syn::{Data, Field, Fields, Index, Lit, Meta, NestedMeta};
 
 /// Derive macro for [`AssetCollection`]
 ///
@@ -59,7 +59,7 @@ fn impl_asset_collection(
 ) -> Result<proc_macro2::TokenStream, Vec<syn::Error>> {
     let name = &ast.ident;
 
-    let mut default_fields: Vec<Ident> = vec![];
+    let mut from_world_fields: Vec<Ident> = vec![];
     let mut assets: Vec<AssetField> = vec![];
     if let Data::Struct(ref data_struct) = ast.data {
         if let Fields::Named(ref named_fields) = data_struct.fields {
@@ -71,7 +71,7 @@ fn impl_asset_collection(
                         for error in errors {
                             match error {
                                 ParseFieldError::NoAttributes => {
-                                    default_fields.push(field.clone().ident.unwrap())
+                                    from_world_fields.push(field.clone().ident.unwrap())
                                 }
                                 ParseFieldError::KeyAttributeStandsAlone => {
                                     compile_errors.push(syn::Error::new_spanned(
@@ -188,15 +188,25 @@ fn impl_asset_collection(
         conditional_asset_collections.extend(conditional_3d);
     }
 
+    let mut prepare_from_world = quote! {};
+    prepare_from_world.append_all(from_world_fields.iter().fold(
+        quote!(),
+        |es, _| quote! (#es ::bevy::ecs::world::FromWorld::from_world(world),),
+    ));
+
     let mut asset_creation = assets.iter().fold(quote!(), |token_stream, asset| {
         asset.attach_token_stream_for_creation(token_stream)
     });
-    asset_creation.append_all(default_fields.iter().fold(
-        quote!(),
-        |es, ident| quote! (#es #ident : Default::default()),
-    ));
+    let mut index = 0;
+    asset_creation.append_all(from_world_fields.iter().fold(quote!(), |es, ident| {
+        let index_ident = Index::from(index);
+        let tokens = quote! (#es #ident : from_world_fields.#index_ident,);
+        index += 1;
+        tokens
+    }));
     let create_function = quote! {
             fn create(world: &mut World) -> Self {
+                let from_world_fields = (#prepare_from_world);
                 let cell = world.cell();
                 let asset_server = cell.get_resource::<AssetServer>().expect("Cannot get AssetServer");
                 let asset_keys = cell.get_resource::<bevy_asset_loader::DynamicAssets>().expect("Cannot get bevy_asset_loader::DynamicAssets");
@@ -239,7 +249,7 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
     let mut builder = AssetBuilder::default();
     let mut errors = vec![];
     for attr in field.attrs.iter() {
-        if let syn::Meta::List(ref asset_meta_list) = attr.parse_meta().unwrap() {
+        if let Meta::List(ref asset_meta_list) = attr.parse_meta().unwrap() {
             if *asset_meta_list.path.get_ident().unwrap() != ASSET_ATTRIBUTE {
                 continue;
             }
