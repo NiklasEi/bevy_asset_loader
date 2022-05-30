@@ -619,9 +619,7 @@ mod test {
 
         let mut builder = asset_builder_dynamic();
         builder.is_optional = true;
-        let asset = builder
-            .build()
-            .expect("This should be a valid asset");
+        let asset = builder.build().expect("This should be a valid asset");
         assert_eq!(
             asset,
             AssetField::OptionalDynamic(DynamicAssetField {
@@ -633,9 +631,7 @@ mod test {
 
         let mut builder = asset_builder_dynamic();
         builder.is_collection = true;
-        let asset = builder
-            .build()
-            .expect("This should be a valid asset");
+        let asset = builder.build().expect("This should be a valid asset");
         assert_eq!(
             asset,
             AssetField::DynamicFileCollection(
@@ -651,9 +647,7 @@ mod test {
         let mut builder = asset_builder_dynamic();
         builder.is_collection = true;
         builder.is_typed = true;
-        let asset = builder
-            .build()
-            .expect("This should be a valid asset");
+        let asset = builder.build().expect("This should be a valid asset");
         assert_eq!(
             asset,
             AssetField::DynamicFileCollection(
