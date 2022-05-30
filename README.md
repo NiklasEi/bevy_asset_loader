@@ -13,7 +13,7 @@ Asset configurations, like their file path or tile dimensions for sprite sheets,
 
 Asset loader also supports `iyes_loopless` states via [`stageless`](#stageless) feature.
 
-_The `main` branch and the latest release support Bevy version `0.7` (see [version table](#compatible-bevy-versions)). If you like living on the edge, take a look at the `bevy_main` branch, which tries to stay close to Bevy's development._
+_The `main` branch and the latest release support Bevy version `0.7` (see [version table](#compatible-bevy-versions))_
 
 ## How to use
 
@@ -65,7 +65,7 @@ enum GameState {
 }
 ```
 
-See [two_collections.rs](/bevy_asset_loader/examples/two_collections.rs) for a complete example.
+See [full_collection.rs](/bevy_asset_loader/examples/full_collection.rs) for a complete example.
 
 ### Dynamic assets
 
@@ -370,7 +370,7 @@ The main branch is compatible with the latest Bevy release, while the branch `be
 Compatibility of `bevy_asset_loader` versions:
 | `bevy_asset_loader` | `bevy` |
 | :--                 |  :--   |
-| `0.10`              | `0.7`  |
+| `0.10` - `0.11`     | `0.7`  |
 | `0.8` - `0.9`       | `0.6`  |
 | `0.1` - `0.7`       | `0.5`  |
 | `main`              | `0.7`  |
