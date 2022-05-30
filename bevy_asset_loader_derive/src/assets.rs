@@ -621,7 +621,7 @@ mod test {
         builder.is_optional = true;
         let asset = builder
             .build()
-            .expect("This should be a valid TextureAtlasAsset");
+            .expect("This should be a valid asset");
         assert_eq!(
             asset,
             AssetField::OptionalDynamic(DynamicAssetField {
@@ -635,7 +635,7 @@ mod test {
         builder.is_collection = true;
         let asset = builder
             .build()
-            .expect("This should be a valid TextureAtlasAsset");
+            .expect("This should be a valid asset");
         assert_eq!(
             asset,
             AssetField::DynamicFileCollection(
@@ -645,7 +645,7 @@ mod test {
                 },
                 Typed::No
             ),
-            "Dynamic asset with 'folder' attribute should yield 'AssetField::DynamicFolder'"
+            "Dynamic asset with 'collection' attribute should yield 'AssetField::DynamicFileCollection'"
         );
 
         let mut builder = asset_builder_dynamic();
@@ -653,7 +653,7 @@ mod test {
         builder.is_typed = true;
         let asset = builder
             .build()
-            .expect("This should be a valid TextureAtlasAsset");
+            .expect("This should be a valid asset");
         assert_eq!(
             asset,
             AssetField::DynamicFileCollection(
@@ -663,7 +663,7 @@ mod test {
                 },
                 Typed::Yes
             ),
-            "Dynamic asset with 'folder' attribute should yield 'AssetField::DynamicFolder'"
+            "Dynamic asset with 'collection' attribute should yield 'AssetField::DynamicFileCollection'"
         );
     }
 
