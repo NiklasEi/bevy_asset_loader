@@ -11,7 +11,6 @@ fn main() {
         .with_collection::<MyAssets>()
         .build(&mut app);
     app.add_state(MyStates::AssetLoading)
-        .insert_resource("from_world test value".to_owned())
         .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(expectations))
         .run();
 }
@@ -28,8 +27,9 @@ struct MyAssets {
     #[asset(texture_atlas(tile_size_x = 96., tile_size_y = 99., columns = 8, rows = 1))]
     #[asset(path = "images/female_adventurer_sheet.png")]
     texture_atlas: Handle<TextureAtlas>,
-    // A field that implements `FromWorld`
-    from_world: FromWorldTest,
+    // Example field with type that implements `FromWorld`
+    // If no derive attributes are set, `from_world` will be used to set the value.
+    from_world: ColorStandardMaterial<{ u8::MAX }, 0, 0, { u8::MAX }>,
 
     // Load collections of assets
 
@@ -79,10 +79,10 @@ fn expectations(
         asset_server.get_load_state(atlas.texture.clone()),
         LoadState::Loaded
     );
-    assert_eq!(
-        assets.from_world.test_value,
-        "from_world test value".to_owned()
-    );
+    let material = standard_materials
+        .get(&assets.from_world.handle)
+        .expect("Standard material should be added to its assets resource.");
+    assert_eq!(material.base_color, Color::RED);
     assert_eq!(assets.folder_untyped.len(), 6);
     for handle in assets.folder_untyped.iter() {
         assert_eq!(
@@ -117,14 +117,19 @@ fn expectations(
     quit.send(AppExit);
 }
 
-struct FromWorldTest {
-    test_value: String,
+struct ColorStandardMaterial<const R: u8, const G: u8, const B: u8, const A: u8> {
+    pub handle: Handle<StandardMaterial>,
 }
 
-impl FromWorld for FromWorldTest {
+impl<const R: u8, const G: u8, const B: u8, const A: u8> FromWorld
+    for ColorStandardMaterial<R, G, B, A>
+{
     fn from_world(world: &mut World) -> Self {
-        FromWorldTest {
-            test_value: world.get_resource::<String>().unwrap().clone(),
+        let mut materials = world
+            .get_resource_mut::<Assets<StandardMaterial>>()
+            .unwrap();
+        ColorStandardMaterial {
+            handle: materials.add(StandardMaterial::from(Color::rgba_u8(R, G, B, A))),
         }
     }
 }
