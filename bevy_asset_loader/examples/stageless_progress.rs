@@ -15,12 +15,13 @@ fn main() {
     let mut app = App::new();
     app.add_loopless_state(MyStates::AssetLoading);
     AssetLoader::new(MyStates::AssetLoading)
+        .continue_to_state(MyStates::Next)
         .with_collection::<TextureAssets>()
         .with_collection::<AudioAssets>()
         .build(&mut app);
     app.add_plugins(DefaultPlugins)
         // track progress during `MyStates::AssetLoading` and continue to `MyStates::Next` when progress is completed
-        .add_plugin(ProgressPlugin::new(MyStates::AssetLoading).continue_to(MyStates::Next))
+        .add_plugin(ProgressPlugin::new(MyStates::AssetLoading))
         // gracefully quit the app when `MyStates::Next` is reached
         .add_enter_system(MyStates::Next, expect)
         .add_system(track_fake_long_task.run_in_state(MyStates::AssetLoading))
