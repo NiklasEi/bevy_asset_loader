@@ -74,7 +74,7 @@ required-features = ["3d"]
 [[example]]
 name = "progress_tracking"
 path = "examples/progress_tracking.rs"
-required-features = ["progress_tracking"]
+required-features = ["progress_tracking", "2d"]
 
 [[example]]
 name = "stageless"
@@ -92,7 +92,7 @@ path = "examples/stageless_progress.rs"
 required-features = [
   "progress_tracking_stageless",
   "stageless",
-  "progress_tracking"
+  "progress_tracking", "2d"
 ]
 
 [[example]]

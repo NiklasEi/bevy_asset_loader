@@ -1,4 +1,5 @@
 use bevy::app::AppExit;
+use bevy::asset::LoadState;
 use bevy::prelude::*;
 use bevy_asset_loader::{AssetCollection, AssetLoader};
 use iyes_loopless::prelude::*;
@@ -21,7 +22,7 @@ fn main() {
         // track progress during `MyStates::AssetLoading` and continue to `MyStates::Next` when progress is completed
         .add_plugin(ProgressPlugin::new(MyStates::AssetLoading).continue_to(MyStates::Next))
         // gracefully quit the app when `MyStates::Next` is reached
-        .add_enter_system(MyStates::Next, quit)
+        .add_enter_system(MyStates::Next, expect)
         .add_system(track_fake_long_task.run_in_state(MyStates::AssetLoading))
         .add_system_to_stage(CoreStage::PostUpdate, print_progress)
         .run();
@@ -30,19 +31,20 @@ fn main() {
 #[derive(AssetCollection)]
 struct AudioAssets {
     #[asset(path = "audio/background.ogg")]
-    _background: Handle<AudioSource>,
+    background: Handle<AudioSource>,
     #[asset(path = "audio/plop.ogg")]
-    _plop: Handle<AudioSource>,
+    plop: Handle<AudioSource>,
 }
 
 #[derive(AssetCollection)]
 struct TextureAssets {
     #[asset(path = "images/player.png")]
-    _player: Handle<Image>,
+    player: Handle<Image>,
     #[asset(path = "images/tree.png")]
-    _tree: Handle<Image>,
-    #[asset(path = "images/female_adventurer.png")]
-    _female_adventurer: Handle<Image>,
+    tree: Handle<Image>,
+    #[asset(texture_atlas(tile_size_x = 96., tile_size_y = 99., columns = 8, rows = 1))]
+    #[asset(path = "images/female_adventurer_sheet.png")]
+    female_adventurer: Handle<TextureAtlas>,
 }
 
 fn track_fake_long_task(time: Res<Time>, progress: Res<ProgressCounter>) {
@@ -54,8 +56,38 @@ fn track_fake_long_task(time: Res<Time>, progress: Res<ProgressCounter>) {
     }
 }
 
-fn quit(mut quit: EventWriter<AppExit>) {
-    info!("quitting");
+fn expect(
+    audio_assets: Res<AudioAssets>,
+    texture_assets: Res<TextureAssets>,
+    asset_server: Res<AssetServer>,
+    texture_atlases: Res<Assets<TextureAtlas>>,
+    mut quit: EventWriter<AppExit>,
+) {
+    assert_eq!(
+        asset_server.get_load_state(audio_assets.background.clone()),
+        LoadState::Loaded
+    );
+    assert_eq!(
+        asset_server.get_load_state(audio_assets.plop.clone()),
+        LoadState::Loaded
+    );
+    let atlas = texture_atlases
+        .get(texture_assets.female_adventurer.clone())
+        .expect("Texture atlas should be added to its assets resource.");
+    assert_eq!(
+        asset_server.get_load_state(atlas.texture.clone()),
+        LoadState::Loaded
+    );
+    assert_eq!(
+        asset_server.get_load_state(texture_assets.player.clone()),
+        LoadState::Loaded
+    );
+    assert_eq!(
+        asset_server.get_load_state(texture_assets.tree.clone()),
+        LoadState::Loaded
+    );
+    println!("Everything looks good!");
+    println!("Quitting the application...");
     quit.send(AppExit);
 }
 
