@@ -67,59 +67,34 @@ impl AssetField {
         &self,
         token_stream: TokenStream,
     ) -> TokenStream {
-        #[allow(unused_mut, unused_assignments)]
-        let mut conditional_dynamic_asset_collections = quote! {};
-
-        #[cfg(feature = "2d")]
-        {
-            let conditional_2d = quote! {
-            ::bevy_asset_loader::DynamicAsset::TextureAtlas {
-                path,
-                tile_size_x,
-                tile_size_y,
-                columns,
-                rows,
-                padding_x,
-                padding_y,
-            } => atlases.add(TextureAtlas::from_grid_with_padding(
-                asset_server.get_handle(path),
-                Vec2::new(*tile_size_x, *tile_size_y),
-                *columns,
-                *rows,
-                Vec2::new(padding_x.unwrap_or(0.), padding_y.unwrap_or(0.)),
-            )).clone_untyped(),
-            };
-            conditional_dynamic_asset_collections.extend(conditional_2d);
-        }
-        #[cfg(feature = "3d")]
-        {
-            let conditional_3d = quote! {
-            ::bevy_asset_loader::DynamicAsset::StandardMaterial { path } =>
-                materials.add(asset_server.get_handle::<bevy::prelude::Image, &String>(path).into()).clone_untyped(),
-            };
-            conditional_dynamic_asset_collections.extend(conditional_3d);
-        }
-
         match self {
             AssetField::Basic(basic) => {
                 let field_ident = basic.field_ident.clone();
                 let asset_path = basic.asset_path.clone();
-                quote!(#token_stream #field_ident : asset_server.get_handle(#asset_path),)
+                quote!(#token_stream #field_ident : {
+                    let asset_server = world.get_resource::<AssetServer>().expect("Cannot get AssetServer");
+                    asset_server.get_handle(#asset_path)
+                },)
             }
             AssetField::Folder(basic, typed) => {
                 let field_ident = basic.field_ident.clone();
                 let asset_path = basic.asset_path.clone();
                 match typed {
                     Typed::Yes => {
-                        quote!(#token_stream #field_ident : asset_server.load_folder(#asset_path)
+                        quote!(#token_stream #field_ident : {
+                            let asset_server = world.get_resource::<AssetServer>().expect("Cannot get AssetServer");
+                            asset_server.load_folder(#asset_path)
                             .unwrap()
                             .drain(..)
                             .map(|handle| handle.typed())
-                            .collect(),
-                        )
+                            .collect()
+                        },)
                     }
                     Typed::No => {
-                        quote!(#token_stream #field_ident : asset_server.load_folder(#asset_path).unwrap(),)
+                        quote!(#token_stream #field_ident : {
+                            let asset_server = world.get_resource::<AssetServer>().expect("Cannot get AssetServer");
+                            asset_server.load_folder(#asset_path).unwrap()
+                        },)
                     }
                 }
             }
@@ -128,12 +103,7 @@ impl AssetField {
                 let asset_key = dynamic.key.clone();
                 quote!(#token_stream #field_ident : {
                     let asset = asset_keys.get_asset(#asset_key.into()).unwrap_or_else(|| panic!("Failed to get asset for key '{}'", #asset_key));
-                    let handle = match asset {
-                        ::bevy_asset_loader::DynamicAsset::File { path } => asset_server.get_handle_untyped(path),
-                        #conditional_dynamic_asset_collections
-                        _ => panic!("The dynamic asset '{}' cannot be created (expected `File`, `StandardMaterial`, or `TextureAtlas`), got {:?}", #asset_key, asset)
-                    };
-                    handle.typed()
+                    asset.single_handle(world).unwrap_or_else(|_| panic!("The dynamic asset '{}' cannot be created (expected `File`, `StandardMaterial`, or `TextureAtlas`), got {:?}", #asset_key, asset)).typed()
                 },)
             }
             AssetField::OptionalDynamic(dynamic) => {
@@ -142,12 +112,7 @@ impl AssetField {
                 quote!(#token_stream #field_ident : {
                     let asset = asset_keys.get_asset(#asset_key.into());
                     asset.map(|asset| {
-                        let handle = match asset {
-                            ::bevy_asset_loader::DynamicAsset::File { path } => asset_server.get_handle_untyped(path),
-                            #conditional_dynamic_asset_collections
-                            _ => panic!("The dynamic asset '{}' cannot be created (expected `File`, `StandardMaterial`, or `TextureAtlas`), got {:?}", #asset_key, asset)
-                        };
-                        handle.typed()
+                            asset.single_handle(world).unwrap_or_else(|_|  panic!("The dynamic asset '{}' cannot be created (expected `File`, `StandardMaterial`, or `TextureAtlas`), got {:?}", #asset_key, asset)).typed()
                     })
                 },)
             }
@@ -157,39 +122,34 @@ impl AssetField {
                 let load = match typed {
                     Typed::Yes => {
                         quote!(
-                            ::bevy_asset_loader::DynamicAsset::Folder { path } => asset_server.load_folder(path)
-                                .unwrap()
+                            asset.vector_of_handles(world).unwrap_or_else(|_| panic!("The dynamic asset '{}' cannot be created (expected `Folder` or `Files`), got {:?}", #asset_key, asset))
                                 .drain(..)
                                 .map(|handle| handle.typed())
-                                .collect(),
-                            ::bevy_asset_loader::DynamicAsset::Files { paths } => paths
-                                .iter()
-                                .map(|path| asset_server.load(path))
                                 .collect()
                         )
                     }
                     Typed::No => {
                         quote!(
-                            ::bevy_asset_loader::DynamicAsset::Folder { path } => asset_server.load_folder(path).unwrap(),
-                            ::bevy_asset_loader::DynamicAsset::Files { paths } => paths
-                                .iter()
-                                .map(|path| asset_server.load_untyped(path))
-                                .collect()
+                            asset.vector_of_handles(world).unwrap_or_else(|_| panic!("The dynamic asset '{}' cannot be created (expected `Folder` or `Files`), got {:?}", #asset_key, asset))
                         )
                     }
                 };
                 quote!(#token_stream #field_ident : {
                     let asset = asset_keys.get_asset(#asset_key.into()).unwrap_or_else(|| panic!("Failed to get asset for key '{}'", #asset_key));
-                    match asset {
-                        #load,
-                        _ => panic!("The dynamic asset '{}' cannot be created (expected `Folder` or `Files`), got {:?}", #asset_key, asset)
-                    }
+                    #load
                 },)
             }
             AssetField::StandardMaterial(basic) => {
                 let field_ident = basic.field_ident.clone();
                 let asset_path = basic.asset_path.clone();
-                quote!(#token_stream #field_ident : materials.add(asset_server.get_handle(#asset_path).into()),)
+                quote!(#token_stream #field_ident : {
+                    let cell = world.cell();
+                    let asset_server = cell.get_resource::<AssetServer>().expect("Cannot get AssetServer");
+                    let mut materials = cell
+                        .get_resource_mut::<Assets<StandardMaterial>>()
+                        .expect("Cannot get resource Assets<StandardMaterial>");
+                    materials.add(asset_server.get_handle(#asset_path).into())
+                },)
             }
             AssetField::TextureAtlas(texture_atlas) => {
                 let field_ident = texture_atlas.field_ident.clone();
@@ -200,26 +160,38 @@ impl AssetField {
                 let rows = texture_atlas.rows;
                 let padding_x = texture_atlas.padding_x;
                 let padding_y = texture_atlas.padding_y;
-                quote!(
-                    #token_stream #field_ident : {
+                quote!(#token_stream #field_ident : {
+                    let cell = world.cell();
+                    let asset_server = cell
+                        .get_resource::<AssetServer>()
+                        .expect("Cannot get AssetServer");
+                    let mut atlases = cell
+                        .get_resource_mut::<Assets<TextureAtlas>>()
+                        .expect("Cannot get resource Assets<TextureAtlas>");
                     atlases.add(TextureAtlas::from_grid_with_padding(
                         asset_server.get_handle(#asset_path),
                         Vec2::new(#tile_size_x, #tile_size_y),
                         #columns,
                         #rows,
                         Vec2::new(#padding_x, #padding_y),
-                    ))},
-                )
+                    ))
+                },)
             }
             AssetField::Files(files, typed) => {
                 let field_ident = files.field_ident.clone();
                 let asset_paths = files.asset_paths.clone();
                 match typed {
                     Typed::Yes => {
-                        quote!(#token_stream #field_ident : vec![#(asset_server.load(#asset_paths)),*],)
+                        quote!(#token_stream #field_ident : {
+                            let asset_server = world.get_resource::<AssetServer>().expect("Cannot get AssetServer");
+                            vec![#(asset_server.load(#asset_paths)),*]
+                        },)
                     }
                     Typed::No => {
-                        quote!(#token_stream #field_ident : vec![#(asset_server.load_untyped(#asset_paths)),*],)
+                        quote!(#token_stream #field_ident : {
+                            let asset_server = world.get_resource::<AssetServer>().expect("Cannot get AssetServer");
+                            vec![#(asset_server.load_untyped(#asset_paths)),*]
+                        },)
                     }
                 }
             }

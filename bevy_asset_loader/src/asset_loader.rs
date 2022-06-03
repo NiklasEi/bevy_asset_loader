@@ -60,7 +60,8 @@ use iyes_loopless::state::app::StateTransitionStageLabel;
 #[cfg(feature = "stageless")]
 use iyes_loopless::state::StateTransitionStage;
 
-pub use dynamic_asset::{DynamicAsset, DynamicAssets};
+use crate::asset_loader::dynamic_asset::DynamicAsset;
+pub use dynamic_asset::{DynamicAssets, StandardDynamicAsset};
 
 /// A Bevy plugin to configure automatic asset loading
 ///
@@ -139,7 +140,7 @@ pub use dynamic_asset::{DynamicAsset, DynamicAssets};
 pub struct AssetLoader<State> {
     next_state: Option<State>,
     loading_state: State,
-    dynamic_assets: HashMap<String, DynamicAsset>,
+    dynamic_assets: HashMap<String, Box<dyn DynamicAsset>>,
     collection_count: usize,
     check_loading_assets: SystemSet,
     #[cfg(not(feature = "stageless"))]
@@ -439,9 +440,12 @@ where
     }
 
     /// Insert a map of asset keys with corresponding dynamic assets
-    pub fn add_dynamic_assets(mut self, mut dynamic_assets: HashMap<String, DynamicAsset>) -> Self {
+    pub fn add_dynamic_assets(
+        mut self,
+        mut dynamic_assets: HashMap<String, StandardDynamicAsset>,
+    ) -> Self {
         dynamic_assets.drain().for_each(|(key, value)| {
-            self.dynamic_assets.insert(key, value);
+            self.dynamic_assets.insert(key, Box::new(value));
         });
 
         self

@@ -1,10 +1,15 @@
 use bevy::utils::HashMap;
+use std::fmt::Debug;
 
-use bevy::asset::{AssetServer, HandleUntyped};
+use bevy::asset::{AssetServer, Assets, HandleUntyped};
 #[cfg(feature = "dynamic_assets")]
 use bevy::ecs::schedule::StateData;
+use bevy::math::Vec2;
+use bevy::pbr::StandardMaterial;
+use bevy::prelude::{Image, World};
 #[cfg(feature = "dynamic_assets")]
 use bevy::reflect::TypeUuid;
+use bevy::sprite::TextureAtlas;
 #[cfg(feature = "dynamic_assets")]
 use std::marker::PhantomData;
 
@@ -12,7 +17,7 @@ use std::marker::PhantomData;
 /// a dynamic asset based on their keys.
 #[derive(Debug)]
 #[cfg_attr(feature = "dynamic_assets", derive(serde::Deserialize))]
-pub enum DynamicAsset {
+pub enum StandardDynamicAsset {
     /// A dynamic asset directly loaded from a single file
     File {
         /// Asset file path
@@ -58,22 +63,93 @@ pub enum DynamicAsset {
     },
 }
 
-impl DynamicAsset {
-    /// Return handles to all contained asset paths
-    pub fn load_untyped(&self, asset_server: &AssetServer) -> Vec<HandleUntyped> {
+pub trait DynamicAsset: Debug + Send + Sync {
+    /// Return handles to all required asset paths
+    fn load_untyped(&self, asset_server: &AssetServer) -> Vec<HandleUntyped>;
+
+    fn single_handle(&self, world: &mut World) -> Result<HandleUntyped, ()>;
+
+    fn vector_of_handles(&self, world: &mut World) -> Result<Vec<HandleUntyped>, ()>;
+}
+
+impl DynamicAsset for StandardDynamicAsset {
+    fn load_untyped(&self, asset_server: &AssetServer) -> Vec<HandleUntyped> {
         match self {
-            DynamicAsset::File { path } => vec![asset_server.load_untyped(path)],
-            DynamicAsset::Folder { path } => asset_server
+            StandardDynamicAsset::File { path } => vec![asset_server.load_untyped(path)],
+            StandardDynamicAsset::Folder { path } => asset_server
                 .load_folder(path)
                 .unwrap_or_else(|_| panic!("Failed to load '{}' as a folder", path)),
-            DynamicAsset::Files { paths } => paths
+            StandardDynamicAsset::Files { paths } => paths
                 .iter()
                 .map(|path| asset_server.load_untyped(path))
                 .collect(),
             #[cfg(feature = "3d")]
-            DynamicAsset::StandardMaterial { path } => vec![asset_server.load_untyped(path)],
+            StandardDynamicAsset::StandardMaterial { path } => {
+                vec![asset_server.load_untyped(path)]
+            }
             #[cfg(feature = "2d")]
-            DynamicAsset::TextureAtlas { path, .. } => vec![asset_server.load_untyped(path)],
+            StandardDynamicAsset::TextureAtlas { path, .. } => {
+                vec![asset_server.load_untyped(path)]
+            }
+        }
+    }
+
+    fn single_handle(&self, world: &mut World) -> Result<HandleUntyped, ()> {
+        let cell = world.cell();
+        let asset_server = cell
+            .get_resource::<AssetServer>()
+            .expect("Cannot get AssetServer");
+        match self {
+            StandardDynamicAsset::File { path } => Ok(asset_server.get_handle_untyped(path)),
+            #[cfg(feature = "3d")]
+            StandardDynamicAsset::StandardMaterial { path } => {
+                let mut materials = cell
+                    .get_resource_mut::<Assets<StandardMaterial>>()
+                    .expect("Cannot get resource Assets<StandardMaterial>");
+                Ok(materials
+                    .add(asset_server.get_handle::<Image, &String>(path).into())
+                    .clone_untyped())
+            }
+            #[cfg(feature = "2d")]
+            StandardDynamicAsset::TextureAtlas {
+                path,
+                tile_size_x,
+                tile_size_y,
+                columns,
+                rows,
+                padding_x,
+                padding_y,
+            } => {
+                let mut atlases = cell
+                    .get_resource_mut::<Assets<TextureAtlas>>()
+                    .expect("Cannot get resource Assets<TextureAtlas>");
+                Ok(atlases
+                    .add(TextureAtlas::from_grid_with_padding(
+                        asset_server.get_handle(path),
+                        Vec2::new(*tile_size_x, *tile_size_y),
+                        *columns,
+                        *rows,
+                        Vec2::new(padding_x.unwrap_or(0.), padding_y.unwrap_or(0.)),
+                    ))
+                    .clone_untyped())
+            }
+            _ => Err(()),
+        }
+    }
+
+    fn vector_of_handles(&self, world: &mut World) -> Result<Vec<HandleUntyped>, ()> {
+        let asset_server = world
+            .get_resource::<AssetServer>()
+            .expect("Cannot get AssetServer");
+        match self {
+            StandardDynamicAsset::Folder { path } => Ok(asset_server
+                .load_folder(path)
+                .unwrap_or_else(|_| panic!("Failed to load '{}' as a folder", path))),
+            StandardDynamicAsset::Files { paths } => Ok(paths
+                .iter()
+                .map(|path| asset_server.load_untyped(path))
+                .collect()),
+            _ => Err(()),
         }
     }
 }
@@ -127,12 +203,12 @@ impl DynamicAsset {
 /// ```
 #[derive(Default)]
 pub struct DynamicAssets {
-    pub(crate) key_asset_map: HashMap<String, DynamicAsset>,
+    pub(crate) key_asset_map: HashMap<String, Box<dyn DynamicAsset>>,
 }
 
 impl DynamicAssets {
     /// Get the asset corresponding to the given key.
-    pub fn get_asset(&self, key: &str) -> Option<&DynamicAsset> {
+    pub fn get_asset(&self, key: &str) -> Option<&Box<dyn DynamicAsset>> {
         self.key_asset_map.get(key)
     }
 
@@ -171,7 +247,7 @@ impl DynamicAssets {
     /// #     Menu
     /// # }
     /// ```
-    pub fn register_asset<K: Into<String>>(&mut self, key: K, asset: DynamicAsset) {
+    pub fn register_asset<K: Into<String>>(&mut self, key: K, asset: Box<dyn DynamicAsset>) {
         self.key_asset_map.insert(key.into(), asset);
     }
 
@@ -182,7 +258,7 @@ impl DynamicAssets {
         dynamic_asset_collection: DynamicAssetCollection,
     ) {
         for (key, asset) in dynamic_asset_collection.0 {
-            self.key_asset_map.insert(key, asset);
+            self.key_asset_map.insert(key, Box::new(asset));
         }
     }
 }
@@ -217,4 +293,4 @@ impl<State: StateData> Default for DynamicAssetCollections<State> {
 #[uuid = "2df82c01-9c71-4aa8-adc4-71c5824768f1"]
 #[cfg_attr(docsrs, doc(cfg(feature = "dynamic_assets")))]
 #[cfg(feature = "dynamic_assets")]
-pub struct DynamicAssetCollection(pub HashMap<String, DynamicAsset>);
+pub struct DynamicAssetCollection(pub HashMap<String, StandardDynamicAsset>);
