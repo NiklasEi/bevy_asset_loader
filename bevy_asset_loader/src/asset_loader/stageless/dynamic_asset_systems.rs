@@ -1,4 +1,6 @@
-use crate::asset_loader::dynamic_asset::{DynamicAssetCollection, DynamicAssetCollections};
+use crate::asset_loader::dynamic_asset::{
+    DynamicAssetCollection, DynamicAssetCollections, StandardDynamicAssetCollection,
+};
 use crate::asset_loader::{DynamicAssets, LoadingAssetHandles, LoadingState};
 use bevy::asset::{AssetServer, Assets, LoadState};
 use bevy::ecs::change_detection::ResMut;
@@ -40,7 +42,7 @@ pub(crate) fn check_dynamic_asset_collections<S: StateData>(world: &mut World) {
     let mut system_state: SystemState<(
         Res<AssetServer>,
         ResMut<LoadingAssetHandles<S>>,
-        ResMut<Assets<DynamicAssetCollection>>,
+        ResMut<Assets<StandardDynamicAssetCollection>>,
         ResMut<DynamicAssets>,
     )> = SystemState::new(world);
     let (asset_server, mut loading_collections, mut dynamic_asset_collections, mut asset_keys) =
@@ -51,7 +53,7 @@ pub(crate) fn check_dynamic_asset_collections<S: StateData>(world: &mut World) {
     if collections_load_state == LoadState::Loaded {
         for collection in loading_collections.handles.drain(..) {
             let collection = dynamic_asset_collections.remove(collection).unwrap();
-            asset_keys.register_dynamic_collection(collection);
+            collection.register(&mut asset_keys);
         }
 
         world.insert_resource(NextState(LoadingState::LoadingAssets));

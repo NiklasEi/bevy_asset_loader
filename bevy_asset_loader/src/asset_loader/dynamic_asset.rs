@@ -63,12 +63,16 @@ pub enum StandardDynamicAsset {
     },
 }
 
+/// Any type implementing this trait can be assigned to asset keys as part of a dynamic
+/// asset collection.
 pub trait DynamicAsset: Debug + Send + Sync {
     /// Return handles to all required asset paths
     fn load_untyped(&self, asset_server: &AssetServer) -> Vec<HandleUntyped>;
 
+    /// Return the single handle defining this asset
     fn single_handle(&self, world: &mut World) -> Result<HandleUntyped, ()>;
 
+    /// Return the vector of handles defining this asset
     fn vector_of_handles(&self, world: &mut World) -> Result<Vec<HandleUntyped>, ()>;
 }
 
@@ -203,7 +207,7 @@ impl DynamicAsset for StandardDynamicAsset {
 /// ```
 #[derive(Default)]
 pub struct DynamicAssets {
-    pub(crate) key_asset_map: HashMap<String, Box<dyn DynamicAsset>>,
+    key_asset_map: HashMap<String, Box<dyn DynamicAsset>>,
 }
 
 impl DynamicAssets {
@@ -250,17 +254,10 @@ impl DynamicAssets {
     pub fn register_asset<K: Into<String>>(&mut self, key: K, asset: Box<dyn DynamicAsset>) {
         self.key_asset_map.insert(key.into(), asset);
     }
+}
 
-    /// Register all asset keys and their values
-    #[cfg(feature = "dynamic_assets")]
-    pub fn register_dynamic_collection(
-        &mut self,
-        dynamic_asset_collection: DynamicAssetCollection,
-    ) {
-        for (key, asset) in dynamic_asset_collection.0 {
-            self.key_asset_map.insert(key, Box::new(asset));
-        }
-    }
+pub trait DynamicAssetCollection {
+    fn register(self, dynamic_assets: &mut DynamicAssets);
 }
 
 /// Resource keeping track of dynamic asset collection files for different loading states
@@ -293,4 +290,12 @@ impl<State: StateData> Default for DynamicAssetCollections<State> {
 #[uuid = "2df82c01-9c71-4aa8-adc4-71c5824768f1"]
 #[cfg_attr(docsrs, doc(cfg(feature = "dynamic_assets")))]
 #[cfg(feature = "dynamic_assets")]
-pub struct DynamicAssetCollection(pub HashMap<String, StandardDynamicAsset>);
+pub struct StandardDynamicAssetCollection(pub HashMap<String, StandardDynamicAsset>);
+
+impl DynamicAssetCollection for StandardDynamicAssetCollection {
+    fn register(self, dynamic_assets: &mut DynamicAssets) {
+        for (key, asset) in self.0 {
+            dynamic_assets.register_asset(key, Box::new(asset));
+        }
+    }
+}

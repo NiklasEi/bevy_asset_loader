@@ -98,7 +98,7 @@ pub use crate::asset_collection::{AssetCollection, AssetCollectionApp, AssetColl
 pub use crate::asset_loader::{AssetLoader, DynamicAssets, StandardDynamicAsset};
 
 #[cfg(feature = "dynamic_assets")]
-pub use crate::asset_loader::{DynamicAssetCollection, DynamicAssetCollections};
+pub use crate::asset_loader::{DynamicAssetCollections, StandardDynamicAssetCollection};
 
 pub use bevy_asset_loader_derive::AssetCollection;
 

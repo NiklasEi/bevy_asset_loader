@@ -43,10 +43,10 @@ use stageless::dynamic_asset_systems::{
 };
 
 #[cfg(feature = "dynamic_assets")]
-use bevy_asset_ron::RonAssetPlugin;
+use bevy_common_assets::ron::RonAssetPlugin;
 
 #[cfg(feature = "dynamic_assets")]
-pub use dynamic_asset::{DynamicAssetCollection, DynamicAssetCollections};
+pub use dynamic_asset::{DynamicAssetCollections, StandardDynamicAssetCollection};
 
 #[cfg(feature = "progress_tracking")]
 use iyes_progress::ProgressSystemLabel;
@@ -653,7 +653,7 @@ where
 
         #[cfg(feature = "dynamic_assets")]
         {
-            app.add_plugin(RonAssetPlugin::<DynamicAssetCollection>::new(
+            app.add_plugin(RonAssetPlugin::<StandardDynamicAssetCollection>::new(
                 &self.dynamic_asset_collection_file_endings,
             ));
             update.add_system_set(
@@ -675,9 +675,11 @@ where
                 .files
                 .insert(self.loading_state.clone(), self.dynamic_asset_collections);
         }
-        app.insert_resource(DynamicAssets {
-            key_asset_map: self.dynamic_assets,
-        });
+        let mut dynamic_assets = DynamicAssets::default();
+        for (key, asset) in self.dynamic_assets {
+            dynamic_assets.register_asset(key, asset);
+        }
+        app.insert_resource(dynamic_assets);
 
         update.add_system_set(
             SystemSet::on_update(LoadingState::Initialize).with_system(initialize_loading_state),
@@ -784,7 +786,7 @@ where
 
         #[cfg(feature = "dynamic_assets")]
         {
-            app.add_plugin(RonAssetPlugin::<DynamicAssetCollection>::new(
+            app.add_plugin(RonAssetPlugin::<StandardDynamicAssetCollection>::new(
                 &self.dynamic_asset_collection_file_endings,
             ));
             self.loading_transition_stage.add_enter_system(
@@ -810,9 +812,11 @@ where
                 .files
                 .insert(self.loading_state.clone(), self.dynamic_asset_collections);
         }
-        app.insert_resource(DynamicAssets {
-            key_asset_map: self.dynamic_assets,
-        });
+        let mut dynamic_assets = DynamicAssets::default();
+        for (key, asset) in self.dynamic_assets {
+            dynamic_assets.register_asset(key, asset);
+        }
+        app.insert_resource(dynamic_assets);
 
         update.add_system_set(
             ConditionSet::new()
