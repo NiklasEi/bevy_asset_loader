@@ -1,15 +1,13 @@
 use bevy::utils::HashMap;
 use std::fmt::Debug;
 
-use bevy::asset::{AssetServer, Assets, HandleUntyped};
+use bevy::asset::{AssetServer, HandleUntyped};
+use bevy::ecs::world::World;
+
 #[cfg(feature = "dynamic_assets")]
 use bevy::ecs::schedule::StateData;
-use bevy::math::Vec2;
-use bevy::pbr::StandardMaterial;
-use bevy::prelude::{Image, World};
 #[cfg(feature = "dynamic_assets")]
 use bevy::reflect::TypeUuid;
-use bevy::sprite::TextureAtlas;
 #[cfg(feature = "dynamic_assets")]
 use std::marker::PhantomData;
 
@@ -108,10 +106,14 @@ impl DynamicAsset for StandardDynamicAsset {
             #[cfg(feature = "3d")]
             StandardDynamicAsset::StandardMaterial { path } => {
                 let mut materials = cell
-                    .get_resource_mut::<Assets<StandardMaterial>>()
+                    .get_resource_mut::<bevy::asset::Assets<bevy::pbr::StandardMaterial>>()
                     .expect("Cannot get resource Assets<StandardMaterial>");
                 Ok(materials
-                    .add(asset_server.get_handle::<Image, &String>(path).into())
+                    .add(
+                        asset_server
+                            .get_handle::<bevy::render::texture::Image, &String>(path)
+                            .into(),
+                    )
                     .clone_untyped())
             }
             #[cfg(feature = "2d")]
@@ -125,15 +127,15 @@ impl DynamicAsset for StandardDynamicAsset {
                 padding_y,
             } => {
                 let mut atlases = cell
-                    .get_resource_mut::<Assets<TextureAtlas>>()
+                    .get_resource_mut::<bevy::asset::Assets<bevy::sprite::TextureAtlas>>()
                     .expect("Cannot get resource Assets<TextureAtlas>");
                 Ok(atlases
-                    .add(TextureAtlas::from_grid_with_padding(
+                    .add(bevy::sprite::TextureAtlas::from_grid_with_padding(
                         asset_server.get_handle(path),
-                        Vec2::new(*tile_size_x, *tile_size_y),
+                        bevy::math::Vec2::new(*tile_size_x, *tile_size_y),
                         *columns,
                         *rows,
-                        Vec2::new(padding_x.unwrap_or(0.), padding_y.unwrap_or(0.)),
+                        bevy::math::Vec2::new(padding_x.unwrap_or(0.), padding_y.unwrap_or(0.)),
                     ))
                     .clone_untyped())
             }
@@ -165,7 +167,7 @@ impl DynamicAsset for StandardDynamicAsset {
 ///
 /// ```edition2021
 /// # use bevy::prelude::*;
-/// # use bevy_asset_loader::{DynamicAssets, AssetCollection, DynamicAsset};
+/// # use bevy_asset_loader::{DynamicAssets, AssetCollection, StandardDynamicAsset};
 /// fn choose_character(
 ///     mut state: ResMut<State<GameState>>,
 ///     mut asset_keys: ResMut<DynamicAssets>,
@@ -174,16 +176,16 @@ impl DynamicAsset for StandardDynamicAsset {
 ///     if mouse_input.just_pressed(MouseButton::Left) {
 ///         asset_keys.register_asset(
 ///             "character",
-///             DynamicAsset::File {
+///             Box::new(StandardDynamicAsset::File {
 ///                 path: "images/female_adventurer.png".to_owned(),
-///             },
+///             }),
 ///         );
 ///     } else if mouse_input.just_pressed(MouseButton::Right) {
 ///         asset_keys.register_asset(
 ///             "character",
-///             DynamicAsset::File {
+///             Box::new(StandardDynamicAsset::File {
 ///                 path: "images/zombie.png".to_owned(),
-///             },
+///             }),
 ///         );
 ///     } else {
 ///         return;
@@ -212,8 +214,8 @@ pub struct DynamicAssets {
 
 impl DynamicAssets {
     /// Get the asset corresponding to the given key.
-    pub fn get_asset(&self, key: &str) -> Option<&Box<dyn DynamicAsset>> {
-        self.key_asset_map.get(key)
+    pub fn get_asset(&self, key: &str) -> Option<&dyn DynamicAsset> {
+        self.key_asset_map.get(key).map(|boxed| boxed.as_ref())
     }
 
     /// Set the corresponding dynamic asset for the given key.
@@ -221,16 +223,16 @@ impl DynamicAssets {
     /// In case the key is already known, its value will be overwritten.
     /// ```edition2021
     /// # use bevy::prelude::*;
-    /// # use bevy_asset_loader::{DynamicAssets, AssetCollection, DynamicAsset};
+    /// # use bevy_asset_loader::{DynamicAssets, AssetCollection, StandardDynamicAsset};
     /// fn choose_character(
     ///     mut state: ResMut<State<GameState>>,
     ///     mut asset_keys: ResMut<DynamicAssets>,
     ///     mouse_input: Res<Input<MouseButton>>,
     /// ) {
     ///     if mouse_input.just_pressed(MouseButton::Left) {
-    ///         asset_keys.register_asset("character", DynamicAsset::File{path: "images/female_adventurer.png".to_owned()})
+    ///         asset_keys.register_asset("character", Box::new(StandardDynamicAsset::File{path: "images/female_adventurer.png".to_owned()}))
     ///     } else if mouse_input.just_pressed(MouseButton::Right) {
-    ///         asset_keys.register_asset("character", DynamicAsset::File{path: "images/zombie.png".to_owned()})
+    ///         asset_keys.register_asset("character", Box::new(StandardDynamicAsset::File{path: "images/zombie.png".to_owned()}))
     ///     } else {
     ///         return;
     ///     }
@@ -292,6 +294,7 @@ impl<State: StateData> Default for DynamicAssetCollections<State> {
 #[cfg(feature = "dynamic_assets")]
 pub struct StandardDynamicAssetCollection(pub HashMap<String, StandardDynamicAsset>);
 
+#[cfg(feature = "dynamic_assets")]
 impl DynamicAssetCollection for StandardDynamicAssetCollection {
     fn register(self, dynamic_assets: &mut DynamicAssets) {
         for (key, asset) in self.0 {
