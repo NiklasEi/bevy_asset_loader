@@ -60,8 +60,9 @@ use iyes_loopless::state::app::StateTransitionStageLabel;
 #[cfg(feature = "stageless")]
 use iyes_loopless::state::StateTransitionStage;
 
-use crate::asset_loader::dynamic_asset::DynamicAsset;
-pub use dynamic_asset::{DynamicAssets, StandardDynamicAsset};
+pub use dynamic_asset::{
+    DynamicAsset, DynamicAssetCollection, DynamicAssets, StandardDynamicAsset,
+};
 
 /// A Bevy plugin to configure automatic asset loading
 ///

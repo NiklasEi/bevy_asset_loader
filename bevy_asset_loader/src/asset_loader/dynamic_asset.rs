@@ -258,7 +258,9 @@ impl DynamicAssets {
     }
 }
 
+///
 pub trait DynamicAssetCollection {
+    /// Register all dynamic assets inside the collection in the [`DynamicAssets`] resource.
     fn register(self, dynamic_assets: &mut DynamicAssets);
 }
 

@@ -1,0 +1,18 @@
+({
+    "first_combined_image": CombinedImage (
+        bottom_layer: "images/tree.png",
+        top_layer: "images/player.png",
+    ),
+    "second_combined_image": CombinedImage (
+        bottom_layer: "images/tree.png",
+        top_layer: "images/player.png",
+    ),
+    "first_standard_material": StandardMaterial (
+        base_color: [1.0, 0.0,0.0,0.0],
+        base_color_texture: "images/tree.png"
+    ),
+    "second_standard_material": StandardMaterial (
+        base_color: [0.0, 1.0,0.0,0.0],
+        base_color_texture: "images/player.png"
+    ),
+})
