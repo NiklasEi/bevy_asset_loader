@@ -204,6 +204,7 @@ where
     /// #     pub tree: Handle<Image>,
     /// # }
     /// ```
+    #[must_use]
     #[cfg(not(feature = "stageless"))]
     pub fn new(load: S) -> AssetLoader<S> {
         Self {
@@ -264,8 +265,9 @@ where
     /// #     pub tree: Handle<Image>,
     /// # }
     /// ```
+    #[must_use]
     #[cfg(feature = "stageless")]
-    pub fn new(load: S) -> AssetLoader<S> {
+    pub fn new(load: S) -> Self {
         Self {
             next_state: None,
             loading_state: load,
@@ -324,6 +326,7 @@ where
     /// #     pub tree: Handle<Image>,
     /// # }
     /// ```
+    #[must_use]
     pub fn continue_to_state(mut self, next: S) -> Self {
         self.next_state = Some(next);
 
@@ -371,6 +374,7 @@ where
     /// #     pub tree: Handle<Image>,
     /// # }
     /// ```
+    #[must_use]
     #[cfg(not(feature = "stageless"))]
     pub fn with_collection<A: AssetCollection>(mut self) -> Self {
         self.start_loading_assets = self
@@ -426,6 +430,7 @@ where
     /// #     pub tree: Handle<Image>,
     /// # }
     /// ```
+    #[must_use]
     #[cfg(feature = "stageless")]
     pub fn with_collection<A: AssetCollection>(mut self) -> Self {
         self.loading_transition_stage.add_enter_system(
@@ -441,6 +446,7 @@ where
     }
 
     /// Insert a map of asset keys with corresponding dynamic assets
+    #[must_use]
     pub fn add_dynamic_assets(
         mut self,
         mut dynamic_assets: HashMap<String, StandardDynamicAsset>,
@@ -497,6 +503,7 @@ where
     /// #     pub array: Handle<Image>,
     /// # }
     /// ```
+    #[must_use]
     #[cfg(not(feature = "stageless"))]
     pub fn init_resource<A: FromWorld + Send + Sync + 'static>(mut self) -> Self {
         self.initialize_resources = self
@@ -552,6 +559,7 @@ where
     /// #     pub array: Handle<Image>,
     /// # }
     /// ```
+    #[must_use]
     #[cfg(feature = "stageless")]
     pub fn init_resource<A: FromWorld + Send + Sync + 'static>(mut self) -> Self {
         self.loading_transition_stage.add_enter_system(
@@ -566,6 +574,7 @@ where
     ///
     /// The file will be loaded as [`DynamicAssetCollection`].
     /// It's mapping of asset keys to dynamic assets will be used during the loading state to resolve asset keys.
+    #[must_use]
     #[cfg_attr(docsrs, doc(cfg(feature = "dynamic_assets")))]
     #[cfg(feature = "dynamic_assets")]
     pub fn with_dynamic_asset_collection_file(
@@ -581,6 +590,7 @@ where
     /// Set all file endings loaded as dynamic asset collections.
     ///
     /// The default file ending is `.assets`
+    #[must_use]
     #[cfg_attr(docsrs, doc(cfg(feature = "dynamic_assets")))]
     #[cfg(feature = "dynamic_assets")]
     pub fn set_dynamic_asset_collection_file_endings(mut self, endings: Vec<&'static str>) -> Self {
