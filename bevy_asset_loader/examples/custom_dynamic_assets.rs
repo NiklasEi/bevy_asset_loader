@@ -1,3 +1,4 @@
+use bevy::asset::LoadState;
 use bevy::prelude::*;
 use bevy::utils::HashMap;
 use bevy_asset_loader::{
@@ -11,26 +12,93 @@ fn main() {
     AssetLoader::new(MyStates::AssetLoading)
         .continue_to_state(MyStates::Next)
         .with_collection::<MyAssets>()
+        // .set_dynamic_asset_collection_file_endings(vec!["standard.assets"])
         .build(&mut app);
 
-    app.add_state(MyStates::AssetLoading)
+    app.add_state(MyStates::CollectionLoading)
+        .insert_resource(Msaa { samples: 1 })
         .add_plugins(DefaultPlugins)
         .add_plugin(RonAssetPlugin::<CustomDynamicAssetCollection>::new(&[
             "assets",
         ]))
+        .add_system_set(
+            SystemSet::on_enter(MyStates::CollectionLoading).with_system(start_collection_loading),
+        )
+        .add_system_set(
+            SystemSet::on_update(MyStates::CollectionLoading).with_system(check_collection_loading),
+        )
+        .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(render_stuff))
         .run();
+}
+
+fn render_stuff(mut commands: Commands, assets: Res<MyAssets>) {
+    commands.spawn_bundle(PerspectiveCameraBundle {
+        transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
+        ..PerspectiveCameraBundle::new_3d()
+    });
+    commands.spawn_bundle(PbrBundle {
+        mesh: assets.cube.clone(),
+        material: assets.tree_standard_material.clone(),
+        transform: Transform::from_xyz(-1., 0., 1.),
+        ..default()
+    });
+    commands.spawn_bundle(PbrBundle {
+        mesh: assets.cube.clone(),
+        material: assets.player_standard_material.clone(),
+        transform: Transform::from_xyz(1., 0., 1.),
+        ..default()
+    });
+    commands.spawn_bundle(PointLightBundle {
+        point_light: PointLight {
+            intensity: 1500.0,
+            shadows_enabled: true,
+            ..default()
+        },
+        transform: Transform::from_xyz(4.0, 8.0, 4.0),
+        ..default()
+    });
+
+    // Combined image as sprite
+    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
+    commands.spawn_bundle(SpriteBundle {
+        texture: assets.combined_image.clone(),
+        transform: Transform::from_xyz(0.0, 200.0, 0.0),
+        ..default()
+    });
+}
+
+struct LoadingCollection(Handle<CustomDynamicAssetCollection>);
+
+fn start_collection_loading(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.insert_resource(LoadingCollection(asset_server.load("custom.assets")));
+}
+
+fn check_collection_loading(
+    asset_server: Res<AssetServer>,
+    collection: Res<LoadingCollection>,
+    mut state: ResMut<State<MyStates>>,
+    mut collections: ResMut<Assets<CustomDynamicAssetCollection>>,
+    mut dynamic_assets: ResMut<DynamicAssets>,
+) {
+    if asset_server.get_load_state(collection.0.id) == LoadState::Loaded {
+        let collection = collections.remove(collection.0.clone()).unwrap();
+        collection.register(&mut dynamic_assets);
+        state
+            .set(MyStates::AssetLoading)
+            .expect("Failed to set state");
+    }
 }
 
 #[derive(AssetCollection)]
 struct MyAssets {
-    #[asset(key = "first_combined_image")]
-    first_combined_image: Handle<Image>,
-    #[asset(key = "second_combined_image")]
-    second_combined_image: Handle<Image>,
-    #[asset(key = "first_standard_material")]
-    first_standard_material: Handle<StandardMaterial>,
-    #[asset(key = "second_standard_material")]
-    second_standard_material: Handle<StandardMaterial>,
+    #[asset(key = "combined_image")]
+    combined_image: Handle<Image>,
+    #[asset(key = "tree_standard_material")]
+    tree_standard_material: Handle<StandardMaterial>,
+    #[asset(key = "player_standard_material")]
+    player_standard_material: Handle<StandardMaterial>,
+    #[asset(key = "cube")]
+    cube: Handle<Mesh>,
 }
 
 #[derive(serde::Deserialize, Debug)]
@@ -42,6 +110,9 @@ enum CustomDynamicAsset {
     StandardMaterial {
         base_color: [f32; 4],
         base_color_texture: String,
+    },
+    Cube {
+        size: f32,
     },
 }
 
@@ -58,6 +129,7 @@ impl DynamicAsset for CustomDynamicAsset {
             CustomDynamicAsset::StandardMaterial {
                 base_color_texture, ..
             } => vec![asset_server.load_untyped(base_color_texture)],
+            CustomDynamicAsset::Cube { .. } => vec![],
         }
     }
 
@@ -112,8 +184,18 @@ impl DynamicAsset for CustomDynamicAsset {
                 let image = asset_server.load(base_color_texture);
                 let mut material = StandardMaterial::from(color);
                 material.base_color_texture = Some(image);
+                material.alpha_mode = AlphaMode::Opaque;
 
                 Ok(materials.add(material).clone_untyped())
+            }
+            CustomDynamicAsset::Cube { size } => {
+                let mut meshes = cell
+                    .get_resource_mut::<Assets<Mesh>>()
+                    .expect("Failed to get mesh assets");
+
+                Ok(meshes
+                    .add(Mesh::from(shape::Cube { size: *size }))
+                    .clone_untyped())
             }
         }
     }
@@ -137,6 +219,7 @@ impl DynamicAssetCollection for CustomDynamicAssetCollection {
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 enum MyStates {
+    CollectionLoading,
     AssetLoading,
     Next,
 }
