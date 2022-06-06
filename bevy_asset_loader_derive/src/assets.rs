@@ -98,47 +98,6 @@ impl AssetField {
                     }
                 }
             }
-            AssetField::Dynamic(dynamic) => {
-                let field_ident = dynamic.field_ident.clone();
-                let asset_key = dynamic.key.clone();
-                quote!(#token_stream #field_ident : {
-                    let asset = asset_keys.get_asset(#asset_key.into()).unwrap_or_else(|| panic!("Failed to get asset for key '{}'", #asset_key));
-                    asset.single_handle(world).unwrap_or_else(|_| panic!("The dynamic asset '{}' cannot be created (expected `File`, `StandardMaterial`, or `TextureAtlas`), got {:?}", #asset_key, asset)).typed()
-                },)
-            }
-            AssetField::OptionalDynamic(dynamic) => {
-                let field_ident = dynamic.field_ident.clone();
-                let asset_key = dynamic.key.clone();
-                quote!(#token_stream #field_ident : {
-                    let asset = asset_keys.get_asset(#asset_key.into());
-                    asset.map(|asset| {
-                            asset.single_handle(world).unwrap_or_else(|_|  panic!("The dynamic asset '{}' cannot be created (expected `File`, `StandardMaterial`, or `TextureAtlas`), got {:?}", #asset_key, asset)).typed()
-                    })
-                },)
-            }
-            AssetField::DynamicFileCollection(dynamic, typed) => {
-                let field_ident = dynamic.field_ident.clone();
-                let asset_key = dynamic.key.clone();
-                let load = match typed {
-                    Typed::Yes => {
-                        quote!(
-                            asset.vector_of_handles(world).unwrap_or_else(|_| panic!("The dynamic asset '{}' cannot be created (expected `Folder` or `Files`), got {:?}", #asset_key, asset))
-                                .drain(..)
-                                .map(|handle| handle.typed())
-                                .collect()
-                        )
-                    }
-                    Typed::No => {
-                        quote!(
-                            asset.vector_of_handles(world).unwrap_or_else(|_| panic!("The dynamic asset '{}' cannot be created (expected `Folder` or `Files`), got {:?}", #asset_key, asset))
-                        )
-                    }
-                };
-                quote!(#token_stream #field_ident : {
-                    let asset = asset_keys.get_asset(#asset_key.into()).unwrap_or_else(|| panic!("Failed to get asset for key '{}'", #asset_key));
-                    #load
-                },)
-            }
             AssetField::StandardMaterial(basic) => {
                 let field_ident = basic.field_ident.clone();
                 let asset_path = basic.asset_path.clone();
@@ -195,6 +154,54 @@ impl AssetField {
                     }
                 }
             }
+            AssetField::Dynamic(dynamic) => {
+                let field_ident = dynamic.field_ident.clone();
+                let asset_key = dynamic.key.clone();
+                quote!(#token_stream #field_ident : {
+                    let asset = asset_keys.get_asset(#asset_key.into()).unwrap_or_else(|| panic!("Failed to get asset for key '{}'", #asset_key));
+                    match asset.build(world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
+                        ::bevy_asset_loader::DynamicAssetType::Single(handle) => handle.typed(),
+                        _ => panic!("The dynamic asset '{}' cannot be created (expected `File`, `StandardMaterial`, or `TextureAtlas`), got {:?}", #asset_key, asset)
+                    }
+                },)
+            }
+            AssetField::OptionalDynamic(dynamic) => {
+                let field_ident = dynamic.field_ident.clone();
+                let asset_key = dynamic.key.clone();
+                quote!(#token_stream #field_ident : {
+                    let asset = asset_keys.get_asset(#asset_key.into());
+                    asset.map(|asset| match asset.build(world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
+                            ::bevy_asset_loader::DynamicAssetType::Single(handle) => handle.typed(),
+                            _ => panic!("The dynamic asset '{}' cannot be created (expected `File`, `StandardMaterial`, or `TextureAtlas`), got {:?}", #asset_key, asset)
+                        }
+                    )
+                },)
+            }
+            AssetField::DynamicFileCollection(dynamic, typed) => {
+                let field_ident = dynamic.field_ident.clone();
+                let asset_key = dynamic.key.clone();
+                let load = match typed {
+                    Typed::Yes => {
+                        quote!(match asset.build(world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
+                            ::bevy_asset_loader::DynamicAssetType::Collection(mut handles) =>
+                                handles.drain(..).map(|handle| handle.typed()).collect(),
+                            _ =>
+                                panic!("The dynamic asset '{}' cannot be created (expected `Folder` or `Files`), got {:?}", #asset_key, asset),
+                        })
+                    }
+                    Typed::No => {
+                        quote!(match asset.build(world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
+                            ::bevy_asset_loader::DynamicAssetType::Collection(handles) => handles,
+                            _ =>
+                                panic!("The dynamic asset '{}' cannot be created (expected `Folder` or `Files`), got {:?}", #asset_key, asset),
+                        })
+                    }
+                };
+                quote!(#token_stream #field_ident : {
+                    let asset = asset_keys.get_asset(#asset_key.into()).unwrap_or_else(|| panic!("Failed to get asset for key '{}'", #asset_key));
+                    #load
+                },)
+            }
         }
     }
 
@@ -214,7 +221,7 @@ impl AssetField {
                     #token_stream {
                         let dynamic_asset = asset_keys.get_asset(#asset_key.into());
                         if let Some(dynamic_asset) = dynamic_asset {
-                            handles.extend(dynamic_asset.load_untyped(&asset_server));
+                            handles.extend(dynamic_asset.load(&asset_server));
                         }
                     }
                 )
@@ -224,7 +231,7 @@ impl AssetField {
                 quote!(
                     #token_stream {
                         let dynamic_asset = asset_keys.get_asset(#asset_key.into()).unwrap_or_else(|| panic!("Failed to get asset for key '{}'", #asset_key));
-                        handles.extend(dynamic_asset.load_untyped(&asset_server));
+                        handles.extend(dynamic_asset.load(&asset_server));
                     }
                 )
             }

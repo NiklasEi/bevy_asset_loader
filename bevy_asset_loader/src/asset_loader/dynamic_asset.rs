@@ -61,21 +61,26 @@ pub enum StandardDynamicAsset {
     },
 }
 
+/// Different typed that can generate the asset field value of a dynamic asset
+pub enum DynamicAssetType {
+    /// Dynamic asset that is defined by a single handle
+    Single(HandleUntyped),
+    /// Dynamic asset that is defined by multiple handles
+    Collection(Vec<HandleUntyped>),
+}
+
 /// Any type implementing this trait can be assigned to asset keys as part of a dynamic
 /// asset collection.
 pub trait DynamicAsset: Debug + Send + Sync {
     /// Return handles to all required asset paths
-    fn load_untyped(&self, asset_server: &AssetServer) -> Vec<HandleUntyped>;
+    fn load(&self, asset_server: &AssetServer) -> Vec<HandleUntyped>;
 
-    /// Return the single handle defining this asset
-    fn single_handle(&self, world: &mut World) -> Result<HandleUntyped, ()>;
-
-    /// Return the vector of handles defining this asset
-    fn vector_of_handles(&self, world: &mut World) -> Result<Vec<HandleUntyped>, ()>;
+    /// Return the handle(s) defining this asset
+    fn build(&self, world: &mut World) -> Result<DynamicAssetType, anyhow::Error>;
 }
 
 impl DynamicAsset for StandardDynamicAsset {
-    fn load_untyped(&self, asset_server: &AssetServer) -> Vec<HandleUntyped> {
+    fn load(&self, asset_server: &AssetServer) -> Vec<HandleUntyped> {
         match self {
             StandardDynamicAsset::File { path } => vec![asset_server.load_untyped(path)],
             StandardDynamicAsset::Folder { path } => asset_server
@@ -96,25 +101,29 @@ impl DynamicAsset for StandardDynamicAsset {
         }
     }
 
-    fn single_handle(&self, world: &mut World) -> Result<HandleUntyped, ()> {
+    fn build(&self, world: &mut World) -> Result<DynamicAssetType, anyhow::Error> {
         let cell = world.cell();
         let asset_server = cell
             .get_resource::<AssetServer>()
             .expect("Cannot get AssetServer");
         match self {
-            StandardDynamicAsset::File { path } => Ok(asset_server.get_handle_untyped(path)),
+            StandardDynamicAsset::File { path } => Ok(DynamicAssetType::Single(
+                asset_server.get_handle_untyped(path),
+            )),
             #[cfg(feature = "3d")]
             StandardDynamicAsset::StandardMaterial { path } => {
                 let mut materials = cell
                     .get_resource_mut::<bevy::asset::Assets<bevy::pbr::StandardMaterial>>()
                     .expect("Cannot get resource Assets<StandardMaterial>");
-                Ok(materials
+                let handle = materials
                     .add(
                         asset_server
                             .get_handle::<bevy::render::texture::Image, &String>(path)
                             .into(),
                     )
-                    .clone_untyped())
+                    .clone_untyped();
+
+                Ok(DynamicAssetType::Single(handle))
             }
             #[cfg(feature = "2d")]
             StandardDynamicAsset::TextureAtlas {
@@ -129,7 +138,7 @@ impl DynamicAsset for StandardDynamicAsset {
                 let mut atlases = cell
                     .get_resource_mut::<bevy::asset::Assets<bevy::sprite::TextureAtlas>>()
                     .expect("Cannot get resource Assets<TextureAtlas>");
-                Ok(atlases
+                let handle = atlases
                     .add(bevy::sprite::TextureAtlas::from_grid_with_padding(
                         asset_server.get_handle(path),
                         bevy::math::Vec2::new(*tile_size_x, *tile_size_y),
@@ -137,25 +146,21 @@ impl DynamicAsset for StandardDynamicAsset {
                         *rows,
                         bevy::math::Vec2::new(padding_x.unwrap_or(0.), padding_y.unwrap_or(0.)),
                     ))
-                    .clone_untyped())
-            }
-            _ => Err(()),
-        }
-    }
+                    .clone_untyped();
 
-    fn vector_of_handles(&self, world: &mut World) -> Result<Vec<HandleUntyped>, ()> {
-        let asset_server = world
-            .get_resource::<AssetServer>()
-            .expect("Cannot get AssetServer");
-        match self {
-            StandardDynamicAsset::Folder { path } => Ok(asset_server
-                .load_folder(path)
-                .unwrap_or_else(|_| panic!("Failed to load '{}' as a folder", path))),
-            StandardDynamicAsset::Files { paths } => Ok(paths
-                .iter()
-                .map(|path| asset_server.load_untyped(path))
-                .collect()),
-            _ => Err(()),
+                Ok(DynamicAssetType::Single(handle))
+            }
+            StandardDynamicAsset::Folder { path } => Ok(DynamicAssetType::Collection(
+                asset_server
+                    .load_folder(path)
+                    .unwrap_or_else(|_| panic!("Failed to load '{}' as a folder", path)),
+            )),
+            StandardDynamicAsset::Files { paths } => Ok(DynamicAssetType::Collection(
+                paths
+                    .iter()
+                    .map(|path| asset_server.load_untyped(path))
+                    .collect(),
+            )),
         }
     }
 }

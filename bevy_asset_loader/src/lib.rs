@@ -96,7 +96,8 @@ mod asset_loader;
 
 pub use crate::asset_collection::{AssetCollection, AssetCollectionApp, AssetCollectionWorld};
 pub use crate::asset_loader::{
-    AssetLoader, DynamicAsset, DynamicAssetCollection, DynamicAssets, StandardDynamicAsset,
+    AssetLoader, DynamicAsset, DynamicAssetCollection, DynamicAssetType, DynamicAssets,
+    StandardDynamicAsset,
 };
 
 #[cfg(feature = "dynamic_assets")]

@@ -24,6 +24,8 @@ stageless = ["iyes_loopless"]
 [dependencies]
 bevy = { version = "0.7", default-features = false }
 bevy_asset_loader_derive = { version = "=0.11.0", path = "../bevy_asset_loader_derive" }
+anyhow = "1"
+
 bevy_common_assets = { version = "0.2", features = ["ron"], optional = true }
 serde = { version = "1", optional = true }
 iyes_progress = { version = "0.3", optional = true }
@@ -31,6 +33,7 @@ iyes_loopless = { version = "0.5", optional = true }
 
 [dev-dependencies]
 bevy = { version = "0.7", features = ["vorbis"] }
+anyhow = "1"
 iyes_progress = { version = "0.3" }
 iyes_loopless = { version = "0.5" }
 bevy_common_assets = { version = "0.2", features = ["ron"] }
@@ -110,3 +113,7 @@ required-features = ["2d", "3d"]
 name = "full_dynamic_collection"
 path = "examples/full_dynamic_collection.rs"
 required-features = ["2d", "3d", "dynamic_assets"]
+
+[[example]]
+name = "custom_dynamic_assets"
+path = "examples/custom_dynamic_assets.rs"

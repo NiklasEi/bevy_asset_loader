@@ -2,7 +2,8 @@ use bevy::asset::LoadState;
 use bevy::prelude::*;
 use bevy::utils::HashMap;
 use bevy_asset_loader::{
-    AssetCollection, AssetLoader, DynamicAsset, DynamicAssetCollection, DynamicAssets,
+    AssetCollection, AssetLoader, DynamicAsset, DynamicAssetCollection, DynamicAssetType,
+    DynamicAssets,
 };
 use bevy_common_assets::ron::RonAssetPlugin;
 
@@ -12,7 +13,6 @@ fn main() {
     AssetLoader::new(MyStates::AssetLoading)
         .continue_to_state(MyStates::Next)
         .with_collection::<MyAssets>()
-        // .set_dynamic_asset_collection_file_endings(vec!["standard.assets"])
         .build(&mut app);
 
     app.add_state(MyStates::CollectionLoading)
@@ -117,7 +117,7 @@ enum CustomDynamicAsset {
 }
 
 impl DynamicAsset for CustomDynamicAsset {
-    fn load_untyped(&self, asset_server: &AssetServer) -> Vec<HandleUntyped> {
+    fn load(&self, asset_server: &AssetServer) -> Vec<HandleUntyped> {
         match self {
             CustomDynamicAsset::CombinedImage {
                 top_layer,
@@ -133,7 +133,7 @@ impl DynamicAsset for CustomDynamicAsset {
         }
     }
 
-    fn single_handle(&self, world: &mut World) -> Result<HandleUntyped, ()> {
+    fn build(&self, world: &mut World) -> Result<DynamicAssetType, anyhow::Error> {
         let cell = world.cell();
         let asset_server = cell
             .get_resource::<AssetServer>()
@@ -171,7 +171,9 @@ impl DynamicAsset for CustomDynamicAsset {
                     second.texture_descriptor.format,
                 );
 
-                Ok(images.add(combined).clone_untyped())
+                Ok(DynamicAssetType::Single(
+                    images.add(combined).clone_untyped(),
+                ))
             }
             CustomDynamicAsset::StandardMaterial {
                 base_color_texture,
@@ -186,22 +188,21 @@ impl DynamicAsset for CustomDynamicAsset {
                 material.base_color_texture = Some(image);
                 material.alpha_mode = AlphaMode::Opaque;
 
-                Ok(materials.add(material).clone_untyped())
+                Ok(DynamicAssetType::Single(
+                    materials.add(material).clone_untyped(),
+                ))
             }
             CustomDynamicAsset::Cube { size } => {
                 let mut meshes = cell
                     .get_resource_mut::<Assets<Mesh>>()
                     .expect("Failed to get mesh assets");
-
-                Ok(meshes
+                let handle = meshes
                     .add(Mesh::from(shape::Cube { size: *size }))
-                    .clone_untyped())
+                    .clone_untyped();
+
+                Ok(DynamicAssetType::Single(handle))
             }
         }
-    }
-
-    fn vector_of_handles(&self, _world: &mut World) -> Result<Vec<HandleUntyped>, ()> {
-        Err(())
     }
 }
 

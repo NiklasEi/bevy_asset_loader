@@ -61,7 +61,7 @@ use iyes_loopless::state::app::StateTransitionStageLabel;
 use iyes_loopless::state::StateTransitionStage;
 
 pub use dynamic_asset::{
-    DynamicAsset, DynamicAssetCollection, DynamicAssets, StandardDynamicAsset,
+    DynamicAsset, DynamicAssetCollection, DynamicAssetType, DynamicAssets, StandardDynamicAsset,
 };
 
 /// A Bevy plugin to configure automatic asset loading
