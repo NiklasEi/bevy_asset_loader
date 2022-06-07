@@ -1,17 +1,18 @@
 use bevy::prelude::*;
-use bevy_asset_loader::{AssetCollection, AssetLoader};
+use bevy_asset_loader::prelude::*;
 
 const PLAYER_SPEED: f32 = 5.;
 
 /// This example shows how to load multiple asset collections with one [`AssetLoader`]
 fn main() {
-    let mut app = App::new();
-    AssetLoader::new(MyStates::AssetLoading)
-        .continue_to_state(MyStates::Next)
-        .with_collection::<ImageAssets>()
-        .with_collection::<AudioAssets>()
-        .build(&mut app);
-    app.add_state(MyStates::AssetLoading)
+    App::new()
+        .add_loading_state(
+            LoadingState::new(MyStates::AssetLoading)
+                .continue_to_state(MyStates::Next)
+                .with_collection::<ImageAssets>()
+                .with_collection::<AudioAssets>(),
+        )
+        .add_state(MyStates::AssetLoading)
         .insert_resource(Msaa { samples: 1 })
         .add_plugins(DefaultPlugins)
         .add_system_set(

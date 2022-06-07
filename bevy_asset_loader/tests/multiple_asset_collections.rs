@@ -4,7 +4,8 @@ use bevy::app::AppExit;
 use bevy::asset::AssetPlugin;
 use bevy::audio::AudioPlugin;
 use bevy::prelude::*;
-use bevy_asset_loader::{AssetCollection, AssetLoader};
+use bevy_asset_loader::asset_collection::AssetCollection;
+use bevy_asset_loader::loading_state::{LoadingState, LoadingStateAppExt};
 
 #[cfg_attr(
     all(
@@ -16,18 +17,17 @@ use bevy_asset_loader::{AssetCollection, AssetLoader};
     test
 )]
 fn multiple_asset_collections() {
-    let mut app = App::new();
-    app.add_plugins(MinimalPlugins)
+    App::new()
+        .add_plugins(MinimalPlugins)
         .add_plugin(AssetPlugin::default())
-        .add_plugin(AudioPlugin::default());
-
-    AssetLoader::new(MyStates::Load)
-        .continue_to_state(MyStates::Next)
-        .with_collection::<PlopAudio>()
-        .with_collection::<BackgroundAudio>()
-        .build(&mut app);
-
-    app.add_state(MyStates::Load)
+        .add_plugin(AudioPlugin::default())
+        .add_loading_state(
+            LoadingState::new(MyStates::Load)
+                .continue_to_state(MyStates::Next)
+                .with_collection::<PlopAudio>()
+                .with_collection::<BackgroundAudio>(),
+        )
+        .add_state(MyStates::Load)
         .add_system_set(SystemSet::on_update(MyStates::Load).with_system(timeout))
         .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(expect))
         .run();

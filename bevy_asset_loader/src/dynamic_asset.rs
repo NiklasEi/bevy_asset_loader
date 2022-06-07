@@ -85,7 +85,7 @@ impl DynamicAsset {
 ///
 /// ```edition2021
 /// # use bevy::prelude::*;
-/// # use bevy_asset_loader::{DynamicAssets, AssetCollection, DynamicAsset};
+/// # use bevy_asset_loader::prelude::*;
 /// fn choose_character(
 ///     mut state: ResMut<State<GameState>>,
 ///     mut asset_keys: ResMut<DynamicAssets>,
@@ -141,7 +141,7 @@ impl DynamicAssets {
     /// In case the key is already known, its value will be overwritten.
     /// ```edition2021
     /// # use bevy::prelude::*;
-    /// # use bevy_asset_loader::{DynamicAssets, AssetCollection, DynamicAsset};
+    /// # use bevy_asset_loader::prelude::*;
     /// fn choose_character(
     ///     mut state: ResMut<State<GameState>>,
     ///     mut asset_keys: ResMut<DynamicAssets>,
