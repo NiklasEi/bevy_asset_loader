@@ -26,12 +26,12 @@ pub trait AssetCollection: Send + Sync + 'static {
     fn load(world: &mut World) -> Vec<HandleUntyped>;
 }
 
-/// Extension trait for [`App`](bevy::app::App) enabling initialisation of [asset collections](AssetCollection)
+/// Extension trait for [`App`](::bevy::app::App) enabling initialisation of [asset collections](crate::asset_collection::AssetCollection)
 pub trait AssetCollectionApp {
-    /// Initialise an [`AssetCollection`]
+    /// Initialise an [`AssetCollection`](crate::asset_collection::AssetCollection)
     ///
     /// This function does not give any guaranties about the loading status of the asset handles.
-    /// If you want to use a loading state, you do not need this function! Instead use an [`AssetLoader`](crate::AssetLoader)
+    /// If you want to use a loading state, you do not need this function! Instead use an [`LoadingState`](crate::loading_state::LoadingState)
     /// and add collections to it to be prepared during the loading state.
     fn init_collection<A: AssetCollection>(&mut self) -> &mut Self;
 }
@@ -55,13 +55,12 @@ impl AssetCollectionApp for App {
     }
 }
 
-/// Extension trait for [`World`](bevy::ecs::world::World) enabling initialisation of [asset collections](AssetCollection)
+/// Extension trait for [`World`](::bevy::ecs::world::World) enabling initialisation of [asset collections](AssetCollection)
 pub trait AssetCollectionWorld {
     /// Initialise an [`AssetCollection`]
     ///
     /// This function does not give any guaranties about the loading status of the asset handles.
-    /// If you want to use a loading state, you do not need this function! Instead use an [`AssetLoader`](crate::AssetLoader)
-    /// and add collections to it to be prepared during the loading state.
+    /// If you want such guaranties, use a [`LoadingState`](crate::loading_state::LoadingState).
     fn init_collection<A: AssetCollection>(&mut self);
 }
 

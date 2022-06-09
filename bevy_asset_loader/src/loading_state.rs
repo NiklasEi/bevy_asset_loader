@@ -155,7 +155,7 @@ impl<S> LoadingState<S>
 where
     S: StateData,
 {
-    /// Create a new [`AssetLoader`]
+    /// Create a new [`LoadingState`]
     ///
     /// This function takes a [`State`] during which all asset collections will
     /// be loaded and inserted as resources.
@@ -213,9 +213,9 @@ where
         }
     }
 
-    /// Create a new [`AssetLoader`]
+    /// Create a new [`LoadingState`]
     ///
-    /// This function takes a [`State`](bevy_ecs::schedule::State) during which all asset collections will
+    /// This function takes a [`State`](::bevy::ecs::schedule::State) during which all asset collections will
     /// be loaded and inserted as resources.
     /// ```edition2021
     /// # use bevy_asset_loader::prelude::*;
@@ -273,7 +273,7 @@ where
         }
     }
 
-    /// The [`AssetLoader`] will set this [`State`] after all asset collections
+    /// The [`LoadingState`] will set this Bevy [`State`](::bevy::ecs::schedule::State) after all asset collections
     /// are loaded and inserted as resources.
     /// ```edition2021
     /// # use bevy_asset_loader::prelude::*;
@@ -320,7 +320,7 @@ where
         self
     }
 
-    /// Add an [`AssetCollection`] to the [`AssetLoader`]
+    /// Add an [`AssetCollection`] to the [`LoadingState`]
     ///
     /// The added collection will be loaded and inserted into your Bevy app as a resource.
     /// ```edition2021
@@ -373,7 +373,7 @@ where
         self
     }
 
-    /// Add an [`AssetCollection`] to the [`AssetLoader`]
+    /// Add an [`AssetCollection`] to the [`LoadingState`]
     ///
     /// The added collection will be loaded and inserted into your Bevy app as a resource.
     /// ```edition2021
@@ -490,7 +490,7 @@ where
         self
     }
 
-    /// Add any [`FromWorld`](bevy_ecs::world::FromWorld) resource to be initialized after all asset collections are loaded.
+    /// Add any [`FromWorld`](::bevy::ecs::world::FromWorld) resource to be initialized after all asset collections are loaded.
     /// ```edition2021
     /// # use bevy_asset_loader::prelude::*;
     /// # use bevy::prelude::*;
@@ -572,7 +572,7 @@ where
         self
     }
 
-    /// Finish configuring the [`AssetLoader`]
+    /// Finish configuring the [`LoadingState`]
     ///
     /// Calling this function is required to set up the asset loading.
     /// ```edition2021
@@ -704,7 +704,7 @@ where
         );
     }
 
-    /// Finish configuring the [`AssetLoader`]
+    /// Finish configuring the [`LoadingState`]
     ///
     /// Calling this function is required to set up the asset loading.
     /// ```edition2021

@@ -1,6 +1,6 @@
 //! The goal of this crate is to offer an easy way for bevy games to load all their assets in a loading [`State`](::bevy::ecs::schedule::State).
 //!
-//! `bevy_asset_loader` introduces the derivable trait [`AssetCollection`]. Structs with asset handles
+//! `bevy_asset_loader` introduces the derivable trait [`AssetCollection`](crate::asset_collection::AssetCollection). Structs with asset handles
 //! can be automatically loaded during a configurable loading [`State`](::bevy::ecs::schedule::State). Afterwards they will be inserted as
 //! resources containing loaded handles and the plugin will switch to a second configurable [`State`](::bevy::ecs::schedule::State).
 //!
@@ -72,8 +72,8 @@
 //!     pub tree: Handle<Image>,
 //! }
 //!
-//! // since this function runs in MyState::Next, we know our assets are
-//! // loaded and their handles are in the resource AudioAssets
+//! // since this function runs in MyState::Next, we know our assets are loaded.
+//! // We can get their handles from the AudioAssets resource.
 //! fn use_asset_handles(audio_assets: Res<AudioAssets>, audio: Res<Audio>) {
 //!     audio.play(audio_assets.background.clone());
 //! }
