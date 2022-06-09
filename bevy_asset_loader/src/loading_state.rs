@@ -575,6 +575,8 @@ where
     /// Finish configuring the [`LoadingState`]
     ///
     /// Calling this function is required to set up the asset loading.
+    /// Most of the time you do not want to call this method directly though, but complete the setup
+    /// using [`LoadingStateAppExt::add_loading_state`].
     /// ```edition2021
     /// # use bevy_asset_loader::prelude::*;
     /// # use bevy::prelude::*;
@@ -707,6 +709,8 @@ where
     /// Finish configuring the [`LoadingState`]
     ///
     /// Calling this function is required to set up the asset loading.
+    /// Most of the time you do not want to call this method directly though, but complete the setup
+    /// using [`LoadingStateAppExt::add_loading_state`].
     /// ```edition2021
     /// # use bevy_asset_loader::prelude::*;
     /// # use bevy::prelude::*;
