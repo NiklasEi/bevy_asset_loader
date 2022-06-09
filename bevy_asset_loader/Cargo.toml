@@ -58,12 +58,12 @@ name = "init_resource"
 path = "examples/init_resource.rs"
 
 [[example]]
-name = "dynamic_asset"
-path = "examples/dynamic_asset.rs"
+name = "manual_dynamic_asset"
+path = "examples/manual_dynamic_asset.rs"
 
 [[example]]
-name = "dynamic_asset_ron"
-path = "examples/dynamic_asset_ron.rs"
+name = "dynamic_asset"
+path = "examples/dynamic_asset.rs"
 required-features = ["2d", "dynamic_assets"]
 
 [[example]]
@@ -86,8 +86,8 @@ path = "examples/stageless.rs"
 required-features = ["stageless"]
 
 [[example]]
-name = "stageless_dynamic_asset"
-path = "examples/stageless_dynamic_asset.rs"
+name = "stageless_manual_dynamic_asset"
+path = "examples/stageless_manual_dynamic_asset.rs"
 required-features = ["stageless"]
 
 [[example]]
@@ -100,8 +100,8 @@ required-features = [
 ]
 
 [[example]]
-name = "stageless_dynamic_ron"
-path = "examples/stageless_dynamic_ron.rs"
+name = "stageless_dynamic_asset"
+path = "examples/stageless_dynamic_asset.rs"
 required-features = ["2d", "dynamic_assets", "stageless"]
 
 [[example]]

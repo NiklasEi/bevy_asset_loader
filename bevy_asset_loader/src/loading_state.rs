@@ -1,4 +1,3 @@
-mod dynamic_asset;
 #[cfg(all(feature = "dynamic_assets", not(feature = "stageless")))]
 mod dynamic_asset_systems;
 
@@ -46,7 +45,7 @@ use stageless::dynamic_asset_systems::{
 use bevy_common_assets::ron::RonAssetPlugin;
 
 #[cfg(feature = "dynamic_assets")]
-pub use dynamic_asset::{DynamicAssetCollections, StandardDynamicAssetCollection};
+use crate::dynamic_asset::{DynamicAssetCollections, StandardDynamicAssetCollection};
 
 #[cfg(feature = "progress_tracking")]
 use iyes_progress::ProgressSystemLabel;
@@ -60,14 +59,12 @@ use iyes_loopless::state::app::StateTransitionStageLabel;
 #[cfg(feature = "stageless")]
 use iyes_loopless::state::StateTransitionStage;
 
-pub use dynamic_asset::{
-    DynamicAsset, DynamicAssetCollection, DynamicAssetType, DynamicAssets, StandardDynamicAsset,
-};
+use crate::dynamic_asset::{DynamicAsset, DynamicAssets, StandardDynamicAsset};
 
 /// A Bevy plugin to configure automatic asset loading
 ///
 /// ```edition2021
-/// # use bevy_asset_loader::{AssetLoader, AssetCollection};
+/// # use bevy_asset_loader::prelude::*;
 /// # use bevy::prelude::*;
 /// # use bevy::asset::AssetPlugin;
 /// # #[cfg(feature="stageless")]
@@ -75,18 +72,16 @@ pub use dynamic_asset::{
 ///
 /// # #[cfg(not(feature="stageless"))]
 /// fn main() {
-///     let mut app = App::new();
-///     app
+///     App::new()
 ///         .add_plugins(MinimalPlugins)
 /// #       .init_resource::<iyes_progress::ProgressCounter>()
-///         .add_plugin(AssetPlugin::default());
-///     AssetLoader::new(GameState::Loading)
-///         .continue_to_state(GameState::Menu)
-///         .with_collection::<AudioAssets>()
-///         .with_collection::<ImageAssets>()
-///         .build(&mut app);
-///
-///     app.add_state(GameState::Loading)
+///         .add_plugin(AssetPlugin::default())
+///         .add_loading_state(LoadingState::new(GameState::Loading)
+///             .continue_to_state(GameState::Menu)
+///             .with_collection::<AudioAssets>()
+///             .with_collection::<ImageAssets>()
+///         )
+///         .add_state(GameState::Loading)
 ///         .add_system_set(SystemSet::on_enter(GameState::Menu)
 ///             .with_system(play_audio)
 ///         )
@@ -96,21 +91,19 @@ pub use dynamic_asset::{
 ///
 /// # #[cfg(feature="stageless")]
 /// # fn main() {
-/// #    let mut app = App::new();
-/// #    app
+/// #    App::new()
 /// #        .add_loopless_state(GameState::Loading)
 /// #        .add_plugins(MinimalPlugins)
-/// #       .init_resource::<iyes_progress::ProgressCounter>()
-/// #        .add_plugin(AssetPlugin::default());
-/// #    AssetLoader::new(GameState::Loading)
-/// #        .continue_to_state(GameState::Menu)
-/// #        .with_collection::<AudioAssets>()
-/// #        .with_collection::<ImageAssets>()
-/// #        .build(&mut app);
-/// #
-/// #   app
-/// #       .add_enter_system(GameState::Menu, play_audio)
-/// #       .set_runner(|mut app| app.schedule.run(&mut app.world))
+/// #        .init_resource::<iyes_progress::ProgressCounter>()
+/// #        .add_plugin(AssetPlugin::default())
+/// #        .add_loading_state(
+/// #          LoadingState::new(GameState::Loading)
+/// #            .continue_to_state(GameState::Menu)
+/// #            .with_collection::<AudioAssets>()
+/// #            .with_collection::<ImageAssets>()
+/// #        )
+/// #        .add_enter_system(GameState::Menu, play_audio)
+/// #        .set_runner(|mut app| app.schedule.run(&mut app.world))
 /// #        .run();
 /// }
 ///
@@ -138,7 +131,7 @@ pub use dynamic_asset::{
 ///     pub tree: Handle<Image>,
 /// }
 /// ```
-pub struct AssetLoader<State> {
+pub struct LoadingState<State> {
     next_state: Option<State>,
     loading_state: State,
     dynamic_assets: HashMap<String, Box<dyn DynamicAsset>>,
@@ -155,33 +148,32 @@ pub struct AssetLoader<State> {
     dynamic_asset_collections: Vec<String>,
 
     #[cfg(feature = "stageless")]
-    loading_transition_stage: StateTransitionStage<LoadingState>,
+    loading_transition_stage: StateTransitionStage<InternalLoadingState>,
 }
 
-impl<S> AssetLoader<S>
+impl<S> LoadingState<S>
 where
     S: StateData,
 {
-    /// Create a new [`AssetLoader`]
+    /// Create a new [`LoadingState`]
     ///
     /// This function takes a [`State`] during which all asset collections will
     /// be loaded and inserted as resources.
     /// ```edition2021
-    /// # use bevy_asset_loader::{AssetLoader, AssetCollection};
+    /// # use bevy_asset_loader::prelude::*;
     /// # use bevy::prelude::*;
     /// # use bevy::asset::AssetPlugin;
     /// # fn main() {
-    ///     let mut app = App::new();
-    /// #   app
+    ///     App::new()
     /// #       .add_plugins(MinimalPlugins)
     /// #       .init_resource::<iyes_progress::ProgressCounter>()
-    /// #       .add_plugin(AssetPlugin::default());
-    ///     AssetLoader::new(GameState::Loading)
-    ///         .continue_to_state(GameState::Menu)
-    ///         .with_collection::<AudioAssets>()
-    ///         .with_collection::<ImageAssets>()
-    ///         .build(&mut app);
-    /// #   app
+    /// #       .add_plugin(AssetPlugin::default())
+    ///         .add_loading_state(
+    ///           LoadingState::new(GameState::Loading)
+    ///             .continue_to_state(GameState::Menu)
+    ///             .with_collection::<AudioAssets>()
+    ///             .with_collection::<ImageAssets>()
+    ///         )
     /// #       .add_state(GameState::Loading)
     /// #       .set_runner(|mut app| app.schedule.run(&mut app.world))
     /// #       .run();
@@ -206,15 +198,15 @@ where
     /// ```
     #[must_use]
     #[cfg(not(feature = "stageless"))]
-    pub fn new(load: S) -> AssetLoader<S> {
+    pub fn new(load: S) -> LoadingState<S> {
         Self {
             next_state: None,
             loading_state: load,
             dynamic_assets: HashMap::default(),
             collection_count: 0,
-            start_loading_assets: SystemSet::on_enter(LoadingState::LoadingAssets),
-            check_loading_assets: SystemSet::on_update(LoadingState::LoadingAssets),
-            initialize_resources: SystemSet::on_enter(LoadingState::Finalize),
+            start_loading_assets: SystemSet::on_enter(InternalLoadingState::LoadingAssets),
+            check_loading_assets: SystemSet::on_update(InternalLoadingState::LoadingAssets),
+            initialize_resources: SystemSet::on_enter(InternalLoadingState::Finalize),
             #[cfg(feature = "dynamic_assets")]
             dynamic_asset_collection_file_endings: vec!["assets"],
             #[cfg(feature = "dynamic_assets")]
@@ -222,28 +214,27 @@ where
         }
     }
 
-    /// Create a new [`AssetLoader`]
+    /// Create a new [`LoadingState`]
     ///
-    /// This function takes a [`State`](bevy_ecs::schedule::State) during which all asset collections will
+    /// This function takes a [`State`](::bevy::ecs::schedule::State) during which all asset collections will
     /// be loaded and inserted as resources.
     /// ```edition2021
-    /// # use bevy_asset_loader::{AssetLoader, AssetCollection};
+    /// # use bevy_asset_loader::prelude::*;
     /// # use bevy::prelude::*;
     /// # use bevy::asset::AssetPlugin;
     /// # use iyes_loopless::prelude::*;
     /// # fn main() {
-    ///     let mut app = App::new();
-    /// #   app
+    ///     App::new()
     /// #       .add_loopless_state(GameState::Loading)
     /// #       .add_plugins(MinimalPlugins)
     /// #       .init_resource::<iyes_progress::ProgressCounter>()
-    /// #       .add_plugin(AssetPlugin::default());
-    ///     AssetLoader::new(GameState::Loading)
-    ///         .continue_to_state(GameState::Menu)
-    ///         .with_collection::<AudioAssets>()
-    ///         .with_collection::<ImageAssets>()
-    ///         .build(&mut app);
-    /// #   app
+    /// #       .add_plugin(AssetPlugin::default())
+    ///         .add_loading_state(
+    ///           LoadingState::new(GameState::Loading)
+    ///             .continue_to_state(GameState::Menu)
+    ///             .with_collection::<AudioAssets>()
+    ///             .with_collection::<ImageAssets>()
+    ///         )
     /// #       .set_runner(|mut app| app.schedule.run(&mut app.world))
     /// #       .run();
     /// # }
@@ -267,16 +258,16 @@ where
     /// ```
     #[must_use]
     #[cfg(feature = "stageless")]
-    pub fn new(load: S) -> Self {
+    pub fn new(load: S) -> LoadingState<S> {
         Self {
             next_state: None,
             loading_state: load,
             dynamic_assets: HashMap::default(),
             collection_count: 0,
             check_loading_assets: ConditionSet::new()
-                .run_in_state(LoadingState::LoadingAssets)
+                .run_in_state(InternalLoadingState::LoadingAssets)
                 .into(),
-            loading_transition_stage: StateTransitionStage::new(LoadingState::Initialize),
+            loading_transition_stage: StateTransitionStage::new(InternalLoadingState::Initialize),
             #[cfg(feature = "dynamic_assets")]
             dynamic_asset_collection_file_endings: vec!["assets"],
             #[cfg(feature = "dynamic_assets")]
@@ -284,26 +275,25 @@ where
         }
     }
 
-    /// The [`AssetLoader`] will set this [`State`] after all asset collections
+    /// The [`LoadingState`] will set this Bevy [`State`](::bevy::ecs::schedule::State) after all asset collections
     /// are loaded and inserted as resources.
     /// ```edition2021
-    /// # use bevy_asset_loader::{AssetLoader, AssetCollection};
+    /// # use bevy_asset_loader::prelude::*;
     /// # use bevy::prelude::*;
     /// # use bevy::asset::AssetPlugin;
     /// # use iyes_loopless::prelude::*;
     /// # fn main() {
-    ///     let mut app = App::new();
-    /// #   app
+    ///     App::new()
     /// #       .add_loopless_state(GameState::Loading)
     /// #       .add_plugins(MinimalPlugins)
     /// #       .init_resource::<iyes_progress::ProgressCounter>()
-    /// #       .add_plugin(AssetPlugin::default());
-    ///     AssetLoader::new(GameState::Loading)
-    ///         .continue_to_state(GameState::Menu)
-    ///         .with_collection::<AudioAssets>()
-    ///         .with_collection::<ImageAssets>()
-    ///         .build(&mut app);
-    /// #   app
+    /// #       .add_plugin(AssetPlugin::default())
+    ///         .add_loading_state(
+    ///           LoadingState::new(GameState::Loading)
+    ///             .continue_to_state(GameState::Menu)
+    ///             .with_collection::<AudioAssets>()
+    ///             .with_collection::<ImageAssets>()
+    ///         )
     /// #       .add_state(GameState::Loading)
     /// #       .set_runner(|mut app| app.schedule.run(&mut app.world))
     /// #       .run();
@@ -333,25 +323,24 @@ where
         self
     }
 
-    /// Add an [`AssetCollection`] to the [`AssetLoader`]
+    /// Add an [`AssetCollection`] to the [`LoadingState`]
     ///
     /// The added collection will be loaded and inserted into your Bevy app as a resource.
     /// ```edition2021
-    /// # use bevy_asset_loader::{AssetLoader, AssetCollection};
+    /// # use bevy_asset_loader::prelude::*;
     /// # use bevy::prelude::*;
     /// # use bevy::asset::AssetPlugin;
     /// # fn main() {
-    ///     let mut app = App::new();
-    /// #   app
+    ///     App::new()
     /// #       .add_plugins(MinimalPlugins)
     /// #       .init_resource::<iyes_progress::ProgressCounter>()
-    /// #       .add_plugin(AssetPlugin::default());
-    ///     AssetLoader::new(GameState::Loading)
-    ///         .continue_to_state(GameState::Menu)
-    ///         .with_collection::<AudioAssets>()
-    ///         .with_collection::<ImageAssets>()
-    ///         .build(&mut app);
-    /// #   app
+    /// #       .add_plugin(AssetPlugin::default())
+    ///         .add_loading_state(
+    ///           LoadingState::new(GameState::Loading)
+    ///             .continue_to_state(GameState::Menu)
+    ///             .with_collection::<AudioAssets>()
+    ///             .with_collection::<ImageAssets>()
+    ///         )
     /// #       .add_state(GameState::Loading)
     /// #       .set_runner(|mut app| app.schedule.run(&mut app.world))
     /// #       .run();
@@ -388,27 +377,26 @@ where
         self
     }
 
-    /// Add an [`AssetCollection`] to the [`AssetLoader`]
+    /// Add an [`AssetCollection`] to the [`LoadingState`]
     ///
     /// The added collection will be loaded and inserted into your Bevy app as a resource.
     /// ```edition2021
-    /// # use bevy_asset_loader::{AssetLoader, AssetCollection};
+    /// # use bevy_asset_loader::prelude::*;
     /// # use bevy::prelude::*;
     /// # use bevy::asset::AssetPlugin;
     /// # use iyes_loopless::prelude::*;
     /// # fn main() {
-    ///     let mut app = App::new();
-    /// #   app
+    ///     App::new()
     /// #       .add_loopless_state(GameState::Loading)
     /// #       .add_plugins(MinimalPlugins)
     /// #       .init_resource::<iyes_progress::ProgressCounter>()
-    /// #       .add_plugin(AssetPlugin::default());
-    ///     AssetLoader::new(GameState::Loading)
-    ///         .continue_to_state(GameState::Menu)
-    ///         .with_collection::<AudioAssets>()
-    ///         .with_collection::<ImageAssets>()
-    ///         .build(&mut app);
-    /// #   app
+    /// #       .add_plugin(AssetPlugin::default())
+    ///         .add_loading_state(
+    ///           LoadingState::new(GameState::Loading)
+    ///             .continue_to_state(GameState::Menu)
+    ///             .with_collection::<AudioAssets>()
+    ///             .with_collection::<ImageAssets>()
+    ///         )
     /// #       .set_runner(|mut app| app.schedule.run(&mut app.world))
     /// #       .run();
     /// # }
@@ -434,7 +422,7 @@ where
     #[cfg(feature = "stageless")]
     pub fn with_collection<A: AssetCollection>(mut self) -> Self {
         self.loading_transition_stage.add_enter_system(
-            LoadingState::LoadingAssets,
+            InternalLoadingState::LoadingAssets,
             start_loading_collection::<S, A>.exclusive_system(),
         );
         self.check_loading_assets = self
@@ -460,21 +448,20 @@ where
 
     /// Add any [`FromWorld`] resource to be initialized after all asset collections are loaded.
     /// ```edition2021
-    /// # use bevy_asset_loader::{AssetLoader, AssetCollection};
+    /// # use bevy_asset_loader::prelude::*;
     /// # use bevy::prelude::*;
     /// # use bevy::asset::AssetPlugin;
     /// # fn main() {
-    ///     let mut app = App::new();
-    /// #   app
+    ///     App::new()
     /// #       .add_plugins(MinimalPlugins)
     /// #       .init_resource::<iyes_progress::ProgressCounter>()
-    /// #       .add_plugin(AssetPlugin::default());
-    ///     AssetLoader::new(GameState::Loading)
-    ///         .continue_to_state(GameState::Menu)
-    ///         .with_collection::<TextureForAtlas>()
-    ///         .init_resource::<TextureAtlasFromWorld>()
-    ///         .build(&mut app);
-    /// #   app
+    /// #       .add_plugin(AssetPlugin::default())
+    ///         .add_loading_state(
+    ///           LoadingState::new(GameState::Loading)
+    ///             .continue_to_state(GameState::Menu)
+    ///             .with_collection::<TextureForAtlas>()
+    ///             .init_resource::<TextureAtlasFromWorld>()
+    ///         )
     /// #       .add_state(GameState::Loading)
     /// #       .set_runner(|mut app| app.schedule.run(&mut app.world))
     /// #       .run();
@@ -513,25 +500,24 @@ where
         self
     }
 
-    /// Add any [`FromWorld`](bevy_ecs::world::FromWorld) resource to be initialized after all asset collections are loaded.
+    /// Add any [`FromWorld`](::bevy::ecs::world::FromWorld) resource to be initialized after all asset collections are loaded.
     /// ```edition2021
-    /// # use bevy_asset_loader::{AssetLoader, AssetCollection};
+    /// # use bevy_asset_loader::prelude::*;
     /// # use bevy::prelude::*;
     /// # use bevy::asset::AssetPlugin;
     /// # use iyes_loopless::prelude::*;
     /// # fn main() {
-    ///     let mut app = App::new();
-    /// #   app
+    ///     App::new()
     /// #       .add_loopless_state(GameState::Loading)
     /// #       .add_plugins(MinimalPlugins)
     /// #       .init_resource::<iyes_progress::ProgressCounter>()
-    /// #       .add_plugin(AssetPlugin::default());
-    ///     AssetLoader::new(GameState::Loading)
-    ///         .continue_to_state(GameState::Menu)
-    ///         .with_collection::<TextureForAtlas>()
-    ///         .init_resource::<TextureAtlasFromWorld>()
-    ///         .build(&mut app);
-    /// #   app
+    /// #       .add_plugin(AssetPlugin::default())
+    ///         .add_loading_state(
+    ///           LoadingState::new(GameState::Loading)
+    ///             .continue_to_state(GameState::Menu)
+    ///             .with_collection::<TextureForAtlas>()
+    ///             .init_resource::<TextureAtlasFromWorld>()
+    ///         )
     /// #       .set_runner(|mut app| app.schedule.run(&mut app.world))
     /// #       .run();
     /// # }
@@ -563,7 +549,7 @@ where
     #[cfg(feature = "stageless")]
     pub fn init_resource<A: FromWorld + Send + Sync + 'static>(mut self) -> Self {
         self.loading_transition_stage.add_enter_system(
-            LoadingState::Finalize,
+            InternalLoadingState::Finalize,
             init_resource::<A>.exclusive_system(),
         );
 
@@ -599,25 +585,26 @@ where
         self
     }
 
-    /// Finish configuring the [`AssetLoader`]
+    /// Finish configuring the [`LoadingState`]
     ///
     /// Calling this function is required to set up the asset loading.
+    /// Most of the time you do not want to call this method directly though, but complete the setup
+    /// using [`LoadingStateAppExt::add_loading_state`].
     /// ```edition2021
-    /// # use bevy_asset_loader::{AssetLoader, AssetCollection};
+    /// # use bevy_asset_loader::prelude::*;
     /// # use bevy::prelude::*;
     /// # use bevy::asset::AssetPlugin;
     /// # fn main() {
-    ///     let mut app = App::new();
-    /// #   app
+    ///     App::new()
     /// #       .add_plugins(MinimalPlugins)
     /// #       .init_resource::<iyes_progress::ProgressCounter>()
-    /// #       .add_plugin(AssetPlugin::default());
-    ///     AssetLoader::new(GameState::Loading)
-    ///         .continue_to_state(GameState::Menu)
-    ///         .with_collection::<AudioAssets>()
-    ///         .with_collection::<ImageAssets>()
-    ///         .build(&mut app);
-    /// #   app
+    /// #       .add_plugin(AssetPlugin::default())
+    ///         .add_loading_state(
+    ///           LoadingState::new(GameState::Loading)
+    ///             .continue_to_state(GameState::Menu)
+    ///             .with_collection::<AudioAssets>()
+    ///             .with_collection::<ImageAssets>()
+    ///         )
     /// #       .add_state(GameState::Loading)
     /// #       .set_runner(|mut app| app.schedule.run(&mut app.world))
     /// #       .run();
@@ -668,11 +655,11 @@ where
                 &self.dynamic_asset_collection_file_endings,
             ));
             update.add_system_set(
-                SystemSet::on_enter(LoadingState::LoadingDynamicAssetCollections)
+                SystemSet::on_enter(InternalLoadingState::LoadingDynamicAssetCollections)
                     .with_system(load_dynamic_asset_collections::<S>.exclusive_system()),
             );
             update.add_system_set(
-                SystemSet::on_update(LoadingState::LoadingDynamicAssetCollections)
+                SystemSet::on_update(InternalLoadingState::LoadingDynamicAssetCollections)
                     .with_system(check_dynamic_asset_collections::<S>.exclusive_system()),
             );
             app.insert_resource(LoadingAssetHandles {
@@ -693,19 +680,22 @@ where
         app.insert_resource(dynamic_assets);
 
         update.add_system_set(
-            SystemSet::on_update(LoadingState::Initialize).with_system(initialize_loading_state),
+            SystemSet::on_update(InternalLoadingState::Initialize)
+                .with_system(initialize_loading_state),
         );
         update.add_system_set(self.start_loading_assets);
         update.add_system_set(self.check_loading_assets);
         update.add_system_set(self.initialize_resources);
         update.add_system_set(
-            SystemSet::on_update(LoadingState::Finalize).with_system(finish_loading_state::<S>),
+            SystemSet::on_update(InternalLoadingState::Finalize)
+                .with_system(finish_loading_state::<S>),
         );
 
         loading_schedule.add_stage("update", update);
 
-        app.insert_resource(State::new(LoadingState::Initialize));
-        loading_schedule.add_system_set_to_stage("update", State::<LoadingState>::get_driver());
+        app.insert_resource(State::new(InternalLoadingState::Initialize));
+        loading_schedule
+            .add_system_set_to_stage("update", State::<InternalLoadingState>::get_driver());
 
         let mut loading_state_schedules = app
             .world
@@ -731,27 +721,28 @@ where
         );
     }
 
-    /// Finish configuring the [`AssetLoader`]
+    /// Finish configuring the [`LoadingState`]
     ///
     /// Calling this function is required to set up the asset loading.
+    /// Most of the time you do not want to call this method directly though, but complete the setup
+    /// using [`LoadingStateAppExt::add_loading_state`].
     /// ```edition2021
-    /// # use bevy_asset_loader::{AssetLoader, AssetCollection};
+    /// # use bevy_asset_loader::prelude::*;
     /// # use bevy::prelude::*;
     /// # use bevy::asset::AssetPlugin;
     /// # use iyes_loopless::prelude::*;
     /// # fn main() {
-    ///     let mut app = App::new();
-    /// #   app
+    ///     App::new()
     /// #       .add_loopless_state(GameState::Loading)
     /// #       .add_plugins(MinimalPlugins)
     /// #       .init_resource::<iyes_progress::ProgressCounter>()
-    /// #       .add_plugin(AssetPlugin::default());
-    ///     AssetLoader::new(GameState::Loading)
-    ///         .continue_to_state(GameState::Menu)
-    ///         .with_collection::<AudioAssets>()
-    ///         .with_collection::<ImageAssets>()
-    ///         .build(&mut app);
-    /// #   app
+    /// #       .add_plugin(AssetPlugin::default())
+    ///         .add_loading_state(
+    ///           LoadingState::new(GameState::Loading)
+    ///             .continue_to_state(GameState::Menu)
+    ///             .with_collection::<AudioAssets>()
+    ///             .with_collection::<ImageAssets>()
+    ///         )
     /// #       .set_runner(|mut app| app.schedule.run(&mut app.world))
     /// #       .run();
     /// # }
@@ -801,14 +792,14 @@ where
                 &self.dynamic_asset_collection_file_endings,
             ));
             self.loading_transition_stage.add_enter_system(
-                LoadingState::LoadingDynamicAssetCollections,
+                InternalLoadingState::LoadingDynamicAssetCollections,
                 load_dynamic_asset_collections::<S>.exclusive_system(),
             );
             // I think it's a bug in iyes, but you need this kind of cast to make it become a descriptor
             update.add_system(
                 iyes_loopless::condition::IntoConditionalExclusiveSystem::run_in_state(
                     check_dynamic_asset_collections::<S>,
-                    LoadingState::LoadingDynamicAssetCollections,
+                    InternalLoadingState::LoadingDynamicAssetCollections,
                 )
                 .label("iyes_loopless::condition::IntoConditionalExclusiveSystem::cast"),
             );
@@ -831,14 +822,14 @@ where
 
         update.add_system_set(
             ConditionSet::new()
-                .run_in_state(LoadingState::Initialize)
+                .run_in_state(InternalLoadingState::Initialize)
                 .with_system(initialize_loading_state)
                 .into(),
         );
         update.add_system_set(self.check_loading_assets);
         update.add_system_set(
             ConditionSet::new()
-                .run_in_state(LoadingState::Finalize)
+                .run_in_state(InternalLoadingState::Finalize)
                 .with_system(finish_loading_state::<S>)
                 .into(),
         );
@@ -846,7 +837,7 @@ where
         loading_schedule.add_stage("update", update);
         loading_schedule.add_stage_before(
             "update",
-            StateTransitionStageLabel::from_type::<LoadingState>(),
+            StateTransitionStageLabel::from_type::<InternalLoadingState>(),
             self.loading_transition_stage,
         );
 
@@ -888,7 +879,7 @@ struct LoadingAssetHandles<T> {
     marker: PhantomData<T>,
 }
 
-pub struct AssetLoaderConfiguration<State: StateData> {
+pub(crate) struct AssetLoaderConfiguration<State: StateData> {
     configuration: HashMap<State, LoadingConfiguration<State>>,
 }
 
@@ -901,7 +892,7 @@ impl<State: StateData> Default for AssetLoaderConfiguration<State> {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub(crate) enum LoadingState {
+pub(crate) enum InternalLoadingState {
     /// Starting point. Here it will be decided whether or not dynamic asset collections need to be loaded.
     Initialize,
     /// Load dynamic asset collections and configure their key <-> asset mapping
@@ -931,5 +922,19 @@ impl<State: StateData> Default for LoadingStateSchedules<State> {
         LoadingStateSchedules {
             schedules: HashMap::default(),
         }
+    }
+}
+
+/// Extension trait for Bevy Apps to add loading states idiomatically
+pub trait LoadingStateAppExt {
+    /// Add a loading state to your app
+    fn add_loading_state<S: StateData>(&mut self, loading_state: LoadingState<S>) -> &mut Self;
+}
+
+impl LoadingStateAppExt for App {
+    fn add_loading_state<S: StateData>(&mut self, loading_state: LoadingState<S>) -> &mut Self {
+        loading_state.build(self);
+
+        self
     }
 }

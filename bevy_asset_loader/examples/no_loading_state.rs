@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_asset_loader::{AssetCollection, AssetCollectionApp, AssetCollectionWorld};
+use bevy_asset_loader::prelude::*;
 
 /// This example shows how to use `bevy_asset_loader` without a loading state.
 /// Asset collections can still be used as a convenient method to define resources containing

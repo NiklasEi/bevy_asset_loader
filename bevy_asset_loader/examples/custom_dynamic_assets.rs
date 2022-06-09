@@ -1,21 +1,17 @@
 use bevy::asset::LoadState;
 use bevy::prelude::*;
 use bevy::utils::HashMap;
-use bevy_asset_loader::{
-    AssetCollection, AssetLoader, DynamicAsset, DynamicAssetCollection, DynamicAssetType,
-    DynamicAssets,
-};
+use bevy_asset_loader::prelude::*;
 use bevy_common_assets::ron::RonAssetPlugin;
 
 fn main() {
-    let mut app = App::new();
-
-    AssetLoader::new(MyStates::AssetLoading)
-        .continue_to_state(MyStates::Next)
-        .with_collection::<MyAssets>()
-        .build(&mut app);
-
-    app.add_state(MyStates::CollectionLoading)
+    App::new()
+        .add_loading_state(
+            LoadingState::new(MyStates::AssetLoading)
+                .continue_to_state(MyStates::Next)
+                .with_collection::<MyAssets>(),
+        )
+        .add_state(MyStates::CollectionLoading)
         .insert_resource(Msaa { samples: 1 })
         .add_plugins(DefaultPlugins)
         .add_plugin(RonAssetPlugin::<CustomDynamicAssetCollection>::new(&[

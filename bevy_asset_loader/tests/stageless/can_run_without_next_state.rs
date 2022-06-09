@@ -4,22 +4,19 @@ use bevy::app::AppExit;
 use bevy::asset::AssetPlugin;
 use bevy::audio::AudioPlugin;
 use bevy::prelude::*;
-use bevy_asset_loader::{AssetCollection, AssetLoader};
+use bevy_asset_loader::asset_collection::AssetCollection;
+use bevy_asset_loader::loading_state::{LoadingState, LoadingStateAppExt};
 use iyes_loopless::prelude::*;
 
 #[test]
 fn can_run_without_next_state() {
-    let mut app = App::new();
-    app.add_loopless_state(MyStates::Load)
+    App::new()
+        .add_loopless_state(MyStates::Load)
         .add_plugins(MinimalPlugins)
         .add_plugin(AssetPlugin::default())
-        .add_plugin(AudioPlugin::default());
-
-    AssetLoader::new(MyStates::Load)
-        .with_collection::<MyAssets>()
-        .build(&mut app);
-
-    app.init_resource::<TestState>()
+        .add_plugin(AudioPlugin::default())
+        .add_loading_state(LoadingState::new(MyStates::Load).with_collection::<MyAssets>())
+        .init_resource::<TestState>()
         .add_system_set(
             ConditionSet::new()
                 .run_in_state(MyStates::Load)
