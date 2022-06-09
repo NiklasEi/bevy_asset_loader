@@ -22,6 +22,8 @@ use bevy::utils::HashMap;
 use std::marker::PhantomData;
 
 use crate::asset_collection::AssetCollection;
+use crate::dynamic_asset::DynamicAssetCollections;
+
 #[cfg(feature = "stageless")]
 use stageless::systems::{
     check_loading_collection, finish_loading_state, init_resource, initialize_loading_state,
@@ -45,7 +47,7 @@ use stageless::dynamic_asset_systems::{
 use bevy_common_assets::ron::RonAssetPlugin;
 
 #[cfg(feature = "dynamic_assets")]
-use crate::dynamic_asset::{DynamicAssetCollections, StandardDynamicAssetCollection};
+use crate::standard_dynamic_asset::StandardDynamicAssetCollection;
 
 #[cfg(feature = "progress_tracking")]
 use iyes_progress::ProgressSystemLabel;
@@ -59,7 +61,8 @@ use iyes_loopless::state::app::StateTransitionStageLabel;
 #[cfg(feature = "stageless")]
 use iyes_loopless::state::StateTransitionStage;
 
-use crate::dynamic_asset::{DynamicAsset, DynamicAssets, StandardDynamicAsset};
+use crate::dynamic_asset::{DynamicAsset, DynamicAssets};
+use crate::standard_dynamic_asset::StandardDynamicAsset;
 
 /// A Bevy plugin to configure automatic asset loading
 ///
@@ -649,6 +652,7 @@ where
         let mut loading_schedule = Schedule::default();
         let mut update = SystemStage::parallel();
 
+        app.init_resource::<DynamicAssetCollections<S>>();
         #[cfg(feature = "dynamic_assets")]
         {
             app.add_plugin(RonAssetPlugin::<StandardDynamicAssetCollection>::new(
@@ -666,7 +670,6 @@ where
                 handles: Default::default(),
                 marker: PhantomData::<S>,
             });
-            app.init_resource::<DynamicAssetCollections<S>>();
             app.world
                 .get_resource_mut::<DynamicAssetCollections<S>>()
                 .unwrap()
@@ -786,6 +789,7 @@ where
         let mut loading_schedule = Schedule::default();
         let mut update = SystemStage::parallel();
 
+        app.init_resource::<DynamicAssetCollections<S>>();
         #[cfg(feature = "dynamic_assets")]
         {
             app.add_plugin(RonAssetPlugin::<StandardDynamicAssetCollection>::new(
@@ -807,7 +811,6 @@ where
                 handles: Default::default(),
                 marker: PhantomData::<S>,
             });
-            app.init_resource::<DynamicAssetCollections<S>>();
             app.world
                 .get_resource_mut::<DynamicAssetCollections<S>>()
                 .unwrap()

@@ -97,18 +97,21 @@ pub mod asset_collection;
 pub mod dynamic_asset;
 /// A game state responsible for loading assets
 pub mod loading_state;
+/// Dynamic assets for common Bevy asset types
+pub mod standard_dynamic_asset;
 
 #[doc(hidden)]
 pub mod prelude {
+    pub use crate::standard_dynamic_asset::StandardDynamicAsset;
     #[doc(hidden)]
     #[cfg(feature = "dynamic_assets")]
-    pub use crate::dynamic_asset::{DynamicAssetCollections, StandardDynamicAssetCollection};
+    pub use crate::standard_dynamic_asset::StandardDynamicAssetCollection;
     #[doc(hidden)]
     pub use crate::{
         asset_collection::{AssetCollection, AssetCollectionApp, AssetCollectionWorld},
         dynamic_asset::{
-            DynamicAsset, DynamicAssetCollection, DynamicAssetType, DynamicAssets,
-            StandardDynamicAsset,
+            DynamicAsset, DynamicAssetCollection, DynamicAssetCollections, DynamicAssetType,
+            DynamicAssets,
         },
         loading_state::{LoadingState, LoadingStateAppExt},
     };

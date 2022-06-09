@@ -15,7 +15,7 @@ readme = "../README.md"
 [features]
 2d = ["bevy/bevy_sprite", "bevy_asset_loader_derive/2d"]
 # This feature adds support for bevy's StandardMaterial assets
-3d = ["bevy/bevy_pbr", "bevy_asset_loader_derive/3d"]
+3d = ["bevy/bevy_pbr", "bevy/bevy_render", "bevy_asset_loader_derive/3d"]
 dynamic_assets = ["bevy_common_assets", "serde"]
 progress_tracking = ["iyes_progress"]
 progress_tracking_stageless = ["iyes_progress/iyes_loopless"]

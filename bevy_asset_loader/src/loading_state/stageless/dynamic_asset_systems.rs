@@ -1,7 +1,6 @@
-use crate::dynamic_asset::{
-    DynamicAssetCollection, DynamicAssetCollections, DynamicAssets, StandardDynamicAssetCollection,
-};
+use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssetCollections, DynamicAssets};
 use crate::loading_state::{InternalLoadingState, LoadingAssetHandles};
+use crate::standard_dynamic_asset::StandardDynamicAssetCollection;
 use bevy::asset::{AssetServer, Assets, LoadState};
 use bevy::ecs::change_detection::ResMut;
 
