@@ -73,7 +73,7 @@ impl AssetField {
         #[cfg(feature = "2d")]
         {
             let conditional_2d = quote! {
-            ::bevy_asset_loader::DynamicAsset::TextureAtlas {
+            ::bevy_asset_loader::prelude::DynamicAsset::TextureAtlas {
                 path,
                 tile_size_x,
                 tile_size_y,
@@ -94,7 +94,7 @@ impl AssetField {
         #[cfg(feature = "3d")]
         {
             let conditional_3d = quote! {
-            ::bevy_asset_loader::DynamicAsset::StandardMaterial { path } =>
+            ::bevy_asset_loader::prelude::DynamicAsset::StandardMaterial { path } =>
                 materials.add(asset_server.get_handle::<bevy::prelude::Image, &String>(path).into()).clone_untyped(),
             };
             conditional_dynamic_asset_collections.extend(conditional_3d);
@@ -129,7 +129,7 @@ impl AssetField {
                 quote!(#token_stream #field_ident : {
                     let asset = asset_keys.get_asset(#asset_key.into()).unwrap_or_else(|| panic!("Failed to get asset for key '{}'", #asset_key));
                     let handle = match asset {
-                        ::bevy_asset_loader::DynamicAsset::File { path } => asset_server.get_handle_untyped(path),
+                        ::bevy_asset_loader::prelude::DynamicAsset::File { path } => asset_server.get_handle_untyped(path),
                         #conditional_dynamic_asset_collections
                         _ => panic!("The dynamic asset '{}' cannot be created (expected `File`, `StandardMaterial`, or `TextureAtlas`), got {:?}", #asset_key, asset)
                     };
@@ -143,7 +143,7 @@ impl AssetField {
                     let asset = asset_keys.get_asset(#asset_key.into());
                     asset.map(|asset| {
                         let handle = match asset {
-                            ::bevy_asset_loader::DynamicAsset::File { path } => asset_server.get_handle_untyped(path),
+                            ::bevy_asset_loader::prelude::DynamicAsset::File { path } => asset_server.get_handle_untyped(path),
                             #conditional_dynamic_asset_collections
                             _ => panic!("The dynamic asset '{}' cannot be created (expected `File`, `StandardMaterial`, or `TextureAtlas`), got {:?}", #asset_key, asset)
                         };
@@ -157,12 +157,12 @@ impl AssetField {
                 let load = match typed {
                     Typed::Yes => {
                         quote!(
-                            ::bevy_asset_loader::DynamicAsset::Folder { path } => asset_server.load_folder(path)
+                            ::bevy_asset_loader::prelude::DynamicAsset::Folder { path } => asset_server.load_folder(path)
                                 .unwrap()
                                 .drain(..)
                                 .map(|handle| handle.typed())
                                 .collect(),
-                            ::bevy_asset_loader::DynamicAsset::Files { paths } => paths
+                            ::bevy_asset_loader::prelude::DynamicAsset::Files { paths } => paths
                                 .iter()
                                 .map(|path| asset_server.load(path))
                                 .collect()
@@ -170,8 +170,8 @@ impl AssetField {
                     }
                     Typed::No => {
                         quote!(
-                            ::bevy_asset_loader::DynamicAsset::Folder { path } => asset_server.load_folder(path).unwrap(),
-                            ::bevy_asset_loader::DynamicAsset::Files { paths } => paths
+                            ::bevy_asset_loader::prelude::DynamicAsset::Folder { path } => asset_server.load_folder(path).unwrap(),
+                            ::bevy_asset_loader::prelude::DynamicAsset::Files { paths } => paths
                                 .iter()
                                 .map(|path| asset_server.load_untyped(path))
                                 .collect()

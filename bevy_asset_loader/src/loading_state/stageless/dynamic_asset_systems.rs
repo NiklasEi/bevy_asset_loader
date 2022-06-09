@@ -1,5 +1,5 @@
-use crate::asset_loader::dynamic_asset::{DynamicAssetCollection, DynamicAssetCollections};
-use crate::asset_loader::{DynamicAssets, LoadingAssetHandles, LoadingState};
+use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssetCollections, DynamicAssets};
+use crate::loading_state::{InternalLoadingState, LoadingAssetHandles};
 use bevy::asset::{AssetServer, Assets, LoadState};
 use bevy::ecs::change_detection::ResMut;
 
@@ -25,7 +25,7 @@ pub(crate) fn load_dynamic_asset_collections<S: StateData>(world: &mut World) {
         .get_mut(&state.0)
         .expect("Failed to get list of dynamic asset collections for current loading state");
     if files.is_empty() {
-        world.insert_resource(NextState(LoadingState::LoadingAssets));
+        world.insert_resource(NextState(InternalLoadingState::LoadingAssets));
         return;
     }
     for file in files.drain(..) {
@@ -54,6 +54,6 @@ pub(crate) fn check_dynamic_asset_collections<S: StateData>(world: &mut World) {
             asset_keys.register_dynamic_collection(collection);
         }
 
-        world.insert_resource(NextState(LoadingState::LoadingAssets));
+        world.insert_resource(NextState(InternalLoadingState::LoadingAssets));
     }
 }

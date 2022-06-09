@@ -1,5 +1,5 @@
-use crate::asset_loader::dynamic_asset::{DynamicAssetCollection, DynamicAssetCollections};
-use crate::asset_loader::{DynamicAssets, LoadingAssetHandles, LoadingState};
+use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssetCollections, DynamicAssets};
+use crate::loading_state::{InternalLoadingState, LoadingAssetHandles};
 use bevy::asset::{AssetServer, Assets, LoadState};
 use bevy::ecs::change_detection::ResMut;
 use bevy::ecs::schedule::State;
@@ -11,7 +11,7 @@ pub(crate) fn load_dynamic_asset_collections<S: StateData>(world: &mut World) {
     #[allow(clippy::type_complexity)]
     let mut system_state: SystemState<(
         ResMut<DynamicAssetCollections<S>>,
-        ResMut<State<LoadingState>>,
+        ResMut<State<InternalLoadingState>>,
         ResMut<LoadingAssetHandles<S>>,
         Res<AssetServer>,
         Res<State<S>>,
@@ -30,7 +30,7 @@ pub(crate) fn load_dynamic_asset_collections<S: StateData>(world: &mut World) {
         .expect("Failed to get list of dynamic asset collections for current loading state");
     if files.is_empty() {
         loading_state
-            .set(LoadingState::LoadingAssets)
+            .set(InternalLoadingState::LoadingAssets)
             .expect("Failed to set loading state");
         return;
     }
@@ -46,7 +46,7 @@ pub(crate) fn check_dynamic_asset_collections<S: StateData>(world: &mut World) {
     let mut system_state: SystemState<(
         Res<AssetServer>,
         ResMut<LoadingAssetHandles<S>>,
-        ResMut<State<LoadingState>>,
+        ResMut<State<InternalLoadingState>>,
         ResMut<Assets<DynamicAssetCollection>>,
         ResMut<DynamicAssets>,
     )> = SystemState::new(world);
@@ -66,7 +66,7 @@ pub(crate) fn check_dynamic_asset_collections<S: StateData>(world: &mut World) {
             asset_keys.register_dynamic_collection(collection);
         }
         loading_state
-            .set(LoadingState::LoadingAssets)
+            .set(InternalLoadingState::LoadingAssets)
             .expect("Failed to set loading state");
     }
 }

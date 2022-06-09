@@ -1,19 +1,20 @@
 use bevy::prelude::*;
-use bevy_asset_loader::{AssetCollection, AssetLoader};
+use bevy_asset_loader::prelude::*;
 use iyes_loopless::prelude::*;
 
 const PLAYER_SPEED: f32 = 5.;
 
 /// This example shows how to use `iyes_loopless` with `bevy_asset_loader`
 fn main() {
-    let mut app = App::new();
-    app.add_loopless_state(MyStates::AssetLoading);
-    AssetLoader::new(MyStates::AssetLoading)
-        .continue_to_state(MyStates::Next)
-        .with_collection::<ImageAssets>()
-        .with_collection::<AudioAssets>()
-        .build(&mut app);
-    app.insert_resource(Msaa { samples: 1 })
+    App::new()
+        .add_loopless_state(MyStates::AssetLoading)
+        .add_loading_state(
+            LoadingState::new(MyStates::AssetLoading)
+                .continue_to_state(MyStates::Next)
+                .with_collection::<ImageAssets>()
+                .with_collection::<AudioAssets>(),
+        )
+        .insert_resource(Msaa { samples: 1 })
         .add_plugins(DefaultPlugins)
         .add_enter_system(MyStates::Next, spawn_player_and_tree)
         .add_enter_system(MyStates::Next, play_background_audio)

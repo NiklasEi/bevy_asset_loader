@@ -1,16 +1,17 @@
 use bevy::prelude::*;
-use bevy_asset_loader::{AssetCollection, AssetLoader};
+use bevy_asset_loader::prelude::*;
 
 /// This example demonstrates how to load a standard material from a .png file
 ///
 /// Requires the feature '3d'
 fn main() {
-    let mut app = App::new();
-    AssetLoader::new(MyStates::AssetLoading)
-        .continue_to_state(MyStates::Next)
-        .with_collection::<MyAssets>()
-        .build(&mut app);
-    app.add_state(MyStates::AssetLoading)
+    App::new()
+        .add_loading_state(
+            LoadingState::new(MyStates::AssetLoading)
+                .continue_to_state(MyStates::Next)
+                .with_collection::<MyAssets>(),
+        )
+        .add_state(MyStates::AssetLoading)
         .insert_resource(Msaa { samples: 1 })
         .insert_resource(AmbientLight {
             color: Color::WHITE,

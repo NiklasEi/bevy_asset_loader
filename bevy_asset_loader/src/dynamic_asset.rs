@@ -80,12 +80,12 @@ impl DynamicAsset {
 
 /// Resource to dynamically resolve keys to asset paths.
 ///
-/// This resource is set by the [`AssetLoader`](crate::AssetLoader) and is read when entering a loading state.
-/// You should set your desired asset key and paths in a previous [`State`](::bevy::ecs::schedule::State).
+/// This resource is set by a [`LoadingState`](crate::loading_state::LoadingState) and is read when entering the corresponding Bevy [`State`](::bevy::ecs::schedule::State).
+/// If you want to manage your dynamic assets manually, they should be configured in a previous [`State`](::bevy::ecs::schedule::State).
 ///
 /// ```edition2021
 /// # use bevy::prelude::*;
-/// # use bevy_asset_loader::{DynamicAssets, AssetCollection, DynamicAsset};
+/// # use bevy_asset_loader::prelude::*;
 /// fn choose_character(
 ///     mut state: ResMut<State<GameState>>,
 ///     mut asset_keys: ResMut<DynamicAssets>,
@@ -141,7 +141,7 @@ impl DynamicAssets {
     /// In case the key is already known, its value will be overwritten.
     /// ```edition2021
     /// # use bevy::prelude::*;
-    /// # use bevy_asset_loader::{DynamicAssets, AssetCollection, DynamicAsset};
+    /// # use bevy_asset_loader::prelude::*;
     /// fn choose_character(
     ///     mut state: ResMut<State<GameState>>,
     ///     mut asset_keys: ResMut<DynamicAssets>,

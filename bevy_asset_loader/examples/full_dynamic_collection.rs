@@ -1,17 +1,18 @@
 use bevy::app::AppExit;
 use bevy::asset::LoadState;
 use bevy::prelude::*;
-use bevy_asset_loader::{AssetCollection, AssetLoader};
+use bevy_asset_loader::prelude::*;
 
 fn main() {
-    let mut app = App::new();
-    app.add_plugins(DefaultPlugins);
-    AssetLoader::new(MyStates::AssetLoading)
-        .continue_to_state(MyStates::Next)
-        .with_dynamic_asset_collection_file("my.assets")
-        .with_collection::<MyAssets>()
-        .build(&mut app);
-    app.add_state(MyStates::AssetLoading)
+    App::new()
+        .add_plugins(DefaultPlugins)
+        .add_loading_state(
+            LoadingState::new(MyStates::AssetLoading)
+                .continue_to_state(MyStates::Next)
+                .with_dynamic_asset_collection_file("my.assets")
+                .with_collection::<MyAssets>(),
+        )
+        .add_state(MyStates::AssetLoading)
         .add_system_set(SystemSet::on_update(MyStates::Next).with_system(expectations))
         .run();
 }

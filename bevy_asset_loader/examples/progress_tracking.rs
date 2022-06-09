@@ -1,7 +1,7 @@
 use bevy::app::AppExit;
 use bevy::asset::LoadState;
 use bevy::prelude::*;
-use bevy_asset_loader::{AssetCollection, AssetLoader};
+use bevy_asset_loader::prelude::*;
 use iyes_progress::{ProgressCounter, ProgressPlugin};
 
 /// This example shows how to track the loading progress of your collections using `iyes_progress`
@@ -11,12 +11,13 @@ use iyes_progress::{ProgressCounter, ProgressPlugin};
 /// completes after one second. At that point, `iyes_progress` will continue to the next state
 /// and the app will terminate.
 fn main() {
-    let mut app = App::new();
-    AssetLoader::new(MyStates::AssetLoading)
-        .with_collection::<TextureAssets>()
-        .with_collection::<AudioAssets>()
-        .build(&mut app);
-    app.add_state(MyStates::AssetLoading)
+    App::new()
+        .add_loading_state(
+            LoadingState::new(MyStates::AssetLoading)
+                .with_collection::<TextureAssets>()
+                .with_collection::<AudioAssets>(),
+        )
+        .add_state(MyStates::AssetLoading)
         .add_plugins(DefaultPlugins)
         // track progress during `MyStates::AssetLoading` and continue to `MyStates::Next` when progress is completed
         .add_plugin(ProgressPlugin::new(MyStates::AssetLoading).continue_to(MyStates::Next))
