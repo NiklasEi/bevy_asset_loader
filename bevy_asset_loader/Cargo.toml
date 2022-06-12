@@ -117,3 +117,4 @@ required-features = ["2d", "3d", "dynamic_assets"]
 [[example]]
 name = "custom_dynamic_assets"
 path = "examples/custom_dynamic_assets.rs"
+required-features = ["dynamic_assets"] # ToDo: remove feature (it should only enbale support for standard dynamic assets)

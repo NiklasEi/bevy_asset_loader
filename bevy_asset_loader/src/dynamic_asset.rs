@@ -1,7 +1,8 @@
 use bevy::utils::HashMap;
+use std::any::TypeId;
 use std::fmt::Debug;
 
-use bevy::asset::{AssetServer, HandleUntyped};
+use bevy::asset::{Asset, AssetServer, HandleUntyped};
 use bevy::ecs::world::World;
 
 use bevy::ecs::schedule::StateData;
@@ -125,18 +126,19 @@ impl DynamicAssets {
 
 /// This traits describes types that contain asset configurations and can
 /// register them in the [`DynamicAssets`] resource.
-pub trait DynamicAssetCollection {
+pub trait DynamicAssetCollection: Asset {
     /// Register all dynamic assets inside the collection in the [`DynamicAssets`] resource.
-    fn register(self, dynamic_assets: &mut DynamicAssets);
+    fn register(&self, dynamic_assets: &mut DynamicAssets);
 }
 
 /// Resource keeping track of dynamic asset collection files for different loading states
+#[derive(Debug)]
 pub struct DynamicAssetCollections<State: StateData> {
     /// Dynamic asset collection files for different loading states.
     ///
     /// The file lists get loaded and emptied at the beginning of the loading states.
     /// Make sure to add any file you would like to load before entering the loading state!
-    pub files: HashMap<State, Vec<String>>,
+    pub files: HashMap<State, HashMap<TypeId, Vec<String>>>,
     pub(crate) _marker: PhantomData<State>,
 }
 

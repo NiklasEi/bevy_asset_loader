@@ -1,4 +1,3 @@
-use bevy::asset::LoadState;
 use bevy::prelude::*;
 use bevy::utils::HashMap;
 use bevy_asset_loader::prelude::*;
@@ -6,23 +5,18 @@ use bevy_common_assets::ron::RonAssetPlugin;
 
 fn main() {
     App::new()
-        .add_loading_state(
-            LoadingState::new(MyStates::AssetLoading)
-                .continue_to_state(MyStates::Next)
-                .with_collection::<MyAssets>(),
-        )
-        .add_state(MyStates::CollectionLoading)
         .insert_resource(Msaa { samples: 1 })
         .add_plugins(DefaultPlugins)
         .add_plugin(RonAssetPlugin::<CustomDynamicAssetCollection>::new(&[
-            "assets",
+            "my-assets",
         ]))
-        .add_system_set(
-            SystemSet::on_enter(MyStates::CollectionLoading).with_system(start_collection_loading),
+        .add_loading_state(
+            LoadingState::new(MyStates::AssetLoading)
+                .continue_to_state(MyStates::Next)
+                .with_dynamic_collections::<CustomDynamicAssetCollection>(vec!["custom.my-assets"])
+                .with_collection::<MyAssets>(),
         )
-        .add_system_set(
-            SystemSet::on_update(MyStates::CollectionLoading).with_system(check_collection_loading),
-        )
+        .add_state(MyStates::AssetLoading)
         .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(render_stuff))
         .run();
 }
@@ -63,28 +57,6 @@ fn render_stuff(mut commands: Commands, assets: Res<MyAssets>) {
     });
 }
 
-struct LoadingCollection(Handle<CustomDynamicAssetCollection>);
-
-fn start_collection_loading(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.insert_resource(LoadingCollection(asset_server.load("custom.assets")));
-}
-
-fn check_collection_loading(
-    asset_server: Res<AssetServer>,
-    collection: Res<LoadingCollection>,
-    mut state: ResMut<State<MyStates>>,
-    mut collections: ResMut<Assets<CustomDynamicAssetCollection>>,
-    mut dynamic_assets: ResMut<DynamicAssets>,
-) {
-    if asset_server.get_load_state(collection.0.id) == LoadState::Loaded {
-        let collection = collections.remove(collection.0.clone()).unwrap();
-        collection.register(&mut dynamic_assets);
-        state
-            .set(MyStates::AssetLoading)
-            .expect("Failed to set state");
-    }
-}
-
 #[derive(AssetCollection)]
 struct MyAssets {
     #[asset(key = "combined_image")]
@@ -97,13 +69,13 @@ struct MyAssets {
     cube: Handle<Mesh>,
 }
 
-#[derive(serde::Deserialize, Debug)]
+#[derive(serde::Deserialize, Debug, Clone)]
 enum CustomDynamicAsset {
     CombinedImage {
         bottom_layer: String,
         top_layer: String,
     },
-    StandardMaterial {
+    StandardMaterialZ {
         base_color: [f32; 4],
         base_color_texture: String,
     },
@@ -122,7 +94,7 @@ impl DynamicAsset for CustomDynamicAsset {
                 asset_server.load_untyped(bottom_layer),
                 asset_server.load_untyped(top_layer),
             ],
-            CustomDynamicAsset::StandardMaterial {
+            CustomDynamicAsset::StandardMaterialZ {
                 base_color_texture, ..
             } => vec![asset_server.load_untyped(base_color_texture)],
             CustomDynamicAsset::Cube { .. } => vec![],
@@ -171,7 +143,7 @@ impl DynamicAsset for CustomDynamicAsset {
                     images.add(combined).clone_untyped(),
                 ))
             }
-            CustomDynamicAsset::StandardMaterial {
+            CustomDynamicAsset::StandardMaterialZ {
                 base_color_texture,
                 base_color,
             } => {
@@ -207,16 +179,15 @@ impl DynamicAsset for CustomDynamicAsset {
 pub struct CustomDynamicAssetCollection(HashMap<String, CustomDynamicAsset>);
 
 impl DynamicAssetCollection for CustomDynamicAssetCollection {
-    fn register(self, dynamic_assets: &mut DynamicAssets) {
-        for (key, asset) in self.0 {
-            dynamic_assets.register_asset(key, Box::new(asset));
+    fn register(&self, dynamic_assets: &mut DynamicAssets) {
+        for (key, asset) in self.0.iter() {
+            dynamic_assets.register_asset(key, Box::new(asset.clone()));
         }
     }
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 enum MyStates {
-    CollectionLoading,
     AssetLoading,
     Next,
 }

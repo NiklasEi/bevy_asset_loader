@@ -11,7 +11,7 @@ use bevy::utils::HashMap;
 
 /// These asset variants can be loaded from configuration files. They will then replace
 /// a dynamic asset based on their keys.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "dynamic_assets", derive(serde::Deserialize))]
 pub enum StandardDynamicAsset {
     /// A dynamic asset directly loaded from a single file
@@ -151,15 +151,12 @@ impl DynamicAsset for StandardDynamicAsset {
 /// and combined in [`DynamicAssets`](DynamicAssets).
 #[derive(serde::Deserialize, TypeUuid)]
 #[uuid = "2df82c01-9c71-4aa8-adc4-71c5824768f1"]
-#[cfg_attr(docsrs, doc(cfg(feature = "dynamic_assets")))]
-#[cfg(feature = "dynamic_assets")]
 pub struct StandardDynamicAssetCollection(pub HashMap<String, StandardDynamicAsset>);
 
-#[cfg(feature = "dynamic_assets")]
 impl DynamicAssetCollection for StandardDynamicAssetCollection {
-    fn register(self, dynamic_assets: &mut DynamicAssets) {
-        for (key, asset) in self.0 {
-            dynamic_assets.register_asset(key, Box::new(asset));
+    fn register(&self, dynamic_assets: &mut DynamicAssets) {
+        for (key, asset) in self.0.iter() {
+            dynamic_assets.register_asset(key, Box::new(asset.clone()));
         }
     }
 }
