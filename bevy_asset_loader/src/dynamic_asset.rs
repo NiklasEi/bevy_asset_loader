@@ -2,7 +2,7 @@ use bevy::utils::HashMap;
 use std::any::TypeId;
 use std::fmt::Debug;
 
-use bevy::asset::{Asset, AssetServer, HandleUntyped};
+use bevy::asset::{AssetServer, HandleUntyped};
 use bevy::ecs::world::World;
 
 use bevy::ecs::schedule::StateData;
@@ -126,7 +126,7 @@ impl DynamicAssets {
 
 /// This traits describes types that contain asset configurations and can
 /// register them in the [`DynamicAssets`] resource.
-pub trait DynamicAssetCollection: Asset {
+pub trait DynamicAssetCollection {
     /// Register all dynamic assets inside the collection in the [`DynamicAssets`] resource.
     fn register(&self, dynamic_assets: &mut DynamicAssets);
 }

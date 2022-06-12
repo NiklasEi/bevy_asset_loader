@@ -1,6 +1,6 @@
 use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssetCollections, DynamicAssets};
 use crate::loading_state::{AssetLoaderConfiguration, InternalLoadingState, LoadingAssetHandles};
-use bevy::asset::{AssetServer, Assets, LoadState};
+use bevy::asset::{Asset, AssetServer, Assets, LoadState};
 use bevy::ecs::change_detection::ResMut;
 use bevy::ecs::schedule::State;
 use bevy::ecs::schedule::StateData;
@@ -8,7 +8,7 @@ use bevy::ecs::system::{Res, SystemState};
 use bevy::ecs::world::World;
 use std::any::TypeId;
 
-pub(crate) fn load_dynamic_asset_collections<S: StateData, C: DynamicAssetCollection>(
+pub(crate) fn load_dynamic_asset_collections<S: StateData, C: DynamicAssetCollection + Asset>(
     world: &mut World,
 ) {
     #[allow(clippy::type_complexity)]
@@ -41,7 +41,7 @@ pub(crate) fn load_dynamic_asset_collections<S: StateData, C: DynamicAssetCollec
     }
 }
 
-pub(crate) fn check_dynamic_asset_collections<S: StateData, C: DynamicAssetCollection>(
+pub(crate) fn check_dynamic_asset_collections<S: StateData, C: DynamicAssetCollection + Asset>(
     world: &mut World,
 ) {
     {

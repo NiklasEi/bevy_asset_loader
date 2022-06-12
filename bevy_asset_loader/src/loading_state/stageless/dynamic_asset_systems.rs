@@ -10,7 +10,7 @@ use bevy::ecs::world::World;
 
 use iyes_loopless::prelude::{CurrentState, NextState};
 
-pub(crate) fn load_dynamic_asset_collections<S: StateData, C: DynamicAssetCollection>(
+pub(crate) fn load_dynamic_asset_collections<S: StateData, C: DynamicAssetCollection + Asset>(
     world: &mut World,
 ) {
     #[allow(clippy::type_complexity)]
@@ -43,7 +43,7 @@ pub(crate) fn load_dynamic_asset_collections<S: StateData, C: DynamicAssetCollec
     }
 }
 
-pub(crate) fn check_dynamic_asset_collections<S: StateData, C: DynamicAssetCollection>(
+pub(crate) fn check_dynamic_asset_collections<S: StateData, C: DynamicAssetCollection + Asset>(
     world: &mut World,
 ) {
     #[allow(clippy::type_complexity)]

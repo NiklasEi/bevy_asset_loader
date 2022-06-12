@@ -8,7 +8,7 @@ mod systems;
 mod stageless;
 
 use bevy::app::App;
-use bevy::asset::HandleUntyped;
+use bevy::asset::{Asset, HandleUntyped};
 #[cfg(not(feature = "stageless"))]
 use bevy::ecs::schedule::State;
 use bevy::ecs::schedule::{
@@ -340,7 +340,7 @@ where
     /// Todo
     #[must_use]
     #[cfg(not(feature = "stageless"))]
-    pub fn with_dynamic_collections<C: DynamicAssetCollection>(
+    pub fn with_dynamic_collections<C: DynamicAssetCollection + Asset>(
         mut self,
         mut files: Vec<&str>,
     ) -> Self {
@@ -366,7 +366,7 @@ where
     /// Todo
     #[must_use]
     #[cfg(feature = "stageless")]
-    pub fn with_dynamic_collections<C: DynamicAssetCollection>(
+    pub fn with_dynamic_collections<C: DynamicAssetCollection + Asset>(
         mut self,
         mut files: Vec<&str>,
     ) -> Self {
