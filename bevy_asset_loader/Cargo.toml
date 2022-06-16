@@ -60,6 +60,7 @@ path = "examples/init_resource.rs"
 [[example]]
 name = "manual_dynamic_asset"
 path = "examples/manual_dynamic_asset.rs"
+required-features = ["dynamic_assets"]
 
 [[example]]
 name = "dynamic_asset"
@@ -88,7 +89,7 @@ required-features = ["stageless"]
 [[example]]
 name = "stageless_manual_dynamic_asset"
 path = "examples/stageless_manual_dynamic_asset.rs"
-required-features = ["stageless"]
+required-features = ["stageless", "dynamic_assets"]
 
 [[example]]
 name = "stageless_progress"

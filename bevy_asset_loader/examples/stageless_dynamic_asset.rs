@@ -12,10 +12,9 @@ fn main() {
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading)
                 .continue_to_state(MyStates::Next)
-                // This call can be repeated for multiple `.assets` files
-                // You can also directly add files to the `DynamicAssetCollections<MyStates>`
-                // resource in systems running before the loading state
-                .with_dynamic_asset_collection_file("dynamic_asset.assets")
+                .with_dynamic_collections::<StandardDynamicAssetCollection>(vec![
+                    "dynamic_asset.assets",
+                ])
                 .with_collection::<ImageAssets>()
                 .with_collection::<AudioAssets>(),
         )

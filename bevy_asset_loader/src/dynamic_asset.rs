@@ -31,48 +31,7 @@ pub trait DynamicAsset: Debug + Send + Sync {
 /// This resource is set by a [`LoadingState`](crate::loading_state::LoadingState) and is read when entering the corresponding Bevy [`State`](::bevy::ecs::schedule::State).
 /// If you want to manage your dynamic assets manually, they should be configured in a previous [`State`](::bevy::ecs::schedule::State).
 ///
-/// ```edition2021
-/// # use bevy::prelude::*;
-/// # use bevy_asset_loader::prelude::*;
-/// fn choose_character(
-///     mut state: ResMut<State<GameState>>,
-///     mut asset_keys: ResMut<DynamicAssets>,
-///     mouse_input: Res<Input<MouseButton>>,
-/// ) {
-///     if mouse_input.just_pressed(MouseButton::Left) {
-///         asset_keys.register_asset(
-///             "character",
-///             Box::new(StandardDynamicAsset::File {
-///                 path: "images/female_adventurer.png".to_owned(),
-///             }),
-///         );
-///     } else if mouse_input.just_pressed(MouseButton::Right) {
-///         asset_keys.register_asset(
-///             "character",
-///             Box::new(StandardDynamicAsset::File {
-///                 path: "images/zombie.png".to_owned(),
-///             }),
-///         );
-///     } else {
-///         return;
-///     }
-///
-///     state
-///         .set(GameState::Loading)
-///         .expect("Failed to change state");
-/// }
-///
-/// #[derive(AssetCollection)]
-/// struct ImageAssets {
-///     #[asset(key = "character")]
-///     player: Handle<Image>,
-/// }
-/// # #[derive(Clone, Eq, PartialEq, Debug, Hash)]
-/// # enum GameState {
-/// #     Loading,
-/// #     Menu
-/// # }
-/// ```
+/// See the `manual_dynamic_asset` example.
 #[derive(Default)]
 pub struct DynamicAssets {
     key_asset_map: HashMap<String, Box<dyn DynamicAsset>>,
@@ -87,38 +46,6 @@ impl DynamicAssets {
     /// Set the corresponding dynamic asset for the given key.
     ///
     /// In case the key is already known, its value will be overwritten.
-    /// ```edition2021
-    /// # use bevy::prelude::*;
-    /// # use bevy_asset_loader::prelude::*;
-    /// fn choose_character(
-    ///     mut state: ResMut<State<GameState>>,
-    ///     mut asset_keys: ResMut<DynamicAssets>,
-    ///     mouse_input: Res<Input<MouseButton>>,
-    /// ) {
-    ///     if mouse_input.just_pressed(MouseButton::Left) {
-    ///         asset_keys.register_asset("character", Box::new(StandardDynamicAsset::File{path: "images/female_adventurer.png".to_owned()}))
-    ///     } else if mouse_input.just_pressed(MouseButton::Right) {
-    ///         asset_keys.register_asset("character", Box::new(StandardDynamicAsset::File{path: "images/zombie.png".to_owned()}))
-    ///     } else {
-    ///         return;
-    ///     }
-    ///
-    ///     state
-    ///         .set(GameState::Loading)
-    ///         .expect("Failed to change state");
-    /// }
-    ///
-    /// #[derive(AssetCollection)]
-    /// struct ImageAssets {
-    ///     #[asset(key = "character")]
-    ///     player: Handle<Image>,
-    /// }
-    /// # #[derive(Clone, Eq, PartialEq, Debug, Hash)]
-    /// # enum GameState {
-    /// #     Loading,
-    /// #     Menu
-    /// # }
-    /// ```
     pub fn register_asset<K: Into<String>>(&mut self, key: K, asset: Box<dyn DynamicAsset>) {
         self.key_asset_map.insert(key.into(), asset);
     }

@@ -9,7 +9,7 @@ fn main() {
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading)
                 .continue_to_state(MyStates::Next)
-                .with_dynamic_asset_collection_file("my.assets")
+                .with_dynamic_collections::<StandardDynamicAssetCollection>(vec!["my.assets"])
                 .with_collection::<MyAssets>(),
         )
         .add_state(MyStates::AssetLoading)

@@ -8,6 +8,8 @@ mod systems;
 mod stageless;
 
 use bevy::app::App;
+#[cfg(feature = "stageless")]
+use bevy::app::CoreStage;
 use bevy::asset::{Asset, HandleUntyped};
 #[cfg(not(feature = "stageless"))]
 use bevy::ecs::schedule::State;
@@ -769,13 +771,13 @@ where
         let mut dynamic_collections_for_state = dynamic_asset_collections
             .files
             .remove(&self.loading_state)
-            .unwrap_or_else(HashMap::default);
+            .unwrap_or_default();
         self.dynamic_asset_collections
             .drain()
             .for_each(|(id, mut files)| {
                 let mut dynamic_files = dynamic_collections_for_state
                     .remove(&id)
-                    .unwrap_or_else(Vec::new);
+                    .unwrap_or_default();
                 dynamic_files.append(&mut files);
                 dynamic_collections_for_state.insert(id, dynamic_files);
             });
@@ -928,13 +930,13 @@ where
         let mut dynamic_collections_for_state = dynamic_asset_collections
             .files
             .remove(&self.loading_state)
-            .unwrap_or_else(HashMap::default);
+            .unwrap_or_default();
         self.dynamic_asset_collections
             .drain()
             .for_each(|(id, mut files)| {
                 let mut dynamic_files = dynamic_collections_for_state
                     .remove(&id)
-                    .unwrap_or_else(Vec::new);
+                    .unwrap_or_default();
                 dynamic_files.append(&mut files);
                 dynamic_collections_for_state.insert(id, dynamic_files);
             });

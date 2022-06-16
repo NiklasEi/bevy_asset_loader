@@ -35,12 +35,12 @@
 //!         .run();
 //! }
 //!
-//! # #[cfg(all(feature="stageless"))]
+//! # #[cfg(feature="stageless")]
 //! # fn main() {
 //! #     App::new()
 //! #       .add_loopless_state(GameState::Loading)
 //! # /*
-//!         .add_plugins(DefaultPlugins)
+//! #       .add_plugins(DefaultPlugins)
 //! # */
 //! #       .add_plugins(MinimalPlugins)
 //! #       .init_resource::<iyes_progress::ProgressCounter>()
@@ -54,7 +54,7 @@
 //! #       .add_system(use_asset_handles.run_in_state(GameState::Next))
 //! #       .set_runner(|mut app| app.schedule.run(&mut app.world))
 //! #       .run();
-//! }
+//! # }
 //!
 //! #[derive(AssetCollection)]
 //! struct AudioAssets {

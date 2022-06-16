@@ -2,8 +2,7 @@ use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssetCollections, Dyna
 use crate::loading_state::{AssetLoaderConfiguration, InternalLoadingState, LoadingAssetHandles};
 use bevy::asset::{Asset, AssetServer, Assets, LoadState};
 use bevy::ecs::change_detection::ResMut;
-use bevy::ecs::schedule::State;
-use bevy::ecs::schedule::StateData;
+use bevy::ecs::schedule::{State, StateData};
 use bevy::ecs::system::{Res, SystemState};
 use bevy::ecs::world::World;
 use std::any::TypeId;

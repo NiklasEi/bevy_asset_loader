@@ -114,12 +114,9 @@ fn count_loaded_handles<S: StateData, Assets: AssetCollection>(
 }
 
 pub(crate) fn initialize_loading_state(mut commands: Commands) {
-    #[cfg(feature = "dynamic_assets")]
     commands.insert_resource(NextState(
         InternalLoadingState::LoadingDynamicAssetCollections,
     ));
-    #[cfg(not(feature = "dynamic_assets"))]
-    commands.insert_resource(NextState(InternalLoadingState::LoadingAssets));
 }
 
 pub(crate) fn finish_loading_state<S: StateData>(

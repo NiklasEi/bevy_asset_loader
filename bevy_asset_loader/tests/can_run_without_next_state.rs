@@ -33,8 +33,8 @@ fn can_run_without_next_state() {
 }
 
 fn timeout(time: Res<Time>) {
-    if time.seconds_since_startup() > 10. {
-        panic!("The asset loader did not load the collection in 10 seconds");
+    if time.seconds_since_startup() > 30. {
+        panic!("The asset loader did not load the collection in 30 seconds");
     }
 }
 
