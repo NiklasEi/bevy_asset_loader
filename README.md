@@ -11,7 +11,7 @@ In most cases you will want to load your asset collections during loading states
 
 Asset configurations, like their file path or dimensions of sprite sheets, can be given at compile time (through derive macro attributes), or at run time (see ["Dynamic assets"](#dynamic-assets)). The second, allows managing asset configurations as assets. That means you can keep a list of your asset files and their properties in asset files. The main benefit of using dynamic assets is a cleaner split of code and data leading to less recompiles while working on your assets. It also makes your game more approachable for people that want to contribute without touching code.
 
-_`bevy_asset_loader` supports `iyes_loopless` states with the [`stageless`](#stageless) feature._
+_`bevy_asset_loader` supports `iyes_loopless` states with the [`stageless`](#stageless-support) feature._
 
 _The `main` branch and the latest release support Bevy version `0.7` (see [version table](#compatible-bevy-versions))_
 
