@@ -7,6 +7,7 @@ fn main() {
     App::new()
         .insert_resource(Msaa { samples: 1 })
         .add_plugins(DefaultPlugins)
+        // We need to make sure that our dynamic asset collections can be loaded from the asset file
         .add_plugin(RonAssetPlugin::<CustomDynamicAssetCollection>::new(&[
             "my-assets",
         ]))

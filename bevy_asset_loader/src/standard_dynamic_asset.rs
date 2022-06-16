@@ -2,17 +2,13 @@ use crate::dynamic_asset::{DynamicAsset, DynamicAssetType};
 use bevy::asset::{AssetServer, HandleUntyped};
 use bevy::ecs::world::World;
 
-#[cfg(feature = "dynamic_assets")]
 use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssets};
-#[cfg(feature = "dynamic_assets")]
 use bevy::reflect::TypeUuid;
-#[cfg(feature = "dynamic_assets")]
 use bevy::utils::HashMap;
 
 /// These asset variants can be loaded from configuration files. They will then replace
 /// a dynamic asset based on their keys.
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "dynamic_assets", derive(serde::Deserialize))]
+#[derive(Debug, Clone, serde::Deserialize)]
 pub enum StandardDynamicAsset {
     /// A dynamic asset directly loaded from a single file
     File {
