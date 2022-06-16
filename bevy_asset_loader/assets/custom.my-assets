@@ -1,9 +1,9 @@
 ({
-    "tree_standard_material": StandardMaterialZ (
+    "tree_standard_material": StandardMaterial (
         base_color: (0.1, 10., 0.3, 0.0),
         base_color_texture: "images/tree.png"
     ),
-    "player_standard_material": StandardMaterialZ (
+    "player_standard_material": StandardMaterial (
         base_color: (0.0, 1.0, 0.0, 0.0),
         base_color_texture: "images/player.png"
     ),

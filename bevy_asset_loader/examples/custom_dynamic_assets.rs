@@ -75,7 +75,7 @@ enum CustomDynamicAsset {
         bottom_layer: String,
         top_layer: String,
     },
-    StandardMaterialZ {
+    StandardMaterial {
         base_color: [f32; 4],
         base_color_texture: String,
     },
@@ -94,7 +94,7 @@ impl DynamicAsset for CustomDynamicAsset {
                 asset_server.load_untyped(bottom_layer),
                 asset_server.load_untyped(top_layer),
             ],
-            CustomDynamicAsset::StandardMaterialZ {
+            CustomDynamicAsset::StandardMaterial {
                 base_color_texture, ..
             } => vec![asset_server.load_untyped(base_color_texture)],
             CustomDynamicAsset::Cube { .. } => vec![],
@@ -143,7 +143,7 @@ impl DynamicAsset for CustomDynamicAsset {
                     images.add(combined).clone_untyped(),
                 ))
             }
-            CustomDynamicAsset::StandardMaterialZ {
+            CustomDynamicAsset::StandardMaterial {
                 base_color_texture,
                 base_color,
             } => {
