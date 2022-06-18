@@ -37,11 +37,15 @@ use systems::{
 };
 
 #[cfg(not(feature = "stageless"))]
-use dynamic_asset_systems::{check_dynamic_asset_collections, load_dynamic_asset_collections};
+use dynamic_asset_systems::{
+    check_dynamic_asset_collections, load_dynamic_asset_collections,
+    resume_to_loading_asset_collections,
+};
 
 #[cfg(feature = "stageless")]
 use stageless::dynamic_asset_systems::{
     check_dynamic_asset_collections, load_dynamic_asset_collections,
+    resume_to_loading_asset_collections,
 };
 
 #[cfg(feature = "dynamic_assets")]
@@ -725,7 +729,6 @@ where
     #[allow(unused_mut)]
     pub fn build(mut self, app: &mut App) {
         app.init_resource::<AssetLoaderConfiguration<S>>();
-        app.init_resource::<LoadingStateSchedules<S>>();
         {
             let mut asset_loader_configuration = app
                 .world
@@ -736,6 +739,7 @@ where
                 LoadingConfiguration::new(self.next_state.clone()),
             );
         }
+        app.init_resource::<LoadingStateSchedules<S>>();
 
         let mut loading_schedule = Schedule::default();
         let mut update = SystemStage::parallel();
@@ -786,6 +790,9 @@ where
             .insert(self.loading_state.clone(), dynamic_collections_for_state);
 
         update.add_system_set(self.start_loading_dynamic_collections);
+        self.check_loading_dynamic_collections = self
+            .check_loading_dynamic_collections
+            .with_system(resume_to_loading_asset_collections::<S>);
         update.add_system_set(self.check_loading_dynamic_collections);
         update.add_system_set(self.initialize_dependencies);
 
@@ -957,6 +964,9 @@ where
                 .into(),
         );
 
+        self.check_loading_dynamic_collections = self
+            .check_loading_dynamic_collections
+            .with_system(resume_to_loading_asset_collections::<S>);
         update.add_system_set(self.check_loading_dynamic_collections);
         update.add_system_set(self.check_loading_collections);
         update.add_system_set(
@@ -982,6 +992,7 @@ where
             .insert(self.loading_state.clone(), loading_schedule);
 
         app.add_enter_system(self.loading_state.clone(), reset_loading_state);
+        app.add_loopless_state(InternalLoadingState::Initialize);
 
         #[cfg(feature = "progress_tracking")]
         let loading_state_system =

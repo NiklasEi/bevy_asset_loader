@@ -2,9 +2,8 @@ use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssetCollections, Dyna
 use crate::loading_state::{AssetLoaderConfiguration, InternalLoadingState, LoadingAssetHandles};
 use bevy::asset::{Asset, AssetServer, Assets, LoadState};
 use bevy::ecs::change_detection::ResMut;
-
 use bevy::ecs::schedule::StateData;
-use bevy::ecs::system::{Res, SystemState};
+use bevy::ecs::system::{Commands, Res, SystemState};
 use bevy::ecs::world::World;
 use std::any::TypeId;
 
@@ -39,9 +38,11 @@ pub(crate) fn load_dynamic_asset_collections<S: StateData, C: DynamicAssetCollec
             .push(asset_server.load_untyped(&file));
     }
 
-    if let Some(mut config) = asset_loader_config.configuration.get_mut(&state.0) {
-        config.loading_dynamic_collections += 1;
-    }
+    let mut config = asset_loader_config
+        .configuration
+        .get_mut(&state.0)
+        .expect("No asset loader configuration for current state");
+    config.loading_dynamic_collections += 1;
 }
 
 pub(crate) fn check_dynamic_asset_collections<S: StateData, C: DynamicAssetCollection + Asset>(
@@ -79,13 +80,25 @@ pub(crate) fn check_dynamic_asset_collections<S: StateData, C: DynamicAssetColle
             let collection = dynamic_asset_collections.get(collection).unwrap();
             collection.register(&mut asset_keys);
         }
-
-        if let Some(mut config) = asset_loader_config.configuration.get_mut(&state.0) {
-            config.loading_dynamic_collections -= 1;
-            if config.loading_dynamic_collections == 0 {
-                world.insert_resource(NextState(InternalLoadingState::LoadingAssets));
-            }
-        }
+        let mut config = asset_loader_config
+            .configuration
+            .get_mut(&state.0)
+            .expect("No asset loader configuration for current state");
+        config.loading_dynamic_collections -= 1;
     }
     world.remove_resource::<LoadingAssetHandles<C>>();
+}
+
+pub(crate) fn resume_to_loading_asset_collections<S: StateData>(
+    mut commands: Commands,
+    state: Res<CurrentState<S>>,
+    asset_loader_config: Res<AssetLoaderConfiguration<S>>,
+) {
+    let config = asset_loader_config
+        .configuration
+        .get(&state.0)
+        .expect("No asset loader configuration for current state");
+    if config.loading_dynamic_collections == 0 {
+        commands.insert_resource(NextState(InternalLoadingState::LoadingAssets));
+    }
 }

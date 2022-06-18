@@ -49,7 +49,6 @@ pub(crate) fn check_dynamic_asset_collections<S: StateData, C: DynamicAssetColle
             Res<AssetServer>,
             Option<ResMut<LoadingAssetHandles<C>>>,
             Res<State<S>>,
-            ResMut<State<InternalLoadingState>>,
             Res<Assets<C>>,
             ResMut<DynamicAssets>,
             ResMut<AssetLoaderConfiguration<S>>,
@@ -58,7 +57,6 @@ pub(crate) fn check_dynamic_asset_collections<S: StateData, C: DynamicAssetColle
             asset_server,
             mut loading_collections,
             state,
-            mut loading_state,
             dynamic_asset_collections,
             mut asset_keys,
             mut asset_loader_config,
@@ -77,14 +75,27 @@ pub(crate) fn check_dynamic_asset_collections<S: StateData, C: DynamicAssetColle
             let collection = dynamic_asset_collections.get(collection).unwrap();
             collection.register(&mut asset_keys);
         }
-        if let Some(mut config) = asset_loader_config.configuration.get_mut(state.current()) {
-            config.loading_dynamic_collections -= 1;
-            if config.loading_dynamic_collections == 0 {
-                loading_state
-                    .set(InternalLoadingState::LoadingAssets)
-                    .expect("Failed to set loading State");
-            }
-        }
+        let mut config = asset_loader_config
+            .configuration
+            .get_mut(state.current())
+            .expect("No asset loader configuration for current state");
+        config.loading_dynamic_collections -= 1;
     }
     world.remove_resource::<LoadingAssetHandles<C>>();
+}
+
+pub(crate) fn resume_to_loading_asset_collections<S: StateData>(
+    state: Res<State<S>>,
+    mut loading_state: ResMut<State<InternalLoadingState>>,
+    asset_loader_config: Res<AssetLoaderConfiguration<S>>,
+) {
+    let config = asset_loader_config
+        .configuration
+        .get(state.current())
+        .expect("No asset loader configuration for current state");
+    if config.loading_dynamic_collections == 0 {
+        loading_state
+            .set(InternalLoadingState::LoadingAssets)
+            .expect("Failed to set loading State");
+    }
 }

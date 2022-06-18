@@ -148,5 +148,5 @@ pub(crate) fn run_loading_state<S: StateData>(world: &mut World) {
 }
 
 pub(crate) fn reset_loading_state(mut commands: Commands) {
-    commands.insert_resource(NextState(InternalLoadingState::Initialize));
+    commands.insert_resource(CurrentState(InternalLoadingState::Initialize));
 }
