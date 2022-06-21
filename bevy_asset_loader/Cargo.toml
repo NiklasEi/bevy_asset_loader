@@ -27,12 +27,12 @@ bevy_asset_loader_derive = { version = "=0.11.0", path = "../bevy_asset_loader_d
 bevy_asset_ron = { version = "0.4", optional = true }
 serde = { version = "1", optional = true }
 iyes_progress = { version = "0.3", optional = true }
-iyes_loopless = { version = "0.5", optional = true }
+iyes_loopless = { version = "0.6", optional = true }
 
 [dev-dependencies]
 bevy = { version = "0.7", features = ["vorbis"] }
 iyes_progress = { version = "0.3" }
-iyes_loopless = { version = "0.5" }
+iyes_loopless = { version = "0.6.1" }
 trybuild = { version = "1.0" }
 bevy-inspector-egui = { version = "0.10.0" }
 
