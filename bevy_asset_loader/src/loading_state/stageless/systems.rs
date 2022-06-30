@@ -49,6 +49,11 @@ pub(crate) fn start_loading_collection<S: StateData, Assets: AssetCollection>(wo
 }
 
 pub(crate) fn check_loading_collection<S: StateData, Assets: AssetCollection>(world: &mut World) {
+    if let Some(state) = world.get_resource::<CurrentState<InternalLoadingState>>() {
+        if state.0 != InternalLoadingState::LoadingAssets {
+            return;
+        }
+    }
     if let Some((done, total, option_loading_collections)) =
         count_loaded_handles::<S, Assets>(world)
     {
@@ -113,7 +118,13 @@ fn count_loaded_handles<S: StateData, Assets: AssetCollection>(
     Some((done as u32, total as u32, loading_collections))
 }
 
-pub(crate) fn initialize_loading_state(mut commands: Commands) {
+pub(crate) fn initialize_loading_state(
+    mut commands: Commands,
+    internal_state: Res<CurrentState<InternalLoadingState>>,
+) {
+    if internal_state.0 != InternalLoadingState::Initialize {
+        return;
+    }
     commands.insert_resource(NextState(
         InternalLoadingState::LoadingDynamicAssetCollections,
     ));

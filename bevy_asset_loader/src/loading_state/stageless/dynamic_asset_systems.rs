@@ -10,24 +10,12 @@ use std::any::TypeId;
 use iyes_loopless::prelude::{CurrentState, NextState};
 
 pub(crate) fn load_dynamic_asset_collections<S: StateData, C: DynamicAssetCollection + Asset>(
-    world: &mut World,
+    mut dynamic_asset_collections: ResMut<DynamicAssetCollections<S>>,
+    mut loading_collections: ResMut<LoadingAssetHandles<C>>,
+    asset_server: Res<AssetServer>,
+    state: Res<CurrentState<S>>,
+    mut asset_loader_config: ResMut<AssetLoaderConfiguration<S>>,
 ) {
-    #[allow(clippy::type_complexity)]
-    let mut system_state: SystemState<(
-        ResMut<DynamicAssetCollections<S>>,
-        ResMut<LoadingAssetHandles<C>>,
-        Res<AssetServer>,
-        Res<CurrentState<S>>,
-        ResMut<AssetLoaderConfiguration<S>>,
-    )> = SystemState::new(world);
-    let (
-        mut dynamic_asset_collections,
-        mut loading_collections,
-        asset_server,
-        state,
-        mut asset_loader_config,
-    ) = system_state.get_mut(world);
-
     let files = dynamic_asset_collections
         .files
         .get_mut(&state.0)
@@ -48,6 +36,11 @@ pub(crate) fn load_dynamic_asset_collections<S: StateData, C: DynamicAssetCollec
 pub(crate) fn check_dynamic_asset_collections<S: StateData, C: DynamicAssetCollection + Asset>(
     world: &mut World,
 ) {
+    if let Some(state) = world.get_resource::<CurrentState<InternalLoadingState>>() {
+        if state.0 != InternalLoadingState::LoadingDynamicAssetCollections {
+            return;
+        }
+    }
     {
         #[allow(clippy::type_complexity)]
         let mut system_state: SystemState<(
@@ -92,8 +85,12 @@ pub(crate) fn check_dynamic_asset_collections<S: StateData, C: DynamicAssetColle
 pub(crate) fn resume_to_loading_asset_collections<S: StateData>(
     mut commands: Commands,
     state: Res<CurrentState<S>>,
+    internal_state: Res<CurrentState<InternalLoadingState>>,
     asset_loader_config: Res<AssetLoaderConfiguration<S>>,
 ) {
+    if internal_state.0 != InternalLoadingState::LoadingDynamicAssetCollections {
+        return;
+    }
     let config = asset_loader_config
         .configuration
         .get(&state.0)

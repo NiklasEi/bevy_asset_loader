@@ -29,13 +29,13 @@ anyhow = "1"
 bevy_common_assets = { version = "0.2", features = ["ron"], optional = true }
 serde = { version = "1", optional = true }
 iyes_progress = { version = "0.3", optional = true }
-iyes_loopless = { version = "0.6", optional = true }
+iyes_loopless = { git = "https://github.com/NiklasEi/iyes_loopless", branch = "loopless-schedule-ext-trait", optional = true }
 
 [dev-dependencies]
 bevy = { version = "0.7", features = ["vorbis"] }
 anyhow = "1"
 iyes_progress = { version = "0.3" }
-iyes_loopless = { version = "0.6" }
+iyes_loopless = { git = "https://github.com/NiklasEi/iyes_loopless", branch = "loopless-schedule-ext-trait" }
 bevy_common_assets = { version = "0.2", features = ["ron"] }
 serde = { version = "1" }
 trybuild = { version = "1.0" }
