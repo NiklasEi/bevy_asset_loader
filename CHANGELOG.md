@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.12.0
+- `App` extension trait making adding loading states a lot nicer ([#58](https://github.com/NiklasEi/bevy_asset_loader/issues/58))
+- Custom dynamic assets ([#55](https://github.com/NiklasEi/bevy_asset_loader/issues/55))
+- Added a prelude
+- Documentation fixes and improvements
+
 ## v0.11.0
 - Support progress tracking through `iyes_progress` ([#6](https://github.com/NiklasEi/bevy_asset_loader/issues/6))
 - Use `FromWorld` instead of `Default` for fields without attributes
