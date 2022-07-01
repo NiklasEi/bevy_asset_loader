@@ -2,7 +2,7 @@
 
 [![crates.io](https://img.shields.io/crates/v/bevy_asset_loader.svg)](https://crates.io/crates/bevy_asset_loader)
 [![docs](https://docs.rs/bevy_asset_loader/badge.svg)](https://docs.rs/bevy_asset_loader)
-[![license](https://img.shields.io/crates/l/bevy_asset_loader)](https://github.com/NiklasEi/bevy_asset_loader/blob/main/LICENSE.md)
+[![license](https://img.shields.io/crates/l/bevy_asset_loader)](https://github.com/NiklasEi/bevy_asset_loader#license)
 [![crates.io](https://img.shields.io/crates/d/bevy_asset_loader.svg)](https://crates.io/crates/bevy_asset_loader)
 
 This [Bevy][bevy] plugin reduces boilerplate for handling game assets. The crate offers the derivable `AssetCollection` trait and can automatically load structs that implement it. Asset collections contain handles to your game assets and are available to your systems as resources after loading.
@@ -411,7 +411,7 @@ Compatibility of `bevy_asset_loader` versions:
 
 ## License
 
-Licensed under either of
+Dual-licensed under either of
 
 - Apache License, Version 2.0, ([LICENSE-APACHE](/LICENSE-APACHE) or https://www.apache.org/licenses/LICENSE-2.0)
 - MIT license ([LICENSE-MIT](/LICENSE-MIT) or https://opensource.org/licenses/MIT)
