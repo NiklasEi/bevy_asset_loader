@@ -35,12 +35,12 @@
 //!         .run();
 //! }
 //!
-//! # #[cfg(all(feature="stageless"))]
+//! # #[cfg(feature="stageless")]
 //! # fn main() {
 //! #     App::new()
 //! #       .add_loopless_state(GameState::Loading)
 //! # /*
-//!         .add_plugins(DefaultPlugins)
+//! #       .add_plugins(DefaultPlugins)
 //! # */
 //! #       .add_plugins(MinimalPlugins)
 //! #       .init_resource::<iyes_progress::ProgressCounter>()
@@ -54,7 +54,7 @@
 //! #       .add_system(use_asset_handles.run_in_state(GameState::Next))
 //! #       .set_runner(|mut app| app.schedule.run(&mut app.world))
 //! #       .run();
-//! }
+//! # }
 //!
 //! #[derive(AssetCollection)]
 //! struct AudioAssets {
@@ -97,16 +97,23 @@ pub mod asset_collection;
 pub mod dynamic_asset;
 /// A game state responsible for loading assets
 pub mod loading_state;
+/// Dynamic assets for common Bevy asset types
+#[cfg_attr(docsrs, doc(cfg(feature = "dynamic_assets")))]
+#[cfg(feature = "dynamic_assets")]
+pub mod standard_dynamic_asset;
 
 #[doc(hidden)]
 pub mod prelude {
     #[doc(hidden)]
     #[cfg(feature = "dynamic_assets")]
-    pub use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssetCollections};
+    pub use crate::standard_dynamic_asset::{StandardDynamicAsset, StandardDynamicAssetCollection};
     #[doc(hidden)]
     pub use crate::{
         asset_collection::{AssetCollection, AssetCollectionApp, AssetCollectionWorld},
-        dynamic_asset::{DynamicAsset, DynamicAssets},
+        dynamic_asset::{
+            DynamicAsset, DynamicAssetCollection, DynamicAssetCollections, DynamicAssetType,
+            DynamicAssets,
+        },
         loading_state::{LoadingState, LoadingStateAppExt},
     };
 }

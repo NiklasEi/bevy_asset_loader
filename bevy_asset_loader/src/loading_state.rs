@@ -1,4 +1,4 @@
-#[cfg(all(feature = "dynamic_assets", not(feature = "stageless")))]
+#[cfg(not(feature = "stageless"))]
 mod dynamic_asset_systems;
 
 #[cfg(not(feature = "stageless"))]
@@ -8,20 +8,23 @@ mod systems;
 mod stageless;
 
 use bevy::app::App;
-use bevy::asset::HandleUntyped;
+#[cfg(feature = "stageless")]
+use bevy::app::CoreStage;
+use bevy::asset::{Asset, HandleUntyped};
 #[cfg(not(feature = "stageless"))]
 use bevy::ecs::schedule::State;
 use bevy::ecs::schedule::{
     ExclusiveSystemDescriptorCoercion, Schedule, StateData, SystemSet, SystemStage,
 };
-use bevy::ecs::system::IntoExclusiveSystem;
+use bevy::ecs::system::{Commands, IntoExclusiveSystem};
 use bevy::ecs::world::FromWorld;
-#[cfg(feature = "stageless")]
-use bevy::prelude::CoreStage;
 use bevy::utils::HashMap;
+use std::any::TypeId;
 use std::marker::PhantomData;
 
 use crate::asset_collection::AssetCollection;
+use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssetCollections};
+
 #[cfg(feature = "stageless")]
 use stageless::systems::{
     check_loading_collection, finish_loading_state, init_resource, initialize_loading_state,
@@ -33,19 +36,23 @@ use systems::{
     reset_loading_state, run_loading_state, start_loading_collection,
 };
 
-#[cfg(all(feature = "dynamic_assets", not(feature = "stageless")))]
-use dynamic_asset_systems::{check_dynamic_asset_collections, load_dynamic_asset_collections};
+#[cfg(not(feature = "stageless"))]
+use dynamic_asset_systems::{
+    check_dynamic_asset_collections, load_dynamic_asset_collections,
+    resume_to_loading_asset_collections,
+};
 
-#[cfg(all(feature = "dynamic_assets", feature = "stageless"))]
+#[cfg(feature = "stageless")]
 use stageless::dynamic_asset_systems::{
     check_dynamic_asset_collections, load_dynamic_asset_collections,
+    resume_to_loading_asset_collections,
 };
 
 #[cfg(feature = "dynamic_assets")]
-use bevy_asset_ron::RonAssetPlugin;
+use bevy_common_assets::ron::RonAssetPlugin;
 
 #[cfg(feature = "dynamic_assets")]
-use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssetCollections};
+use crate::standard_dynamic_asset::{StandardDynamicAsset, StandardDynamicAssetCollection};
 
 #[cfg(feature = "progress_tracking")]
 use iyes_progress::ProgressSystemLabel;
@@ -54,10 +61,7 @@ use iyes_progress::ProgressSystemLabel;
 use iyes_loopless::prelude::{AppLooplessStateExt, ConditionSet};
 
 #[cfg(feature = "stageless")]
-use iyes_loopless::state::app::StateTransitionStageLabel;
-
-#[cfg(feature = "stageless")]
-use iyes_loopless::state::StateTransitionStage;
+use iyes_loopless::state::schedule::ScheduleLooplessStateExt;
 
 use crate::dynamic_asset::{DynamicAsset, DynamicAssets};
 
@@ -134,21 +138,18 @@ use crate::dynamic_asset::{DynamicAsset, DynamicAssets};
 pub struct LoadingState<State> {
     next_state: Option<State>,
     loading_state: State,
-    dynamic_assets: HashMap<String, DynamicAsset>,
-    collection_count: usize,
-    check_loading_assets: SystemSet,
-    #[cfg(not(feature = "stageless"))]
-    start_loading_assets: SystemSet,
-    #[cfg(not(feature = "stageless"))]
+    dynamic_assets: HashMap<String, Box<dyn DynamicAsset>>,
+    check_loading_collections: SystemSet,
+    check_loading_dynamic_collections: SystemSet,
+    initialize_dependencies: SystemSet,
+    start_loading_dynamic_collections: SystemSet,
+    start_loading_collections: SystemSet,
     initialize_resources: SystemSet,
 
-    #[cfg(feature = "dynamic_assets")]
-    dynamic_asset_collection_file_endings: Vec<&'static str>,
-    #[cfg(feature = "dynamic_assets")]
-    dynamic_asset_collections: Vec<String>,
+    dynamic_asset_collections: HashMap<TypeId, Vec<String>>,
 
-    #[cfg(feature = "stageless")]
-    loading_transition_stage: StateTransitionStage<InternalLoadingState>,
+    #[cfg(feature = "dynamic_assets")]
+    standard_dynamic_asset_collection_file_endings: Vec<&'static str>,
 }
 
 impl<S> LoadingState<S>
@@ -196,20 +197,26 @@ where
     /// #     pub tree: Handle<Image>,
     /// # }
     /// ```
+    #[must_use]
     #[cfg(not(feature = "stageless"))]
     pub fn new(load: S) -> LoadingState<S> {
         Self {
             next_state: None,
             loading_state: load,
             dynamic_assets: HashMap::default(),
-            collection_count: 0,
-            start_loading_assets: SystemSet::on_enter(InternalLoadingState::LoadingAssets),
-            check_loading_assets: SystemSet::on_update(InternalLoadingState::LoadingAssets),
+            initialize_dependencies: SystemSet::on_exit(InternalLoadingState::Initialize),
+            start_loading_collections: SystemSet::on_enter(InternalLoadingState::LoadingAssets),
+            start_loading_dynamic_collections: SystemSet::on_enter(
+                InternalLoadingState::LoadingDynamicAssetCollections,
+            ),
+            check_loading_collections: SystemSet::on_update(InternalLoadingState::LoadingAssets),
+            check_loading_dynamic_collections: SystemSet::on_update(
+                InternalLoadingState::LoadingDynamicAssetCollections,
+            ),
             initialize_resources: SystemSet::on_enter(InternalLoadingState::Finalize),
+            dynamic_asset_collections: Default::default(),
             #[cfg(feature = "dynamic_assets")]
-            dynamic_asset_collection_file_endings: vec!["assets"],
-            #[cfg(feature = "dynamic_assets")]
-            dynamic_asset_collections: vec![],
+            standard_dynamic_asset_collection_file_endings: vec!["assets"],
         }
     }
 
@@ -255,21 +262,26 @@ where
     /// #     pub tree: Handle<Image>,
     /// # }
     /// ```
+    #[must_use]
     #[cfg(feature = "stageless")]
     pub fn new(load: S) -> LoadingState<S> {
         Self {
             next_state: None,
             loading_state: load,
             dynamic_assets: HashMap::default(),
-            collection_count: 0,
-            check_loading_assets: ConditionSet::new()
+            check_loading_collections: ConditionSet::new()
                 .run_in_state(InternalLoadingState::LoadingAssets)
                 .into(),
-            loading_transition_stage: StateTransitionStage::new(InternalLoadingState::Initialize),
+            check_loading_dynamic_collections: ConditionSet::new()
+                .run_in_state(InternalLoadingState::LoadingDynamicAssetCollections)
+                .into(),
+            initialize_dependencies: Default::default(),
+            start_loading_dynamic_collections: Default::default(),
+            start_loading_collections: Default::default(),
             #[cfg(feature = "dynamic_assets")]
-            dynamic_asset_collection_file_endings: vec!["assets"],
-            #[cfg(feature = "dynamic_assets")]
-            dynamic_asset_collections: vec![],
+            standard_dynamic_asset_collection_file_endings: vec!["assets"],
+            dynamic_asset_collections: Default::default(),
+            initialize_resources: Default::default(),
         }
     }
 
@@ -314,8 +326,75 @@ where
     /// #     pub tree: Handle<Image>,
     /// # }
     /// ```
+    #[must_use]
     pub fn continue_to_state(mut self, next: S) -> Self {
         self.next_state = Some(next);
+
+        self
+    }
+
+    /// Register files to be loaded as a certain type of [`DynamicAssetCollection`]
+    ///
+    /// During the loading state, the given dynamic asset collections will be loaded and their
+    /// content registered. This will happen before trying to resolve any dynamic assets
+    /// as part of asset collections.
+    ///
+    /// You need to register a loader for your asset type yourself.
+    /// If you want to see some code, take a look at the `custom_dynamic_assets` example.
+    #[must_use]
+    #[cfg(not(feature = "stageless"))]
+    pub fn with_dynamic_collections<C: DynamicAssetCollection + Asset>(
+        mut self,
+        mut files: Vec<&str>,
+    ) -> Self {
+        self.dynamic_asset_collections.insert(
+            TypeId::of::<C>(),
+            files.drain(..).map(|file| file.to_owned()).collect(),
+        );
+        self.start_loading_dynamic_collections = self
+            .start_loading_dynamic_collections
+            .with_system(load_dynamic_asset_collections::<S, C>.exclusive_system());
+        self.check_loading_dynamic_collections = self
+            .check_loading_dynamic_collections
+            .with_system(check_dynamic_asset_collections::<S, C>.exclusive_system());
+        self.initialize_dependencies =
+            self.initialize_dependencies
+                .with_system(|mut commands: Commands| {
+                    commands.init_resource::<LoadingAssetHandles<C>>();
+                });
+
+        self
+    }
+
+    /// Register files to be loaded as a certain type of [`DynamicAssetCollection`]
+    ///
+    /// During the loading state, the given dynamic asset collections will be loaded and their
+    /// content registered. This will happen before trying to resolve any dynamic assets
+    /// as part of asset collections.
+    ///
+    /// You need to register a loader for your asset type yourself.
+    /// If you want to see some code, take a look at the `custom_dynamic_assets` example.
+    #[must_use]
+    #[cfg(feature = "stageless")]
+    pub fn with_dynamic_collections<C: DynamicAssetCollection + Asset>(
+        mut self,
+        mut files: Vec<&str>,
+    ) -> Self {
+        self.dynamic_asset_collections.insert(
+            TypeId::of::<C>(),
+            files.drain(..).map(|file| file.to_owned()).collect(),
+        );
+        self.start_loading_dynamic_collections = self
+            .start_loading_dynamic_collections
+            .with_system(load_dynamic_asset_collections::<S, C>);
+        self.check_loading_dynamic_collections = self
+            .check_loading_dynamic_collections
+            .with_system(check_dynamic_asset_collections::<S, C>.exclusive_system());
+        self.initialize_dependencies =
+            self.initialize_dependencies
+                .with_system(|mut commands: Commands| {
+                    commands.init_resource::<LoadingAssetHandles<C>>();
+                });
 
         self
     }
@@ -360,15 +439,15 @@ where
     /// #     pub tree: Handle<Image>,
     /// # }
     /// ```
+    #[must_use]
     #[cfg(not(feature = "stageless"))]
     pub fn with_collection<A: AssetCollection>(mut self) -> Self {
-        self.start_loading_assets = self
-            .start_loading_assets
+        self.start_loading_collections = self
+            .start_loading_collections
             .with_system(start_loading_collection::<S, A>.exclusive_system());
-        self.check_loading_assets = self
-            .check_loading_assets
+        self.check_loading_collections = self
+            .check_loading_collections
             .with_system(check_loading_collection::<S, A>.exclusive_system());
-        self.collection_count += 1;
 
         self
     }
@@ -414,24 +493,29 @@ where
     /// #     pub tree: Handle<Image>,
     /// # }
     /// ```
+    #[must_use]
     #[cfg(feature = "stageless")]
     pub fn with_collection<A: AssetCollection>(mut self) -> Self {
-        self.loading_transition_stage.add_enter_system(
-            InternalLoadingState::LoadingAssets,
-            start_loading_collection::<S, A>.exclusive_system(),
-        );
-        self.check_loading_assets = self
-            .check_loading_assets
+        self.start_loading_collections = self
+            .start_loading_collections
+            .with_system(start_loading_collection::<S, A>.exclusive_system());
+        self.check_loading_collections = self
+            .check_loading_collections
             .with_system(check_loading_collection::<S, A>.exclusive_system());
-        self.collection_count += 1;
 
         self
     }
 
-    /// Insert a map of asset keys with corresponding dynamic assets
-    pub fn add_dynamic_assets(mut self, mut dynamic_assets: HashMap<String, DynamicAsset>) -> Self {
+    /// Insert a map of asset keys with corresponding standard dynamic assets
+    #[must_use]
+    #[cfg(feature = "dynamic_assets")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "dynamic_assets")))]
+    pub fn add_standard_dynamic_assets(
+        mut self,
+        mut dynamic_assets: HashMap<String, StandardDynamicAsset>,
+    ) -> Self {
         dynamic_assets.drain().for_each(|(key, value)| {
-            self.dynamic_assets.insert(key, value);
+            self.dynamic_assets.insert(key, Box::new(value));
         });
 
         self
@@ -481,6 +565,7 @@ where
     /// #     pub array: Handle<Image>,
     /// # }
     /// ```
+    #[must_use]
     #[cfg(not(feature = "stageless"))]
     pub fn init_resource<A: FromWorld + Send + Sync + 'static>(mut self) -> Self {
         self.initialize_resources = self
@@ -535,39 +620,27 @@ where
     /// #     pub array: Handle<Image>,
     /// # }
     /// ```
+    #[must_use]
     #[cfg(feature = "stageless")]
     pub fn init_resource<A: FromWorld + Send + Sync + 'static>(mut self) -> Self {
-        self.loading_transition_stage.add_enter_system(
-            InternalLoadingState::Finalize,
-            init_resource::<A>.exclusive_system(),
-        );
+        self.initialize_resources = self
+            .initialize_resources
+            .with_system(init_resource::<A>.exclusive_system());
 
         self
     }
 
-    /// Register a dynamic asset collection file to be loaded and used for resolving asset keys.
-    ///
-    /// The file will be loaded as [`DynamicAssetCollection`].
-    /// It's mapping of asset keys to dynamic assets will be used during the loading state to resolve asset keys.
-    #[cfg_attr(docsrs, doc(cfg(feature = "dynamic_assets")))]
-    #[cfg(feature = "dynamic_assets")]
-    pub fn with_dynamic_asset_collection_file(
-        mut self,
-        dynamic_asset_collection_file: &str,
-    ) -> Self {
-        self.dynamic_asset_collections
-            .push(dynamic_asset_collection_file.to_owned());
-
-        self
-    }
-
-    /// Set all file endings loaded as dynamic asset collections.
+    /// Set all file endings that should be loaded as [`StandardDynamicAssetCollection`].
     ///
     /// The default file ending is `.assets`
+    #[must_use]
     #[cfg_attr(docsrs, doc(cfg(feature = "dynamic_assets")))]
     #[cfg(feature = "dynamic_assets")]
-    pub fn set_dynamic_asset_collection_file_endings(mut self, endings: Vec<&'static str>) -> Self {
-        self.dynamic_asset_collection_file_endings = endings;
+    pub fn set_standard_dynamic_asset_collection_file_endings(
+        mut self,
+        endings: Vec<&'static str>,
+    ) -> Self {
+        self.standard_dynamic_asset_collection_file_endings = endings;
 
         self
     }
@@ -618,7 +691,6 @@ where
     #[allow(unused_mut)]
     pub fn build(mut self, app: &mut App) {
         app.init_resource::<AssetLoaderConfiguration<S>>();
-        app.init_resource::<LoadingStateSchedules<S>>();
         {
             let mut asset_loader_configuration = app
                 .world
@@ -626,50 +698,60 @@ where
                 .unwrap();
             asset_loader_configuration.configuration.insert(
                 self.loading_state.clone(),
-                LoadingConfiguration {
-                    next: self.next_state.clone(),
-                    loading_collections: 0,
-                },
+                LoadingConfiguration::new(self.next_state.clone()),
             );
         }
+        app.init_resource::<LoadingStateSchedules<S>>();
 
         let mut loading_schedule = Schedule::default();
         let mut update = SystemStage::parallel();
 
+        app.init_resource::<DynamicAssetCollections<S>>();
         #[cfg(feature = "dynamic_assets")]
-        {
-            app.add_plugin(RonAssetPlugin::<DynamicAssetCollection>::new(
-                &self.dynamic_asset_collection_file_endings,
-            ));
-            update.add_system_set(
-                SystemSet::on_enter(InternalLoadingState::LoadingDynamicAssetCollections)
-                    .with_system(load_dynamic_asset_collections::<S>.exclusive_system()),
-            );
-            update.add_system_set(
-                SystemSet::on_update(InternalLoadingState::LoadingDynamicAssetCollections)
-                    .with_system(check_dynamic_asset_collections::<S>.exclusive_system()),
-            );
-            app.insert_resource(LoadingAssetHandles {
-                handles: Default::default(),
-                marker: PhantomData::<S>,
+        app.add_plugin(RonAssetPlugin::<StandardDynamicAssetCollection>::new(
+            &self.standard_dynamic_asset_collection_file_endings,
+        ));
+
+        let mut dynamic_asset_collections = app
+            .world
+            .get_resource_mut::<DynamicAssetCollections<S>>()
+            .unwrap();
+        let mut dynamic_collections_for_state = dynamic_asset_collections
+            .files
+            .remove(&self.loading_state)
+            .unwrap_or_default();
+        self.dynamic_asset_collections
+            .drain()
+            .for_each(|(id, mut files)| {
+                let mut dynamic_files = dynamic_collections_for_state
+                    .remove(&id)
+                    .unwrap_or_default();
+                dynamic_files.append(&mut files);
+                dynamic_collections_for_state.insert(id, dynamic_files);
             });
-            app.init_resource::<DynamicAssetCollections<S>>();
-            app.world
-                .get_resource_mut::<DynamicAssetCollections<S>>()
-                .unwrap()
-                .files
-                .insert(self.loading_state.clone(), self.dynamic_asset_collections);
+        dynamic_asset_collections
+            .files
+            .insert(self.loading_state.clone(), dynamic_collections_for_state);
+
+        update.add_system_set(self.start_loading_dynamic_collections);
+        self.check_loading_dynamic_collections = self
+            .check_loading_dynamic_collections
+            .with_system(resume_to_loading_asset_collections::<S>);
+        update.add_system_set(self.check_loading_dynamic_collections);
+        update.add_system_set(self.initialize_dependencies);
+
+        app.init_resource::<DynamicAssets>();
+        let mut dynamic_assets = app.world.get_resource_mut::<DynamicAssets>().unwrap();
+        for (key, asset) in self.dynamic_assets {
+            dynamic_assets.register_asset(key, asset);
         }
-        app.insert_resource(DynamicAssets {
-            key_asset_map: self.dynamic_assets,
-        });
 
         update.add_system_set(
             SystemSet::on_update(InternalLoadingState::Initialize)
                 .with_system(initialize_loading_state),
         );
-        update.add_system_set(self.start_loading_assets);
-        update.add_system_set(self.check_loading_assets);
+        update.add_system_set(self.start_loading_collections);
+        update.add_system_set(self.check_loading_collections);
         update.add_system_set(self.initialize_resources);
         update.add_system_set(
             SystemSet::on_update(InternalLoadingState::Finalize)
@@ -761,47 +843,45 @@ where
                 .unwrap();
             asset_loader_configuration.configuration.insert(
                 self.loading_state.clone(),
-                LoadingConfiguration {
-                    next: self.next_state.clone(),
-                    loading_collections: 0,
-                },
+                LoadingConfiguration::new(self.next_state.clone()),
             );
         }
 
         let mut loading_schedule = Schedule::default();
         let mut update = SystemStage::parallel();
 
+        app.init_resource::<DynamicAssetCollections<S>>();
         #[cfg(feature = "dynamic_assets")]
-        {
-            app.add_plugin(RonAssetPlugin::<DynamicAssetCollection>::new(
-                &self.dynamic_asset_collection_file_endings,
-            ));
-            self.loading_transition_stage.add_enter_system(
-                InternalLoadingState::LoadingDynamicAssetCollections,
-                load_dynamic_asset_collections::<S>.exclusive_system(),
-            );
-            // I think it's a bug in iyes, but you need this kind of cast to make it become a descriptor
-            update.add_system(
-                iyes_loopless::condition::IntoConditionalExclusiveSystem::run_in_state(
-                    check_dynamic_asset_collections::<S>,
-                    InternalLoadingState::LoadingDynamicAssetCollections,
-                )
-                .label("iyes_loopless::condition::IntoConditionalExclusiveSystem::cast"),
-            );
-            app.insert_resource(LoadingAssetHandles {
-                handles: Default::default(),
-                marker: PhantomData::<S>,
+        app.add_plugin(RonAssetPlugin::<StandardDynamicAssetCollection>::new(
+            &self.standard_dynamic_asset_collection_file_endings,
+        ));
+
+        let mut dynamic_asset_collections = app
+            .world
+            .get_resource_mut::<DynamicAssetCollections<S>>()
+            .unwrap();
+        let mut dynamic_collections_for_state = dynamic_asset_collections
+            .files
+            .remove(&self.loading_state)
+            .unwrap_or_default();
+        self.dynamic_asset_collections
+            .drain()
+            .for_each(|(id, mut files)| {
+                let mut dynamic_files = dynamic_collections_for_state
+                    .remove(&id)
+                    .unwrap_or_default();
+                dynamic_files.append(&mut files);
+                dynamic_collections_for_state.insert(id, dynamic_files);
             });
-            app.init_resource::<DynamicAssetCollections<S>>();
-            app.world
-                .get_resource_mut::<DynamicAssetCollections<S>>()
-                .unwrap()
-                .files
-                .insert(self.loading_state.clone(), self.dynamic_asset_collections);
+        dynamic_asset_collections
+            .files
+            .insert(self.loading_state.clone(), dynamic_collections_for_state);
+
+        app.init_resource::<DynamicAssets>();
+        let mut dynamic_assets = app.world.get_resource_mut::<DynamicAssets>().unwrap();
+        for (key, asset) in self.dynamic_assets {
+            dynamic_assets.register_asset(key, asset);
         }
-        app.insert_resource(DynamicAssets {
-            key_asset_map: self.dynamic_assets,
-        });
 
         update.add_system_set(
             ConditionSet::new()
@@ -809,7 +889,12 @@ where
                 .with_system(initialize_loading_state)
                 .into(),
         );
-        update.add_system_set(self.check_loading_assets);
+
+        self.check_loading_dynamic_collections = self
+            .check_loading_dynamic_collections
+            .with_system(resume_to_loading_asset_collections::<S>);
+        update.add_system_set(self.check_loading_dynamic_collections);
+        update.add_system_set(self.check_loading_collections);
         update.add_system_set(
             ConditionSet::new()
                 .run_in_state(InternalLoadingState::Finalize)
@@ -818,10 +903,22 @@ where
         );
 
         loading_schedule.add_stage("update", update);
-        loading_schedule.add_stage_before(
-            "update",
-            StateTransitionStageLabel::from_type::<InternalLoadingState>(),
-            self.loading_transition_stage,
+        loading_schedule
+            .add_loopless_state_before_stage("update", InternalLoadingState::Initialize);
+
+        loading_schedule.add_enter_system_set(
+            InternalLoadingState::LoadingDynamicAssetCollections,
+            self.start_loading_dynamic_collections,
+        );
+        loading_schedule.add_enter_system_set(
+            InternalLoadingState::LoadingAssets,
+            self.start_loading_collections,
+        );
+        loading_schedule
+            .add_enter_system_set(InternalLoadingState::Finalize, self.initialize_resources);
+        loading_schedule.add_exit_system_set(
+            InternalLoadingState::Initialize,
+            self.initialize_dependencies,
         );
 
         let mut loading_state_schedules = app
@@ -856,10 +953,19 @@ where
 }
 
 /// This resource is used for handles from asset collections and loading dynamic asset collection files.
-/// The generic will be the [`AssetCollection`] type for the first and the State for the second.
-struct LoadingAssetHandles<T> {
+/// The generic will be the [`AssetCollection`] type for the first and the [`DynamicAssetCollection`] for the second.
+pub(crate) struct LoadingAssetHandles<T> {
     handles: Vec<HandleUntyped>,
     marker: PhantomData<T>,
+}
+
+impl<T> Default for LoadingAssetHandles<T> {
+    fn default() -> Self {
+        LoadingAssetHandles {
+            handles: Default::default(),
+            marker: Default::default(),
+        }
+    }
 }
 
 pub(crate) struct AssetLoaderConfiguration<State: StateData> {
@@ -879,7 +985,6 @@ pub(crate) enum InternalLoadingState {
     /// Starting point. Here it will be decided whether or not dynamic asset collections need to be loaded.
     Initialize,
     /// Load dynamic asset collections and configure their key <-> asset mapping
-    #[cfg(feature = "dynamic_assets")]
     LoadingDynamicAssetCollections,
     /// Load the actual asset collections and check their status every frame.
     LoadingAssets,
@@ -892,6 +997,17 @@ pub(crate) enum InternalLoadingState {
 struct LoadingConfiguration<State: StateData> {
     next: Option<State>,
     loading_collections: usize,
+    loading_dynamic_collections: usize,
+}
+
+impl<State: StateData> LoadingConfiguration<State> {
+    fn new(state: Option<State>) -> Self {
+        LoadingConfiguration {
+            next: state,
+            loading_collections: 0,
+            loading_dynamic_collections: 0,
+        }
+    }
 }
 
 /// Resource to store the schedules for loading states

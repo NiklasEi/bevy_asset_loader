@@ -165,29 +165,6 @@ fn impl_asset_collection(
             }
     };
 
-    #[allow(unused_mut, unused_assignments)]
-    let mut conditional_asset_collections = quote! {};
-    #[cfg(feature = "2d")]
-    {
-        // texture atlas resources
-        let conditional_2d = quote! {
-                let mut atlases = cell
-                    .get_resource_mut::<Assets<TextureAtlas>>()
-                    .expect("Cannot get resource Assets<TextureAtlas>");
-        };
-        conditional_asset_collections.extend(conditional_2d);
-    }
-    #[cfg(feature = "3d")]
-    {
-        // standard materials
-        let conditional_3d = quote! {
-                let mut materials = cell
-                    .get_resource_mut::<Assets<StandardMaterial>>()
-                    .expect("Cannot get resource Assets<StandardMaterial>");
-        };
-        conditional_asset_collections.extend(conditional_3d);
-    }
-
     let mut prepare_from_world = quote! {};
     prepare_from_world.append_all(from_world_fields.iter().fold(
         quote!(),
@@ -205,16 +182,16 @@ fn impl_asset_collection(
         tokens
     }));
     let create_function = quote! {
-            fn create(world: &mut World) -> Self {
-                let from_world_fields = (#prepare_from_world);
-                let cell = world.cell();
-                let asset_server = cell.get_resource::<AssetServer>().expect("Cannot get AssetServer");
-                let asset_keys = cell.get_resource::<bevy_asset_loader::prelude::DynamicAssets>().expect("Cannot get bevy_asset_loader::prelude::DynamicAssets");
-                #conditional_asset_collections
-                #name {
-                    #asset_creation
-                }
-            }
+        fn create(world: &mut World) -> Self {
+            let from_world_fields = (#prepare_from_world);
+            world.resource_scope(
+                |world, asset_keys: Mut<::bevy_asset_loader::dynamic_asset::DynamicAssets>| {
+                    #name {
+                        #asset_creation
+                    }
+                },
+            )
+        }
     };
 
     let impl_asset_collection = quote! {

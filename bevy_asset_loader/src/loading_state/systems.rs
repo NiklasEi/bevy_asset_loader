@@ -110,13 +110,8 @@ fn count_loaded_handles<S: StateData, Assets: AssetCollection>(
 }
 
 pub(crate) fn initialize_loading_state(mut loading_state: ResMut<State<InternalLoadingState>>) {
-    #[cfg(feature = "dynamic_assets")]
     loading_state
         .set(InternalLoadingState::LoadingDynamicAssetCollections)
-        .expect("Failed to set LoadingState");
-    #[cfg(not(feature = "dynamic_assets"))]
-    loading_state
-        .set(InternalLoadingState::LoadingAssets)
         .expect("Failed to set LoadingState");
 }
 

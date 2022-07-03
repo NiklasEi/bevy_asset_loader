@@ -9,9 +9,7 @@ This [Bevy][bevy] plugin reduces boilerplate for handling game assets. The crate
 
 In most cases you will want to load your asset collections during loading states (think loading screens). During such a state, all assets are loaded and their loading process is observed. Only when asset collections can be build with fully loaded asset handles, the collections are inserted as resources. If you do not want to use a loading state, asset collections can still result in cleaner code and improved maintainability (see the ["usage without a loading state"](#usage-without-a-loading-state) section).
 
-Asset configurations, like their file path or dimensions of sprite sheets, can be given at compile time (through derive macro attributes), or at run time (see ["Dynamic assets"](#dynamic-assets)). The second, allows managing asset configurations as assets. That means you can keep a list of your asset files and their properties in asset files. The main benefit of using dynamic assets is a cleaner split of code and data leading to less recompiles while working on your assets. It also makes your game more approachable for people that want to contribute without touching code.
-
-_`bevy_asset_loader` supports `iyes_loopless` states with the [`stageless`](#stageless) feature._
+_`bevy_asset_loader` supports `iyes_loopless` states with the [`stageless`](#stageless-support) feature._
 
 _The `main` branch and the latest release support Bevy version `0.7` (see [version table](#compatible-bevy-versions))_
 
@@ -19,9 +17,19 @@ _The `main` branch and the latest release support Bevy version `0.7` (see [versi
 
 A loading state is responsible for managing the loading process during a configurable Bevy state (see [the cheatbook on states][cheatbook-states]).
 
-If your loading state is set up, you can start your game logic from the next state and use the asset collections as resources in your systems. The `LoadingState` guarantees that all handles in your collections are fully loaded by the time the second state starts.
+If your `LoadingState` is set up, you can start your game logic from the next state and use the asset collections as resources in your systems. The loading state guarantees that all handles in your collections are fully loaded by the time the next state starts.
+
+```rust ignore
+app.add_loading_state(
+    LoadingState::new(GameState::Loading)
+        .continue_to_state(GameState::Next)
+        .with_collection::<MyAssets>()
+)
+```
 
 ## Compile time vs. Run time (dynamic) assets
+
+Asset configurations, like their file path or dimensions of sprite sheets, can be given at compile time (through derive macro attributes), or at run time (["Dynamic assets"](#dynamic-assets)). The second, allows managing asset configurations as assets. That means you can keep a list of your asset files and their properties in asset files. The main benefit of using dynamic assets is a cleaner split of code and data leading to less recompiles while working on your assets. It also makes your game more approachable for people that want to contribute without touching code.
 
 The derive macro for `AssetCollection` supports multiple attributes. They configure how the asset is loaded.
 
@@ -66,8 +74,6 @@ The [full_collection](/bevy_asset_loader/examples/full_collection.rs) example sh
 
 ### Dynamic assets
 
-It is possible to decide asset configurations at run time. This is done via the resource `DynamicAssets` which is a map of asset keys to their configurations. During set up of a loading state, the resource is initialized. It is later read to resolve asset keys while loading collections.
-
 Dynamic assets are configured through the derive macro attribute `key` and are not allowed to have a `path` or `paths` attribute:
 ```rust
 use bevy::prelude::*;
@@ -94,9 +100,13 @@ The keys `player` and `tree` in the example above should either be set manually 
 })
 ```
 
-The file ending is `.assets` by default, but can be configured via `LoadingState::set_dynamic_asset_collection_file_endings`.
+The file ending is `.assets` by default, but can be configured via `LoadingState::set_standard_dynamic_asset_collection_file_endings`.
 
 The example [full_dynamic_collection](/bevy_asset_loader/examples/full_dynamic_collection.rs) shows all supported field types for dynamic assets.
+
+### Custom dynamic assets
+
+You can define your own types to load as dynamic assets. Take a look at the [custom_dynamic_assets.rs](/bevy_asset_loader/examples/custom_dynamic_assets.rs) example for some code.
 
 ## Supported asset fields
 
@@ -308,7 +318,7 @@ The two padding fields/attributes are optional and default to `0.`.
 
 ### Types implementing FromWorld
 
-
+Any field in an asset collection without any attribute is required to implement the `FromWorld` trait. When the asset collection is build, the `FromWorld` implementation is called to get the value for the field.
 
 ## Initializing FromWorld resources
 

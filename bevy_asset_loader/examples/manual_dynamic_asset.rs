@@ -69,16 +69,16 @@ fn character_setup(
         // See the `dynamic_asset` example
         asset_keys.register_asset(
             "character",
-            DynamicAsset::File {
+            Box::new(StandardDynamicAsset::File {
                 path: "images/female_adventurer.png".to_owned(),
-            },
+            }),
         );
     } else if mouse_input.just_pressed(MouseButton::Right) {
         asset_keys.register_asset(
             "character",
-            DynamicAsset::File {
+            Box::new(StandardDynamicAsset::File {
                 path: "images/zombie.png".to_owned(),
-            },
+            }),
         );
     } else if keyboard_input.just_pressed(KeyCode::B) {
         show_background.0 = !show_background.0;
@@ -90,9 +90,9 @@ fn character_setup(
     if show_background.0 {
         asset_keys.register_asset(
             "background",
-            DynamicAsset::File {
+            Box::new(StandardDynamicAsset::File {
                 path: "images/background.png".to_owned(),
-            },
+            }),
         );
     }
     state

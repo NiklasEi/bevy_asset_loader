@@ -15,8 +15,8 @@ readme = "../README.md"
 [features]
 2d = ["bevy/bevy_sprite", "bevy_asset_loader_derive/2d"]
 # This feature adds support for bevy's StandardMaterial assets
-3d = ["bevy/bevy_pbr", "bevy_asset_loader_derive/3d"]
-dynamic_assets = ["bevy_asset_ron", "serde"]
+3d = ["bevy/bevy_pbr", "bevy/bevy_render", "bevy_asset_loader_derive/3d"]
+dynamic_assets = ["bevy_common_assets", "serde"]
 progress_tracking = ["iyes_progress"]
 progress_tracking_stageless = ["iyes_progress/iyes_loopless"]
 stageless = ["iyes_loopless"]
@@ -24,17 +24,21 @@ stageless = ["iyes_loopless"]
 [dependencies]
 bevy = { version = "0.7", default-features = false }
 bevy_asset_loader_derive = { version = "=0.11.0", path = "../bevy_asset_loader_derive" }
-bevy_asset_ron = { version = "0.4", optional = true }
+anyhow = "1"
+
+bevy_common_assets = { version = "0.2", features = ["ron"], optional = true }
 serde = { version = "1", optional = true }
 iyes_progress = { version = "0.3", optional = true }
-iyes_loopless = { version = "0.6", optional = true }
+iyes_loopless = { git = "https://github.com/NiklasEi/iyes_loopless", branch = "loopless-schedule-ext-trait", optional = true }
 
 [dev-dependencies]
 bevy = { version = "0.7", features = ["vorbis"] }
+anyhow = "1"
 iyes_progress = { version = "0.3" }
-iyes_loopless = { version = "0.6.1" }
+iyes_loopless = { git = "https://github.com/NiklasEi/iyes_loopless", branch = "loopless-schedule-ext-trait" }
+bevy_common_assets = { version = "0.2", features = ["ron"] }
+serde = { version = "1" }
 trybuild = { version = "1.0" }
-bevy-inspector-egui = { version = "0.10.0" }
 
 [package.metadata.docs.rs]
 all-features = true
@@ -56,6 +60,7 @@ path = "examples/init_resource.rs"
 [[example]]
 name = "manual_dynamic_asset"
 path = "examples/manual_dynamic_asset.rs"
+required-features = ["dynamic_assets"]
 
 [[example]]
 name = "dynamic_asset"
@@ -84,7 +89,7 @@ required-features = ["stageless"]
 [[example]]
 name = "stageless_manual_dynamic_asset"
 path = "examples/stageless_manual_dynamic_asset.rs"
-required-features = ["stageless"]
+required-features = ["stageless", "dynamic_assets"]
 
 [[example]]
 name = "stageless_progress"
@@ -109,3 +114,7 @@ required-features = ["2d", "3d"]
 name = "full_dynamic_collection"
 path = "examples/full_dynamic_collection.rs"
 required-features = ["2d", "3d", "dynamic_assets"]
+
+[[example]]
+name = "custom_dynamic_assets"
+path = "examples/custom_dynamic_assets.rs"
