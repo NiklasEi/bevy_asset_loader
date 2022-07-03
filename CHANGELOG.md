@@ -5,6 +5,7 @@
 - Custom dynamic assets ([#55](https://github.com/NiklasEi/bevy_asset_loader/issues/55))
 - Added a prelude
 - Documentation fixes and improvements
+- Allow configuring a loading state multiple times (fixes [#60](https://github.com/NiklasEi/bevy_asset_loader/issues/60))
 
 ## v0.11.0
 - Support progress tracking through `iyes_progress` ([#6](https://github.com/NiklasEi/bevy_asset_loader/issues/6))

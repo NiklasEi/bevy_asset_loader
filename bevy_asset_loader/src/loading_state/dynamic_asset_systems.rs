@@ -95,7 +95,7 @@ pub(crate) fn resume_to_loading_asset_collections<S: StateData>(
         .expect("No asset loader configuration for current state");
     if config.loading_dynamic_collections == 0 {
         loading_state
-            .set(InternalLoadingState::LoadingAssets)
+            .overwrite_set(InternalLoadingState::LoadingAssets)
             .expect("Failed to set loading State");
     }
 }
