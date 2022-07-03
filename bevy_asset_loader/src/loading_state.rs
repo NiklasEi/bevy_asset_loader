@@ -862,7 +862,7 @@ where
             let mut loading_config = asset_loader_configuration
                 .configuration
                 .remove(&self.loading_state)
-                .unwrap_or(LoadingConfiguration::new(self.next_state.clone()));
+                .unwrap_or_else(|| LoadingConfiguration::new(self.next_state.clone()));
             if self.next_state.is_some() {
                 loading_config.next = self.next_state.clone();
             }
