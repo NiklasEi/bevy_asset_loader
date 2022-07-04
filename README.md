@@ -102,6 +102,8 @@ The keys `player` and `tree` in the example above should either be set manually 
 
 The file ending is `.assets` by default, but can be configured via `LoadingState::set_standard_dynamic_asset_collection_file_endings`.
 
+Dynamic assets can be optional. This requires the derive attribute `optional` on the field and the type to be an `Option`. The value of the field will be `None` in case the given key cannot be resolved at run time.
+
 The example [full_dynamic_collection](/bevy_asset_loader/examples/full_dynamic_collection.rs) shows all supported field types for dynamic assets.
 
 ### Custom dynamic assets

@@ -45,6 +45,7 @@ pub(crate) enum AssetField {
     Dynamic(DynamicAssetField),
     OptionalDynamic(DynamicAssetField),
     DynamicFileCollection(DynamicAssetField, Typed),
+    OptionalDynamicFileCollection(DynamicAssetField, Typed),
 }
 
 #[derive(PartialEq, Debug)]
@@ -202,6 +203,32 @@ impl AssetField {
                     #load
                 },)
             }
+            AssetField::OptionalDynamicFileCollection(dynamic, typed) => {
+                let field_ident = dynamic.field_ident.clone();
+                let asset_key = dynamic.key.clone();
+                let load = match typed {
+                    Typed::Yes => {
+                        quote!(
+                            asset.map(|asset| match asset.build(world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
+                                ::bevy_asset_loader::prelude::DynamicAssetType::Collection(mut handles) => handles.drain(..).map(|handle| handle.typed()).collect(),
+                                _ => panic!("The dynamic asset '{}' cannot be created (expected `Folder` or `Files`), got {:?}", #asset_key, asset),
+                            })
+                        )
+                    }
+                    Typed::No => {
+                        quote!(
+                            asset.map(|asset| match asset.build(world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
+                                ::bevy_asset_loader::prelude::DynamicAssetType::Collection(handles) => handles,
+                                _ => panic!("The dynamic asset '{}' cannot be created (expected `Folder` or `Files`), got {:?}", #asset_key, asset),
+                            })
+                        )
+                    }
+                };
+                quote!(#token_stream #field_ident : {
+                    let asset = asset_keys.get_asset(#asset_key.into());
+                    #load
+                },)
+            }
         }
     }
 
@@ -215,7 +242,8 @@ impl AssetField {
                 let asset_path = asset.asset_path.clone();
                 quote!(#token_stream asset_server.load_folder(#asset_path).unwrap().drain(..).for_each(|handle| handles.push(handle));)
             }
-            AssetField::OptionalDynamic(dynamic) => {
+            AssetField::OptionalDynamic(dynamic)
+            | AssetField::OptionalDynamicFileCollection(dynamic, _) => {
                 let asset_key = dynamic.key.clone();
                 quote!(
                     #token_stream {
@@ -322,11 +350,20 @@ impl AssetBuilder {
         if missing_fields.len() == 4 {
             if self.key.is_some() {
                 return if self.is_optional {
-                    // Todo support optional folder?
-                    Ok(AssetField::OptionalDynamic(DynamicAssetField {
-                        field_ident: self.field_ident.unwrap(),
-                        key: self.key.unwrap(),
-                    }))
+                    if self.is_collection {
+                        Ok(AssetField::OptionalDynamicFileCollection(
+                            DynamicAssetField {
+                                field_ident: self.field_ident.unwrap(),
+                                key: self.key.unwrap(),
+                            },
+                            self.is_typed.into(),
+                        ))
+                    } else {
+                        Ok(AssetField::OptionalDynamic(DynamicAssetField {
+                            field_ident: self.field_ident.unwrap(),
+                            key: self.key.unwrap(),
+                        }))
+                    }
                 } else if self.is_collection {
                     Ok(AssetField::DynamicFileCollection(
                         DynamicAssetField {
