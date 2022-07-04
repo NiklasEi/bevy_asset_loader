@@ -8,4 +8,5 @@ mod stageless {
     mod can_run_without_next_state;
     mod init_resource;
     mod multiple_asset_collections;
+    mod multiple_loading_states;
 }

@@ -111,7 +111,7 @@ fn count_loaded_handles<S: StateData, Assets: AssetCollection>(
 
 pub(crate) fn initialize_loading_state(mut loading_state: ResMut<State<InternalLoadingState>>) {
     loading_state
-        .set(InternalLoadingState::LoadingDynamicAssetCollections)
+        .overwrite_set(InternalLoadingState::LoadingDynamicAssetCollections)
         .expect("Failed to set LoadingState");
 }
 
@@ -125,7 +125,10 @@ pub(crate) fn finish_loading_state<S: StateData>(
         .get(state.current())
     {
         if let Some(next) = config.next.as_ref() {
-            state.set(next.clone()).expect("Failed to set next State");
+            // Overwrite to support multiple loading states configured in one Bevy State
+            state
+                .overwrite_set(next.clone())
+                .expect("Failed to set next State");
             return;
         }
     }

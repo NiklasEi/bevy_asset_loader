@@ -61,7 +61,9 @@ use iyes_progress::ProgressSystemLabel;
 use iyes_loopless::prelude::{AppLooplessStateExt, ConditionSet};
 
 #[cfg(feature = "stageless")]
-use iyes_loopless::state::schedule::ScheduleLooplessStateExt;
+use iyes_loopless::state::schedule::{ScheduleLooplessStateExt, StateTransitionStageLabel};
+#[cfg(feature = "stageless")]
+use iyes_loopless::state::StateTransitionStage;
 
 use crate::dynamic_asset::{DynamicAsset, DynamicAssets};
 
@@ -696,15 +698,17 @@ where
                 .world
                 .get_resource_mut::<AssetLoaderConfiguration<S>>()
                 .unwrap();
-            asset_loader_configuration.configuration.insert(
-                self.loading_state.clone(),
-                LoadingConfiguration::new(self.next_state.clone()),
-            );
+            let mut loading_config = asset_loader_configuration
+                .configuration
+                .remove(&self.loading_state)
+                .unwrap_or(LoadingConfiguration::new(self.next_state.clone()));
+            if self.next_state.is_some() {
+                loading_config.next = self.next_state.clone();
+            }
+            asset_loader_configuration
+                .configuration
+                .insert(self.loading_state.clone(), loading_config);
         }
-        app.init_resource::<LoadingStateSchedules<S>>();
-
-        let mut loading_schedule = Schedule::default();
-        let mut update = SystemStage::parallel();
 
         app.init_resource::<DynamicAssetCollections<S>>();
         #[cfg(feature = "dynamic_assets")]
@@ -733,18 +737,36 @@ where
             .files
             .insert(self.loading_state.clone(), dynamic_collections_for_state);
 
+        app.insert_resource(State::new(InternalLoadingState::Initialize));
+        app.init_resource::<LoadingStateSchedules<S>>();
+        let mut loading_state_schedules = app
+            .world
+            .get_resource_mut::<LoadingStateSchedules<S>>()
+            .unwrap();
+        let mut loading_schedule = loading_state_schedules
+            .schedules
+            .remove(&self.loading_state)
+            .unwrap_or_default();
+        let mut update = {
+            if loading_schedule
+                .get_stage_mut::<SystemStage>(&"update")
+                .is_none()
+            {
+                loading_schedule.add_stage("update", SystemStage::parallel());
+                loading_schedule
+                    .add_system_set_to_stage("update", State::<InternalLoadingState>::get_driver());
+            }
+            loading_schedule
+                .get_stage_mut::<SystemStage>(&"update")
+                .unwrap()
+        };
+
         update.add_system_set(self.start_loading_dynamic_collections);
         self.check_loading_dynamic_collections = self
             .check_loading_dynamic_collections
             .with_system(resume_to_loading_asset_collections::<S>);
         update.add_system_set(self.check_loading_dynamic_collections);
         update.add_system_set(self.initialize_dependencies);
-
-        app.init_resource::<DynamicAssets>();
-        let mut dynamic_assets = app.world.get_resource_mut::<DynamicAssets>().unwrap();
-        for (key, asset) in self.dynamic_assets {
-            dynamic_assets.register_asset(key, asset);
-        }
 
         update.add_system_set(
             SystemSet::on_update(InternalLoadingState::Initialize)
@@ -758,19 +780,15 @@ where
                 .with_system(finish_loading_state::<S>),
         );
 
-        loading_schedule.add_stage("update", update);
-
-        app.insert_resource(State::new(InternalLoadingState::Initialize));
-        loading_schedule
-            .add_system_set_to_stage("update", State::<InternalLoadingState>::get_driver());
-
-        let mut loading_state_schedules = app
-            .world
-            .get_resource_mut::<LoadingStateSchedules<S>>()
-            .unwrap();
         loading_state_schedules
             .schedules
             .insert(self.loading_state.clone(), loading_schedule);
+
+        app.init_resource::<DynamicAssets>();
+        let mut dynamic_assets = app.world.get_resource_mut::<DynamicAssets>().unwrap();
+        for (key, asset) in self.dynamic_assets {
+            dynamic_assets.register_asset(key, asset);
+        }
 
         app.add_system_set(
             SystemSet::on_enter(self.loading_state.clone()).with_system(reset_loading_state),
@@ -841,14 +859,17 @@ where
                 .world
                 .get_resource_mut::<AssetLoaderConfiguration<S>>()
                 .unwrap();
-            asset_loader_configuration.configuration.insert(
-                self.loading_state.clone(),
-                LoadingConfiguration::new(self.next_state.clone()),
-            );
+            let mut loading_config = asset_loader_configuration
+                .configuration
+                .remove(&self.loading_state)
+                .unwrap_or_else(|| LoadingConfiguration::new(self.next_state.clone()));
+            if self.next_state.is_some() {
+                loading_config.next = self.next_state.clone();
+            }
+            asset_loader_configuration
+                .configuration
+                .insert(self.loading_state.clone(), loading_config);
         }
-
-        let mut loading_schedule = Schedule::default();
-        let mut update = SystemStage::parallel();
 
         app.init_resource::<DynamicAssetCollections<S>>();
         #[cfg(feature = "dynamic_assets")]
@@ -883,6 +904,26 @@ where
             dynamic_assets.register_asset(key, asset);
         }
 
+        let mut loading_state_schedules = app
+            .world
+            .get_resource_mut::<LoadingStateSchedules<S>>()
+            .unwrap();
+        let mut loading_schedule = loading_state_schedules
+            .schedules
+            .remove(&self.loading_state)
+            .unwrap_or_default();
+        let mut update = {
+            if loading_schedule
+                .get_stage_mut::<SystemStage>(&"update")
+                .is_none()
+            {
+                loading_schedule.add_stage("update", SystemStage::parallel());
+            }
+            loading_schedule
+                .get_stage_mut::<SystemStage>(&"update")
+                .unwrap()
+        };
+
         update.add_system_set(
             ConditionSet::new()
                 .run_in_state(InternalLoadingState::Initialize)
@@ -902,9 +943,15 @@ where
                 .into(),
         );
 
-        loading_schedule.add_stage("update", update);
-        loading_schedule
-            .add_loopless_state_before_stage("update", InternalLoadingState::Initialize);
+        if loading_schedule
+            .get_stage::<StateTransitionStage<InternalLoadingState>>(
+                &StateTransitionStageLabel::from_type::<InternalLoadingState>(),
+            )
+            .is_none()
+        {
+            loading_schedule
+                .add_loopless_state_before_stage("update", InternalLoadingState::Initialize);
+        }
 
         loading_schedule.add_enter_system_set(
             InternalLoadingState::LoadingDynamicAssetCollections,
@@ -921,10 +968,6 @@ where
             self.initialize_dependencies,
         );
 
-        let mut loading_state_schedules = app
-            .world
-            .get_resource_mut::<LoadingStateSchedules<S>>()
-            .unwrap();
         loading_state_schedules
             .schedules
             .insert(self.loading_state.clone(), loading_schedule);
