@@ -9,7 +9,9 @@ fn main() {
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading)
                 .continue_to_state(MyStates::Next)
-                .with_dynamic_collections::<StandardDynamicAssetCollection>(vec!["my.assets"])
+                .with_dynamic_collections::<StandardDynamicAssetCollection>(vec![
+                    "full_dynamic_collection.assets",
+                ])
                 .with_collection::<MyAssets>(),
         )
         .add_state(MyStates::AssetLoading)
@@ -60,6 +62,16 @@ struct MyAssets {
     // Type in `assets/my.assets`: `Files`
     #[asset(key = "files_typed", collection(typed))]
     files_typed: Vec<Handle<Image>>,
+
+    // Optional file collections
+    #[asset(key = "missing_key", collection, optional)]
+    optional_folder_untyped: Option<Vec<HandleUntyped>>,
+    #[asset(key = "missing_key", collection(typed), optional)]
+    optional_folder_typed: Option<Vec<Handle<Image>>>,
+    #[asset(key = "missing_key", collection, optional)]
+    optional_files_untyped: Option<Vec<HandleUntyped>>,
+    #[asset(key = "missing_key", collection(typed), optional)]
+    optional_files_typed: Option<Vec<Handle<Image>>>,
 }
 
 fn expectations(
@@ -123,6 +135,11 @@ fn expectations(
             LoadState::Loaded
         );
     }
+
+    assert_eq!(assets.optional_folder_untyped, None);
+    assert_eq!(assets.optional_folder_typed, None);
+    assert_eq!(assets.optional_files_untyped, None);
+    assert_eq!(assets.optional_files_typed, None);
 
     println!("Everything looks good!");
     println!("Quitting the application...");
