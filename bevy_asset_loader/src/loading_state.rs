@@ -997,9 +997,9 @@ where
 
 /// This resource is used for handles from asset collections and loading dynamic asset collection files.
 /// The generic will be the [`AssetCollection`] type for the first and the [`DynamicAssetCollection`] for the second.
-pub(crate) struct LoadingAssetHandles<T> {
-    handles: Vec<HandleUntyped>,
-    marker: PhantomData<T>,
+pub struct LoadingAssetHandles<T> {
+    pub handles: Vec<HandleUntyped>,
+    pub marker: PhantomData<T>,
 }
 
 impl<T> Default for LoadingAssetHandles<T> {

@@ -32,7 +32,7 @@ iyes_progress = { version = "0.3", optional = true }
 iyes_loopless = { git = "https://github.com/NiklasEi/iyes_loopless", branch = "loopless-schedule-ext-trait", optional = true }
 
 [dev-dependencies]
-bevy = { version = "0.7", features = ["vorbis"] }
+bevy = { version = "0.7", features = ["vorbis", "filesystem_watcher"] }
 anyhow = "1"
 iyes_progress = { version = "0.3" }
 iyes_loopless = { git = "https://github.com/NiklasEi/iyes_loopless", branch = "loopless-schedule-ext-trait" }

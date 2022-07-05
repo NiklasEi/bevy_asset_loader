@@ -73,6 +73,7 @@ pub(crate) fn check_dynamic_asset_collections<S: StateData, C: DynamicAssetColle
         }
         for collection in loading_collections.handles.drain(..) {
             let collection = dynamic_asset_collections.get(collection).unwrap();
+            println!("registering collection");
             collection.register(&mut asset_keys);
         }
         let mut config = asset_loader_config
