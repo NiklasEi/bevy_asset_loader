@@ -57,7 +57,7 @@ struct AudioAssets {
 }
 
 fn draw(mut commands: Commands, image_assets: Res<ImageAssets>) {
-    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
+    commands.spawn_bundle(Camera2dBundle::default());
     commands.spawn_bundle(SpriteBundle {
         texture: image_assets.player.clone(),
         transform: Transform::from_translation(Vec3::new(-150., 0., 1.)),

@@ -41,7 +41,7 @@ struct AudioAssets {
 }
 
 fn spawn_player_and_tree(mut commands: Commands, image_assets: Res<ImageAssets>) {
-    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
+    commands.spawn_bundle(Camera2dBundle::default());
     let mut transform = Transform::from_translation(Vec3::new(0., 0., 1.));
     transform.scale = Vec3::splat(0.5);
     commands

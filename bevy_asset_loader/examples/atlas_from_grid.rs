@@ -32,7 +32,7 @@ fn draw_atlas(
     my_assets: Res<MyAssets>,
     texture_atlases: Res<Assets<TextureAtlas>>,
 ) {
-    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
+    commands.spawn_bundle(Camera2dBundle::default());
     // draw the original image (whole atlas)
     let atlas = texture_atlases
         .get(my_assets.female_adventurer.clone())
