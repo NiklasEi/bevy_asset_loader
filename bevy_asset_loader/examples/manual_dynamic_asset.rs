@@ -179,12 +179,12 @@ enum MyStates {
 }
 
 fn menu(mut commands: Commands, font_assets: Res<FontAssets>) {
-    commands.spawn_bundle(UiCameraBundle::default());
+    commands.spawn_bundle(Camera2dBundle::default());
     commands
         .spawn_bundle(NodeBundle {
             style: Style {
                 size: Size::new(Val::Percent(100.), Val::Percent(100.)),
-                margin: Rect::all(Val::Auto),
+                margin: UiRect::all(Val::Auto),
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
                 flex_direction: FlexDirection::ColumnReverse,

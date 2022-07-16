@@ -74,7 +74,7 @@ fn expect(
         LoadState::Loaded
     );
     let atlas = texture_atlases
-        .get(texture_assets.female_adventurer.clone())
+        .get(&texture_assets.female_adventurer)
         .expect("Texture atlas should be added to its assets resource.");
     assert_eq!(
         asset_server.get_load_state(atlas.texture.clone()),

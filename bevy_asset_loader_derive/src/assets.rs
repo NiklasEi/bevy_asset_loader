@@ -134,6 +134,7 @@ impl AssetField {
                         #columns,
                         #rows,
                         Vec2::new(#padding_x, #padding_y),
+                        Vec2::splat(0.),
                     ))
                 },)
             }

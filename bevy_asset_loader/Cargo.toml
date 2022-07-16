@@ -28,13 +28,13 @@ anyhow = "1"
 
 bevy_common_assets = { git = "https://github.com/NiklasEi/bevy_common_assets", features = ["ron"], rev = "71455dd2682e6877a00508e9d88270ab1ee16a6e", optional = true }
 serde = { version = "1", optional = true }
-iyes_progress = { git = "https://github.com/NiklasEi/iyes_progress", rev = "4cc980d8910a3094240c80d05ebe184fbf74e89f", optional = true }
+iyes_progress = { git = "https://github.com/NiklasEi/iyes_progress", rev = "c18e8adbb522196c78070f7221cac3f4a719fbaa", optional = true }
 iyes_loopless = { git = "https://github.com/NiklasEi/iyes_loopless", rev = "be6146b466a0b52917ac65a42cc82dd659d1a3c8", optional = true }
 
 [dev-dependencies]
 bevy = { git = "https://github.com/bevyengine/bevy", rev = "e0a8087408c9177927e00a538c8581ada74e1831", features = ["vorbis"] }
 anyhow = "1"
-iyes_progress = { git = "https://github.com/NiklasEi/iyes_progress", rev = "4cc980d8910a3094240c80d05ebe184fbf74e89f" }
+iyes_progress = { git = "https://github.com/NiklasEi/iyes_progress", rev = "c18e8adbb522196c78070f7221cac3f4a719fbaa" }
 iyes_loopless = { git = "https://github.com/NiklasEi/iyes_loopless", rev = "be6146b466a0b52917ac65a42cc82dd659d1a3c8" }
 bevy_common_assets = { git = "https://github.com/NiklasEi/bevy_common_assets", rev = "71455dd2682e6877a00508e9d88270ab1ee16a6e", features = ["ron"] }
 serde = { version = "1" }

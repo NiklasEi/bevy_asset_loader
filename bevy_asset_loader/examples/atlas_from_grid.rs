@@ -35,7 +35,7 @@ fn draw_atlas(
     commands.spawn_bundle(Camera2dBundle::default());
     // draw the original image (whole atlas)
     let atlas = texture_atlases
-        .get(my_assets.female_adventurer.clone())
+        .get(&my_assets.female_adventurer)
         .expect("Failed to find our atlas");
     commands.spawn_bundle(SpriteBundle {
         texture: atlas.texture.clone(),

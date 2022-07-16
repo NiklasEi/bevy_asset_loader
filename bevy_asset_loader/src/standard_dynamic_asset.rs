@@ -1,6 +1,7 @@
 use crate::dynamic_asset::{DynamicAsset, DynamicAssetType};
 use bevy::asset::{AssetServer, HandleUntyped};
 use bevy::ecs::world::World;
+use bevy::math::Vec2;
 
 use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssets};
 use bevy::reflect::TypeUuid;
@@ -117,10 +118,11 @@ impl DynamicAsset for StandardDynamicAsset {
                 let handle = atlases
                     .add(bevy::sprite::TextureAtlas::from_grid_with_padding(
                         asset_server.get_handle(path),
-                        bevy::math::Vec2::new(*tile_size_x, *tile_size_y),
+                        Vec2::new(*tile_size_x, *tile_size_y),
                         *columns,
                         *rows,
-                        bevy::math::Vec2::new(padding_x.unwrap_or(0.), padding_y.unwrap_or(0.)),
+                        Vec2::new(padding_x.unwrap_or(0.), padding_y.unwrap_or(0.)),
+                        Vec2::splat(0.),
                     ))
                     .clone_untyped();
 
