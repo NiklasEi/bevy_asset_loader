@@ -6,7 +6,7 @@ with `cargo run --example <example>`.
 | Example                                                | Description                                                              |
 |--------------------------------------------------------|--------------------------------------------------------------------------|
 | [`full_collection.rs`](full_collection.rs)             | A complete asset collection with all supported non-dynamic field types   |
-| [`full_dynamic_collection.rs`](full_collection.rs)     | A complete asset collection with all supported dynamic asset field types |
+| [`full_dynamic_collection.rs`](full_dynamic_collection.rs)     | A complete asset collection with all supported dynamic asset field types |
 | [`two_collections.rs`](two_collections.rs)             | Load multiple asset collections                                          |
 | [`manual_dynamic_asset.rs`](manual_dynamic_asset.rs)   | Load an image asset from a path resolved at run time                     |
 | [`dynamic_asset.rs`](dynamic_asset.rs)                 | Load dynamic assets from a `.ron` file                                   |
