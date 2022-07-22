@@ -30,6 +30,11 @@ fn main() {
         .run();
 }
 
+// Time in seconds to complete a custom long-running task.
+// If assets are loaded earlier, the current state will not
+// be changed until the 'fake long task' is completed (thanks to 'iyes_progress')
+const DURATION_LONG_TASK_IN_SECS: f64 = 3.0;
+
 #[derive(AssetCollection)]
 struct AudioAssets {
     #[asset(path = "audio/background.ogg")]
@@ -49,12 +54,14 @@ struct TextureAssets {
     female_adventurer: Handle<TextureAtlas>,
 }
 
-fn track_fake_long_task(time: Res<Time>, progress: Res<ProgressCounter>) {
-    if time.seconds_since_startup() > 1. {
-        info!("done");
-        progress.manually_track(true.into());
-    } else {
-        progress.manually_track(false.into());
+fn track_fake_long_task(time: Res<Time>, progress: Res<ProgressCounter>, mut printed: Local<bool>) {
+    let ended = time.seconds_since_startup() > DURATION_LONG_TASK_IN_SECS;
+
+    progress.manually_track((ended).into());
+
+    if ended && !*printed {
+        info!("The fake long task is completed!");
+        *printed = true;
     }
 }
 
@@ -95,7 +102,10 @@ fn expect(
 
 fn print_progress(progress: Option<Res<ProgressCounter>>) {
     if let Some(progress) = progress {
-        info!("Current progress: {:?}", progress.progress());
+        // The condition to remove hell in the console
+        if progress.is_changed() {
+            info!("Current progress: {:?}", progress.progress());
+        }
     }
 }
 
