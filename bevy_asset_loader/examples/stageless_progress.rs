@@ -53,12 +53,14 @@ struct TextureAssets {
     female_adventurer: Handle<TextureAtlas>,
 }
 
-fn track_fake_long_task(time: Res<Time>, progress: Res<ProgressCounter>) {
-    if time.seconds_since_startup() > DURATION_LONG_TASK_IN_SECS {
+fn track_fake_long_task(time: Res<Time>, progress: Res<ProgressCounter>, mut printed: Local<bool>) {
+    let ended = time.seconds_since_startup() > DURATION_LONG_TASK_IN_SECS;
+
+    progress.manually_track((ended).into());
+
+    if ended && !*printed {
         info!("The fake long task is completed!");
-        progress.manually_track(true.into());
-    } else {
-        progress.manually_track(false.into());
+        *printed = true;
     }
 }
 
