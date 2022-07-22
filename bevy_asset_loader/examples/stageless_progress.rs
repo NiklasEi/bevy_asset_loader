@@ -16,19 +16,23 @@ fn main() {
         .add_loopless_state(MyStates::AssetLoading)
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading)
-                .continue_to_state(MyStates::Next)
                 .with_collection::<TextureAssets>()
                 .with_collection::<AudioAssets>(),
         )
         .add_plugins(DefaultPlugins)
         // track progress during `MyStates::AssetLoading` and continue to `MyStates::Next` when progress is completed
-        .add_plugin(ProgressPlugin::new(MyStates::AssetLoading))
+        .add_plugin(ProgressPlugin::new(MyStates::AssetLoading).continue_to(MyStates::Next))
         // gracefully quit the app when `MyStates::Next` is reached
         .add_enter_system(MyStates::Next, expect)
         .add_system(track_fake_long_task.run_in_state(MyStates::AssetLoading))
         .add_system_to_stage(CoreStage::PostUpdate, print_progress)
         .run();
 }
+
+// Time in seconds to complete a custom long-running task.
+// If assets are loaded earlier, the current state will not
+// be changed until the 'fake long task' is completed (thanks to 'iyes_progress')
+const DURATION_LONG_TASK_IN_SECS: f64 = 3.0;
 
 #[derive(AssetCollection)]
 struct AudioAssets {
@@ -50,8 +54,8 @@ struct TextureAssets {
 }
 
 fn track_fake_long_task(time: Res<Time>, progress: Res<ProgressCounter>) {
-    if time.seconds_since_startup() > 1. {
-        info!("done");
+    if time.seconds_since_startup() > DURATION_LONG_TASK_IN_SECS {
+        info!("The fake long task is completed!");
         progress.manually_track(true.into());
     } else {
         progress.manually_track(false.into());
@@ -95,7 +99,10 @@ fn expect(
 
 fn print_progress(progress: Option<Res<ProgressCounter>>) {
     if let Some(progress) = progress {
-        info!("Current progress: {:?}", progress.progress());
+        // The condition to remove hell in the console
+        if progress.is_changed() {
+            info!("Current progress: {:?}", progress.progress());
+        }
     }
 }
 
