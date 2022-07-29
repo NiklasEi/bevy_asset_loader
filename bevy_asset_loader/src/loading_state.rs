@@ -61,9 +61,9 @@ use iyes_progress::ProgressSystemLabel;
 use iyes_loopless::prelude::{AppLooplessStateExt, ConditionSet};
 
 #[cfg(feature = "stageless")]
-use iyes_loopless::state::schedule::{ScheduleLooplessStateExt, StateTransitionStageLabel};
+use iyes_loopless::state::schedule::ScheduleLooplessStateExt;
 #[cfg(feature = "stageless")]
-use iyes_loopless::state::StateTransitionStage;
+use iyes_loopless::state::{StateTransitionStage, StateTransitionStageLabel};
 
 use crate::dynamic_asset::{DynamicAsset, DynamicAssets};
 

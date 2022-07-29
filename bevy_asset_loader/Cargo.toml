@@ -28,14 +28,14 @@ anyhow = "1"
 
 bevy_common_assets = { git = "https://github.com/NiklasEi/bevy_common_assets", features = ["ron"], branch = "bevy_main", optional = true }
 serde = { version = "1", optional = true }
-iyes_progress = { git = "https://github.com/NiklasEi/iyes_progress", branch = "bevy_main", optional = true }
-iyes_loopless = { git = "https://github.com/NiklasEi/iyes_loopless", branch= "bevy_main", optional = true }
+iyes_progress = { git = "https://github.com/IyesGames/iyes_progress", branch = "bevy_main", optional = true }
+iyes_loopless = { git = "https://github.com/IyesGames/iyes_loopless", branch = "bevy_main", optional = true }
 
 [dev-dependencies]
 bevy = { git = "https://github.com/bevyengine/bevy", features = ["vorbis"] }
 anyhow = "1"
-iyes_progress = { git = "https://github.com/NiklasEi/iyes_progress", branch = "bevy_main" }
-iyes_loopless = { git = "https://github.com/NiklasEi/iyes_loopless", branch = "bevy_main" }
+iyes_progress = { git = "https://github.com/IyesGames/iyes_progress", branch = "bevy_main" }
+iyes_loopless = { git = "https://github.com/IyesGames/iyes_loopless", branch = "bevy_main" }
 bevy_common_assets = { git = "https://github.com/NiklasEi/bevy_common_assets", branch = "bevy_main", features = ["ron"] }
 serde = { version = "1" }
 trybuild = { version = "1.0" }
