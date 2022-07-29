@@ -118,7 +118,7 @@ fn print_progress(
                 "[Frame {}] Changed progress: {:?}",
                 diagnostics
                     .get(FrameTimeDiagnosticsPlugin::FRAME_COUNT)
-                    .map(|diagnostic| diagnostic.sum())
+                    .map(|diagnostic| diagnostic.value().unwrap_or(0.))
                     .unwrap_or(0.),
                 progress
             );
