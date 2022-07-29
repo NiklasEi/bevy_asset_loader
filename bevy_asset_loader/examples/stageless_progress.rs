@@ -1,5 +1,6 @@
 use bevy::app::AppExit;
 use bevy::asset::LoadState;
+use bevy::diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin};
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 use iyes_loopless::prelude::*;
@@ -8,9 +9,12 @@ use iyes_progress::{ProgressCounter, ProgressPlugin};
 /// This example shows how to track the loading progress of your collections using `iyes_progress`
 ///
 /// Running it will print the current progress for every frame. The five assets from
-/// the two collections will be loaded rather quickly (one or two frames). The final task
+/// the two collections will be loaded rather quickly (one/a few frames). The final task
 /// completes after one second. At that point, `iyes_progress` will continue to the next state
 /// and the app will terminate.
+///
+/// NOTE: If you do not track any `iyes_progress` tasks manually, you need to let the `LoadingState`
+/// handle the state transition! See [#54](https://github.com/NiklasEi/bevy_asset_loader/issues/54) for more info.
 fn main() {
     App::new()
         .add_loopless_state(MyStates::AssetLoading)
@@ -20,19 +24,24 @@ fn main() {
                 .with_collection::<AudioAssets>(),
         )
         .add_plugins(DefaultPlugins)
+        .add_plugin(FrameTimeDiagnosticsPlugin::default())
         // track progress during `MyStates::AssetLoading` and continue to `MyStates::Next` when progress is completed
         .add_plugin(ProgressPlugin::new(MyStates::AssetLoading).continue_to(MyStates::Next))
         // gracefully quit the app when `MyStates::Next` is reached
         .add_enter_system(MyStates::Next, expect)
-        .add_system(track_fake_long_task.run_in_state(MyStates::AssetLoading))
-        .add_system_to_stage(CoreStage::PostUpdate, print_progress)
+        .add_system(
+            track_fake_long_task
+                .run_in_state(MyStates::AssetLoading)
+                .before(print_progress),
+        )
+        .add_system(print_progress)
         .run();
 }
 
 // Time in seconds to complete a custom long-running task.
 // If assets are loaded earlier, the current state will not
 // be changed until the 'fake long task' is completed (thanks to 'iyes_progress')
-const DURATION_LONG_TASK_IN_SECS: f64 = 3.0;
+const DURATION_LONG_TASK_IN_SECS: f64 = 2.0;
 
 #[derive(AssetCollection)]
 struct AudioAssets {
@@ -53,14 +62,12 @@ struct TextureAssets {
     female_adventurer: Handle<TextureAtlas>,
 }
 
-fn track_fake_long_task(time: Res<Time>, progress: Res<ProgressCounter>, mut printed: Local<bool>) {
-    let ended = time.seconds_since_startup() > DURATION_LONG_TASK_IN_SECS;
-
-    progress.manually_track((ended).into());
-
-    if ended && !*printed {
-        info!("The fake long task is completed!");
-        *printed = true;
+fn track_fake_long_task(time: Res<Time>, progress: Res<ProgressCounter>) {
+    if time.seconds_since_startup() > DURATION_LONG_TASK_IN_SECS {
+        info!("Long task is completed");
+        progress.manually_track(true.into());
+    } else {
+        progress.manually_track(false.into());
     }
 }
 
@@ -94,16 +101,27 @@ fn expect(
         asset_server.get_load_state(texture_assets.tree.clone()),
         LoadState::Loaded
     );
-    println!("Everything looks good!");
-    println!("Quitting the application...");
+    info!("Everything looks good!");
+    info!("Quitting the application...");
     quit.send(AppExit);
 }
 
-fn print_progress(progress: Option<Res<ProgressCounter>>) {
-    if let Some(progress) = progress {
-        // The condition to remove hell in the console
-        if progress.is_changed() {
-            info!("Current progress: {:?}", progress.progress());
+fn print_progress(
+    progress: Option<Res<ProgressCounter>>,
+    diagnostics: Res<Diagnostics>,
+    mut last_done: Local<u32>,
+) {
+    if let Some(progress) = progress.map(|counter| counter.progress()) {
+        if progress.done > *last_done {
+            *last_done = progress.done;
+            info!(
+                "[Frame {}] Changed progress: {:?}",
+                diagnostics
+                    .get(FrameTimeDiagnosticsPlugin::FRAME_COUNT)
+                    .map(|diagnostic| diagnostic.sum())
+                    .unwrap_or(0.),
+                progress
+            );
         }
     }
 }
