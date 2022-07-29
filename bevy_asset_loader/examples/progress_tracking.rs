@@ -1,5 +1,6 @@
 use bevy::app::AppExit;
 use bevy::asset::LoadState;
+use bevy::diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin};
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 use iyes_progress::{ProgressCounter, ProgressPlugin};
@@ -7,7 +8,7 @@ use iyes_progress::{ProgressCounter, ProgressPlugin};
 /// This example shows how to track the loading progress of your collections using `iyes_progress`
 ///
 /// Running it will print the current progress for every frame. The five assets from
-/// the two collections will be loaded rather quickly (one or two frames). The final task
+/// the two collections will be loaded rather quickly (one/a few frames). The final task
 /// completes after one second. At that point, `iyes_progress` will continue to the next state
 /// and the app will terminate.
 fn main() {
@@ -19,16 +20,23 @@ fn main() {
         )
         .add_state(MyStates::AssetLoading)
         .add_plugins(DefaultPlugins)
+        .add_plugin(FrameTimeDiagnosticsPlugin::default())
         // track progress during `MyStates::AssetLoading` and continue to `MyStates::Next` when progress is completed
         .add_plugin(ProgressPlugin::new(MyStates::AssetLoading).continue_to(MyStates::Next))
         // gracefully quit the app when `MyStates::Next` is reached
         .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(expect))
         .add_system_set(
-            SystemSet::on_update(MyStates::AssetLoading).with_system(track_fake_long_task),
+            SystemSet::on_update(MyStates::AssetLoading)
+                .with_system(track_fake_long_task.before(print_progress)),
         )
-        .add_system_to_stage(CoreStage::PostUpdate, print_progress)
+        .add_system(print_progress)
         .run();
 }
+
+// Time in seconds to complete a custom long-running task.
+// If assets are loaded earlier, the current state will not
+// be changed until the 'fake long task' is completed (thanks to 'iyes_progress')
+const DURATION_LONG_TASK_IN_SECS: f64 = 2.0;
 
 #[derive(AssetCollection)]
 struct AudioAssets {
@@ -50,8 +58,8 @@ struct TextureAssets {
 }
 
 fn track_fake_long_task(time: Res<Time>, progress: Res<ProgressCounter>) {
-    if time.seconds_since_startup() > 1. {
-        info!("done");
+    if time.seconds_since_startup() > DURATION_LONG_TASK_IN_SECS {
+        info!("Long task is completed");
         progress.manually_track(true.into());
     } else {
         progress.manually_track(false.into());
@@ -88,14 +96,28 @@ fn expect(
         asset_server.get_load_state(texture_assets.tree.clone()),
         LoadState::Loaded
     );
-    println!("Everything looks good!");
-    println!("Quitting the application...");
+    info!("Everything looks good!");
+    info!("Quitting the application...");
     quit.send(AppExit);
 }
 
-fn print_progress(progress: Option<Res<ProgressCounter>>) {
-    if let Some(progress) = progress {
-        info!("Current progress: {:?}", progress.progress());
+fn print_progress(
+    progress: Option<Res<ProgressCounter>>,
+    diagnostics: Res<Diagnostics>,
+    mut last_done: Local<u32>,
+) {
+    if let Some(progress) = progress.map(|counter| counter.progress()) {
+        if progress.done > *last_done {
+            *last_done = progress.done;
+            info!(
+                "[Frame {}] Changed progress: {:?}",
+                diagnostics
+                    .get(FrameTimeDiagnosticsPlugin::FRAME_COUNT)
+                    .map(|diagnostic| diagnostic.sum())
+                    .unwrap_or(0.),
+                progress
+            );
+        }
     }
 }
 
