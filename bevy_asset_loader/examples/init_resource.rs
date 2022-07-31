@@ -42,8 +42,8 @@ impl FromWorld for CombinedImage {
         let image_assets = cell
             .get_resource::<ImageAssets>()
             .expect("Failed to get ImageAssets");
-        let player_image = images.get(image_assets.player.clone()).unwrap();
-        let tree_image = images.get(image_assets.tree.clone()).unwrap();
+        let player_image = images.get(&image_assets.player.clone()).unwrap();
+        let tree_image = images.get(&image_assets.tree.clone()).unwrap();
         let mut combined = player_image.clone();
         combined.data = combined
             .data
@@ -66,7 +66,7 @@ fn draw(
     combined_texture: Res<CombinedImage>,
     image_assets: Res<ImageAssets>,
 ) {
-    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
+    commands.spawn_bundle(Camera2dBundle::default());
     commands.spawn_bundle(SpriteBundle {
         texture: image_assets.player.clone(),
         transform: Transform::from_translation(Vec3::new(-150., 0., 1.)),

@@ -23,9 +23,9 @@ fn main() {
 }
 
 fn render_stuff(mut commands: Commands, assets: Res<MyAssets>) {
-    commands.spawn_bundle(PerspectiveCameraBundle {
+    commands.spawn_bundle(Camera3dBundle {
         transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
-        ..PerspectiveCameraBundle::new_3d()
+        ..default()
     });
     commands.spawn_bundle(PbrBundle {
         mesh: assets.cube.clone(),
@@ -50,7 +50,7 @@ fn render_stuff(mut commands: Commands, assets: Res<MyAssets>) {
     });
 
     // Combined image as sprite
-    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
+    commands.spawn_bundle(Camera2dBundle::default());
     commands.spawn_bundle(SpriteBundle {
         texture: assets.combined_image.clone(),
         transform: Transform::from_xyz(0.0, 200.0, 0.0),
@@ -116,10 +116,10 @@ impl DynamicAsset for CustomDynamicAsset {
                     .get_resource_mut::<Assets<Image>>()
                     .expect("Failed to get image assets");
                 let first = images
-                    .get(asset_server.load_untyped(top_layer))
+                    .get(&asset_server.load_untyped(top_layer).typed())
                     .expect("Failed to get first layer");
                 let second = images
-                    .get(asset_server.load_untyped(bottom_layer))
+                    .get(&asset_server.load_untyped(bottom_layer).typed())
                     .expect("Failed to get second layer");
                 let combined = Image::new(
                     second.texture_descriptor.size,
