@@ -87,6 +87,16 @@ path = "examples/stageless.rs"
 required-features = ["stageless"]
 
 [[example]]
+name = "stageless_full_collection"
+path = "examples/stageless_full_collection.rs"
+required-features = ["stageless", "2d", "3d"]
+
+[[example]]
+name = "stageless_full_dynamic_collection"
+path = "examples/stageless_full_dynamic_collection.rs"
+required-features = ["stageless", "2d", "3d", "dynamic_assets"]
+
+[[example]]
 name = "stageless_manual_dynamic_asset"
 path = "examples/stageless_manual_dynamic_asset.rs"
 required-features = ["stageless", "dynamic_assets"]
