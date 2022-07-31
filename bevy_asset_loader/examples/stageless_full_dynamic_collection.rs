@@ -1,8 +1,8 @@
 use bevy::app::AppExit;
 use bevy::asset::LoadState;
 use bevy::prelude::*;
-use iyes_loopless::prelude::AppLooplessStateExt;
 use bevy_asset_loader::prelude::*;
+use iyes_loopless::prelude::AppLooplessStateExt;
 
 fn main() {
     App::new()
@@ -16,7 +16,7 @@ fn main() {
                 ])
                 .with_collection::<MyAssets>(),
         )
-        .add_enter_system(MyStates::Next,expectations)
+        .add_enter_system(MyStates::Next, expectations)
         .run();
 }
 
