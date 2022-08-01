@@ -10,7 +10,7 @@ homepage = "https://github.com/NiklasEi/bevy_asset_loader"
 documentation = "https://docs.rs/bevy_asset_loader"
 keywords = ["bevy", "gamedev", "asset", "assets"]
 categories = ["game-development"]
-readme = "../README.md"
+readme = "README.md"
 
 [features]
 2d = ["bevy/bevy_sprite", "bevy_asset_loader_derive/2d"]
