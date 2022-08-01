@@ -32,10 +32,10 @@ fn draw_atlas(
     my_assets: Res<MyAssets>,
     texture_atlases: Res<Assets<TextureAtlas>>,
 ) {
-    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
+    commands.spawn_bundle(Camera2dBundle::default());
     // draw the original image (whole atlas)
     let atlas = texture_atlases
-        .get(my_assets.female_adventurer.clone())
+        .get(&my_assets.female_adventurer)
         .expect("Failed to find our atlas");
     commands.spawn_bundle(SpriteBundle {
         texture: atlas.texture.clone(),
@@ -63,7 +63,7 @@ fn animate_sprite_system(
     time: Res<Time>,
     mut query: Query<(&mut AnimationTimer, &mut TextureAtlasSprite)>,
 ) {
-    for (mut timer, mut sprite) in query.iter_mut() {
+    for (mut timer, mut sprite) in &mut query {
         timer.0.tick(time.delta());
         if timer.0.finished() {
             sprite.index = (sprite.index + 1) % 8;

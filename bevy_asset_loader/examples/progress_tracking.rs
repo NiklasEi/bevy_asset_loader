@@ -82,7 +82,7 @@ fn expect(
         LoadState::Loaded
     );
     let atlas = texture_atlases
-        .get(texture_assets.female_adventurer.clone())
+        .get(&texture_assets.female_adventurer)
         .expect("Texture atlas should be added to its assets resource.");
     assert_eq!(
         asset_server.get_load_state(atlas.texture.clone()),
@@ -113,7 +113,7 @@ fn print_progress(
                 "[Frame {}] Changed progress: {:?}",
                 diagnostics
                     .get(FrameTimeDiagnosticsPlugin::FRAME_COUNT)
-                    .map(|diagnostic| diagnostic.sum())
+                    .map(|diagnostic| diagnostic.value().unwrap_or(0.))
                     .unwrap_or(0.),
                 progress
             );

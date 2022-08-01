@@ -63,7 +63,7 @@ fn expectations(
         LoadState::Loaded
     );
     let material = standard_materials
-        .get(assets.standard_material.clone())
+        .get(&assets.standard_material)
         .expect("Standard material should be added to its assets resource.");
     assert_eq!(
         asset_server.get_load_state(
@@ -75,7 +75,7 @@ fn expectations(
         LoadState::Loaded
     );
     let atlas = texture_atlases
-        .get(assets.texture_atlas.clone())
+        .get(&assets.texture_atlas)
         .expect("Texture atlas should be added to its assets resource.");
     assert_eq!(
         asset_server.get_load_state(atlas.texture.clone()),
