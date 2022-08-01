@@ -7,6 +7,7 @@
 - Support optional dynamic folder and files assets (fixes [#49](https://github.com/NiklasEi/bevy_asset_loader/issues/49))
 - Added a prelude
 - Documentation fixes and improvements
+- `AssetLoader` => `LoadingState`
 - Update to Bevy 0.8
 
 ## v0.11.0
