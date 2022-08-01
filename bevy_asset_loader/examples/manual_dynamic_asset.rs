@@ -257,7 +257,7 @@ fn update_menu(
 }
 
 fn exit_menu(mut commands: Commands, ui: Query<Entity, With<MenuUi>>) {
-    for entity in ui.iter() {
+    for entity in &ui {
         commands.entity(entity).despawn_recursive();
     }
 }

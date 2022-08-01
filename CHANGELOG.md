@@ -3,10 +3,11 @@
 ## v0.12.0
 - `App` extension trait making adding loading states a lot nicer ([#58](https://github.com/NiklasEi/bevy_asset_loader/issues/58))
 - Custom dynamic assets ([#55](https://github.com/NiklasEi/bevy_asset_loader/issues/55))
-- Added a prelude
-- Documentation fixes and improvements
 - Allow configuring a loading state multiple times (fixes [#60](https://github.com/NiklasEi/bevy_asset_loader/issues/60))
 - Support optional dynamic folder and files assets (fixes [#49](https://github.com/NiklasEi/bevy_asset_loader/issues/49))
+- Added a prelude
+- Documentation fixes and improvements
+- Update to Bevy 0.8
 
 ## v0.11.0
 - Support progress tracking through `iyes_progress` ([#6](https://github.com/NiklasEi/bevy_asset_loader/issues/6))

@@ -63,7 +63,7 @@ fn animate_sprite_system(
     time: Res<Time>,
     mut query: Query<(&mut AnimationTimer, &mut TextureAtlasSprite)>,
 ) {
-    for (mut timer, mut sprite) in query.iter_mut() {
+    for (mut timer, mut sprite) in &mut query {
         timer.0.tick(time.delta());
         if timer.0.finished() {
             sprite.index = (sprite.index + 1) % 8;
