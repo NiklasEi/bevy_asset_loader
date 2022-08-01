@@ -1,6 +1,6 @@
 [package]
 name = "bevy_asset_loader"
-version = "0.11.0"
+version = "0.12.0"
 authors = ["Niklas Eicker <git@nikl.me>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
@@ -23,7 +23,7 @@ stageless = ["iyes_loopless"]
 
 [dependencies]
 bevy = { version = "0.8", default-features = false, features = ["bevy_asset"] }
-bevy_asset_loader_derive = { version = "=0.11.0", path = "../bevy_asset_loader_derive" }
+bevy_asset_loader_derive = { version = "=0.12.0", path = "../bevy_asset_loader_derive" }
 anyhow = "1"
 
 bevy_common_assets = { version = "0.3", features = ["ron"], optional = true }

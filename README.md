@@ -11,7 +11,7 @@ In most cases you will want to load your asset collections during loading states
 
 _`bevy_asset_loader` supports `iyes_loopless` states with the [`stageless`](#stageless-support) feature._
 
-_The `main` branch and the latest release support Bevy version `0.7` (see [version table](#compatible-bevy-versions))_
+_The `main` branch and the latest release support Bevy version `0.8` (see [version table](#compatible-bevy-versions))_
 
 ## Loading states
 
@@ -415,10 +415,11 @@ The main branch is compatible with the latest Bevy release, while the branch `be
 Compatibility of `bevy_asset_loader` versions:
 | `bevy_asset_loader` | `bevy` |
 | :--                 |  :--   |
+| `0.12`              | `0.8`  |
 | `0.10` - `0.11`     | `0.7`  |
 | `0.8` - `0.9`       | `0.6`  |
 | `0.1` - `0.7`       | `0.5`  |
-| `main`              | `0.7`  |
+| `main`              | `0.8`  |
 | `bevy_main`         | `main` |
 
 ## License
