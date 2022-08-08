@@ -20,7 +20,7 @@ pub enum StandardDynamicAsset {
     ///
     /// Subdirectories are also included.
     /// This is not supported for web builds! If you need compatibility with web builds,
-    /// consider using [`DynamicAsset::Files`] instead.
+    /// consider using [`StandardDynamicAsset::Files`] instead.
     Folder {
         /// Asset file folder path
         path: String,
