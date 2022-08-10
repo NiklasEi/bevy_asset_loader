@@ -102,7 +102,7 @@ pub mod loading_state;
 #[cfg(feature = "dynamic_assets")]
 pub mod standard_dynamic_asset;
 
-#[doc(hidden)]
+/// Most commonly used types
 pub mod prelude {
     #[doc(hidden)]
     #[cfg(feature = "dynamic_assets")]
