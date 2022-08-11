@@ -58,7 +58,7 @@ struct ImageAssets {
 // This system decides which file to load as the character sprite based on some player input
 fn character_setup(
     mut commands: Commands,
-    mut asset_keys: ResMut<DynamicAssets>,
+    mut dynamic_assets: ResMut<DynamicAssets>,
     mut show_background: ResMut<ShowBackground>,
     mouse_input: Res<Input<MouseButton>>,
     keyboard_input: Res<Input<KeyCode>>,
@@ -89,7 +89,7 @@ fn character_setup(
     }
 
     if show_background.0 {
-        asset_keys.register_asset(
+        dynamic_assets.register_asset(
             "background",
             Box::new(StandardDynamicAsset::File {
                 path: "images/background.png".to_owned(),
@@ -188,9 +188,7 @@ fn menu(mut commands: Commands, font_assets: Res<FontAssets>) {
                 flex_direction: FlexDirection::ColumnReverse,
                 ..Default::default()
             },
-            visibility: Visibility {
-                is_visible: false,
-            },
+            color: UiColor(Color::rgba(0.0,0.0,0.0,1.0)),
             ..Default::default()
         })
         .insert(MenuUi)
