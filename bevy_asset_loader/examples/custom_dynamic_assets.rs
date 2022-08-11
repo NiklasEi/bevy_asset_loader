@@ -1,3 +1,4 @@
+use bevy::core_pipeline::clear_color::ClearColorConfig;
 use bevy::prelude::*;
 use bevy::utils::HashMap;
 use bevy_asset_loader::prelude::*;
@@ -49,8 +50,17 @@ fn render_stuff(mut commands: Commands, assets: Res<MyAssets>) {
         ..default()
     });
 
+    commands.spawn_bundle(Camera2dBundle {
+        camera: Camera {
+            priority: 1,
+            ..default()
+        },
+        camera_2d: Camera2d {
+            clear_color: ClearColorConfig::None,
+        },
+        ..default()
+    });
     // Combined image as sprite
-    commands.spawn_bundle(Camera2dBundle::default());
     commands.spawn_bundle(SpriteBundle {
         texture: assets.combined_image.clone(),
         transform: Transform::from_xyz(0.0, 200.0, 0.0),

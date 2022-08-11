@@ -1,6 +1,8 @@
 use crate::dynamic_asset::{DynamicAsset, DynamicAssetType};
 use bevy::asset::{AssetServer, HandleUntyped};
+use bevy::ecs::system::Command;
 use bevy::ecs::world::World;
+#[cfg(feature = "2d")]
 use bevy::math::Vec2;
 
 use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssets};
@@ -140,6 +142,21 @@ impl DynamicAsset for StandardDynamicAsset {
                     .collect(),
             )),
         }
+    }
+}
+
+/// Command to register a standard dynamic asset under the given key
+pub struct RegisterStandardDynamicAsset<K: Into<String> + Sync + Send + 'static> {
+    /// The key of the asset
+    pub key: K,
+    /// The dynamic asset to be registered
+    pub asset: StandardDynamicAsset,
+}
+
+impl<K: Into<String> + Sync + Send + 'static> Command for RegisterStandardDynamicAsset<K> {
+    fn write(self, world: &mut World) {
+        let mut dynamic_assets = world.resource_mut::<DynamicAssets>();
+        dynamic_assets.register_asset(self.key, Box::new(self.asset));
     }
 }
 

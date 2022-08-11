@@ -3,9 +3,11 @@ use bevy_asset_loader::prelude::*;
 
 const PLAYER_SPEED: f32 = 5.;
 
-/// This example shows how to load an asset collection with dynamic assets
+/// This example shows how to manually register dynamic assets. Most of the time you will want to
+/// load them from a file instead ().
 fn main() {
     App::new()
+        .add_plugins(DefaultPlugins)
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading)
                 .continue_to_state(MyStates::Next)
@@ -23,7 +25,6 @@ fn main() {
         .add_state(MyStates::MenuAssetLoading)
         .insert_resource(Msaa { samples: 1 })
         .insert_resource(ShowBackground(false))
-        .add_plugins(DefaultPlugins)
         .add_system_set(
             SystemSet::on_enter(MyStates::Next)
                 .with_system(spawn_player_and_tree)
@@ -57,29 +58,31 @@ struct ImageAssets {
 
 // This system decides which file to load as the character sprite based on some player input
 fn character_setup(
+    mut commands: Commands,
     mut state: ResMut<State<MyStates>>,
-    mut asset_keys: ResMut<DynamicAssets>,
+    mut dynamic_assets: ResMut<DynamicAssets>,
     mut show_background: ResMut<ShowBackground>,
     mouse_input: Res<Input<MouseButton>>,
     keyboard_input: Res<Input<KeyCode>>,
 ) {
     if mouse_input.just_pressed(MouseButton::Left) {
-        // Most of the time you don't want to do this manually,
-        // but load dynamic asset collections from a file.
-        // See the `dynamic_asset` example
-        asset_keys.register_asset(
+        // Manually register the asset
+        //
+        // This can be either done with the resource directly:
+        dynamic_assets.register_asset(
             "character",
             Box::new(StandardDynamicAsset::File {
                 path: "images/female_adventurer.png".to_owned(),
             }),
         );
     } else if mouse_input.just_pressed(MouseButton::Right) {
-        asset_keys.register_asset(
-            "character",
-            Box::new(StandardDynamicAsset::File {
+        // Or be using a command:
+        commands.add(RegisterStandardDynamicAsset {
+            key: "character",
+            asset: StandardDynamicAsset::File {
                 path: "images/zombie.png".to_owned(),
-            }),
-        );
+            },
+        });
     } else if keyboard_input.just_pressed(KeyCode::B) {
         show_background.0 = !show_background.0;
         return;
@@ -88,7 +91,7 @@ fn character_setup(
     }
 
     if show_background.0 {
-        asset_keys.register_asset(
+        dynamic_assets.register_asset(
             "background",
             Box::new(StandardDynamicAsset::File {
                 path: "images/background.png".to_owned(),
@@ -117,7 +120,6 @@ pub struct FontAssets {
 }
 
 fn spawn_player_and_tree(mut commands: Commands, image_assets: Res<ImageAssets>) {
-    commands.spawn_bundle(Camera2dBundle::default());
     let mut transform = Transform::from_translation(Vec3::new(0., 0., 1.));
     transform.scale = Vec3::splat(0.5);
     commands
@@ -190,9 +192,7 @@ fn menu(mut commands: Commands, font_assets: Res<FontAssets>) {
                 flex_direction: FlexDirection::ColumnReverse,
                 ..Default::default()
             },
-            visibility: Visibility {
-                is_visible: false,
-            },
+            color: UiColor(Color::rgba(0.0,0.0,0.0,1.0)),
             ..Default::default()
         })
         .insert(MenuUi)

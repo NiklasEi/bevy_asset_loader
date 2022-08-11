@@ -18,7 +18,7 @@ fn main() {
             brightness: 0.2,
         })
         .add_plugins(DefaultPlugins)
-        .add_system_set(SystemSet::on_update(MyStates::Next).with_system(spawn_player))
+        .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(spawn_player))
         .run();
 }
 
