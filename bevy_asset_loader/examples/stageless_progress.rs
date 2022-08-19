@@ -32,9 +32,9 @@ fn main() {
         .add_system(
             track_fake_long_task
                 .run_in_state(MyStates::AssetLoading)
-                .before(print_progress),
+                .before("print"),
         )
-        .add_system(print_progress)
+        .add_system(print_progress.label("print"))
         .run();
 }
 
