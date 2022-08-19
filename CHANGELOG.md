@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.12.1
+- bump `iyes_progress` to `0.5`
+
 ## v0.12.0
 - `App` extension trait making adding loading states a lot nicer ([#58](https://github.com/NiklasEi/bevy_asset_loader/issues/58))
 - Custom dynamic assets ([#55](https://github.com/NiklasEi/bevy_asset_loader/issues/55))
