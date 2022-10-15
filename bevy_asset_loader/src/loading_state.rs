@@ -28,12 +28,12 @@ use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssetCollections};
 #[cfg(feature = "stageless")]
 use stageless::systems::{
     check_loading_collection, finish_loading_state, init_resource, initialize_loading_state,
-    reset_loading_state, run_loading_state, start_loading_collection,
+    reset_loading_state, resume_to_finalize, run_loading_state, start_loading_collection,
 };
 #[cfg(not(feature = "stageless"))]
 use systems::{
     check_loading_collection, finish_loading_state, init_resource, initialize_loading_state,
-    reset_loading_state, run_loading_state, start_loading_collection,
+    reset_loading_state, resume_to_finalize, run_loading_state, start_loading_collection,
 };
 
 #[cfg(not(feature = "stageless"))]
@@ -699,14 +699,14 @@ where
                 .get_resource_mut::<AssetLoaderConfiguration<S>>()
                 .unwrap();
             let mut loading_config = asset_loader_configuration
-                .configuration
+                .state_configurations
                 .remove(&self.loading_state)
                 .unwrap_or(LoadingConfiguration::new(self.next_state.clone()));
             if self.next_state.is_some() {
                 loading_config.next = self.next_state.clone();
             }
             asset_loader_configuration
-                .configuration
+                .state_configurations
                 .insert(self.loading_state.clone(), loading_config);
         }
 
@@ -773,6 +773,9 @@ where
                 .with_system(initialize_loading_state),
         );
         update.add_system_set(self.start_loading_collections);
+        self.check_loading_collections = self
+            .check_loading_collections
+            .with_system(resume_to_finalize::<S>);
         update.add_system_set(self.check_loading_collections);
         update.add_system_set(self.initialize_resources);
         update.add_system_set(
@@ -860,14 +863,14 @@ where
                 .get_resource_mut::<AssetLoaderConfiguration<S>>()
                 .unwrap();
             let mut loading_config = asset_loader_configuration
-                .configuration
+                .state_configurations
                 .remove(&self.loading_state)
                 .unwrap_or_else(|| LoadingConfiguration::new(self.next_state.clone()));
             if self.next_state.is_some() {
                 loading_config.next = self.next_state.clone();
             }
             asset_loader_configuration
-                .configuration
+                .state_configurations
                 .insert(self.loading_state.clone(), loading_config);
         }
 
@@ -935,6 +938,9 @@ where
             .check_loading_dynamic_collections
             .with_system(resume_to_loading_asset_collections::<S>);
         update.add_system_set(self.check_loading_dynamic_collections);
+        self.check_loading_collections = self
+            .check_loading_collections
+            .with_system(resume_to_finalize::<S>);
         update.add_system_set(self.check_loading_collections);
         update.add_system_set(
             ConditionSet::new()
@@ -957,6 +963,7 @@ where
             InternalLoadingState::LoadingDynamicAssetCollections,
             self.start_loading_dynamic_collections,
         );
+
         loading_schedule.add_enter_system_set(
             InternalLoadingState::LoadingAssets,
             self.start_loading_collections,
@@ -1012,13 +1019,13 @@ impl<T> Default for LoadingAssetHandles<T> {
 }
 
 pub(crate) struct AssetLoaderConfiguration<State: StateData> {
-    configuration: HashMap<State, LoadingConfiguration<State>>,
+    state_configurations: HashMap<State, LoadingConfiguration<State>>,
 }
 
 impl<State: StateData> Default for AssetLoaderConfiguration<State> {
     fn default() -> Self {
         AssetLoaderConfiguration {
-            configuration: HashMap::default(),
+            state_configurations: HashMap::default(),
         }
     }
 }
