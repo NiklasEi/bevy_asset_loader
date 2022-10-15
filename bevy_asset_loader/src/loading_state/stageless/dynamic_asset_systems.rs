@@ -27,7 +27,7 @@ pub(crate) fn load_dynamic_asset_collections<S: StateData, C: DynamicAssetCollec
     }
 
     let mut config = asset_loader_config
-        .configuration
+        .state_configurations
         .get_mut(&state.0)
         .expect("No asset loader configuration for current state");
     config.loading_dynamic_collections += 1;
@@ -76,7 +76,7 @@ pub(crate) fn check_dynamic_asset_collections<S: StateData, C: DynamicAssetColle
             collection.register(&mut asset_keys);
         }
         let mut config = asset_loader_config
-            .configuration
+            .state_configurations
             .get_mut(&state.0)
             .expect("No asset loader configuration for current state");
         config.loading_dynamic_collections -= 1;
@@ -94,7 +94,7 @@ pub(crate) fn resume_to_loading_asset_collections<S: StateData>(
         return;
     }
     let config = asset_loader_config
-        .configuration
+        .state_configurations
         .get(&state.0)
         .expect("No asset loader configuration for current state");
     if config.loading_dynamic_collections == 0 {

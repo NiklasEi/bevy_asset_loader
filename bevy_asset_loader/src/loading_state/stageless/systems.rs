@@ -1,11 +1,11 @@
 use bevy::asset::{AssetServer, LoadState};
 use bevy::ecs::prelude::Commands;
 
+use bevy::ecs::change_detection::{Mut, ResMut};
 use bevy::ecs::prelude::{FromWorld, World};
-use bevy::ecs::schedule::StateData;
-use bevy::ecs::system::SystemState;
+use bevy::ecs::schedule::{Stage, StateData};
+use bevy::ecs::system::{Res, SystemState};
 
-use bevy::prelude::{Mut, Res, ResMut, Stage};
 use std::marker::PhantomData;
 
 #[cfg(feature = "progress_tracking")]
@@ -32,7 +32,7 @@ pub(crate) fn start_loading_collection<S: StateData, Assets: AssetCollection>(wo
     let (mut asset_loader_configuration, state) = system_state.get_mut(world);
 
     let mut config = asset_loader_configuration
-        .configuration
+        .state_configurations
         .get_mut(&state.0)
         .unwrap_or_else(|| {
             panic!(
@@ -54,15 +54,7 @@ pub(crate) fn check_loading_collection<S: StateData, Assets: AssetCollection>(wo
             return;
         }
     }
-    if let Some((done, total, option_loading_collections)) =
-        count_loaded_handles::<S, Assets>(world)
-    {
-        if let Some(loading_collections) = option_loading_collections {
-            if loading_collections == 0 {
-                world.insert_resource(NextState(InternalLoadingState::Finalize))
-            }
-        }
-
+    if let Some((done, total)) = count_loaded_handles::<S, Assets>(world) {
         if total == done {
             let asset_collection = Assets::create(world);
             world.insert_resource(asset_collection);
@@ -83,7 +75,7 @@ pub(crate) fn check_loading_collection<S: StateData, Assets: AssetCollection>(wo
 
 fn count_loaded_handles<S: StateData, Assets: AssetCollection>(
     world: &mut World,
-) -> Option<(u32, u32, Option<usize>)> {
+) -> Option<(u32, u32)> {
     let cell = world.cell();
     let loading_asset_handles = cell.get_resource::<LoadingAssetHandles<Assets>>()?;
     let total = loading_asset_handles.handles.len();
@@ -99,10 +91,8 @@ fn count_loaded_handles<S: StateData, Assets: AssetCollection>(
         .filter(|state| state == &LoadState::Loaded)
         .count();
     if done < total {
-        return Some((done as u32, total as u32, None));
+        return Some((done as u32, total as u32));
     }
-
-    let mut loading_collections: Option<usize> = None;
 
     let state = cell
         .get_resource::<CurrentState<S>>()
@@ -110,12 +100,30 @@ fn count_loaded_handles<S: StateData, Assets: AssetCollection>(
     let mut asset_loader_configuration = cell
         .get_resource_mut::<AssetLoaderConfiguration<S>>()
         .expect("Cannot get AssetLoaderConfiguration resource");
-    if let Some(mut config) = asset_loader_configuration.configuration.get_mut(&state.0) {
+    if let Some(mut config) = asset_loader_configuration
+        .state_configurations
+        .get_mut(&state.0)
+    {
         config.loading_collections -= 1;
-        loading_collections = Some(config.loading_collections)
     }
 
-    Some((done as u32, total as u32, loading_collections))
+    Some((done as u32, total as u32))
+}
+
+pub(crate) fn resume_to_finalize<S: StateData>(
+    mut commands: Commands,
+    loader_configuration: Res<AssetLoaderConfiguration<S>>,
+    state: Res<CurrentState<S>>,
+    internal_state: Res<CurrentState<InternalLoadingState>>,
+) {
+    if internal_state.0 != InternalLoadingState::LoadingAssets {
+        return;
+    }
+    if let Some(configuration) = loader_configuration.state_configurations.get(&state.0) {
+        if configuration.loading_collections == 0 {
+            commands.insert_resource(NextState(InternalLoadingState::Finalize))
+        }
+    }
 }
 
 pub(crate) fn initialize_loading_state(
@@ -135,7 +143,10 @@ pub(crate) fn finish_loading_state<S: StateData>(
     state: Res<CurrentState<S>>,
     asset_loader_configuration: Res<AssetLoaderConfiguration<S>>,
 ) {
-    if let Some(config) = asset_loader_configuration.configuration.get(&state.0) {
+    if let Some(config) = asset_loader_configuration
+        .state_configurations
+        .get(&state.0)
+    {
         if let Some(next) = config.next.as_ref() {
             commands.insert_resource(NextState(next.clone()));
             return;

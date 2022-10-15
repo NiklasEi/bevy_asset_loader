@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use bevy::app::AppExit;
 use bevy::asset::AssetPlugin;
 use bevy::audio::AudioPlugin;

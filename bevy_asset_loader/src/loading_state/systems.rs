@@ -29,7 +29,7 @@ pub(crate) fn start_loading_collection<S: StateData, Assets: AssetCollection>(wo
     let (mut asset_loader_configuration, state) = system_state.get_mut(world);
 
     let mut config = asset_loader_configuration
-        .configuration
+        .state_configurations
         .get_mut(state.current())
         .unwrap_or_else(|| {
             panic!(
@@ -88,25 +88,34 @@ fn count_loaded_handles<S: StateData, Assets: AssetCollection>(
     let state = cell
         .get_resource::<State<S>>()
         .expect("Cannot get State resource");
-    let mut loading_state = cell
-        .get_resource_mut::<State<InternalLoadingState>>()
-        .expect("Cannot get LoadingStatePhase");
     let mut asset_loader_configuration = cell
         .get_resource_mut::<AssetLoaderConfiguration<S>>()
         .expect("Cannot get AssetLoaderConfiguration resource");
     if let Some(mut config) = asset_loader_configuration
-        .configuration
+        .state_configurations
         .get_mut(state.current())
     {
         config.loading_collections -= 1;
-        if config.loading_collections == 0 {
-            loading_state
-                .set(InternalLoadingState::Finalize)
-                .expect("Failed to set loading State");
-        }
     }
 
     Some((done as u32, total as u32))
+}
+
+pub(crate) fn resume_to_finalize<S: StateData>(
+    loader_configuration: Res<AssetLoaderConfiguration<S>>,
+    mut internal_state: ResMut<State<InternalLoadingState>>,
+    user_state: Res<State<S>>,
+) {
+    if let Some(configuration) = loader_configuration
+        .state_configurations
+        .get(user_state.current())
+    {
+        if configuration.loading_collections == 0 {
+            internal_state
+                .overwrite_set(InternalLoadingState::Finalize)
+                .expect("Failed to set internal state to Finalize")
+        }
+    }
 }
 
 pub(crate) fn initialize_loading_state(mut loading_state: ResMut<State<InternalLoadingState>>) {
@@ -121,7 +130,7 @@ pub(crate) fn finish_loading_state<S: StateData>(
     asset_loader_configuration: Res<AssetLoaderConfiguration<S>>,
 ) {
     if let Some(config) = asset_loader_configuration
-        .configuration
+        .state_configurations
         .get(state.current())
     {
         if let Some(next) = config.next.as_ref() {
