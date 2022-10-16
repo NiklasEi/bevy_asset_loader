@@ -342,9 +342,9 @@ The loading state runs in a single exclusive system `at_start`. This means that 
 
 ## Failure state
 
-A loading state can be configured to set a failure state if one of the assets contained in a collection fails to load. You can set failure states by calling `on_failure_continue_to` (see [`failure_state`](bevy_asset_loader/examples/failure_state.rs) example).
+For the case that some asset in a collection fails to load, you can configure a failure state via `on_failure_continue_to` (see [`failure_state`](bevy_asset_loader/examples/failure_state.rs) example). If no failure state is configured and some asset fails to load, your application will be stuck in the loading state.
 
-If no failure state is configured and some asset fails to load, your application will be stuck in the loading state.
+In most cases this happens, an asset file is missing, or a certain file ending does not have a corresponding asset loader. In both of these cases, a quick look into the application logs should help, since Bevy prints warnings about those issues.
 
 ## Usage without a loading state
 
