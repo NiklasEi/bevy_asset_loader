@@ -82,6 +82,10 @@ path = "examples/progress_tracking.rs"
 required-features = ["progress_tracking", "2d"]
 
 [[example]]
+name = "failure_state"
+path = "examples/failure_state.rs"
+
+[[example]]
 name = "stageless"
 path = "examples/stageless.rs"
 required-features = ["stageless"]
@@ -109,6 +113,11 @@ required-features = [
   "stageless",
   "progress_tracking", "2d"
 ]
+
+[[example]]
+name = "stageless_failure_state"
+path = "examples/stageless_failure_state.rs"
+required-features = ["stageless"]
 
 [[example]]
 name = "stageless_dynamic_asset"

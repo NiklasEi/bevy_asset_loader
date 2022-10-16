@@ -1,11 +1,8 @@
 use bevy::asset::{AssetServer, LoadState};
-#[cfg(not(feature = "stageless"))]
-use bevy::ecs::prelude::State;
-use bevy::ecs::prelude::{FromWorld, World};
-use bevy::ecs::schedule::StateData;
+use bevy::ecs::schedule::{State, StateData};
 use bevy::ecs::system::SystemState;
-#[cfg(not(feature = "stageless"))]
-use bevy::ecs::world::WorldCell;
+use bevy::ecs::world::{FromWorld, World, WorldCell};
+use bevy::log::warn;
 use bevy::prelude::{Mut, Res, ResMut, Stage};
 use std::marker::PhantomData;
 
@@ -74,6 +71,12 @@ fn count_loaded_handles<S: StateData, Assets: AssetCollection>(
     let asset_server = cell
         .get_resource::<AssetServer>()
         .expect("Cannot get AssetServer resource");
+    let failure = loading_asset_handles
+        .handles
+        .iter()
+        .map(|handle| handle.id)
+        .find(|handle_id| asset_server.get_load_state(*handle_id) == LoadState::Failed)
+        .is_some();
     let done = loading_asset_handles
         .handles
         .iter()
@@ -81,7 +84,7 @@ fn count_loaded_handles<S: StateData, Assets: AssetCollection>(
         .map(|handle_id| asset_server.get_load_state(handle_id))
         .filter(|state| state == &LoadState::Loaded)
         .count();
-    if done < total {
+    if done < total && !failure {
         return Some((done as u32, total as u32));
     }
 
@@ -95,7 +98,13 @@ fn count_loaded_handles<S: StateData, Assets: AssetCollection>(
         .state_configurations
         .get_mut(state.current())
     {
-        config.loading_collections -= 1;
+        if failure {
+            config.loading_failed = true;
+        } else {
+            config.loading_collections -= 1;
+        }
+    } else {
+        warn!("Failed to read loading state configuration in count_loaded_handles")
     }
 
     Some((done as u32, total as u32))
@@ -104,7 +113,7 @@ fn count_loaded_handles<S: StateData, Assets: AssetCollection>(
 pub(crate) fn resume_to_finalize<S: StateData>(
     loader_configuration: Res<AssetLoaderConfiguration<S>>,
     mut internal_state: ResMut<State<InternalLoadingState>>,
-    user_state: Res<State<S>>,
+    mut user_state: ResMut<State<S>>,
 ) {
     if let Some(configuration) = loader_configuration
         .state_configurations
@@ -113,8 +122,16 @@ pub(crate) fn resume_to_finalize<S: StateData>(
         if configuration.loading_collections == 0 {
             internal_state
                 .overwrite_set(InternalLoadingState::Finalize)
-                .expect("Failed to set internal state to Finalize")
+                .expect("Failed to set internal state to Finalize");
         }
+        if configuration.loading_failed && configuration.failure.is_some() {
+            let failure = configuration.failure.clone().unwrap();
+            user_state
+                .overwrite_set(failure)
+                .expect("Failed to set loading state to failed");
+        }
+    } else {
+        warn!("Failed to read loading state configuration in resume_to_finalize")
     }
 }
 

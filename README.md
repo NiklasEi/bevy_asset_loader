@@ -340,6 +340,12 @@ When using `stageless` feature, you need to add `progress_tracking_stageless` fe
 
 The loading state runs in a single exclusive system `at_start`. This means that any parallel system in the loading state will always run after all asset handles have been checked for their status. You can thus read the current progress in each frame in a parallel system without worrying about frame lag.
 
+## Failure state
+
+A loading state can be configured to set a failure state if one of the assets contained in a collection fails to load. You can set failure states by calling `on_failure_continue_to` (see [`failure_state`](bevy_asset_loader/examples/failure_state.rs) example).
+
+If no failure state is configured and some asset fails to load, your application will be stuck in the loading state.
+
 ## Usage without a loading state
 
 Although the pattern of a loading state is quite nice, you might have reasons not to use it. In this case `bevy_asset_loader` can still be helpful. Deriving `AssetCollection` on a resource can significantly reduce the boilerplate for managing assets.

@@ -26,7 +26,7 @@ pub trait DynamicAsset: Debug + Send + Sync {
     fn build(&self, world: &mut World) -> Result<DynamicAssetType, anyhow::Error>;
 }
 
-/// Resource to dynamically resolve keys to asset paths.
+/// Resource to dynamically resolve keys to assets.
 ///
 /// This resource is set by a [`LoadingState`](crate::loading_state::LoadingState) and is read when entering the corresponding Bevy [`State`](::bevy::ecs::schedule::State).
 /// If you want to manage your dynamic assets manually, they should be configured in a previous [`State`](::bevy::ecs::schedule::State).
