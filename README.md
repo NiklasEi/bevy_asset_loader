@@ -27,6 +27,8 @@ app.add_loading_state(
 )
 ```
 
+*Note that you can configure the same loading state in multiple places (e.g. in different plugins). All collections added anywhere in your application will be considered.*
+
 ## Compile time vs. Run time (dynamic) assets
 
 Asset configurations, like their file path or dimensions of sprite sheets, can be given at compile time (through derive macro attributes), or at run time (["Dynamic assets"](#dynamic-assets)). The second, allows managing asset configurations as assets. That means you can keep a list of your asset files and their properties in asset files. The main benefit of using dynamic assets is a cleaner split of code and data leading to less recompiles while working on your assets. It also makes your game more approachable for people that want to contribute without touching code.
