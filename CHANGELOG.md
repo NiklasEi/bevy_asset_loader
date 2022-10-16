@@ -1,5 +1,9 @@
 # Changelog
 
+## Next
+- renamed feature `dynamic_assets` to `standard_dynamic_assets`, since you can use custom dynamic assets without the feature
+- Empty loading states no longer get stuck, but directly transition to the next state (fixes [#82](https://github.com/NiklasEi/bevy_asset_loader/issues/82))
+
 ## v0.12.1
 - bump `iyes_progress` to `0.5`
 
