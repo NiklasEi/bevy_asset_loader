@@ -16,7 +16,7 @@ readme = "README.md"
 2d = ["bevy/bevy_sprite", "bevy_asset_loader_derive/2d"]
 # This feature adds support for bevy's StandardMaterial assets
 3d = ["bevy/bevy_pbr", "bevy/bevy_render", "bevy_asset_loader_derive/3d"]
-dynamic_assets = ["bevy_common_assets", "serde"]
+standard_dynamic_assets = ["bevy_common_assets", "serde"]
 progress_tracking = ["iyes_progress"]
 progress_tracking_stageless = ["iyes_progress/iyes_loopless"]
 stageless = ["iyes_loopless"]
@@ -60,12 +60,12 @@ path = "examples/init_resource.rs"
 [[example]]
 name = "manual_dynamic_asset"
 path = "examples/manual_dynamic_asset.rs"
-required-features = ["dynamic_assets"]
+required-features = ["standard_dynamic_assets"]
 
 [[example]]
 name = "dynamic_asset"
 path = "examples/dynamic_asset.rs"
-required-features = ["2d", "dynamic_assets"]
+required-features = ["2d", "standard_dynamic_assets"]
 
 [[example]]
 name = "no_loading_state"
@@ -94,12 +94,12 @@ required-features = ["stageless", "2d", "3d"]
 [[example]]
 name = "stageless_full_dynamic_collection"
 path = "examples/stageless_full_dynamic_collection.rs"
-required-features = ["stageless", "2d", "3d", "dynamic_assets"]
+required-features = ["stageless", "2d", "3d", "standard_dynamic_assets"]
 
 [[example]]
 name = "stageless_manual_dynamic_asset"
 path = "examples/stageless_manual_dynamic_asset.rs"
-required-features = ["stageless", "dynamic_assets"]
+required-features = ["stageless", "standard_dynamic_assets"]
 
 [[example]]
 name = "stageless_progress"
@@ -113,7 +113,7 @@ required-features = [
 [[example]]
 name = "stageless_dynamic_asset"
 path = "examples/stageless_dynamic_asset.rs"
-required-features = ["2d", "dynamic_assets", "stageless"]
+required-features = ["2d", "standard_dynamic_assets", "stageless"]
 
 [[example]]
 name = "full_collection"
@@ -123,7 +123,7 @@ required-features = ["2d", "3d"]
 [[example]]
 name = "full_dynamic_collection"
 path = "examples/full_dynamic_collection.rs"
-required-features = ["2d", "3d", "dynamic_assets"]
+required-features = ["2d", "3d", "standard_dynamic_assets"]
 
 [[example]]
 name = "custom_dynamic_assets"

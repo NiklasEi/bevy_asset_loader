@@ -48,10 +48,10 @@ use stageless::dynamic_asset_systems::{
     resume_to_loading_asset_collections,
 };
 
-#[cfg(feature = "dynamic_assets")]
+#[cfg(feature = "standard_dynamic_assets")]
 use bevy_common_assets::ron::RonAssetPlugin;
 
-#[cfg(feature = "dynamic_assets")]
+#[cfg(feature = "standard_dynamic_assets")]
 use crate::standard_dynamic_asset::{StandardDynamicAsset, StandardDynamicAssetCollection};
 
 #[cfg(feature = "progress_tracking")]
@@ -150,7 +150,7 @@ pub struct LoadingState<State> {
 
     dynamic_asset_collections: HashMap<TypeId, Vec<String>>,
 
-    #[cfg(feature = "dynamic_assets")]
+    #[cfg(feature = "standard_dynamic_assets")]
     standard_dynamic_asset_collection_file_endings: Vec<&'static str>,
 }
 
@@ -217,7 +217,7 @@ where
             ),
             initialize_resources: SystemSet::on_enter(InternalLoadingState::Finalize),
             dynamic_asset_collections: Default::default(),
-            #[cfg(feature = "dynamic_assets")]
+            #[cfg(feature = "standard_dynamic_assets")]
             standard_dynamic_asset_collection_file_endings: vec!["assets"],
         }
     }
@@ -280,7 +280,7 @@ where
             initialize_dependencies: Default::default(),
             start_loading_dynamic_collections: Default::default(),
             start_loading_collections: Default::default(),
-            #[cfg(feature = "dynamic_assets")]
+            #[cfg(feature = "standard_dynamic_assets")]
             standard_dynamic_asset_collection_file_endings: vec!["assets"],
             dynamic_asset_collections: Default::default(),
             initialize_resources: Default::default(),
@@ -510,8 +510,8 @@ where
 
     /// Insert a map of asset keys with corresponding standard dynamic assets
     #[must_use]
-    #[cfg(feature = "dynamic_assets")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "dynamic_assets")))]
+    #[cfg(feature = "standard_dynamic_assets")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "standard_dynamic_assets")))]
     pub fn add_standard_dynamic_assets(
         mut self,
         mut dynamic_assets: HashMap<String, StandardDynamicAsset>,
@@ -636,8 +636,8 @@ where
     ///
     /// The default file ending is `.assets`
     #[must_use]
-    #[cfg_attr(docsrs, doc(cfg(feature = "dynamic_assets")))]
-    #[cfg(feature = "dynamic_assets")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "standard_dynamic_assets")))]
+    #[cfg(feature = "standard_dynamic_assets")]
     pub fn set_standard_dynamic_asset_collection_file_endings(
         mut self,
         endings: Vec<&'static str>,
@@ -711,7 +711,7 @@ where
         }
 
         app.init_resource::<DynamicAssetCollections<S>>();
-        #[cfg(feature = "dynamic_assets")]
+        #[cfg(feature = "standard_dynamic_assets")]
         app.add_plugin(RonAssetPlugin::<StandardDynamicAssetCollection>::new(
             &self.standard_dynamic_asset_collection_file_endings,
         ));
@@ -875,7 +875,7 @@ where
         }
 
         app.init_resource::<DynamicAssetCollections<S>>();
-        #[cfg(feature = "dynamic_assets")]
+        #[cfg(feature = "standard_dynamic_assets")]
         app.add_plugin(RonAssetPlugin::<StandardDynamicAssetCollection>::new(
             &self.standard_dynamic_asset_collection_file_endings,
         ));

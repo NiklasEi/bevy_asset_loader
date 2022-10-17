@@ -32,7 +32,7 @@ jobs:
         run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
         if: runner.os == 'linux'
       - name: Build & run tests for feature combinations
-        run: cargo hack test --keep-going --feature-powerset --group-features "2d","3d","dynamic_assets" --exclude-features "progress_tracking","stageless","progress_tracking_stageless" -p bevy_asset_loader
+        run: cargo hack test --keep-going --feature-powerset --group-features "2d","3d","standard_dynamic_assets" --exclude-features "progress_tracking","stageless","progress_tracking_stageless" -p bevy_asset_loader
       - name: Build & run tests for derive package
         run: cargo hack test --keep-going --feature-powerset  --group-features "2d","3d" -p bevy_asset_loader_derive
   stageless-tests:
@@ -62,7 +62,7 @@ jobs:
         run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
         if: runner.os == 'linux'
       - name: Build & run tests for feature combinations
-        run: cargo hack test --keep-going --feature-powerset --group-features "2d","3d","dynamic_assets" --features "stageless","progress_tracking","progress_tracking_stageless" -p bevy_asset_loader
+        run: cargo hack test --keep-going --feature-powerset --group-features "2d","3d","standard_dynamic_assets" --features "stageless","progress_tracking","progress_tracking_stageless" -p bevy_asset_loader
   progress-tracking-test:
     strategy:
       matrix:
@@ -90,7 +90,7 @@ jobs:
         run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
         if: runner.os == 'linux'
       - name: Build & run tests for feature combinations
-        run: cargo hack test --keep-going --feature-powerset --group-features "2d","3d","dynamic_assets" --exclude-features "stageless","progress_tracking_stageless" --features "progress_tracking" -p bevy_asset_loader
+        run: cargo hack test --keep-going --feature-powerset --group-features "2d","3d","standard_dynamic_assets" --exclude-features "stageless","progress_tracking_stageless" --features "progress_tracking" -p bevy_asset_loader
   lint:
     runs-on: ubuntu-latest
     steps:

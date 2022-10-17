@@ -98,14 +98,14 @@ pub mod dynamic_asset;
 /// A game state responsible for loading assets
 pub mod loading_state;
 /// Dynamic assets for common Bevy asset types
-#[cfg_attr(docsrs, doc(cfg(feature = "dynamic_assets")))]
-#[cfg(feature = "dynamic_assets")]
+#[cfg_attr(docsrs, doc(cfg(feature = "standard_dynamic_assets")))]
+#[cfg(feature = "standard_dynamic_assets")]
 pub mod standard_dynamic_asset;
 
 /// Most commonly used types
 pub mod prelude {
     #[doc(hidden)]
-    #[cfg(feature = "dynamic_assets")]
+    #[cfg(feature = "standard_dynamic_assets")]
     pub use crate::standard_dynamic_asset::{
         RegisterStandardDynamicAsset, StandardDynamicAsset, StandardDynamicAssetCollection,
     };
