@@ -6,6 +6,7 @@
 ))]
 mod stageless {
     mod can_run_without_next_state;
+    mod continues_to_failure_state;
     mod continues_without_collection;
     mod init_resource;
     mod multiple_asset_collections;

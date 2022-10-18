@@ -42,18 +42,16 @@ fn expect(
     }
 }
 
-#[allow(dead_code)]
 #[derive(AssetCollection)]
 struct PlopAudio {
     #[asset(path = "audio/plop.ogg")]
-    plop: Handle<AudioSource>,
+    _plop: Handle<AudioSource>,
 }
 
-#[allow(dead_code)]
 #[derive(AssetCollection)]
 struct BackgroundAudio {
     #[asset(path = "audio/background.ogg")]
-    background: Handle<AudioSource>,
+    _background: Handle<AudioSource>,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]

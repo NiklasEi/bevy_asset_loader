@@ -139,6 +139,7 @@ use crate::dynamic_asset::{DynamicAsset, DynamicAssets};
 /// ```
 pub struct LoadingState<State> {
     next_state: Option<State>,
+    failure_state: Option<State>,
     loading_state: State,
     dynamic_assets: HashMap<String, Box<dyn DynamicAsset>>,
     check_loading_collections: SystemSet,
@@ -204,6 +205,7 @@ where
     pub fn new(load: S) -> LoadingState<S> {
         Self {
             next_state: None,
+            failure_state: None,
             loading_state: load,
             dynamic_assets: HashMap::default(),
             initialize_dependencies: SystemSet::on_exit(InternalLoadingState::Initialize),
@@ -269,6 +271,7 @@ where
     pub fn new(load: S) -> LoadingState<S> {
         Self {
             next_state: None,
+            failure_state: None,
             loading_state: load,
             dynamic_assets: HashMap::default(),
             check_loading_collections: ConditionSet::new()
@@ -331,6 +334,47 @@ where
     #[must_use]
     pub fn continue_to_state(mut self, next: S) -> Self {
         self.next_state = Some(next);
+
+        self
+    }
+
+    /// The [`LoadingState`] will set this Bevy [`State`](::bevy::ecs::schedule::State) if an asset fails to load.
+    /// ```edition2021
+    /// # use bevy_asset_loader::prelude::*;
+    /// # use bevy::prelude::*;
+    /// # use bevy::asset::AssetPlugin;
+    /// # use iyes_loopless::prelude::*;
+    /// # fn main() {
+    ///     App::new()
+    /// #       .add_loopless_state(GameState::Loading)
+    /// #       .add_plugins(MinimalPlugins)
+    /// #       .init_resource::<iyes_progress::ProgressCounter>()
+    /// #       .add_plugin(AssetPlugin::default())
+    ///         .add_loading_state(
+    ///           LoadingState::new(GameState::Loading)
+    ///             .continue_to_state(GameState::Menu)
+    ///             .on_failure_continue_to_state(GameState::Error)
+    ///             .with_collection::<MyAssets>()
+    ///         )
+    /// #       .add_state(GameState::Loading)
+    /// #       .set_runner(|mut app| app.schedule.run(&mut app.world))
+    /// #       .run();
+    /// # }
+    /// # #[derive(Clone, Eq, PartialEq, Debug, Hash)]
+    /// # enum GameState {
+    /// #     Loading,
+    /// #     Error,
+    /// #     Menu
+    /// # }
+    /// # #[derive(AssetCollection)]
+    /// # pub struct MyAssets {
+    /// #     #[asset(path = "audio/background.ogg")]
+    /// #     pub background: Handle<AudioSource>,
+    /// # }
+    /// ```
+    #[must_use]
+    pub fn on_failure_continue_to_state(mut self, next: S) -> Self {
+        self.failure_state = Some(next);
 
         self
     }
@@ -701,9 +745,12 @@ where
             let mut loading_config = asset_loader_configuration
                 .state_configurations
                 .remove(&self.loading_state)
-                .unwrap_or(LoadingConfiguration::new(self.next_state.clone()));
+                .unwrap_or_default();
             if self.next_state.is_some() {
-                loading_config.next = self.next_state.clone();
+                loading_config.next = self.next_state;
+            }
+            if self.failure_state.is_some() {
+                loading_config.failure = self.failure_state;
             }
             asset_loader_configuration
                 .state_configurations
@@ -865,9 +912,12 @@ where
             let mut loading_config = asset_loader_configuration
                 .state_configurations
                 .remove(&self.loading_state)
-                .unwrap_or_else(|| LoadingConfiguration::new(self.next_state.clone()));
+                .unwrap_or_default();
             if self.next_state.is_some() {
-                loading_config.next = self.next_state.clone();
+                loading_config.next = self.next_state;
+            }
+            if self.failure_state.is_some() {
+                loading_config.failure = self.failure_state;
             }
             asset_loader_configuration
                 .state_configurations
@@ -1046,14 +1096,18 @@ pub(crate) enum InternalLoadingState {
 
 struct LoadingConfiguration<State: StateData> {
     next: Option<State>,
+    failure: Option<State>,
+    loading_failed: bool,
     loading_collections: usize,
     loading_dynamic_collections: usize,
 }
 
-impl<State: StateData> LoadingConfiguration<State> {
-    fn new(state: Option<State>) -> Self {
+impl<State: StateData> Default for LoadingConfiguration<State> {
+    fn default() -> Self {
         LoadingConfiguration {
-            next: state,
+            next: None,
+            failure: None,
+            loading_failed: false,
             loading_collections: 0,
             loading_dynamic_collections: 0,
         }
