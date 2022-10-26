@@ -34,7 +34,7 @@ fn init_resource() {
 }
 
 fn timeout(time: Res<Time>) {
-    if time.seconds_since_startup() > 10. {
+    if time.elapsed_seconds_f64() > 10. {
         panic!("The asset loader did not change the state in 10 seconds");
     }
 }
@@ -57,6 +57,7 @@ struct MyAssets {
 #[allow(dead_code)]
 // this struct could e.g. contain TextureAtlas handles or anything else
 // created from previously loaded assets
+#[derive(Resource)]
 struct PostProcessed {
     background: Handle<AudioSource>,
     // use other resources/add fields

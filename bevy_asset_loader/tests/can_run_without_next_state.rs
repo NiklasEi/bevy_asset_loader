@@ -33,7 +33,7 @@ fn can_run_without_next_state() {
 }
 
 fn timeout(time: Res<Time>) {
-    if time.seconds_since_startup() > 30. {
+    if time.elapsed_seconds_f64() > 30. {
         panic!("The asset loader did not load the collection in 30 seconds");
     }
 }
@@ -51,6 +51,8 @@ fn expect(
         test_state.wait_frames_after_load -= 1;
     }
 }
+
+#[derive(Resource)]
 
 struct TestState {
     wait_frames_after_load: usize,

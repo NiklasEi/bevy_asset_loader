@@ -32,19 +32,19 @@ fn draw_atlas(
     my_assets: Res<MyAssets>,
     texture_atlases: Res<Assets<TextureAtlas>>,
 ) {
-    commands.spawn_bundle(Camera2dBundle::default());
+    commands.spawn(Camera2dBundle::default());
     // draw the original image (whole atlas)
     let atlas = texture_atlases
         .get(&my_assets.female_adventurer)
         .expect("Failed to find our atlas");
-    commands.spawn_bundle(SpriteBundle {
+    commands.spawn(SpriteBundle {
         texture: atlas.texture.clone(),
         transform: Transform::from_xyz(0., -150., 0.),
         ..Default::default()
     });
     // draw single texture from sprite sheet starting at index 0
-    commands
-        .spawn_bundle(SpriteSheetBundle {
+    commands.spawn((
+        SpriteSheetBundle {
             transform: Transform {
                 translation: Vec3::new(0., 150., 0.),
                 ..Default::default()
@@ -52,8 +52,9 @@ fn draw_atlas(
             sprite: TextureAtlasSprite::new(0),
             texture_atlas: my_assets.female_adventurer.clone(),
             ..Default::default()
-        })
-        .insert(AnimationTimer(Timer::from_seconds(0.1, true)));
+        },
+        AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
+    ));
 }
 
 #[derive(Component)]

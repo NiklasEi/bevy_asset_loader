@@ -43,11 +43,11 @@ struct AudioAssets {
 }
 
 fn spawn_player_and_tree(mut commands: Commands, image_assets: Res<ImageAssets>) {
-    commands.spawn_bundle(Camera2dBundle::default());
+    commands.spawn(Camera2dBundle::default());
     let mut transform = Transform::from_translation(Vec3::new(0., 0., 1.));
     transform.scale = Vec3::splat(0.5);
-    commands
-        .spawn_bundle(SpriteSheetBundle {
+    commands.spawn((
+        SpriteSheetBundle {
             transform: Transform {
                 translation: Vec3::new(0., 150., 0.),
                 ..Default::default()
@@ -55,10 +55,11 @@ fn spawn_player_and_tree(mut commands: Commands, image_assets: Res<ImageAssets>)
             sprite: TextureAtlasSprite::new(0),
             texture_atlas: image_assets.player.clone(),
             ..Default::default()
-        })
-        .insert(AnimationTimer(Timer::from_seconds(0.1, true)))
-        .insert(Player);
-    commands.spawn_bundle(SpriteBundle {
+        },
+        AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
+        Player,
+    ));
+    commands.spawn(SpriteBundle {
         texture: image_assets.tree.clone(),
         transform: Transform::from_translation(Vec3::new(50., 30., 1.)),
         ..Default::default()

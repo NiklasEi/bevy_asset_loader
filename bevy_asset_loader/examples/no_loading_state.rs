@@ -22,7 +22,7 @@ fn main() {
         // This requires the extension trait `AssetCollectionApp` to be in scope.
         .init_collection::<ImageAssets>()
         // This system listens for mouse clicks and then loads + inserts the AudioAssets collection
-        .add_system(load_and_play_audio.exclusive_system())
+        .add_system(load_and_play_audio)
         .add_startup_system(draw)
         .run();
 }
@@ -57,13 +57,13 @@ struct AudioAssets {
 }
 
 fn draw(mut commands: Commands, image_assets: Res<ImageAssets>) {
-    commands.spawn_bundle(Camera2dBundle::default());
-    commands.spawn_bundle(SpriteBundle {
+    commands.spawn(Camera2dBundle::default());
+    commands.spawn(SpriteBundle {
         texture: image_assets.player.clone(),
         transform: Transform::from_translation(Vec3::new(-150., 0., 1.)),
         ..Default::default()
     });
-    commands.spawn_bundle(SpriteBundle {
+    commands.spawn(SpriteBundle {
         texture: image_assets.tree.clone(),
         transform: Transform::from_translation(Vec3::new(150., 0., 1.)),
         ..Default::default()

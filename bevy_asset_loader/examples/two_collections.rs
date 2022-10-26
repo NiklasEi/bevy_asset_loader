@@ -44,15 +44,15 @@ struct ImageAssets {
 struct Player;
 
 fn spawn_player_and_tree(mut commands: Commands, image_assets: Res<ImageAssets>) {
-    commands.spawn_bundle(Camera2dBundle::default());
+    commands.spawn(Camera2dBundle::default());
     commands
-        .spawn_bundle(SpriteBundle {
+        .spawn(SpriteBundle {
             texture: image_assets.player.clone(),
             transform: Transform::from_translation(Vec3::new(0., 0., 1.)),
             ..Default::default()
         })
         .insert(Player);
-    commands.spawn_bundle(SpriteBundle {
+    commands.spawn(SpriteBundle {
         texture: image_assets.tree.clone(),
         transform: Transform::from_translation(Vec3::new(50., 30., 1.)),
         ..Default::default()

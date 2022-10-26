@@ -1,3 +1,4 @@
+use bevy::ecs::system::Resource;
 use bevy::utils::HashMap;
 use std::any::TypeId;
 use std::fmt::Debug;
@@ -32,7 +33,7 @@ pub trait DynamicAsset: Debug + Send + Sync {
 /// If you want to manage your dynamic assets manually, they should be configured in a previous [`State`](::bevy::ecs::schedule::State).
 ///
 /// See the `manual_dynamic_asset` example.
-#[derive(Default)]
+#[derive(Default, Resource)]
 pub struct DynamicAssets {
     key_asset_map: HashMap<String, Box<dyn DynamicAsset>>,
 }
@@ -59,7 +60,7 @@ pub trait DynamicAssetCollection {
 }
 
 /// Resource keeping track of dynamic asset collection files for different loading states
-#[derive(Debug)]
+#[derive(Debug, Resource)]
 pub struct DynamicAssetCollections<State: StateData> {
     /// Dynamic asset collection files for different loading states.
     ///

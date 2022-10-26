@@ -1,6 +1,6 @@
 use bevy::asset::{AssetServer, LoadState};
 use bevy::ecs::schedule::{State, StateData};
-use bevy::ecs::system::SystemState;
+use bevy::ecs::system::{Resource, SystemState};
 use bevy::ecs::world::{FromWorld, World, WorldCell};
 use bevy::log::warn;
 use bevy::prelude::{Mut, Res, ResMut, Stage};
@@ -14,7 +14,9 @@ use crate::loading_state::{
     AssetLoaderConfiguration, InternalLoadingState, LoadingAssetHandles, LoadingStateSchedules,
 };
 
-pub(crate) fn init_resource<Asset: FromWorld + Send + Sync + 'static>(world: &mut World) {
+pub(crate) fn init_resource<Asset: Resource + FromWorld + Send + Sync + 'static>(
+    world: &mut World,
+) {
     let asset = Asset::from_world(world);
     world.insert_resource(asset);
 }

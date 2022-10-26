@@ -202,6 +202,7 @@ fn impl_asset_collection(
 
             #load_function
         }
+        impl Resource for #name {}
     };
     Ok(impl_asset_collection)
 }
