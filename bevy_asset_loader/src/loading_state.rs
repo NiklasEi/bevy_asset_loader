@@ -1033,8 +1033,10 @@ where
 
         #[cfg(feature = "progress_tracking")]
         let loading_state_system =
-            iyes_loopless::condition::IntoConditionalExclusiveSystem::run_in_state(
-                run_loading_state::<S>,
+            iyes_loopless::condition::ConditionHelpers::run_in_state(
+                iyes_loopless::condition::IntoConditionalExclusiveSystem::into_conditional_exclusive(
+                run_loading_state::<S>
+                ),
                 self.loading_state,
             )
             .at_start()
@@ -1042,8 +1044,10 @@ where
 
         #[cfg(not(feature = "progress_tracking"))]
         let loading_state_system =
-            iyes_loopless::condition::IntoConditionalExclusiveSystem::run_in_state(
-                run_loading_state::<S>,
+            iyes_loopless::condition::ConditionHelpers::run_in_state(
+                iyes_loopless::condition::IntoConditionalExclusiveSystem::into_conditional_exclusive(
+                    run_loading_state::<S>
+                ),
                 self.loading_state,
             )
             .at_start();
