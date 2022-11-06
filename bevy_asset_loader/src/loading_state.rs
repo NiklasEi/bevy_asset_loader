@@ -1032,21 +1032,23 @@ where
         app.add_enter_system(self.loading_state.clone(), reset_loading_state);
 
         #[cfg(feature = "progress_tracking")]
-        let loading_state_system =
-            iyes_loopless::condition::IntoConditionalExclusiveSystem::run_in_state(
+        let loading_state_system = iyes_loopless::condition::ConditionHelpers::run_in_state(
+            iyes_loopless::condition::IntoConditionalExclusiveSystem::into_conditional_exclusive(
                 run_loading_state::<S>,
-                self.loading_state,
-            )
-            .at_start()
-            .after(ProgressSystemLabel::Preparation);
+            ),
+            self.loading_state,
+        )
+        .at_start()
+        .after(ProgressSystemLabel::Preparation);
 
         #[cfg(not(feature = "progress_tracking"))]
-        let loading_state_system =
-            iyes_loopless::condition::IntoConditionalExclusiveSystem::run_in_state(
+        let loading_state_system = iyes_loopless::condition::ConditionHelpers::run_in_state(
+            iyes_loopless::condition::IntoConditionalExclusiveSystem::into_conditional_exclusive(
                 run_loading_state::<S>,
-                self.loading_state,
-            )
-            .at_start();
+            ),
+            self.loading_state,
+        )
+        .at_start();
 
         app.add_system_to_stage(CoreStage::Update, loading_state_system);
     }
