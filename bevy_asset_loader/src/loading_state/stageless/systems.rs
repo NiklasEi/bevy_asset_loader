@@ -88,8 +88,7 @@ fn count_loaded_handles<S: StateData, Assets: AssetCollection>(
         .handles
         .iter()
         .map(|handle| handle.id)
-        .find(|handle_id| asset_server.get_load_state(*handle_id) == LoadState::Failed)
-        .is_some();
+        .any(|handle_id| asset_server.get_load_state(handle_id) == LoadState::Failed);
     let done = loading_asset_handles
         .handles
         .iter()
