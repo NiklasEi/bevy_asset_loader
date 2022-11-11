@@ -1,6 +1,7 @@
 use crate::{ParseFieldError, TextureAtlasAttribute, TEXTURE_ATLAS_ATTRIBUTE};
 use proc_macro2::{Ident, TokenStream};
 use quote::quote;
+use bevy::prelude::Resource;
 
 #[derive(PartialEq, Debug)]
 pub(crate) struct TextureAtlasAssetField {
@@ -280,7 +281,7 @@ impl AssetField {
     }
 }
 
-#[derive(Default, Debug)]
+#[derive(Resource, Default, Debug)]
 pub(crate) struct AssetBuilder {
     pub field_ident: Option<Ident>,
     pub asset_path: Option<String>,

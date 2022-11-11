@@ -22,7 +22,7 @@ progress_tracking_stageless = ["iyes_progress/iyes_loopless"]
 stageless = ["iyes_loopless"]
 
 [dependencies]
-bevy = { version = "0.8", default-features = false, features = ["bevy_asset"] }
+bevy = { git = "https://github.com/bevyengine/bevy", rev = "72fbcc7633248703d58f2dbf1b47cdfde945325a", default-features = false, features = ["bevy_asset"] }
 bevy_asset_loader_derive = { version = "=0.13.0", path = "../bevy_asset_loader_derive" }
 anyhow = "1"
 
@@ -32,7 +32,7 @@ iyes_progress = { version = "0.6", optional = true }
 iyes_loopless = { version = "0.8", optional = true }
 
 [dev-dependencies]
-bevy = { version = "0.8", features = ["vorbis"] }
+bevy = { git = "https://github.com/bevyengine/bevy", rev = "72fbcc7633248703d58f2dbf1b47cdfde945325a", features = ["vorbis"] }
 anyhow = "1"
 iyes_progress = { version = "0.6" }
 iyes_loopless = { version = "0.8" }

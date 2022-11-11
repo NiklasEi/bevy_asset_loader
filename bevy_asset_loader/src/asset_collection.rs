@@ -1,7 +1,7 @@
 use crate::dynamic_asset::DynamicAssets;
 use bevy::app::App;
 use bevy::asset::HandleUntyped;
-use bevy::prelude::World;
+use bevy::prelude::{World, Resource};
 
 pub use bevy_asset_loader_derive::AssetCollection;
 
@@ -19,7 +19,7 @@ pub use bevy_asset_loader_derive::AssetCollection;
 ///     tree: Handle<Image>
 /// }
 /// ```
-pub trait AssetCollection: Send + Sync + 'static {
+pub trait AssetCollection: Send + Sync + Resource + 'static {
     /// Create a new asset collection from the [`AssetServer`](::bevy::asset::AssetServer)
     fn create(world: &mut World) -> Self;
     /// Start loading all the assets in the collection
@@ -39,7 +39,7 @@ pub trait AssetCollectionApp {
 impl AssetCollectionApp for App {
     fn init_collection<Collection>(&mut self) -> &mut Self
     where
-        Collection: AssetCollection,
+        Collection: AssetCollection, 
     {
         if !self.world.contains_resource::<Collection>() {
             // This resource is required for loading a collection

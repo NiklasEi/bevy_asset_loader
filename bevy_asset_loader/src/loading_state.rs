@@ -7,6 +7,7 @@ mod systems;
 #[cfg(feature = "stageless")]
 mod stageless;
 
+use bevy::prelude::*;
 use bevy::app::App;
 #[cfg(feature = "stageless")]
 use bevy::app::CoreStage;
@@ -796,7 +797,7 @@ where
             .unwrap_or_default();
         let mut update = {
             if loading_schedule
-                .get_stage_mut::<SystemStage>(&"update")
+                .get_stage_mut::<SystemStage>("update")
                 .is_none()
             {
                 loading_schedule.add_stage("update", SystemStage::parallel());
@@ -804,7 +805,7 @@ where
                     .add_system_set_to_stage("update", State::<InternalLoadingState>::get_driver());
             }
             loading_schedule
-                .get_stage_mut::<SystemStage>(&"update")
+                .get_stage_mut::<SystemStage>("update")
                 .unwrap()
         };
 
@@ -967,13 +968,13 @@ where
             .unwrap_or_default();
         let mut update = {
             if loading_schedule
-                .get_stage_mut::<SystemStage>(&"update")
+                .get_stage_mut::<SystemStage>("update")
                 .is_none()
             {
                 loading_schedule.add_stage("update", SystemStage::parallel());
             }
             loading_schedule
-                .get_stage_mut::<SystemStage>(&"update")
+                .get_stage_mut::<SystemStage>("update")
                 .unwrap()
         };
 
@@ -1056,6 +1057,7 @@ where
 
 /// This resource is used for handles from asset collections and loading dynamic asset collection files.
 /// The generic will be the [`AssetCollection`] type for the first and the [`DynamicAssetCollection`] for the second.
+#[derive(Resource)]
 pub(crate) struct LoadingAssetHandles<T> {
     handles: Vec<HandleUntyped>,
     marker: PhantomData<T>,
@@ -1070,6 +1072,7 @@ impl<T> Default for LoadingAssetHandles<T> {
     }
 }
 
+#[derive(Resource)]
 pub(crate) struct AssetLoaderConfiguration<State: StateData> {
     state_configurations: HashMap<State, LoadingConfiguration<State>>,
 }
@@ -1117,6 +1120,7 @@ impl<State: StateData> Default for LoadingConfiguration<State> {
 }
 
 /// Resource to store the schedules for loading states
+#[derive(Resource)]
 pub struct LoadingStateSchedules<State: StateData> {
     /// Map to store a schedule per loading state
     pub schedules: HashMap<State, Schedule>,
