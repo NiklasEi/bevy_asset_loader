@@ -56,7 +56,7 @@
 //! #       .run();
 //! # }
 //!
-//! #[derive(AssetCollection)]
+//! #[derive(AssetCollection, Resource)]
 //! struct AudioAssets {
 //!     #[asset(path = "audio/background.ogg")]
 //!     background: Handle<AudioSource>,
@@ -64,7 +64,7 @@
 //!     plop: Handle<AudioSource>
 //! }
 //!
-//! #[derive(AssetCollection)]
+//! #[derive(AssetCollection, Resource)]
 //! pub struct ImageAssets {
 //!     #[asset(path = "images/player.png")]
 //!     pub player: Handle<Image>,

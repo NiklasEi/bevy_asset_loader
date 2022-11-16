@@ -16,7 +16,7 @@ fn main() {
         .run();
 }
 
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 struct MyAssets {
     // Any file that can be loaded to a Handle<T>
     #[asset(path = "audio/background.ogg")]

@@ -13,10 +13,8 @@ use bevy::app::CoreStage;
 use bevy::asset::{Asset, HandleUntyped};
 #[cfg(not(feature = "stageless"))]
 use bevy::ecs::schedule::State;
-use bevy::ecs::schedule::{
-    ExclusiveSystemDescriptorCoercion, Schedule, StateData, SystemSet, SystemStage,
-};
-use bevy::ecs::system::{Commands, IntoExclusiveSystem};
+use bevy::ecs::schedule::{IntoSystemDescriptor, Schedule, StateData, SystemSet, SystemStage};
+use bevy::ecs::system::{Commands, Resource};
 use bevy::ecs::world::FromWorld;
 use bevy::utils::HashMap;
 use std::any::TypeId;
@@ -123,13 +121,13 @@ use crate::dynamic_asset::{DynamicAsset, DynamicAssets};
 ///     Menu
 /// }
 ///
-/// #[derive(AssetCollection)]
+/// #[derive(AssetCollection, Resource)]
 /// pub struct AudioAssets {
 ///     #[asset(path = "audio/background.ogg")]
 ///     pub background: Handle<AudioSource>,
 /// }
 ///
-/// #[derive(AssetCollection)]
+/// #[derive(AssetCollection, Resource)]
 /// pub struct ImageAssets {
 ///     #[asset(path = "images/player.png")]
 ///     pub player: Handle<Image>,
@@ -187,12 +185,12 @@ where
     /// #     Loading,
     /// #     Menu
     /// # }
-    /// # #[derive(AssetCollection)]
+    /// # #[derive(AssetCollection, Resource)]
     /// # pub struct AudioAssets {
     /// #     #[asset(path = "audio/background.ogg")]
     /// #     pub background: Handle<AudioSource>,
     /// # }
-    /// # #[derive(AssetCollection)]
+    /// # #[derive(AssetCollection, Resource)]
     /// # pub struct ImageAssets {
     /// #     #[asset(path = "images/player.png")]
     /// #     pub player: Handle<Image>,
@@ -253,12 +251,12 @@ where
     /// #     Loading,
     /// #     Menu
     /// # }
-    /// # #[derive(AssetCollection)]
+    /// # #[derive(AssetCollection, Resource)]
     /// # pub struct AudioAssets {
     /// #     #[asset(path = "audio/background.ogg")]
     /// #     pub background: Handle<AudioSource>,
     /// # }
-    /// # #[derive(AssetCollection)]
+    /// # #[derive(AssetCollection, Resource)]
     /// # pub struct ImageAssets {
     /// #     #[asset(path = "images/player.png")]
     /// #     pub player: Handle<Image>,
@@ -318,12 +316,12 @@ where
     /// #     Loading,
     /// #     Menu
     /// # }
-    /// # #[derive(AssetCollection)]
+    /// # #[derive(AssetCollection, Resource)]
     /// # pub struct AudioAssets {
     /// #     #[asset(path = "audio/background.ogg")]
     /// #     pub background: Handle<AudioSource>,
     /// # }
-    /// # #[derive(AssetCollection)]
+    /// # #[derive(AssetCollection, Resource)]
     /// # pub struct ImageAssets {
     /// #     #[asset(path = "images/player.png")]
     /// #     pub player: Handle<Image>,
@@ -366,7 +364,7 @@ where
     /// #     Error,
     /// #     Menu
     /// # }
-    /// # #[derive(AssetCollection)]
+    /// # #[derive(AssetCollection, Resource)]
     /// # pub struct MyAssets {
     /// #     #[asset(path = "audio/background.ogg")]
     /// #     pub background: Handle<AudioSource>,
@@ -399,10 +397,10 @@ where
         );
         self.start_loading_dynamic_collections = self
             .start_loading_dynamic_collections
-            .with_system(load_dynamic_asset_collections::<S, C>.exclusive_system());
+            .with_system(load_dynamic_asset_collections::<S, C>);
         self.check_loading_dynamic_collections = self
             .check_loading_dynamic_collections
-            .with_system(check_dynamic_asset_collections::<S, C>.exclusive_system());
+            .with_system(check_dynamic_asset_collections::<S, C>);
         self.initialize_dependencies =
             self.initialize_dependencies
                 .with_system(|mut commands: Commands| {
@@ -435,7 +433,7 @@ where
             .with_system(load_dynamic_asset_collections::<S, C>);
         self.check_loading_dynamic_collections = self
             .check_loading_dynamic_collections
-            .with_system(check_dynamic_asset_collections::<S, C>.exclusive_system());
+            .with_system(check_dynamic_asset_collections::<S, C>);
         self.initialize_dependencies =
             self.initialize_dependencies
                 .with_system(|mut commands: Commands| {
@@ -472,12 +470,12 @@ where
     /// #     Loading,
     /// #     Menu
     /// # }
-    /// # #[derive(AssetCollection)]
+    /// # #[derive(AssetCollection, Resource)]
     /// # pub struct AudioAssets {
     /// #     #[asset(path = "audio/background.ogg")]
     /// #     pub background: Handle<AudioSource>,
     /// # }
-    /// # #[derive(AssetCollection)]
+    /// # #[derive(AssetCollection, Resource)]
     /// # pub struct ImageAssets {
     /// #     #[asset(path = "images/player.png")]
     /// #     pub player: Handle<Image>,
@@ -490,10 +488,10 @@ where
     pub fn with_collection<A: AssetCollection>(mut self) -> Self {
         self.start_loading_collections = self
             .start_loading_collections
-            .with_system(start_loading_collection::<S, A>.exclusive_system());
+            .with_system(start_loading_collection::<S, A>);
         self.check_loading_collections = self
             .check_loading_collections
-            .with_system(check_loading_collection::<S, A>.exclusive_system());
+            .with_system(check_loading_collection::<S, A>);
 
         self
     }
@@ -526,12 +524,12 @@ where
     /// #     Loading,
     /// #     Menu
     /// # }
-    /// # #[derive(AssetCollection)]
+    /// # #[derive(AssetCollection, Resource)]
     /// # pub struct AudioAssets {
     /// #     #[asset(path = "audio/background.ogg")]
     /// #     pub background: Handle<AudioSource>,
     /// # }
-    /// # #[derive(AssetCollection)]
+    /// # #[derive(AssetCollection, Resource)]
     /// # pub struct ImageAssets {
     /// #     #[asset(path = "images/player.png")]
     /// #     pub player: Handle<Image>,
@@ -544,10 +542,10 @@ where
     pub fn with_collection<A: AssetCollection>(mut self) -> Self {
         self.start_loading_collections = self
             .start_loading_collections
-            .with_system(start_loading_collection::<S, A>.exclusive_system());
+            .with_system(start_loading_collection::<S, A>);
         self.check_loading_collections = self
             .check_loading_collections
-            .with_system(check_loading_collection::<S, A>.exclusive_system());
+            .with_system(check_loading_collection::<S, A>);
 
         self
     }
@@ -601,11 +599,11 @@ where
     /// #         let assets = cell.get_resource::<TextureForAtlas>().expect("TextureForAtlas not loaded");
     /// #         let mut atlases = cell.get_resource_mut::<Assets<TextureAtlas>>().expect("TextureAtlases missing");
     /// #         TextureAtlasFromWorld {
-    /// #             atlas: atlases.add(TextureAtlas::from_grid(assets.array.clone(), Vec2::new(250., 250.), 1, 4))
+    /// #             atlas: atlases.add(TextureAtlas::from_grid(assets.array.clone(), Vec2::new(250., 250.), 1, 4, None, None))
     /// #         }
     /// #     }
     /// # }
-    /// # #[derive(AssetCollection)]
+    /// # #[derive(AssetCollection, Resource)]
     /// # pub struct TextureForAtlas {
     /// #     #[asset(path = "images/female_adventurer.ogg")]
     /// #     pub array: Handle<Image>,
@@ -613,10 +611,8 @@ where
     /// ```
     #[must_use]
     #[cfg(not(feature = "stageless"))]
-    pub fn init_resource<A: FromWorld + Send + Sync + 'static>(mut self) -> Self {
-        self.initialize_resources = self
-            .initialize_resources
-            .with_system(init_resource::<A>.exclusive_system());
+    pub fn init_resource<A: Resource + FromWorld>(mut self) -> Self {
+        self.initialize_resources = self.initialize_resources.with_system(init_resource::<A>);
 
         self
     }
@@ -656,11 +652,11 @@ where
     /// #         let assets = cell.get_resource::<TextureForAtlas>().expect("TextureForAtlas not loaded");
     /// #         let mut atlases = cell.get_resource_mut::<Assets<TextureAtlas>>().expect("TextureAtlases missing");
     /// #         TextureAtlasFromWorld {
-    /// #             atlas: atlases.add(TextureAtlas::from_grid(assets.array.clone(), Vec2::new(250., 250.), 1, 4))
+    /// #             atlas: atlases.add(TextureAtlas::from_grid(assets.array.clone(), Vec2::new(250., 250.), 1, 4, None, None))
     /// #         }
     /// #     }
     /// # }
-    /// # #[derive(AssetCollection)]
+    /// # #[derive(AssetCollection, Resource)]
     /// # pub struct TextureForAtlas {
     /// #     #[asset(path = "images/female_adventurer.ogg")]
     /// #     pub array: Handle<Image>,
@@ -668,10 +664,8 @@ where
     /// ```
     #[must_use]
     #[cfg(feature = "stageless")]
-    pub fn init_resource<A: FromWorld + Send + Sync + 'static>(mut self) -> Self {
-        self.initialize_resources = self
-            .initialize_resources
-            .with_system(init_resource::<A>.exclusive_system());
+    pub fn init_resource<A: FromWorld + Resource>(mut self) -> Self {
+        self.initialize_resources = self.initialize_resources.with_system(init_resource::<A>);
 
         self
     }
@@ -720,12 +714,12 @@ where
     /// #     Loading,
     /// #     Menu
     /// # }
-    /// # #[derive(AssetCollection)]
+    /// # #[derive(AssetCollection, Resource)]
     /// # pub struct AudioAssets {
     /// #     #[asset(path = "audio/background.ogg")]
     /// #     pub background: Handle<AudioSource>,
     /// # }
-    /// # #[derive(AssetCollection)]
+    /// # #[derive(AssetCollection, Resource)]
     /// # pub struct ImageAssets {
     /// #     #[asset(path = "images/player.png")]
     /// #     pub player: Handle<Image>,
@@ -796,7 +790,7 @@ where
             .unwrap_or_default();
         let mut update = {
             if loading_schedule
-                .get_stage_mut::<SystemStage>(&"update")
+                .get_stage_mut::<SystemStage>("update")
                 .is_none()
             {
                 loading_schedule.add_stage("update", SystemStage::parallel());
@@ -804,7 +798,7 @@ where
                     .add_system_set_to_stage("update", State::<InternalLoadingState>::get_driver());
             }
             loading_schedule
-                .get_stage_mut::<SystemStage>(&"update")
+                .get_stage_mut::<SystemStage>("update")
                 .unwrap()
         };
 
@@ -845,11 +839,10 @@ where
         );
         #[cfg(feature = "progress_tracking")]
         let loading_state_system = run_loading_state::<S>
-            .exclusive_system()
             .at_start()
             .after(ProgressSystemLabel::Preparation);
         #[cfg(not(feature = "progress_tracking"))]
-        let loading_state_system = run_loading_state::<S>.exclusive_system().at_start();
+        let loading_state_system = run_loading_state::<S>.at_start();
 
         app.add_system_set(
             SystemSet::on_update(self.loading_state).with_system(loading_state_system),
@@ -886,12 +879,12 @@ where
     /// #     Loading,
     /// #     Menu
     /// # }
-    /// # #[derive(AssetCollection)]
+    /// # #[derive(AssetCollection, Resource)]
     /// # pub struct AudioAssets {
     /// #     #[asset(path = "audio/background.ogg")]
     /// #     pub background: Handle<AudioSource>,
     /// # }
-    /// # #[derive(AssetCollection)]
+    /// # #[derive(AssetCollection, Resource)]
     /// # pub struct ImageAssets {
     /// #     #[asset(path = "images/player.png")]
     /// #     pub player: Handle<Image>,
@@ -967,13 +960,13 @@ where
             .unwrap_or_default();
         let mut update = {
             if loading_schedule
-                .get_stage_mut::<SystemStage>(&"update")
+                .get_stage_mut::<SystemStage>("update")
                 .is_none()
             {
                 loading_schedule.add_stage("update", SystemStage::parallel());
             }
             loading_schedule
-                .get_stage_mut::<SystemStage>(&"update")
+                .get_stage_mut::<SystemStage>("update")
                 .unwrap()
         };
 
@@ -1056,6 +1049,7 @@ where
 
 /// This resource is used for handles from asset collections and loading dynamic asset collection files.
 /// The generic will be the [`AssetCollection`] type for the first and the [`DynamicAssetCollection`] for the second.
+#[derive(Resource)]
 pub(crate) struct LoadingAssetHandles<T> {
     handles: Vec<HandleUntyped>,
     marker: PhantomData<T>,
@@ -1070,6 +1064,7 @@ impl<T> Default for LoadingAssetHandles<T> {
     }
 }
 
+#[derive(Resource)]
 pub(crate) struct AssetLoaderConfiguration<State: StateData> {
     state_configurations: HashMap<State, LoadingConfiguration<State>>,
 }
@@ -1117,6 +1112,7 @@ impl<State: StateData> Default for LoadingConfiguration<State> {
 }
 
 /// Resource to store the schedules for loading states
+#[derive(Resource)]
 pub struct LoadingStateSchedules<State: StateData> {
     /// Map to store a schedule per loading state
     pub schedules: HashMap<State, Schedule>,

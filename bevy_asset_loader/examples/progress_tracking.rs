@@ -38,7 +38,7 @@ fn main() {
 // be changed until the 'fake long task' is completed (thanks to 'iyes_progress')
 const DURATION_LONG_TASK_IN_SECS: f64 = 2.0;
 
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 struct AudioAssets {
     #[asset(path = "audio/background.ogg")]
     background: Handle<AudioSource>,
@@ -46,7 +46,7 @@ struct AudioAssets {
     plop: Handle<AudioSource>,
 }
 
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 struct TextureAssets {
     #[asset(path = "images/player.png")]
     player: Handle<Image>,
@@ -58,7 +58,7 @@ struct TextureAssets {
 }
 
 fn track_fake_long_task(time: Res<Time>, progress: Res<ProgressCounter>) {
-    if time.seconds_since_startup() > DURATION_LONG_TASK_IN_SECS {
+    if time.elapsed_seconds_f64() > DURATION_LONG_TASK_IN_SECS {
         info!("Long task is completed");
         progress.manually_track(true.into());
     } else {

@@ -3,7 +3,7 @@ use bevy::prelude::*;
 
 fn main() {}
 
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 struct Test {
     #[asset(what_is_this)]
     #[asset(path = "test.ogg")]

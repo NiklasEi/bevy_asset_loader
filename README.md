@@ -53,7 +53,7 @@ fn main() {
         .run();
 }
 
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 struct MyAssets {
     #[asset(path = "images/player.png")]
     player: Handle<Image>,
@@ -81,7 +81,7 @@ Dynamic assets are configured through the derive macro attribute `key` and are n
 use bevy::prelude::*;
 use bevy_asset_loader::asset_collection::AssetCollection;
 
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 struct ImageAssets {
   #[asset(key = "player")]
   player: Handle<Image>,
@@ -121,7 +121,7 @@ The field should only have the `path` attribute set. The path is relative to you
 use bevy::prelude::*;
 use bevy_asset_loader::asset_collection::AssetCollection;
 
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 struct MyAssets {
     #[asset(path = "my-background.ogg")]
     background: Handle<AudioSource>,
@@ -133,7 +133,7 @@ The dynamic version of the same collection looks like this:
 use bevy::prelude::*;
 use bevy_asset_loader::asset_collection::AssetCollection;
 
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 struct MyAssets {
     #[asset(key = "background")]
     background: Handle<AudioSource>,
@@ -157,7 +157,7 @@ You can load all files in a folder as a vector of untyped handles. This field re
 use bevy::prelude::*;
 use bevy_asset_loader::asset_collection::AssetCollection;
 
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 struct MyAssets {
     #[asset(path = "images", collection)]
     folder: Vec<HandleUntyped>,
@@ -171,7 +171,7 @@ If all assets in the folder have the same (known) type, you can load the folder 
 use bevy::prelude::*;
 use bevy_asset_loader::asset_collection::AssetCollection;
 
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 struct MyAssets {
     #[asset(path = "images", collection(typed))]
     folder: Vec<Handle<Image>>,
@@ -180,7 +180,7 @@ struct MyAssets {
 
 Folders are also supported as a dynamic asset. The path attribute is replaced by the `key` attribute:
 ```rust ignore
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 struct MyAssets {
     #[asset(key = "my.images", collection(typed))]
     images: Vec<Handle<Image>>,
@@ -203,7 +203,7 @@ If you want to load a list of asset files with the same type into a vector of `H
 use bevy::prelude::*;
 use bevy_asset_loader::asset_collection::AssetCollection;
 
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 struct MyAssets {
     #[asset(paths("images/player.png", "images/tree.png"), collection(typed))]
     files_typed: Vec<Handle<Image>>,
@@ -215,7 +215,7 @@ In case you do not know their types, or they might have different types, the han
 use bevy::prelude::*;
 use bevy_asset_loader::asset_collection::AssetCollection;
 
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 struct MyAssets {
     #[asset(paths("images/player.png", "sound/background.ogg"), collection)]
     files_untyped: Vec<HandleUntyped>,
@@ -227,7 +227,7 @@ As dynamic assets, these two fields replace their `paths` attribute with `key`. 
 use bevy::prelude::*;
 use bevy_asset_loader::asset_collection::AssetCollection;
 
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 struct MyAssets {
     #[asset(key = "files_untyped", collection)]
     files_untyped: Vec<HandleUntyped>,
@@ -256,7 +256,7 @@ You can directly load standard materials if you enable the feature `3d`. For a c
 use bevy::prelude::*;
 use bevy_asset_loader::asset_collection::AssetCollection;
 
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 struct MyAssets {
     #[asset(standard_material)]
     #[asset(path = "images/player.png")]
@@ -266,7 +266,7 @@ struct MyAssets {
 
 This is also supported as a dynamic asset:
 ```rust ignore
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 struct MyAssets {
     #[asset(key = "image.player")]
     player: Handle<StandardMaterial>,
@@ -288,7 +288,7 @@ You can directly load texture atlases from sprite sheets if you enable the featu
 use bevy::prelude::*;
 use bevy_asset_loader::asset_collection::AssetCollection;
 
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 struct MyAssets {
     #[asset(texture_atlas(tile_size_x = 64., tile_size_y = 64., columns = 8, rows = 1, padding_x = 12., padding_y = 12.))]
     #[asset(path = "images/sprite_sheet.png")]
@@ -298,7 +298,7 @@ struct MyAssets {
 
 As a dynamic asset this example becomes:
 ```rust ignore
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 struct MyAssets {
     #[asset(key = "image.player")]
     sprite: Handle<TextureAtlas>,
@@ -365,7 +365,7 @@ fn main() {
         .run();
 }
 
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 struct MyAssets {
     #[asset(texture_atlas(tile_size_x = 100., tile_size_y = 96., columns = 8, rows = 1, padding_x = 12., padding_y = 12.))]
     #[asset(path = "images/sprite_sheet.png")]
@@ -397,7 +397,7 @@ fn main() {
         .run();
 }
 
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 struct AudioAssets {
     #[asset(path = "audio/background.ogg")]
     background: Handle<AudioSource>,
