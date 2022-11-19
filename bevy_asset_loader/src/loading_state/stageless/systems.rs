@@ -7,6 +7,7 @@ use bevy::ecs::schedule::{Stage, StateData};
 use bevy::ecs::system::{Res, SystemState};
 
 use bevy::log::warn;
+use bevy::prelude::Resource;
 use std::marker::PhantomData;
 
 #[cfg(feature = "progress_tracking")]
@@ -19,7 +20,7 @@ use crate::loading_state::{
     AssetLoaderConfiguration, InternalLoadingState, LoadingAssetHandles, LoadingStateSchedules,
 };
 
-pub(crate) fn init_resource<Asset: FromWorld + Send + Sync + 'static>(world: &mut World) {
+pub(crate) fn init_resource<Asset: FromWorld + Resource>(world: &mut World) {
     let asset = Asset::from_world(world);
     world.insert_resource(asset);
 }

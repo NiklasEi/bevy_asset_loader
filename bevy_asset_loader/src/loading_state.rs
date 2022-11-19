@@ -994,7 +994,7 @@ where
 
         if loading_schedule
             .get_stage::<StateTransitionStage<InternalLoadingState>>(
-                &StateTransitionStageLabel::from_type::<InternalLoadingState>(),
+                StateTransitionStageLabel::from_type::<InternalLoadingState>(),
             )
             .is_none()
         {
@@ -1026,7 +1026,7 @@ where
 
         #[cfg(feature = "progress_tracking")]
         let loading_state_system = iyes_loopless::condition::ConditionHelpers::run_in_state(
-            iyes_loopless::condition::IntoConditionalExclusiveSystem::into_conditional_exclusive(
+            iyes_loopless::condition::IntoConditionalSystem::into_conditional(
                 run_loading_state::<S>,
             ),
             self.loading_state,
@@ -1036,7 +1036,7 @@ where
 
         #[cfg(not(feature = "progress_tracking"))]
         let loading_state_system = iyes_loopless::condition::ConditionHelpers::run_in_state(
-            iyes_loopless::condition::IntoConditionalExclusiveSystem::into_conditional_exclusive(
+            iyes_loopless::condition::IntoConditionalSystem::into_conditional(
                 run_loading_state::<S>,
             ),
             self.loading_state,
