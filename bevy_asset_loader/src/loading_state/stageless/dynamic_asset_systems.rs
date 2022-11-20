@@ -35,6 +35,14 @@ pub(crate) fn load_dynamic_asset_collections<S: StateData, C: DynamicAssetCollec
 
 pub(crate) fn check_dynamic_asset_collections<S: StateData, C: DynamicAssetCollection + Asset>(
     world: &mut World,
+    system_state: &mut SystemState<(
+        Res<AssetServer>,
+        Option<ResMut<LoadingAssetHandles<C>>>,
+        Res<CurrentState<S>>,
+        Res<Assets<C>>,
+        ResMut<DynamicAssets>,
+        ResMut<AssetLoaderConfiguration<S>>,
+    )>,
 ) {
     if let Some(state) = world.get_resource::<CurrentState<InternalLoadingState>>() {
         if state.0 != InternalLoadingState::LoadingDynamicAssetCollections {
@@ -42,15 +50,6 @@ pub(crate) fn check_dynamic_asset_collections<S: StateData, C: DynamicAssetColle
         }
     }
     {
-        #[allow(clippy::type_complexity)]
-        let mut system_state: SystemState<(
-            Res<AssetServer>,
-            Option<ResMut<LoadingAssetHandles<C>>>,
-            Res<CurrentState<S>>,
-            Res<Assets<C>>,
-            ResMut<DynamicAssets>,
-            ResMut<AssetLoaderConfiguration<S>>,
-        )> = SystemState::new(world);
         let (
             asset_server,
             mut loading_collections,

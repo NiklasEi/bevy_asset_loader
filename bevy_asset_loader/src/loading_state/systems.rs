@@ -19,10 +19,10 @@ pub(crate) fn init_resource<Asset: Resource + FromWorld>(world: &mut World) {
     world.insert_resource(asset);
 }
 
-pub(crate) fn start_loading_collection<S: StateData, Assets: AssetCollection>(world: &mut World) {
-    #[allow(clippy::type_complexity)]
-    let mut system_state: SystemState<(ResMut<AssetLoaderConfiguration<S>>, Res<State<S>>)> =
-        SystemState::new(world);
+pub(crate) fn start_loading_collection<S: StateData, Assets: AssetCollection>(
+    world: &mut World,
+    system_state: &mut SystemState<(ResMut<AssetLoaderConfiguration<S>>, Res<State<S>>)>,
+) {
     let (mut asset_loader_configuration, state) = system_state.get_mut(world);
 
     let mut config = asset_loader_configuration
