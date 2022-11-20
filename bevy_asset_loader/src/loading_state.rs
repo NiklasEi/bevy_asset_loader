@@ -756,9 +756,11 @@ where
 
         app.init_resource::<DynamicAssetCollections<S>>();
         #[cfg(feature = "standard_dynamic_assets")]
-        app.add_plugin(RonAssetPlugin::<StandardDynamicAssetCollection>::new(
-            &self.standard_dynamic_asset_collection_file_endings,
-        ));
+        if !app.is_plugin_added::<RonAssetPlugin<StandardDynamicAssetCollection>>() {
+            app.add_plugin(RonAssetPlugin::<StandardDynamicAssetCollection>::new(
+                &self.standard_dynamic_asset_collection_file_endings,
+            ));
+        }
 
         let mut dynamic_asset_collections = app
             .world
@@ -922,9 +924,11 @@ where
 
         app.init_resource::<DynamicAssetCollections<S>>();
         #[cfg(feature = "standard_dynamic_assets")]
-        app.add_plugin(RonAssetPlugin::<StandardDynamicAssetCollection>::new(
-            &self.standard_dynamic_asset_collection_file_endings,
-        ));
+        if !app.is_plugin_added::<RonAssetPlugin<StandardDynamicAssetCollection>>() {
+            app.add_plugin(RonAssetPlugin::<StandardDynamicAssetCollection>::new(
+                &self.standard_dynamic_asset_collection_file_endings,
+            ));
+        }
 
         let mut dynamic_asset_collections = app
             .world
