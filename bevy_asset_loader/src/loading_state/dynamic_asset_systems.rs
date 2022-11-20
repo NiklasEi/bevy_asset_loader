@@ -7,6 +7,7 @@ use bevy::ecs::system::{Res, SystemState};
 use bevy::ecs::world::World;
 use std::any::TypeId;
 
+#[allow(clippy::type_complexity)]
 pub(crate) fn load_dynamic_asset_collections<S: StateData, C: DynamicAssetCollection + Asset>(
     world: &mut World,
     system_state: &mut SystemState<(
@@ -42,6 +43,7 @@ pub(crate) fn load_dynamic_asset_collections<S: StateData, C: DynamicAssetCollec
     }
 }
 
+#[allow(clippy::type_complexity)]
 pub(crate) fn check_dynamic_asset_collections<S: StateData, C: DynamicAssetCollection + Asset>(
     world: &mut World,
     system_state: &mut SystemState<(

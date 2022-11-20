@@ -33,6 +33,7 @@ pub(crate) fn load_dynamic_asset_collections<S: StateData, C: DynamicAssetCollec
     config.loading_dynamic_collections += 1;
 }
 
+#[allow(clippy::type_complexity)]
 pub(crate) fn check_dynamic_asset_collections<S: StateData, C: DynamicAssetCollection + Asset>(
     world: &mut World,
     system_state: &mut SystemState<(

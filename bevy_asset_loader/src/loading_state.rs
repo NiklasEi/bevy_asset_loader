@@ -48,7 +48,6 @@ use stageless::dynamic_asset_systems::{
 
 #[cfg(feature = "standard_dynamic_assets")]
 use bevy_common_assets::ron::RonAssetPlugin;
-use iyes_loopless::condition::IntoConditionalSystem;
 
 #[cfg(feature = "standard_dynamic_assets")]
 use crate::standard_dynamic_asset::{StandardDynamicAsset, StandardDynamicAssetCollection};
@@ -57,8 +56,9 @@ use crate::standard_dynamic_asset::{StandardDynamicAsset, StandardDynamicAssetCo
 use iyes_progress::ProgressSystemLabel;
 
 #[cfg(feature = "stageless")]
-use iyes_loopless::prelude::{AppLooplessStateExt, ConditionSet};
-
+use iyes_loopless::condition::ConditionSet;
+#[cfg(feature = "stageless")]
+use iyes_loopless::state::app::AppLooplessStateExt;
 #[cfg(feature = "stageless")]
 use iyes_loopless::state::schedule::ScheduleLooplessStateExt;
 #[cfg(feature = "stageless")]
@@ -591,6 +591,7 @@ where
     /// #     Loading,
     /// #     Menu
     /// # }
+    /// # #[derive(Resource)]
     /// # struct TextureAtlasFromWorld {
     /// #     atlas: Handle<TextureAtlas>
     /// # }
@@ -644,6 +645,7 @@ where
     /// #     Loading,
     /// #     Menu
     /// # }
+    /// # #[derive(Resource)]
     /// # struct TextureAtlasFromWorld {
     /// #     atlas: Handle<TextureAtlas>
     /// # }
@@ -1026,17 +1028,23 @@ where
         app.add_enter_system(self.loading_state.clone(), reset_loading_state);
 
         #[cfg(feature = "progress_tracking")]
-        let loading_state_system = run_loading_state::<S>.after(ProgressSystemLabel::Preparation);
+        let loading_state_system = iyes_loopless::condition::ConditionHelpers::run_in_state(
+            iyes_loopless::condition::IntoConditionalSystem::into_conditional(
+                run_loading_state::<S>,
+            ),
+            self.loading_state,
+        )
+        .after(ProgressSystemLabel::Preparation);
 
         #[cfg(not(feature = "progress_tracking"))]
-        let loading_state_system = run_loading_state::<S>;
-
-        app.add_system_to_stage(
-            CoreStage::Update,
-            loading_state_system
-                .run_in_state(self.loading_state)
-                .at_start(),
+        let loading_state_system = iyes_loopless::condition::ConditionHelpers::run_in_state(
+            iyes_loopless::condition::IntoConditionalSystem::into_conditional(
+                run_loading_state::<S>,
+            ),
+            self.loading_state,
         );
+
+        app.add_system_to_stage(CoreStage::Update, loading_state_system.at_start());
     }
 }
 

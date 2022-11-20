@@ -99,6 +99,7 @@ fn character_setup(
     commands.insert_resource(NextState(MyStates::AssetLoading))
 }
 
+#[derive(Resource)]
 struct ShowBackground(bool);
 
 // Rest of example setup

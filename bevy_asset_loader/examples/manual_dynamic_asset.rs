@@ -103,6 +103,7 @@ fn character_setup(
         .expect("Failed to change state");
 }
 
+#[derive(Resource)]
 struct ShowBackground(bool);
 
 // Rest of example setup
