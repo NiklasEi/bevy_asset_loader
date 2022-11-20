@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.14.1
+- Make sure that the `RonAssetPlugin` for `StandardDynamicAssetCollection` is only added once
+
 ## v0.14.0
 - update to Bevy `0.9`
 
