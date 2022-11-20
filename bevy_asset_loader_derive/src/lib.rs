@@ -155,9 +155,9 @@ fn impl_asset_collection(
         asset.attach_token_stream_for_loading(token_stream)
     });
     let load_function = quote! {
-            fn load(world: &mut World) -> Vec<HandleUntyped> {
+            fn load(world: &mut ::bevy::ecs::world::World) -> Vec<::bevy::prelude::HandleUntyped> {
                 let cell = world.cell();
-                let asset_server = cell.get_resource::<AssetServer>().expect("Cannot get AssetServer");
+                let asset_server = cell.get_resource::<::bevy::prelude::AssetServer>().expect("Cannot get AssetServer");
                 let asset_keys = cell.get_resource::<bevy_asset_loader::prelude::DynamicAssets>().expect("Cannot get bevy_asset_loader::prelude::DynamicAssets");
                 let mut handles = vec![];
                 #asset_loading
@@ -182,10 +182,10 @@ fn impl_asset_collection(
         tokens
     }));
     let create_function = quote! {
-        fn create(world: &mut World) -> Self {
+        fn create(world: &mut ::bevy::ecs::world::World) -> Self {
             let from_world_fields = (#prepare_from_world);
             world.resource_scope(
-                |world, asset_keys: Mut<::bevy_asset_loader::dynamic_asset::DynamicAssets>| {
+                |world, asset_keys: ::bevy::prelude::Mut<::bevy_asset_loader::dynamic_asset::DynamicAssets>| {
                     #name {
                         #asset_creation
                     }
