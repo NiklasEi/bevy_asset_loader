@@ -16,6 +16,7 @@ with `cargo run --example <example>`.
 | [`no_loading_state.rs`](no_loading_state.rs)               | How to use asset collections without a loading state                     |
 | [`custom_dynamic_assets.rs`](custom_dynamic_assets.rs)     | Define and use your own dynamic assets                                   |
 | [`progress_tracking.rs`](progress_tracking.rs)             | How to set up progress tracking using `iyes_progress`                    |
+| [`failure_state.rs`](failure_state.rs)                     | Sets up a failure state                                                  |
 
 ## Examples for stageless
 
@@ -31,6 +32,7 @@ Note that progress tracking needs `progress_tracking_stageless` feature together
 | [`stageless_full_dynamic_collection.rs`](stageless_full_dynamic_collection.rs) | A complete asset collection with all supported dynamic asset field types |
 | [`stageless_progress.rs`](stageless_progress.rs)                               | Stageless with progress tracking                                         |
 | [`stageless_dynamic_asset.rs`](stageless_dynamic_asset.rs)                     | Stageless with ron loading                                               |
+| [`stageless_failure_state.rs`](stageless_failure_state.rs)                     | Sets up a failure state                                                  |
 
 ## Credits
 
