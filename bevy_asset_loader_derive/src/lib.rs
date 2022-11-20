@@ -47,6 +47,10 @@ impl TextureAtlasAttribute {
     pub const PADDING_X: &'static str = "padding_x";
     #[allow(dead_code)]
     pub const PADDING_Y: &'static str = "padding_y";
+    #[allow(dead_code)]
+    pub const OFFSET_X: &'static str = "offset_x";
+    #[allow(dead_code)]
+    pub const OFFSET_Y: &'static str = "offset_y";
 }
 
 pub(crate) const COLLECTION_ATTRIBUTE: &str = "collection";
@@ -345,6 +349,26 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                                     if let Lit::Float(padding_y) = &named_value.lit {
                                         builder.padding_y =
                                             Some(padding_y.base10_parse::<f32>().unwrap());
+                                    } else {
+                                        errors.push(ParseFieldError::WrongAttributeType(
+                                            named_value.into_token_stream(),
+                                            "float",
+                                        ));
+                                    }
+                                } else if path == TextureAtlasAttribute::OFFSET_X {
+                                    if let Lit::Float(offset_x) = &named_value.lit {
+                                        builder.offset_x =
+                                            Some(offset_x.base10_parse::<f32>().unwrap());
+                                    } else {
+                                        errors.push(ParseFieldError::WrongAttributeType(
+                                            named_value.into_token_stream(),
+                                            "float",
+                                        ));
+                                    }
+                                } else if path == TextureAtlasAttribute::OFFSET_Y {
+                                    if let Lit::Float(offset_y) = &named_value.lit {
+                                        builder.offset_y =
+                                            Some(offset_y.base10_parse::<f32>().unwrap());
                                     } else {
                                         errors.push(ParseFieldError::WrongAttributeType(
                                             named_value.into_token_stream(),

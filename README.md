@@ -290,7 +290,7 @@ use bevy_asset_loader::asset_collection::AssetCollection;
 
 #[derive(AssetCollection, Resource)]
 struct MyAssets {
-    #[asset(texture_atlas(tile_size_x = 64., tile_size_y = 64., columns = 8, rows = 1, padding_x = 12., padding_y = 12.))]
+    #[asset(texture_atlas(tile_size_x = 64., tile_size_y = 64., columns = 8, rows = 1, padding_x = 12., padding_y = 12., offset_x = 6., offset_y = 6.))]
     #[asset(path = "images/sprite_sheet.png")]
     sprite: Handle<TextureAtlas>,
 }
@@ -314,11 +314,13 @@ struct MyAssets {
         rows: 1,
         padding_x: 12.,
         padding_y: 12.,
+        offset_x: 6.,
+        offset_y: 6.,
     ),
 })
 ```
 
-The two padding fields/attributes are optional and default to `0.`.
+The four padding & offset fields/attributes are optional, and default to `0.`.
 
 ### Types implementing FromWorld
 
