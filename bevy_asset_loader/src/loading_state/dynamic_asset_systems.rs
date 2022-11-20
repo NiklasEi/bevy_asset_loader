@@ -7,17 +7,17 @@ use bevy::ecs::system::{Res, SystemState};
 use bevy::ecs::world::World;
 use std::any::TypeId;
 
+#[allow(clippy::type_complexity)]
 pub(crate) fn load_dynamic_asset_collections<S: StateData, C: DynamicAssetCollection + Asset>(
     world: &mut World,
-) {
-    #[allow(clippy::type_complexity)]
-    let mut system_state: SystemState<(
+    system_state: &mut SystemState<(
         ResMut<DynamicAssetCollections<S>>,
         ResMut<LoadingAssetHandles<C>>,
         Res<AssetServer>,
         Res<State<S>>,
         ResMut<AssetLoaderConfiguration<S>>,
-    )> = SystemState::new(world);
+    )>,
+) {
     let (
         mut dynamic_asset_collections,
         mut loading_collections,
@@ -43,19 +43,19 @@ pub(crate) fn load_dynamic_asset_collections<S: StateData, C: DynamicAssetCollec
     }
 }
 
+#[allow(clippy::type_complexity)]
 pub(crate) fn check_dynamic_asset_collections<S: StateData, C: DynamicAssetCollection + Asset>(
     world: &mut World,
+    system_state: &mut SystemState<(
+        Res<AssetServer>,
+        Option<ResMut<LoadingAssetHandles<C>>>,
+        Res<State<S>>,
+        Res<Assets<C>>,
+        ResMut<DynamicAssets>,
+        ResMut<AssetLoaderConfiguration<S>>,
+    )>,
 ) {
     {
-        #[allow(clippy::type_complexity)]
-        let mut system_state: SystemState<(
-            Res<AssetServer>,
-            Option<ResMut<LoadingAssetHandles<C>>>,
-            Res<State<S>>,
-            Res<Assets<C>>,
-            ResMut<DynamicAssets>,
-            ResMut<AssetLoaderConfiguration<S>>,
-        )> = SystemState::new(world);
         let (
             asset_server,
             mut loading_collections,

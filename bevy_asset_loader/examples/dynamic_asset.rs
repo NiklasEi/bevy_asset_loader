@@ -28,7 +28,7 @@ fn main() {
 }
 
 // The keys used here are defined in `assets/dynamic_asset_ron.assets`
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 struct ImageAssets {
     #[asset(key = "image.player")]
     player: Handle<TextureAtlas>,
@@ -36,18 +36,18 @@ struct ImageAssets {
     tree: Handle<Image>,
 }
 
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 struct AudioAssets {
     #[asset(key = "sounds.background")]
     background: Handle<AudioSource>,
 }
 
 fn spawn_player_and_tree(mut commands: Commands, image_assets: Res<ImageAssets>) {
-    commands.spawn_bundle(Camera2dBundle::default());
+    commands.spawn(Camera2dBundle::default());
     let mut transform = Transform::from_translation(Vec3::new(0., 0., 1.));
     transform.scale = Vec3::splat(0.5);
     commands
-        .spawn_bundle(SpriteSheetBundle {
+        .spawn(SpriteSheetBundle {
             transform: Transform {
                 translation: Vec3::new(0., 150., 0.),
                 ..Default::default()
@@ -56,9 +56,12 @@ fn spawn_player_and_tree(mut commands: Commands, image_assets: Res<ImageAssets>)
             texture_atlas: image_assets.player.clone(),
             ..Default::default()
         })
-        .insert(AnimationTimer(Timer::from_seconds(0.1, true)))
+        .insert(AnimationTimer(Timer::from_seconds(
+            0.1,
+            TimerMode::Repeating,
+        )))
         .insert(Player);
-    commands.spawn_bundle(SpriteBundle {
+    commands.spawn(SpriteBundle {
         texture: image_assets.tree.clone(),
         transform: Transform::from_translation(Vec3::new(50., 30., 1.)),
         ..Default::default()

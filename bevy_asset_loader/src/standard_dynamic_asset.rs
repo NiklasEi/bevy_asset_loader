@@ -118,13 +118,13 @@ impl DynamicAsset for StandardDynamicAsset {
                     .get_resource_mut::<bevy::asset::Assets<bevy::sprite::TextureAtlas>>()
                     .expect("Cannot get resource Assets<TextureAtlas>");
                 let handle = atlases
-                    .add(bevy::sprite::TextureAtlas::from_grid_with_padding(
+                    .add(bevy::sprite::TextureAtlas::from_grid(
                         asset_server.get_handle(path),
                         Vec2::new(*tile_size_x, *tile_size_y),
                         *columns,
                         *rows,
-                        Vec2::new(padding_x.unwrap_or(0.), padding_y.unwrap_or(0.)),
-                        Vec2::splat(0.),
+                        Some(Vec2::new(padding_x.unwrap_or(0.), padding_y.unwrap_or(0.))),
+                        Some(Vec2::splat(0.)),
                     ))
                     .clone_untyped();
 

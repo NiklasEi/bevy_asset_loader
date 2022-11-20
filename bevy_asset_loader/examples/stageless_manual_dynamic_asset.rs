@@ -41,7 +41,7 @@ fn main() {
         .run();
 }
 
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 struct ImageAssets {
     // This key will be resolved when the collection is loaded.
     // It needs to be registered in the resource bevy_asset_loader::DynamicAssets
@@ -99,17 +99,18 @@ fn character_setup(
     commands.insert_resource(NextState(MyStates::AssetLoading))
 }
 
+#[derive(Resource)]
 struct ShowBackground(bool);
 
 // Rest of example setup
 
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 struct AudioAssets {
     #[asset(path = "audio/background.ogg")]
     background: Handle<AudioSource>,
 }
 
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 pub struct FontAssets {
     #[asset(path = "fonts/FiraSans-Bold.ttf")]
     pub fira_sans: Handle<Font>,
@@ -119,13 +120,13 @@ fn spawn_player_and_tree(mut commands: Commands, image_assets: Res<ImageAssets>)
     let mut transform = Transform::from_translation(Vec3::new(0., 0., 1.));
     transform.scale = Vec3::splat(0.5);
     commands
-        .spawn_bundle(SpriteBundle {
+        .spawn(SpriteBundle {
             texture: image_assets.player.clone(),
             transform,
             ..Default::default()
         })
         .insert(Player);
-    commands.spawn_bundle(SpriteBundle {
+    commands.spawn(SpriteBundle {
         texture: image_assets.tree.clone(),
         transform: Transform::from_translation(Vec3::new(50., 30., 1.)),
         ..Default::default()
@@ -134,7 +135,7 @@ fn spawn_player_and_tree(mut commands: Commands, image_assets: Res<ImageAssets>)
 
 fn render_optional_background(mut commands: Commands, image_assets: Res<ImageAssets>) {
     if let Some(background) = &image_assets.background {
-        commands.spawn_bundle(SpriteBundle {
+        commands.spawn(SpriteBundle {
             texture: background.clone(),
             ..Default::default()
         });
@@ -177,9 +178,9 @@ enum MyStates {
 }
 
 fn menu(mut commands: Commands, font_assets: Res<FontAssets>) {
-    commands.spawn_bundle(Camera2dBundle::default());
+    commands.spawn(Camera2dBundle::default());
     commands
-        .spawn_bundle(NodeBundle {
+        .spawn(NodeBundle {
             style: Style {
                 size: Size::new(Val::Percent(100.), Val::Percent(100.)),
                 margin: UiRect::all(Val::Auto),
@@ -188,12 +189,12 @@ fn menu(mut commands: Commands, font_assets: Res<FontAssets>) {
                 flex_direction: FlexDirection::ColumnReverse,
                 ..Default::default()
             },
-            color: UiColor(Color::rgba(0.0,0.0,0.0,1.0)),
+            background_color: BackgroundColor(Color::rgba(0.0,0.0,0.0,1.0)),
             ..Default::default()
         })
         .insert(MenuUi)
         .with_children(|parent| {
-            parent.spawn_bundle(TextBundle {
+            parent.spawn(TextBundle {
                 text: Text {
                     sections: vec![TextSection {
                         value:
@@ -215,7 +216,7 @@ fn menu(mut commands: Commands, font_assets: Res<FontAssets>) {
                 },
                 ..Default::default()
             });
-            parent.spawn_bundle(TextBundle {
+            parent.spawn(TextBundle {
                 text: Text {
                     sections: vec![TextSection {
                         value: "Background currently Off".to_string(),

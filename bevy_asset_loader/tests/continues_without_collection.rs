@@ -35,6 +35,7 @@ fn exit(mut exit: EventWriter<AppExit>) {
     exit.send(AppExit);
 }
 
+#[derive(Resource)]
 struct TestState {
     wait_frames: usize,
 }

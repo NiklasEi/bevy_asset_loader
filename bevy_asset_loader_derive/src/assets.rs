@@ -128,13 +128,13 @@ impl AssetField {
                     let mut atlases = cell
                         .get_resource_mut::<Assets<TextureAtlas>>()
                         .expect("Cannot get resource Assets<TextureAtlas>");
-                    atlases.add(TextureAtlas::from_grid_with_padding(
+                    atlases.add(TextureAtlas::from_grid(
                         asset_server.get_handle(#asset_path),
                         Vec2::new(#tile_size_x, #tile_size_y),
                         #columns,
                         #rows,
-                        Vec2::new(#padding_x, #padding_y),
-                        Vec2::splat(0.),
+                        Some(Vec2::new(#padding_x, #padding_y)),
+                        Some(Vec2::splat(0.)),
                     ))
                 },)
             }

@@ -19,7 +19,7 @@ fn main() {
         .run();
 }
 
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 struct MyAssets {
     // Single files loaded into a Handle<T>
 

@@ -32,12 +32,12 @@ fn exit(mut exit: EventWriter<AppExit>) {
 }
 
 fn timeout(time: Res<Time>) {
-    if time.seconds_since_startup() > 10. {
+    if time.elapsed_seconds_f64() > 10. {
         panic!("The asset loader did not change the state in 10 seconds");
     }
 }
 
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 struct Audio {
     #[asset(path = "audio/plop.ogg")]
     _no_loader_for_ogg_files: Handle<AudioSource>,

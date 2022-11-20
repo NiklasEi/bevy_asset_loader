@@ -3,7 +3,7 @@ use bevy::prelude::*;
 
 fn main() {}
 
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 enum Test {
     #[asset(path = "test.ogg")]
     Asset(Handle<AudioSource>)

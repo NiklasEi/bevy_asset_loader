@@ -22,7 +22,7 @@ fn main() {
         .run();
 }
 
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 struct MyAssets {
     #[asset(standard_material)]
     #[asset(path = "images/player.png")]
@@ -34,12 +34,12 @@ fn spawn_player(
     my_assets: Res<MyAssets>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
-    commands.spawn_bundle(PbrBundle {
+    commands.spawn(PbrBundle {
         mesh: meshes.add(Mesh::from(shape::Cube { size: 2.0 })),
         material: my_assets.player.clone(),
         ..Default::default()
     });
-    commands.spawn_bundle(Camera3dBundle {
+    commands.spawn(Camera3dBundle {
         transform: Transform::from_xyz(-3.0, 3.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
         ..Default::default()
     });

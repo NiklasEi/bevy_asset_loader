@@ -3,7 +3,7 @@ use bevy::ecs::schedule::{State, StateData};
 use bevy::ecs::system::SystemState;
 use bevy::ecs::world::{FromWorld, World, WorldCell};
 use bevy::log::warn;
-use bevy::prelude::{Mut, Res, ResMut, Stage};
+use bevy::prelude::{Mut, Res, ResMut, Resource, Stage};
 use std::marker::PhantomData;
 
 #[cfg(feature = "progress_tracking")]
@@ -14,15 +14,16 @@ use crate::loading_state::{
     AssetLoaderConfiguration, InternalLoadingState, LoadingAssetHandles, LoadingStateSchedules,
 };
 
-pub(crate) fn init_resource<Asset: FromWorld + Send + Sync + 'static>(world: &mut World) {
+pub(crate) fn init_resource<Asset: Resource + FromWorld>(world: &mut World) {
     let asset = Asset::from_world(world);
     world.insert_resource(asset);
 }
 
-pub(crate) fn start_loading_collection<S: StateData, Assets: AssetCollection>(world: &mut World) {
-    #[allow(clippy::type_complexity)]
-    let mut system_state: SystemState<(ResMut<AssetLoaderConfiguration<S>>, Res<State<S>>)> =
-        SystemState::new(world);
+#[allow(clippy::type_complexity)]
+pub(crate) fn start_loading_collection<S: StateData, Assets: AssetCollection>(
+    world: &mut World,
+    system_state: &mut SystemState<(ResMut<AssetLoaderConfiguration<S>>, Res<State<S>>)>,
+) {
     let (mut asset_loader_configuration, state) = system_state.get_mut(world);
 
     let mut config = asset_loader_configuration
@@ -75,8 +76,7 @@ fn count_loaded_handles<S: StateData, Assets: AssetCollection>(
         .handles
         .iter()
         .map(|handle| handle.id)
-        .find(|handle_id| asset_server.get_load_state(*handle_id) == LoadState::Failed)
-        .is_some();
+        .any(|handle_id| asset_server.get_load_state(handle_id) == LoadState::Failed);
     let done = loading_asset_handles
         .handles
         .iter()

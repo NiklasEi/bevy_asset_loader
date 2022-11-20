@@ -41,7 +41,7 @@ fn multiple_loading_states() {
 }
 
 fn timeout(time: Res<Time>) {
-    if time.seconds_since_startup() > 30. {
+    if time.elapsed_seconds_f64() > 30. {
         panic!("The app did not finish in 30 seconds");
     }
 }
@@ -59,21 +59,21 @@ fn quit(mut exit: EventWriter<AppExit>) {
     exit.send(AppExit);
 }
 
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 #[allow(dead_code)]
 struct MyAssets {
     #[asset(path = "audio/background.ogg")]
     background: Handle<AudioSource>,
 }
 
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 #[allow(dead_code)]
 struct MyOtherAssets {
     #[asset(path = "audio/yipee.ogg")]
     yipee: Handle<AudioSource>,
 }
 
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 #[allow(dead_code)]
 struct SplashAssets {
     #[asset(path = "audio/plop.ogg")]

@@ -7,6 +7,7 @@ use bevy::ecs::schedule::{Stage, StateData};
 use bevy::ecs::system::{Res, SystemState};
 
 use bevy::log::warn;
+use bevy::prelude::Resource;
 use std::marker::PhantomData;
 
 #[cfg(feature = "progress_tracking")]
@@ -19,17 +20,16 @@ use crate::loading_state::{
     AssetLoaderConfiguration, InternalLoadingState, LoadingAssetHandles, LoadingStateSchedules,
 };
 
-pub(crate) fn init_resource<Asset: FromWorld + Send + Sync + 'static>(world: &mut World) {
+pub(crate) fn init_resource<Asset: FromWorld + Resource>(world: &mut World) {
     let asset = Asset::from_world(world);
     world.insert_resource(asset);
 }
 
-pub(crate) fn start_loading_collection<S: StateData, Assets: AssetCollection>(world: &mut World) {
-    #[allow(clippy::type_complexity)]
-    let mut system_state: SystemState<(
-        ResMut<AssetLoaderConfiguration<S>>,
-        Res<CurrentState<S>>,
-    )> = SystemState::new(world);
+#[allow(clippy::type_complexity)]
+pub(crate) fn start_loading_collection<S: StateData, Assets: AssetCollection>(
+    world: &mut World,
+    system_state: &mut SystemState<(ResMut<AssetLoaderConfiguration<S>>, Res<CurrentState<S>>)>,
+) {
     let (mut asset_loader_configuration, state) = system_state.get_mut(world);
 
     let mut config = asset_loader_configuration

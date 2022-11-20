@@ -34,7 +34,7 @@ fn init_resource() {
 }
 
 fn timeout(time: Res<Time>) {
-    if time.seconds_since_startup() > 10. {
+    if time.elapsed_seconds_f64() > 10. {
         panic!("The asset loader did not change the state in 10 seconds");
     }
 }
@@ -48,15 +48,16 @@ fn expect(collection: Option<Res<PostProcessed>>, mut exit: EventWriter<AppExit>
 }
 
 #[allow(dead_code)]
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 struct MyAssets {
     #[asset(path = "audio/background.ogg")]
     background: Handle<AudioSource>,
 }
 
-#[allow(dead_code)]
 // this struct could e.g. contain TextureAtlas handles or anything else
 // created from previously loaded assets
+#[allow(dead_code)]
+#[derive(Resource)]
 struct PostProcessed {
     background: Handle<AudioSource>,
     // use other resources/add fields

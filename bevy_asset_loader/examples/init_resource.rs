@@ -21,7 +21,7 @@ fn main() {
         .run();
 }
 
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 struct ImageAssets {
     #[asset(path = "images/player.png")]
     player: Handle<Image>,
@@ -29,6 +29,7 @@ struct ImageAssets {
     tree: Handle<Image>,
 }
 
+#[derive(Resource)]
 struct CombinedImage {
     combined: Handle<Image>,
 }
@@ -66,17 +67,17 @@ fn draw(
     combined_texture: Res<CombinedImage>,
     image_assets: Res<ImageAssets>,
 ) {
-    commands.spawn_bundle(Camera2dBundle::default());
-    commands.spawn_bundle(SpriteBundle {
+    commands.spawn(Camera2dBundle::default());
+    commands.spawn(SpriteBundle {
         texture: image_assets.player.clone(),
         transform: Transform::from_translation(Vec3::new(-150., 0., 1.)),
         ..Default::default()
     });
-    commands.spawn_bundle(SpriteBundle {
+    commands.spawn(SpriteBundle {
         texture: combined_texture.combined.clone(),
         ..Default::default()
     });
-    commands.spawn_bundle(SpriteBundle {
+    commands.spawn(SpriteBundle {
         texture: image_assets.tree.clone(),
         transform: Transform::from_translation(Vec3::new(150., 0., 1.)),
         ..Default::default()

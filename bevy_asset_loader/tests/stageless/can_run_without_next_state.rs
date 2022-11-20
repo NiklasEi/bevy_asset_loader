@@ -26,7 +26,7 @@ fn can_run_without_next_state() {
 }
 
 fn timeout(time: Res<Time>) {
-    if time.seconds_since_startup() > 10. {
+    if time.elapsed_seconds_f64() > 10. {
         panic!("The asset loader did not load the collection in 10 seconds");
     }
 }
@@ -45,6 +45,7 @@ fn expect(
     }
 }
 
+#[derive(Resource)]
 struct TestState {
     wait_frames_after_load: usize,
 }
@@ -58,7 +59,7 @@ impl Default for TestState {
 }
 
 #[allow(dead_code)]
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 struct MyAssets {
     #[asset(path = "audio/background.ogg")]
     background: Handle<AudioSource>,

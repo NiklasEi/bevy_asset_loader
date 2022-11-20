@@ -34,7 +34,7 @@ fn multiple_asset_collections() {
 }
 
 fn timeout(time: Res<Time>) {
-    if time.seconds_since_startup() > 60. {
+    if time.elapsed_seconds_f64() > 60. {
         panic!("The asset loader did not change the state in 60 seconds");
     }
 }
@@ -51,13 +51,13 @@ fn expect(
     }
 }
 
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 struct PlopAudio {
     #[asset(path = "audio/plop.ogg")]
     plop: Handle<AudioSource>,
 }
 
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 struct BackgroundAudio {
     #[asset(path = "audio/background.ogg")]
     background: Handle<AudioSource>,
