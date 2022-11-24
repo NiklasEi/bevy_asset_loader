@@ -22,7 +22,7 @@ fn main() {
 #[derive(AssetCollection, Resource)]
 struct MyAssets {
     // if the sheet would have padding, we could set that with `padding_x` and `padding_y`.
-    // if there's space between the top left corner of the sheet and the first sprite, we could set that `offset_x` and `offset_y`
+    // if there's space between the top left corner of the sheet and the first sprite, we could configure that with `offset_x` and `offset_y`
     #[asset(texture_atlas(tile_size_x = 96., tile_size_y = 99., columns = 8, rows = 1))]
     #[asset(path = "images/female_adventurer_sheet.png")]
     female_adventurer: Handle<TextureAtlas>,
