@@ -603,6 +603,7 @@ mod test {
             columns: Some(10),
             rows: Some(5),
             padding_x: Some(2.),
+            offset_y: Some(3.),
             ..Default::default()
         };
 
@@ -621,7 +622,7 @@ mod test {
                 padding_x: 2.0,
                 padding_y: 0.0,
                 offset_x: 0.0,
-                offset_y: 0.0,
+                offset_y: 3.0,
             })
         );
     }
@@ -644,6 +645,10 @@ mod test {
         // Optional texture atlas field
         let mut builder = asset_builder_dynamic();
         builder.padding_y = Some(5.0);
+        assert!(builder.build().is_err());
+
+        let mut builder = asset_builder_dynamic();
+        builder.offset_x = Some(2.5);
         assert!(builder.build().is_err());
 
         let mut builder = asset_builder_dynamic();
