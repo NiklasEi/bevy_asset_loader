@@ -12,6 +12,8 @@ pub(crate) struct TextureAtlasAssetField {
     pub rows: usize,
     pub padding_x: f32,
     pub padding_y: f32,
+    pub offset_x: f32,
+    pub offset_y: f32,
 }
 
 #[derive(PartialEq, Debug)]
@@ -120,6 +122,8 @@ impl AssetField {
                 let rows = texture_atlas.rows;
                 let padding_x = texture_atlas.padding_x;
                 let padding_y = texture_atlas.padding_y;
+                let offset_x = texture_atlas.offset_x;
+                let offset_y = texture_atlas.offset_y;
                 quote!(#token_stream #field_ident : {
                     let cell = world.cell();
                     let asset_server = cell
@@ -134,7 +138,7 @@ impl AssetField {
                         #columns,
                         #rows,
                         Some(Vec2::new(#padding_x, #padding_y)),
-                        Some(Vec2::splat(0.)),
+                        Some(Vec2::new(#offset_x, #offset_y)),
                     ))
                 },)
             }
@@ -296,6 +300,8 @@ pub(crate) struct AssetBuilder {
     pub rows: Option<usize>,
     pub padding_x: Option<f32>,
     pub padding_y: Option<f32>,
+    pub offset_x: Option<f32>,
+    pub offset_y: Option<f32>,
 }
 
 impl AssetBuilder {
@@ -338,6 +344,8 @@ impl AssetBuilder {
                 || missing_fields.len() < 4
                 || self.padding_x.is_some()
                 || self.padding_y.is_some()
+                || self.offset_x.is_some()
+                || self.offset_y.is_some()
                 || self.is_standard_material)
         {
             return Err(vec![ParseFieldError::KeyAttributeStandsAlone]);
@@ -417,6 +425,8 @@ impl AssetBuilder {
                 rows: self.rows.unwrap(),
                 padding_x: self.padding_x.unwrap_or_default(),
                 padding_y: self.padding_y.unwrap_or_default(),
+                offset_x: self.offset_x.unwrap_or_default(),
+                offset_y: self.offset_y.unwrap_or_default(),
             }));
         }
         Err(vec![ParseFieldError::MissingAttributes(missing_fields)])
@@ -593,6 +603,7 @@ mod test {
             columns: Some(10),
             rows: Some(5),
             padding_x: Some(2.),
+            offset_y: Some(3.),
             ..Default::default()
         };
 
@@ -609,7 +620,9 @@ mod test {
                 columns: 10,
                 rows: 5,
                 padding_x: 2.0,
-                padding_y: 0.0
+                padding_y: 0.0,
+                offset_x: 0.0,
+                offset_y: 3.0,
             })
         );
     }
@@ -632,6 +645,10 @@ mod test {
         // Optional texture atlas field
         let mut builder = asset_builder_dynamic();
         builder.padding_y = Some(5.0);
+        assert!(builder.build().is_err());
+
+        let mut builder = asset_builder_dynamic();
+        builder.offset_x = Some(2.5);
         assert!(builder.build().is_err());
 
         let mut builder = asset_builder_dynamic();

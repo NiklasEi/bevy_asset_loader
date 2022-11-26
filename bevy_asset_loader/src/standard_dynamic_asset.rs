@@ -55,6 +55,10 @@ pub enum StandardDynamicAsset {
         padding_x: Option<f32>,
         /// Padding between rows in pixels
         padding_y: Option<f32>,
+        /// Number of pixels offset of the first tile
+        offset_x: Option<f32>,
+        /// Number of pixels offset of the first tile
+        offset_y: Option<f32>,
     },
 }
 
@@ -113,6 +117,8 @@ impl DynamicAsset for StandardDynamicAsset {
                 rows,
                 padding_x,
                 padding_y,
+                offset_x,
+                offset_y,
             } => {
                 let mut atlases = cell
                     .get_resource_mut::<bevy::asset::Assets<bevy::sprite::TextureAtlas>>()
@@ -124,7 +130,7 @@ impl DynamicAsset for StandardDynamicAsset {
                         *columns,
                         *rows,
                         Some(Vec2::new(padding_x.unwrap_or(0.), padding_y.unwrap_or(0.))),
-                        Some(Vec2::splat(0.)),
+                        Some(Vec2::new(offset_x.unwrap_or(0.), offset_y.unwrap_or(0.))),
                     ))
                     .clone_untyped();
 
