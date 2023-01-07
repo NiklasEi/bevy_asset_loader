@@ -40,7 +40,7 @@ pub(crate) struct DynamicAssetField {
 #[derive(PartialEq, Debug)]
 pub(crate) enum AssetField {
     Basic(BasicAssetField),
-    Folder(BasicAssetField, Typed),
+    Folder(BasicAssetField, Typed, Mapped),
     Files(MultipleFilesField, Typed),
     TextureAtlas(TextureAtlasAssetField),
     StandardMaterial(BasicAssetField),
@@ -65,6 +65,21 @@ impl From<bool> for Typed {
     }
 }
 
+#[derive(PartialEq, Debug)]
+pub(crate) enum Mapped {
+    Yes,
+    No,
+}
+
+impl From<bool> for Mapped {
+    fn from(flag: bool) -> Self {
+        match flag {
+            true => Mapped::Yes,
+            false => Mapped::No,
+        }
+    }
+}
+
 impl AssetField {
     pub(crate) fn attach_token_stream_for_creation(
         &self,
@@ -79,26 +94,74 @@ impl AssetField {
                     asset_server.get_handle(#asset_path)
                 },)
             }
-            AssetField::Folder(basic, typed) => {
+            AssetField::Folder(basic, typed, mapped) => {
                 let field_ident = basic.field_ident.clone();
                 let asset_path = basic.asset_path.clone();
                 match typed {
-                    Typed::Yes => {
-                        quote!(#token_stream #field_ident : {
-                            let asset_server = world.get_resource::<AssetServer>().expect("Cannot get AssetServer");
-                            asset_server.load_folder(#asset_path)
-                            .unwrap()
-                            .drain(..)
-                            .map(|handle| handle.typed())
-                            .collect()
-                        },)
-                    }
-                    Typed::No => {
-                        quote!(#token_stream #field_ident : {
-                            let asset_server = world.get_resource::<AssetServer>().expect("Cannot get AssetServer");
-                            asset_server.load_folder(#asset_path).unwrap()
-                        },)
-                    }
+                    Typed::Yes => match mapped {
+                        Mapped::No => {
+                            quote!(#token_stream #field_ident : {
+                                    let asset_server = world.get_resource::<AssetServer>().expect("Cannot get AssetServer");
+                                    asset_server.load_folder(#asset_path)
+                                        .unwrap()
+                                        .drain(..)
+                                        .map(|handle| handle.typed())
+                                        .collect()
+                                },)
+                        }
+                        Mapped::Yes => {
+                            quote!(#token_stream #field_ident : {
+                                    let asset_server = world.get_resource::<AssetServer>().expect("Cannot get AssetServer");
+                                    let mut folder_map = ::bevy::utils::HashMap::default();
+                                    let handles = asset_server.load_folder(#asset_path).unwrap();
+                                    for handle in handles {
+                                        let path: String = asset_server
+                                            .get_handle_path(&handle)
+                                            .expect("Handle should have a path")
+                                            .path()
+                                            .to_str()
+                                            .expect("Path should be valid UTF-8")
+                                            .strip_prefix(&#asset_path)
+                                            .expect("Should start with folder path")
+                                            .strip_prefix("/")
+                                            .expect("Should be a folder")
+                                            .to_owned();
+                                        folder_map.insert(path, handle.typed());
+                                    }
+                                    folder_map
+                                },)
+                        }
+                    },
+                    Typed::No => match mapped {
+                        Mapped::No => {
+                            quote!(#token_stream #field_ident : {
+                                    let asset_server = world.get_resource::<AssetServer>().expect("Cannot get AssetServer");
+                                    asset_server.load_folder(#asset_path).unwrap()
+                                },)
+                        }
+                        Mapped::Yes => {
+                            quote!(#token_stream #field_ident : {
+                                    let asset_server = world.get_resource::<AssetServer>().expect("Cannot get AssetServer");
+                                    let mut folder_map = ::bevy::utils::HashMap::default();
+                                    let handles = asset_server.load_folder(#asset_path).unwrap();
+                                    for handle in handles {
+                                        let path: String = asset_server
+                                            .get_handle_path(&handle)
+                                            .expect("Handle should have a path")
+                                            .path()
+                                            .to_str()
+                                            .expect("Path should be valid UTF-8")
+                                            .strip_prefix(&#asset_path)
+                                            .expect("Should start with folder path")
+                                            .strip_prefix("/")
+                                            .expect("Should be a folder")
+                                            .to_owned();
+                                        folder_map.insert(path, handle);
+                                    }
+                                    folder_map
+                                },)
+                        }
+                    },
                 }
             }
             AssetField::StandardMaterial(basic) => {
@@ -243,7 +306,7 @@ impl AssetField {
                 let asset_path = asset.asset_path.clone();
                 quote!(#token_stream handles.push(asset_server.load_untyped(#asset_path));)
             }
-            AssetField::Folder(asset, _) => {
+            AssetField::Folder(asset, _, _) => {
                 let asset_path = asset.asset_path.clone();
                 quote!(#token_stream asset_server.load_folder(#asset_path).unwrap().drain(..).for_each(|handle| handles.push(handle));)
             }
@@ -293,6 +356,7 @@ pub(crate) struct AssetBuilder {
     pub is_optional: bool,
     pub is_collection: bool,
     pub is_typed: bool,
+    pub is_mapped: bool,
     pub key: Option<String>,
     pub tile_size_x: Option<f32>,
     pub tile_size_y: Option<f32>,
@@ -404,6 +468,7 @@ impl AssetBuilder {
                         asset_path: self.asset_path.unwrap(),
                     },
                     self.is_typed.into(),
+                    self.is_mapped.into(),
                 ));
             }
             let asset = BasicAssetField {
@@ -437,6 +502,7 @@ impl AssetBuilder {
 mod test {
     use super::*;
     use proc_macro2::Span;
+    use std::mem::transmute;
 
     #[test]
     fn basic_asset() {
@@ -492,7 +558,8 @@ mod test {
                     field_ident: Ident::new("test", Span::call_site()),
                     asset_path: "some/folder".to_owned()
                 },
-                Typed::No
+                Typed::No,
+                Mapped::No
             )
         );
 
@@ -512,7 +579,51 @@ mod test {
                     field_ident: Ident::new("test", Span::call_site()),
                     asset_path: "some/folder".to_owned()
                 },
-                Typed::Yes
+                Typed::Yes,
+                Mapped::No
+            )
+        );
+
+        let builder = AssetBuilder {
+            field_ident: Some(Ident::new("test", Span::call_site())),
+            asset_path: Some("some/folder".to_owned()),
+            is_collection: true,
+            is_mapped: true,
+            ..Default::default()
+        };
+
+        let asset = builder.build().expect("This should be a valid BasicAsset");
+        assert_eq!(
+            asset,
+            AssetField::Folder(
+                BasicAssetField {
+                    field_ident: Ident::new("test", Span::call_site()),
+                    asset_path: "some/folder".to_owned()
+                },
+                Typed::No,
+                Mapped::Yes
+            )
+        );
+
+        let builder = AssetBuilder {
+            field_ident: Some(Ident::new("test", Span::call_site())),
+            asset_path: Some("some/folder".to_owned()),
+            is_collection: true,
+            is_typed: true,
+            is_mapped: true,
+            ..Default::default()
+        };
+
+        let asset = builder.build().expect("This should be a valid BasicAsset");
+        assert_eq!(
+            asset,
+            AssetField::Folder(
+                BasicAssetField {
+                    field_ident: Ident::new("test", Span::call_site()),
+                    asset_path: "some/folder".to_owned()
+                },
+                Typed::Yes,
+                Mapped::Yes
             )
         );
     }

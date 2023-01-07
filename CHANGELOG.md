@@ -1,5 +1,7 @@
 # Changelog
 
+- Option to load folders as maps of "path inside folder" to handle (resolves [#32](https://github.com/NiklasEi/bevy_asset_loader/issues/32))
+
 ## v0.14.1
 - Make sure that the `RonAssetPlugin` for `StandardDynamicAssetCollection` is only added once
 

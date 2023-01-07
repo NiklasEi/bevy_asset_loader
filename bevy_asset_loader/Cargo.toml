@@ -58,6 +58,10 @@ name = "init_resource"
 path = "examples/init_resource.rs"
 
 [[example]]
+name = "load_folder_as_map"
+path = "examples/load_folder_as_map.rs"
+
+[[example]]
 name = "manual_dynamic_asset"
 path = "examples/manual_dynamic_asset.rs"
 required-features = ["standard_dynamic_assets"]
