@@ -377,7 +377,7 @@ struct MyAssets {
 
 ## Stageless support
 
-`bavy_asset_loader` can integrate with `iyes_loopless`, which implements ideas from Bevy's [Stageless RFC](https://github.com/bevyengine/rfcs/pull/45). The integration can be enabled with the `stageless` feature.
+`bevy_asset_loader` can integrate with `iyes_loopless`, which implements ideas from Bevy's [Stageless RFC](https://github.com/bevyengine/rfcs/pull/45). The integration can be enabled with the `stageless` feature.
 
 Currently, you must initialize the `iyes_loopless` state before you initialize your `AssetLoader`. This is a limitation due to the way `iyes_loopless` works. The following is a minimal example of integrating `bevy_asset_loader` with `iyes_loopless`:
 
