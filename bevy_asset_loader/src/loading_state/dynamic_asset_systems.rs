@@ -33,7 +33,7 @@ pub(crate) fn load_dynamic_asset_collections<S: StateData, C: DynamicAssetCollec
     for file in files.remove(&TypeId::of::<C>()).unwrap_or_default() {
         loading_collections
             .handles
-            .push(asset_server.load_untyped(&file));
+            .push(asset_server.load_untyped(file));
     }
     if let Some(mut config) = asset_loader_config
         .state_configurations
