@@ -258,6 +258,7 @@ Collections can be loaded as maps using their file paths as the keys. This is on
 
 ```rust
 use bevy::prelude::*;
+use bevy::utils::HashMap;
 use bevy_asset_loader::asset_collection::AssetCollection;
 
 #[derive(AssetCollection, Resource)]
