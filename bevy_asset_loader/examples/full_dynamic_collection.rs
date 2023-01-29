@@ -10,7 +10,7 @@ fn main() {
             LoadingState::new(MyStates::AssetLoading)
                 .continue_to_state(MyStates::Next)
                 .with_dynamic_collections::<StandardDynamicAssetCollection>(vec![
-                    "full_dynamic_collection.assets",
+                    "full_dynamic_collection.assets.ron",
                 ])
                 .with_collection::<MyAssets>(),
         )

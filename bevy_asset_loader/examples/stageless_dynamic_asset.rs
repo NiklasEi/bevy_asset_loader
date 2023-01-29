@@ -13,7 +13,7 @@ fn main() {
             LoadingState::new(MyStates::AssetLoading)
                 .continue_to_state(MyStates::Next)
                 .with_dynamic_collections::<StandardDynamicAssetCollection>(vec![
-                    "dynamic_asset.assets",
+                    "dynamic_asset.assets.ron",
                 ])
                 .with_collection::<ImageAssets>()
                 .with_collection::<AudioAssets>(),
