@@ -219,7 +219,7 @@ where
             initialize_resources: SystemSet::on_enter(InternalLoadingState::Finalize),
             dynamic_asset_collections: Default::default(),
             #[cfg(feature = "standard_dynamic_assets")]
-            standard_dynamic_asset_collection_file_endings: vec!["assets"],
+            standard_dynamic_asset_collection_file_endings: vec!["assets.ron"],
         }
     }
 
@@ -283,7 +283,7 @@ where
             start_loading_dynamic_collections: Default::default(),
             start_loading_collections: Default::default(),
             #[cfg(feature = "standard_dynamic_assets")]
-            standard_dynamic_asset_collection_file_endings: vec!["assets"],
+            standard_dynamic_asset_collection_file_endings: vec!["assets.ron"],
             dynamic_asset_collections: Default::default(),
             initialize_resources: Default::default(),
         }

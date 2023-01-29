@@ -1,5 +1,7 @@
 # Changelog
 
+- Changed the default file ending for standard dynamic asset files from `.assets` to `.assets.ron`
+
 ## v0.14.1
 - Make sure that the `RonAssetPlugin` for `StandardDynamicAssetCollection` is only added once
 

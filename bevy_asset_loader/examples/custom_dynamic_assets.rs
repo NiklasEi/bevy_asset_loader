@@ -10,12 +10,14 @@ fn main() {
         .add_plugins(DefaultPlugins)
         // We need to make sure that our dynamic asset collections can be loaded from the asset file
         .add_plugin(RonAssetPlugin::<CustomDynamicAssetCollection>::new(&[
-            "my-assets",
+            "my-assets.ron",
         ]))
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading)
                 .continue_to_state(MyStates::Next)
-                .with_dynamic_collections::<CustomDynamicAssetCollection>(vec!["custom.my-assets"])
+                .with_dynamic_collections::<CustomDynamicAssetCollection>(vec![
+                    "custom.my-assets.ron",
+                ])
                 .with_collection::<MyAssets>(),
         )
         .add_state(MyStates::AssetLoading)
@@ -96,6 +98,9 @@ enum CustomDynamicAsset {
 }
 
 impl DynamicAsset for CustomDynamicAsset {
+    // At this point, the content of your dynamic asset file is done loading.
+    // You should return untyped handles to any assets that need to finish loading for your
+    // dynamic asset to be ready.
     fn load(&self, asset_server: &AssetServer) -> Vec<HandleUntyped> {
         match self {
             CustomDynamicAsset::CombinedImage {
@@ -112,6 +117,8 @@ impl DynamicAsset for CustomDynamicAsset {
         }
     }
 
+    // This method is called when all asset handles returned from `load` are done loading.
+    // The handles that you return, should also be loaded.
     fn build(&self, world: &mut World) -> Result<DynamicAssetType, anyhow::Error> {
         let cell = world.cell();
         let asset_server = cell
