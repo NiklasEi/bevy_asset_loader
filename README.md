@@ -102,7 +102,7 @@ The keys `player` and `tree` in the example above should either be set manually 
 })
 ```
 
-The file ending is `.assets` by default, but can be configured via `LoadingState::set_standard_dynamic_asset_collection_file_endings`.
+The file ending is `.assets.ron` by default, but can be configured via `LoadingState::set_standard_dynamic_asset_collection_file_endings`.
 
 Dynamic assets can be optional. This requires the derive attribute `optional` on the field and the type to be an `Option`. The value of the field will be `None` in case the given key cannot be resolved at run time.
 
@@ -403,7 +403,7 @@ struct MyAssets {
 
 ## Stageless support
 
-`bavy_asset_loader` can integrate with `iyes_loopless`, which implements ideas from Bevy's [Stageless RFC](https://github.com/bevyengine/rfcs/pull/45). The integration can be enabled with the `stageless` feature.
+`bevy_asset_loader` can integrate with `iyes_loopless`, which implements ideas from Bevy's [Stageless RFC](https://github.com/bevyengine/rfcs/pull/45). The integration can be enabled with the `stageless` feature.
 
 Currently, you must initialize the `iyes_loopless` state before you initialize your `AssetLoader`. This is a limitation due to the way `iyes_loopless` works. The following is a minimal example of integrating `bevy_asset_loader` with `iyes_loopless`:
 
