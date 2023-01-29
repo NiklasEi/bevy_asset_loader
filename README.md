@@ -150,7 +150,11 @@ struct MyAssets {
 
 The following sections describe more types of asset fields that you can load through asset collections.
 
-### Folders
+### Collections
+
+#### Folders
+
+*This asset field type is not supported in web builds. See [Files](#list-of-paths) for a web compatible way of loading a collection of files.*
 
 You can load all files in a folder as a vector of untyped handles. This field requires the additional derive macro attribute `collection`:
 ```rust
@@ -196,7 +200,7 @@ struct MyAssets {
 
 Loading folders is not supported for web builds. If you want to be compatible with Wasm, load you handles from a list of paths instead (see next section).
 
-### List of paths
+#### List of paths
 
 If you want to load a list of asset files with the same type into a vector of `Handle<T>`, you can list their paths in an attribute:
 ```rust
@@ -246,6 +250,28 @@ The corresponding assets file differs from the folder example:
         paths: ["images/tree.png", "images/player.png"],
     ),
 })
+```
+
+#### Collections as maps
+
+Collections can be loaded as maps using their file paths as the keys. This is only a change in derive attributes and asset field type. Some examples from the sections above would look like this:
+
+```rust
+use bevy::prelude::*;
+use bevy::utils::HashMap;
+use bevy_asset_loader::asset_collection::AssetCollection;
+
+#[derive(AssetCollection, Resource)]
+struct MyAssets {
+    #[asset(path = "images", collection(mapped))]
+    folder: HashMap<String, HandleUntyped>,
+    #[asset(paths("images/player.png", "images/tree.png"), collection(typed, mapped))]
+    files_typed: HashMap<String, Handle<Image>>,
+    #[asset(key = "files_untyped", collection(mapped))]
+    dynamic_files_untyped: HashMap<String, HandleUntyped>,
+    #[asset(key = "files_typed", collection(typed, mapped))]
+    dynamic_files_typed: HashMap<String, Handle<Image>>,
+}
 ```
 
 ### Standard materials

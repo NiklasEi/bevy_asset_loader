@@ -1,5 +1,7 @@
 # Changelog
 
+- Option to load folders as maps of "path inside folder" to handle (resolves [#32](https://github.com/NiklasEi/bevy_asset_loader/issues/32))
+  - other file collections (`paths` and dynamic collections) are mapped with the full file names
 - Changed the default file ending for standard dynamic asset files from `.assets` to `.assets.ron`
 
 ## v0.14.1

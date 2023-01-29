@@ -1,6 +1,7 @@
 use bevy::app::AppExit;
 use bevy::asset::LoadState;
 use bevy::prelude::*;
+use bevy::utils::HashMap;
 use bevy_asset_loader::prelude::*;
 
 fn main() {
@@ -50,18 +51,26 @@ struct MyAssets {
     // Type in `assets/my.assets`: `Folder`
     #[asset(key = "folder_untyped", collection)]
     folder_untyped: Vec<HandleUntyped>,
+    #[asset(key = "folder_untyped", collection(mapped))]
+    folder_untyped_mapped: HashMap<String, HandleUntyped>,
     // Typed folder
     // Type in `assets/my.assets`: `Folder`
     #[asset(key = "folder_typed", collection(typed))]
     folder_typed: Vec<Handle<Image>>,
+    #[asset(key = "folder_typed", collection(typed, mapped))]
+    folder_typed_mapped: HashMap<String, Handle<Image>>,
     // Untyped files
     // Type in `assets/my.assets`: `Files`
     #[asset(key = "files_untyped", collection)]
     files_untyped: Vec<HandleUntyped>,
+    #[asset(key = "files_untyped", collection(mapped))]
+    files_untyped_mapped: HashMap<String, HandleUntyped>,
     // Typed files
     // Type in `assets/my.assets`: `Files`
     #[asset(key = "files_typed", collection(typed))]
     files_typed: Vec<Handle<Image>>,
+    #[asset(key = "files_typed", collection(typed, mapped))]
+    files_typed_mapped: HashMap<String, Handle<Image>>,
 
     // Optional file collections
     #[asset(key = "missing_key", collection, optional)]
@@ -114,11 +123,43 @@ fn expectations(
             LoadState::Loaded
         );
     }
+    assert_eq!(assets.folder_untyped_mapped.len(), 6);
+    for (name, handle) in assets.folder_untyped_mapped.iter() {
+        assert_eq!(
+            asset_server.get_load_state(handle.clone()),
+            LoadState::Loaded
+        );
+        assert_eq!(
+            asset_server
+                .get_handle_path(handle.clone())
+                .unwrap()
+                .path()
+                .to_str()
+                .unwrap(),
+            name
+        );
+    }
     assert_eq!(assets.folder_typed.len(), 6);
     for handle in assets.folder_typed.iter() {
         assert_eq!(
             asset_server.get_load_state(handle.clone()),
             LoadState::Loaded
+        );
+    }
+    assert_eq!(assets.folder_typed_mapped.len(), 6);
+    for (name, handle) in assets.folder_typed_mapped.iter() {
+        assert_eq!(
+            asset_server.get_load_state(handle.clone()),
+            LoadState::Loaded
+        );
+        assert_eq!(
+            asset_server
+                .get_handle_path(handle.clone())
+                .unwrap()
+                .path()
+                .to_str()
+                .unwrap(),
+            name
         );
     }
     assert_eq!(assets.files_untyped.len(), 2);
@@ -128,11 +169,43 @@ fn expectations(
             LoadState::Loaded
         );
     }
+    assert_eq!(assets.files_untyped_mapped.len(), 2);
+    for (name, handle) in assets.files_untyped_mapped.iter() {
+        assert_eq!(
+            asset_server.get_load_state(handle.clone()),
+            LoadState::Loaded
+        );
+        assert_eq!(
+            asset_server
+                .get_handle_path(handle.clone())
+                .unwrap()
+                .path()
+                .to_str()
+                .unwrap(),
+            name
+        );
+    }
     assert_eq!(assets.files_typed.len(), 2);
     for handle in assets.files_typed.iter() {
         assert_eq!(
             asset_server.get_load_state(handle.clone()),
             LoadState::Loaded
+        );
+    }
+    assert_eq!(assets.files_typed_mapped.len(), 2);
+    for (name, handle) in assets.files_typed_mapped.iter() {
+        assert_eq!(
+            asset_server.get_load_state(handle.clone()),
+            LoadState::Loaded
+        );
+        assert_eq!(
+            asset_server
+                .get_handle_path(handle.clone())
+                .unwrap()
+                .path()
+                .to_str()
+                .unwrap(),
+            name
         );
     }
 
