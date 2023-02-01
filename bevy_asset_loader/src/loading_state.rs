@@ -16,7 +16,7 @@ use bevy::ecs::schedule::State;
 use bevy::ecs::schedule::{IntoSystemDescriptor, Schedule, StateData, SystemSet, SystemStage};
 use bevy::ecs::system::{Commands, Resource};
 use bevy::ecs::world::FromWorld;
-use bevy::utils::HashMap;
+use bevy::utils::{default, HashMap, HashSet};
 use std::any::TypeId;
 use std::marker::PhantomData;
 
@@ -392,10 +392,13 @@ where
         mut self,
         mut files: Vec<&str>,
     ) -> Self {
-        self.dynamic_asset_collections.insert(
-            TypeId::of::<C>(),
-            files.drain(..).map(|file| file.to_owned()).collect(),
-        );
+        let mut collections = self
+            .dynamic_asset_collections
+            .remove(&TypeId::of::<C>())
+            .unwrap_or(vec![]);
+        collections.append(&mut files.drain(..).map(|file| file.to_owned()).collect());
+        self.dynamic_asset_collections
+            .insert(TypeId::of::<C>(), collections);
         self.start_loading_dynamic_collections = self
             .start_loading_dynamic_collections
             .with_system(load_dynamic_asset_collections::<S, C>);
@@ -425,10 +428,13 @@ where
         mut self,
         mut files: Vec<&str>,
     ) -> Self {
-        self.dynamic_asset_collections.insert(
-            TypeId::of::<C>(),
-            files.drain(..).map(|file| file.to_owned()).collect(),
-        );
+        let mut collections = self
+            .dynamic_asset_collections
+            .remove(&TypeId::of::<C>())
+            .unwrap_or(vec![]);
+        collections.append(&mut files.drain(..).map(|file| file.to_owned()).collect());
+        self.dynamic_asset_collections
+            .insert(TypeId::of::<C>(), collections);
         self.start_loading_dynamic_collections = self
             .start_loading_dynamic_collections
             .with_system(load_dynamic_asset_collections::<S, C>);
@@ -1101,7 +1107,7 @@ struct LoadingConfiguration<State: StateData> {
     failure: Option<State>,
     loading_failed: bool,
     loading_collections: usize,
-    loading_dynamic_collections: usize,
+    loading_dynamic_collections: HashSet<TypeId>,
 }
 
 impl<State: StateData> Default for LoadingConfiguration<State> {
@@ -1111,7 +1117,7 @@ impl<State: StateData> Default for LoadingConfiguration<State> {
             failure: None,
             loading_failed: false,
             loading_collections: 0,
-            loading_dynamic_collections: 0,
+            loading_dynamic_collections: default(),
         }
     }
 }
