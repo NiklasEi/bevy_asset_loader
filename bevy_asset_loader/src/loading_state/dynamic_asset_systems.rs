@@ -35,11 +35,11 @@ pub(crate) fn load_dynamic_asset_collections<S: StateData, C: DynamicAssetCollec
             .handles
             .push(asset_server.load_untyped(file));
     }
-    if let Some(mut config) = asset_loader_config
+    if let Some(config) = asset_loader_config
         .state_configurations
         .get_mut(state.current())
     {
-        config.loading_dynamic_collections += 1;
+        config.loading_dynamic_collections.insert(TypeId::of::<C>());
     }
 }
 
@@ -80,11 +80,13 @@ pub(crate) fn check_dynamic_asset_collections<S: StateData, C: DynamicAssetColle
                 .unwrap();
             collection.register(&mut asset_keys);
         }
-        let mut config = asset_loader_config
+        let config = asset_loader_config
             .state_configurations
             .get_mut(state.current())
             .expect("No asset loader configuration for current state");
-        config.loading_dynamic_collections -= 1;
+        config
+            .loading_dynamic_collections
+            .remove(&TypeId::of::<C>());
     }
     world.remove_resource::<LoadingAssetHandles<C>>();
 }
@@ -98,7 +100,7 @@ pub(crate) fn resume_to_loading_asset_collections<S: StateData>(
         .state_configurations
         .get(state.current())
         .expect("No asset loader configuration for current state");
-    if config.loading_dynamic_collections == 0 {
+    if config.loading_dynamic_collections.is_empty() {
         loading_state
             .overwrite_set(InternalLoadingState::LoadingAssets)
             .expect("Failed to set loading State");
