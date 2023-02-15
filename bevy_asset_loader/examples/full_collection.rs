@@ -12,7 +12,7 @@ fn main() {
                 .continue_to_state(MyStates::Next)
                 .with_collection::<MyAssets>(),
         )
-        .add_state(MyStates::AssetLoading)
+        .add_state::<MyStates>()
         .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(expectations))
         .run();
 }
@@ -215,8 +215,9 @@ impl<const R: u8, const G: u8, const B: u8, const A: u8> FromWorld
     }
 }
 
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
 enum MyStates {
+    #[default]
     AssetLoading,
     Next,
 }

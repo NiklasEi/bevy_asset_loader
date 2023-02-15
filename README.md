@@ -9,8 +9,6 @@ This [Bevy][bevy] plugin reduces boilerplate for handling game assets. The crate
 
 In most cases you will want to load your asset collections during loading states (think loading screens). During such a state, all assets are loaded and their loading process is observed. Only when asset collections can be build with fully loaded asset handles, the collections are inserted as resources. If you do not want to use a loading state, asset collections can still result in cleaner code and improved maintainability (see the ["usage without a loading state"](#usage-without-a-loading-state) section).
 
-_`bevy_asset_loader` supports `iyes_loopless` states with the [`stageless`](#stageless-support) feature._
-
 _The `main` branch and the latest release support Bevy version `0.9` (see [version table](#compatible-bevy-versions))_
 
 ## Loading states
@@ -47,7 +45,7 @@ fn main() {
                 .continue_to_state(GameState::Next)
                 .with_collection::<MyAssets>()
         )
-        .add_state(GameState::AssetLoading)
+        .add_state::<GameState>()
         .add_plugins(DefaultPlugins)
         .add_system_set(SystemSet::on_enter(GameState::Next).with_system(use_my_assets))
         .run();
@@ -65,8 +63,9 @@ fn use_my_assets(_my_assets: Res<MyAssets>) {
     // do something using the asset handles from the resource
 }
 
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
 enum GameState {
+    #[default]
     AssetLoading,
     Next,
 }
@@ -364,8 +363,6 @@ With the feature `progress_tracking`, you can integrate with [`iyes_progress`][i
 
 See [`progress_tracking`](/bevy_asset_loader/examples/progress_tracking.rs) for a complete example.
 
-When using `stageless` feature, you need to add `progress_tracking_stageless` feature in addition to `progress_tracking`.
-
 ### A note on system ordering
 
 The loading state runs in a single exclusive system `at_start`. This means that any parallel system in the loading state will always run after all asset handles have been checked for their status. You can thus read the current progress in each frame in a parallel system without worrying about frame lag.
@@ -400,49 +397,6 @@ struct MyAssets {
     sprite: Handle<TextureAtlas>,
 }
 ```
-
-## Stageless support
-
-`bevy_asset_loader` can integrate with `iyes_loopless`, which implements ideas from Bevy's [Stageless RFC](https://github.com/bevyengine/rfcs/pull/45). The integration can be enabled with the `stageless` feature.
-
-Currently, you must initialize the `iyes_loopless` state before you initialize your `AssetLoader`. This is a limitation due to the way `iyes_loopless` works. The following is a minimal example of integrating `bevy_asset_loader` with `iyes_loopless`:
-
-```rust no_run
-use bevy::prelude::*;
-use bevy_asset_loader::prelude::*;
-use iyes_loopless::prelude::*;
-
-fn main() {
-    App::new()
-        .add_loopless_state(MyStates::AssetLoading)
-        .add_loading_state(
-          LoadingState::new(MyStates::AssetLoading)
-            .continue_to_state(MyStates::Next)
-            .with_collection::<AudioAssets>()
-        )
-        .add_plugins(DefaultPlugins)
-        .add_enter_system(MyStates::Next, use_my_assets)
-        .run();
-}
-
-#[derive(AssetCollection, Resource)]
-struct AudioAssets {
-    #[asset(path = "audio/background.ogg")]
-    background: Handle<AudioSource>,
-}
-
-fn use_my_assets(_audio_assets: Res<AudioAssets>) {
-  // do something using the asset handles from the resources
-}
-
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
-enum MyStates {
-    AssetLoading,
-    Next,
-}
-```
-
-When using stageless with the `progress_tracking` feature, remember to also enable the `progress_tracking_stageless` feature. See [the stageless examples](/bevy_asset_loader/examples/README.md#examples-for-stageless) for different use cases with `iyes_loopless` integration.
 
 ## Compatible Bevy versions
 

@@ -11,7 +11,7 @@ fn main() {
                 .continue_to_state(MyStates::Next)
                 .with_collection::<MyAssets>(),
         )
-        .add_state(MyStates::AssetLoading)
+        .add_state::<MyStates>()
         .insert_resource(Msaa { samples: 1 })
         .insert_resource(AmbientLight {
             color: Color::WHITE,
@@ -45,8 +45,9 @@ fn spawn_player(
     });
 }
 
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
 enum MyStates {
+    #[default]
     AssetLoading,
     Next,
 }

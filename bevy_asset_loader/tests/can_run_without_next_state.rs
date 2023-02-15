@@ -11,14 +11,13 @@ use bevy_asset_loader::loading_state::{LoadingState, LoadingStateAppExt};
     all(
         not(feature = "2d"),
         not(feature = "3d"),
-        not(feature = "progress_tracking"),
-        not(feature = "stageless")
+        not(feature = "progress_tracking")
     ),
     test
 )]
 fn can_run_without_next_state() {
     App::new()
-        .add_state(MyStates::Load)
+        .add_state::<MyStates>()
         .add_plugins(MinimalPlugins)
         .add_plugin(AssetPlugin::default())
         .add_plugin(AudioPlugin::default())
@@ -72,7 +71,8 @@ struct MyAssets {
     background: Handle<AudioSource>,
 }
 
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
 enum MyStates {
+    #[default]
     Load,
 }

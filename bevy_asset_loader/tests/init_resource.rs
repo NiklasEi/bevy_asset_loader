@@ -11,8 +11,7 @@ use bevy_asset_loader::loading_state::{LoadingState, LoadingStateAppExt};
     all(
         not(feature = "2d"),
         not(feature = "3d"),
-        not(feature = "progress_tracking"),
-        not(feature = "stageless")
+        not(feature = "progress_tracking")
     ),
     test
 )]
@@ -27,7 +26,7 @@ fn init_resource() {
                 .with_collection::<MyAssets>()
                 .init_resource::<PostProcessed>(),
         )
-        .add_state(MyStates::Load)
+        .add_state::<MyStates>()
         .add_system_set(SystemSet::on_update(MyStates::Load).with_system(timeout))
         .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(expect))
         .run();
@@ -76,8 +75,9 @@ impl FromWorld for PostProcessed {
     }
 }
 
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
 enum MyStates {
+    #[default]
     Load,
     Next,
 }

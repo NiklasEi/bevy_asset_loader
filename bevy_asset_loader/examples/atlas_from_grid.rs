@@ -11,7 +11,7 @@ fn main() {
                 .continue_to_state(MyStates::Next)
                 .with_collection::<MyAssets>(),
         )
-        .add_state(MyStates::AssetLoading)
+        .add_state::<MyStates>()
         .insert_resource(Msaa { samples: 1 })
         .add_plugins(DefaultPlugins)
         .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(draw_atlas))
@@ -75,8 +75,9 @@ fn animate_sprite_system(
     }
 }
 
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
 enum MyStates {
+    #[default]
     AssetLoading,
     Next,
 }

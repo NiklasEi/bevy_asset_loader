@@ -8,11 +8,7 @@
 //! # use bevy_asset_loader::prelude::*;
 //! # use bevy::prelude::*;
 //! # use bevy::asset::AssetPlugin;
-//! #
-//! # #[cfg(feature="stageless")]
-//! # use iyes_loopless::prelude::*;
 //!
-//! # #[cfg(not(feature="stageless"))]
 //! fn main() {
 //!     App::new()
 //! # /*
@@ -27,34 +23,13 @@
 //!                 .with_collection::<AudioAssets>()
 //!                 .with_collection::<ImageAssets>()
 //!         )
-//!         .add_state(GameState::Loading)
+//!         .add_state::<GameState>()
 //!         .add_system_set(SystemSet::on_update(GameState::Next)
 //!             .with_system(use_asset_handles)
 //!         )
 //! #       .set_runner(|mut app| app.schedule.run(&mut app.world))
 //!         .run();
 //! }
-//!
-//! # #[cfg(feature="stageless")]
-//! # fn main() {
-//! #     App::new()
-//! #       .add_loopless_state(GameState::Loading)
-//! # /*
-//! #       .add_plugins(DefaultPlugins)
-//! # */
-//! #       .add_plugins(MinimalPlugins)
-//! #       .init_resource::<iyes_progress::ProgressCounter>()
-//! #       .add_plugin(AssetPlugin::default())
-//! #       .add_loading_state(
-//! #         LoadingState::new(GameState::Loading)
-//! #           .continue_to_state(GameState::Next)
-//! #           .with_collection::<AudioAssets>()
-//! #           .with_collection::<ImageAssets>()
-//! #       )
-//! #       .add_system(use_asset_handles.run_in_state(GameState::Next))
-//! #       .set_runner(|mut app| app.schedule.run(&mut app.world))
-//! #       .run();
-//! # }
 //!
 //! #[derive(AssetCollection, Resource)]
 //! struct AudioAssets {
@@ -78,8 +53,9 @@
 //!     audio.play(audio_assets.background.clone());
 //! }
 //!
-//! #[derive(Clone, Eq, PartialEq, Debug, Hash)]
+//! #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
 //! enum GameState {
+//!     #[default]
 //!     Loading,
 //!     Next
 //! }

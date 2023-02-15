@@ -18,7 +18,7 @@ fn main() {
                 .with_collection::<TextureAssets>()
                 .with_collection::<AudioAssets>(),
         )
-        .add_state(MyStates::AssetLoading)
+        .add_state::<MyStates>()
         .add_plugins(DefaultPlugins)
         .add_plugin(FrameTimeDiagnosticsPlugin::default())
         // track progress during `MyStates::AssetLoading` and continue to `MyStates::Next` when progress is completed

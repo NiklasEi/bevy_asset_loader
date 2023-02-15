@@ -16,7 +16,7 @@ fn main() {
                 .with_collection::<ImageAssets>()
                 .with_collection::<AudioAssets>(),
         )
-        .add_state(MyStates::AssetLoading)
+        .add_state::<MyStates>()
         .insert_resource(Msaa { samples: 1 })
         .add_system_set(
             SystemSet::on_enter(MyStates::Next)
@@ -72,8 +72,9 @@ fn play_background_audio(audio_assets: Res<AudioAssets>, audio: Res<Audio>) {
     audio.play(audio_assets.background.clone());
 }
 
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
 enum MyStates {
+    #[default]
     AssetLoading,
     Next,
 }

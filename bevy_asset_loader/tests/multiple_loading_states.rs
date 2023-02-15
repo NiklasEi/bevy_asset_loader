@@ -11,14 +11,13 @@ use bevy_asset_loader::loading_state::{LoadingState, LoadingStateAppExt};
     all(
         not(feature = "2d"),
         not(feature = "3d"),
-        not(feature = "progress_tracking"),
-        not(feature = "stageless")
+        not(feature = "progress_tracking")
     ),
     test
 )]
 fn multiple_loading_states() {
     App::new()
-        .add_state(MyStates::Splash)
+        .add_state::<MyStates>()
         .add_plugins(MinimalPlugins)
         .add_plugin(AssetPlugin::default())
         .add_plugin(AudioPlugin::default())
@@ -84,8 +83,9 @@ struct SplashAssets {
     plop: Handle<AudioSource>,
 }
 
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
 enum MyStates {
+    #[default]
     Splash,
     Load,
     Play,

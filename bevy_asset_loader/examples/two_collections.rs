@@ -12,7 +12,7 @@ fn main() {
                 .with_collection::<ImageAssets>()
                 .with_collection::<AudioAssets>(),
         )
-        .add_state(MyStates::AssetLoading)
+        .add_state::<MyStates>()
         .insert_resource(Msaa { samples: 1 })
         .add_plugins(DefaultPlugins)
         .add_system_set(
@@ -85,8 +85,9 @@ fn move_player(input: Res<Input<KeyCode>>, mut player: Query<&mut Transform, Wit
     transform.translation += movement;
 }
 
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
 enum MyStates {
+    #[default]
     AssetLoading,
     Next,
 }

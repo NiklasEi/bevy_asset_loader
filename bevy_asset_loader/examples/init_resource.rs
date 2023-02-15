@@ -14,7 +14,7 @@ fn main() {
                 .with_collection::<ImageAssets>()
                 .init_resource::<CombinedImage>(),
         )
-        .add_state(MyStates::AssetLoading)
+        .add_state::<MyStates>()
         .insert_resource(Msaa { samples: 1 })
         .add_plugins(DefaultPlugins)
         .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(draw))
@@ -84,8 +84,9 @@ fn draw(
     });
 }
 
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
 enum MyStates {
+    #[default]
     AssetLoading,
     Next,
 }

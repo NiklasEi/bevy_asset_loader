@@ -15,7 +15,7 @@ fn main() {
                 ])
                 .with_collection::<MyAssets>(),
         )
-        .add_state(MyStates::AssetLoading)
+        .add_state::<MyStates>()
         .add_system_set(SystemSet::on_update(MyStates::Next).with_system(expectations))
         .run();
 }
@@ -219,8 +219,9 @@ fn expectations(
     quit.send(AppExit);
 }
 
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
 enum MyStates {
+    #[default]
     AssetLoading,
     Next,
 }

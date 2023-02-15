@@ -11,7 +11,7 @@ fn main() {
                 .on_failure_continue_to_state(MyStates::ErrorScreen)
                 .with_collection::<MyAssets>(),
         )
-        .add_state(MyStates::AssetLoading)
+        .add_state::<MyStates>()
         .add_system_set(SystemSet::on_update(MyStates::AssetLoading).with_system(timeout))
         .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(fail))
         .add_system_set(SystemSet::on_enter(MyStates::ErrorScreen).with_system(ok))
@@ -44,8 +44,9 @@ fn timeout(time: Res<Time>) {
     }
 }
 
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
 enum MyStates {
+    #[default]
     AssetLoading,
     Next,
     ErrorScreen,

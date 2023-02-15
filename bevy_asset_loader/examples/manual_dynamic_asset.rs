@@ -22,7 +22,7 @@ fn main() {
                 .continue_to_state(MyStates::Menu)
                 .with_collection::<FontAssets>(),
         )
-        .add_state(MyStates::MenuAssetLoading)
+        .add_state::<MyStates>()
         .insert_resource(Msaa { samples: 1 })
         .insert_resource(ShowBackground(false))
         .add_system_set(
@@ -173,8 +173,9 @@ fn move_player(input: Res<Input<KeyCode>>, mut player: Query<&mut Transform, Wit
     }
 }
 
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
 enum MyStates {
+    #[default]
     MenuAssetLoading,
     Menu,
     AssetLoading,

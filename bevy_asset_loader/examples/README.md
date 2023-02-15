@@ -18,22 +18,6 @@ with `cargo run --example <example>`.
 | [`progress_tracking.rs`](progress_tracking.rs)             | How to set up progress tracking using `iyes_progress`                    |
 | [`failure_state.rs`](failure_state.rs)                     | Sets up a failure state                                                  |
 
-## Examples for stageless
-
-The following examples use `iyes_loopless`, which implements ideas from
-Bevy's [Stageless RFC](https://github.com/bevyengine/rfcs/pull/45). All examples require the `stageless` feature.
-Note that progress tracking needs `progress_tracking_stageless` feature together with `progress_tracking`.
-
-| Example                                                                        | Description                                                              |
-|--------------------------------------------------------------------------------|--------------------------------------------------------------------------|
-| [`stageless.rs`](stageless.rs)                                                 | Basic example                                                            |
-| [`stageless_manual_dynamic_asset.rs`](stageless_manual_dynamic_asset.rs)       | Load an image asset from a path resolved runtime                         |
-| [`stageless_full_collection.rs`](stageless_full_collection.rs)                 | A complete asset collection with all supported non-dynamic field types   |
-| [`stageless_full_dynamic_collection.rs`](stageless_full_dynamic_collection.rs) | A complete asset collection with all supported dynamic asset field types |
-| [`stageless_progress.rs`](stageless_progress.rs)                               | Stageless with progress tracking                                         |
-| [`stageless_dynamic_asset.rs`](stageless_dynamic_asset.rs)                     | Stageless with ron loading                                               |
-| [`stageless_failure_state.rs`](stageless_failure_state.rs)                     | Sets up a failure state                                                  |
-
 ## Credits
 
 The examples include third party assets:

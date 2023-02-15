@@ -20,7 +20,7 @@ fn main() {
                 ])
                 .with_collection::<MyAssets>(),
         )
-        .add_state(MyStates::AssetLoading)
+        .add_state::<MyStates>()
         .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(render_stuff))
         .run();
 }
@@ -204,8 +204,9 @@ impl DynamicAssetCollection for CustomDynamicAssetCollection {
     }
 }
 
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
 enum MyStates {
+    #[default]
     AssetLoading,
     Next,
 }

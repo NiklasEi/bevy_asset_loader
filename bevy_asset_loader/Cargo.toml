@@ -18,25 +18,21 @@ readme = "README.md"
 3d = ["bevy/bevy_pbr", "bevy/bevy_render", "bevy_asset_loader_derive/3d"]
 standard_dynamic_assets = ["bevy_common_assets", "serde"]
 progress_tracking = ["iyes_progress"]
-progress_tracking_stageless = ["iyes_progress/iyes_loopless"]
-stageless = ["iyes_loopless"]
 
 [dependencies]
-bevy = { version = "0.9", default-features = false, features = ["bevy_asset"] }
+bevy = { git = "https://github.com/bevyengine/bevy", default-features = false, features = ["bevy_asset"] }
 bevy_asset_loader_derive = { version = "=0.14.0", path = "../bevy_asset_loader_derive" }
 anyhow = "1"
 
-bevy_common_assets = { version = "0.4", features = ["ron"], optional = true }
+bevy_common_assets = { git = "https://github.com/NiklasEi/bevy_common_assets", ref = "bevy_main", features = ["ron"], optional = true }
 serde = { version = "1", optional = true }
-iyes_progress = { version = "0.7", optional = true }
-iyes_loopless = { version = "0.9", optional = true }
+iyes_progress = { git = "https://github.com/NiklasEi/iyes_progress", ref = "bevy_main", optional = true }
 
 [dev-dependencies]
-bevy = { version = "0.9", features = ["vorbis"] }
+bevy = { git = "https://github.com/bevyengine/bevy", features = ["vorbis"] }
 anyhow = "1"
-iyes_progress = { version = "0.7" }
-iyes_loopless = { version = "0.9" }
-bevy_common_assets = { version = "0.4", features = ["ron"] }
+iyes_progress = { git = "https://github.com/NiklasEi/iyes_progress", ref = "bevy_main" }
+bevy_common_assets = { git = "https://github.com/NiklasEi/bevy_common_assets", ref = "bevy_main", features = ["ron"] }
 serde = { version = "1" }
 trybuild = { version = "1.0" }
 
@@ -84,45 +80,6 @@ required-features = ["progress_tracking", "2d"]
 [[example]]
 name = "failure_state"
 path = "examples/failure_state.rs"
-
-[[example]]
-name = "stageless"
-path = "examples/stageless.rs"
-required-features = ["stageless"]
-
-[[example]]
-name = "stageless_full_collection"
-path = "examples/stageless_full_collection.rs"
-required-features = ["stageless", "2d", "3d"]
-
-[[example]]
-name = "stageless_full_dynamic_collection"
-path = "examples/stageless_full_dynamic_collection.rs"
-required-features = ["stageless", "2d", "3d", "standard_dynamic_assets"]
-
-[[example]]
-name = "stageless_manual_dynamic_asset"
-path = "examples/stageless_manual_dynamic_asset.rs"
-required-features = ["stageless", "standard_dynamic_assets"]
-
-[[example]]
-name = "stageless_progress"
-path = "examples/stageless_progress.rs"
-required-features = [
-  "progress_tracking_stageless",
-  "stageless",
-  "progress_tracking", "2d"
-]
-
-[[example]]
-name = "stageless_failure_state"
-path = "examples/stageless_failure_state.rs"
-required-features = ["stageless"]
-
-[[example]]
-name = "stageless_dynamic_asset"
-path = "examples/stageless_dynamic_asset.rs"
-required-features = ["2d", "standard_dynamic_assets", "stageless"]
 
 [[example]]
 name = "full_collection"
