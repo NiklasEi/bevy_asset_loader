@@ -4,17 +4,17 @@ use bevy_asset_loader::prelude::*;
 
 fn main() {
     App::new()
+        .add_state::<MyStates>()
         .add_plugins(DefaultPlugins)
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading)
                 .continue_to_state(MyStates::Next)
-                .on_failure_continue_to_state(MyStates::ErrorScreen)
-                .with_collection::<MyAssets>(),
+                .on_failure_continue_to_state(MyStates::ErrorScreen),
         )
-        .add_state::<MyStates>()
-        .add_system_set(SystemSet::on_update(MyStates::AssetLoading).with_system(timeout))
-        .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(fail))
-        .add_system_set(SystemSet::on_enter(MyStates::ErrorScreen).with_system(ok))
+        .add_collection_to_loading_state::<_, MyAssets>(MyStates::AssetLoading)
+        .add_system(timeout.run_if(in_state(MyStates::AssetLoading)))
+        .add_system_to_schedule(OnEnter(MyStates::Next), fail)
+        .add_system_to_schedule(OnEnter(MyStates::ErrorScreen), ok)
         .run();
 }
 
@@ -33,7 +33,7 @@ fn fail() {
 }
 
 fn ok(mut quit: EventWriter<AppExit>) {
-    println!("As expected, the library switched to the failure state");
+    println!("As expected, bevy_asset_loader switched to the failure state");
     println!("Quitting the application...");
     quit.send(AppExit);
 }

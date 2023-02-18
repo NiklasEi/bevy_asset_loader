@@ -6,17 +6,17 @@ use bevy_asset_loader::prelude::*;
 
 fn main() {
     App::new()
+        .add_state::<MyStates>()
         .add_plugins(DefaultPlugins)
         .add_loading_state(
-            LoadingState::new(MyStates::AssetLoading)
-                .continue_to_state(MyStates::Next)
-                .with_dynamic_collections::<StandardDynamicAssetCollection>(vec![
-                    "full_dynamic_collection.assets.ron",
-                ])
-                .with_collection::<MyAssets>(),
+            LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
         )
-        .add_state::<MyStates>()
-        .add_system_set(SystemSet::on_update(MyStates::Next).with_system(expectations))
+        .add_dynamic_collection_to_loading_state::<_, StandardDynamicAssetCollection>(
+            MyStates::AssetLoading,
+            "full_dynamic_collection.assets.ron",
+        )
+        .add_collection_to_loading_state::<_, MyAssets>(MyStates::AssetLoading)
+        .add_system(expectations.run_if(in_state(MyStates::Next)))
         .run();
 }
 

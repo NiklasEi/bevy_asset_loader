@@ -13,21 +13,20 @@ use iyes_progress::{ProgressCounter, ProgressPlugin};
 /// and the app will terminate.
 fn main() {
     App::new()
-        .add_loading_state(
-            LoadingState::new(MyStates::AssetLoading)
-                .with_collection::<TextureAssets>()
-                .with_collection::<AudioAssets>(),
-        )
         .add_state::<MyStates>()
+        .add_loading_state(LoadingState::new(MyStates::AssetLoading))
+        .add_collection_to_loading_state::<_, TextureAssets>(MyStates::AssetLoading)
+        .add_collection_to_loading_state::<_, AudioAssets>(MyStates::AssetLoading)
         .add_plugins(DefaultPlugins)
         .add_plugin(FrameTimeDiagnosticsPlugin::default())
         // track progress during `MyStates::AssetLoading` and continue to `MyStates::Next` when progress is completed
         .add_plugin(ProgressPlugin::new(MyStates::AssetLoading).continue_to(MyStates::Next))
         // gracefully quit the app when `MyStates::Next` is reached
-        .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(expect))
-        .add_system_set(
-            SystemSet::on_update(MyStates::AssetLoading)
-                .with_system(track_fake_long_task.before(print_progress)),
+        .add_system_to_schedule(OnEnter(MyStates::Next), expect)
+        .add_system(
+            track_fake_long_task
+                .before(print_progress)
+                .run_if(in_state(MyStates::AssetLoading)),
         )
         .add_system(print_progress)
         .run();
@@ -121,8 +120,9 @@ fn print_progress(
     }
 }
 
-#[derive(Component, Clone, Eq, PartialEq, Debug, Hash, Copy)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
 enum MyStates {
+    #[default]
     AssetLoading,
     Next,
 }

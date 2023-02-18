@@ -6,21 +6,19 @@ const PLAYER_SPEED: f32 = 5.;
 /// This example shows how to load multiple asset collections in one [`LoadingState`]
 fn main() {
     App::new()
-        .add_loading_state(
-            LoadingState::new(MyStates::AssetLoading)
-                .continue_to_state(MyStates::Next)
-                .with_collection::<ImageAssets>()
-                .with_collection::<AudioAssets>(),
-        )
         .add_state::<MyStates>()
-        .insert_resource(Msaa { samples: 1 })
-        .add_plugins(DefaultPlugins)
-        .add_system_set(
-            SystemSet::on_enter(MyStates::Next)
-                .with_system(spawn_player_and_tree)
-                .with_system(play_background_audio),
+        .add_loading_state(
+            LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
         )
-        .add_system_set(SystemSet::on_update(MyStates::Next).with_system(move_player))
+        .add_collection_to_loading_state::<_, ImageAssets>(MyStates::AssetLoading)
+        .add_collection_to_loading_state::<_, AudioAssets>(MyStates::AssetLoading)
+        .insert_resource(Msaa::Off)
+        .add_plugins(DefaultPlugins)
+        .add_systems_to_schedule(
+            OnEnter(MyStates::Next),
+            (spawn_player_and_tree, play_background_audio),
+        )
+        .add_system(move_player.run_if(in_state(MyStates::Next)))
         .run();
 }
 

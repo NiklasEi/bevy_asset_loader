@@ -3,9 +3,9 @@ use std::any::TypeId;
 use std::fmt::Debug;
 
 use bevy::asset::{AssetServer, HandleUntyped};
+use bevy::ecs::schedule::States;
 use bevy::ecs::system::Resource;
 use bevy::ecs::world::World;
-use bevy::prelude::States;
 use std::marker::PhantomData;
 
 /// Different typed that can generate the asset field value of a dynamic asset

@@ -102,7 +102,7 @@ fn impl_asset_collection(
                                 ParseFieldError::WrongAttributeType(token_stream, expected) => {
                                     compile_errors.push(syn::Error::new_spanned(
                                         token_stream,
-                                        format!("Wrong attribute type. Expected '{}'", expected),
+                                        format!("Wrong attribute type. Expected '{expected}'"),
                                     ));
                                 }
                                 ParseFieldError::UnknownAttributeType(token_stream) => {

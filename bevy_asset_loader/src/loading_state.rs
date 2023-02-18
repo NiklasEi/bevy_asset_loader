@@ -3,14 +3,13 @@ mod systems;
 
 use bevy::app::{App, CoreSet};
 use bevy::asset::{Asset, HandleUntyped};
+use bevy::ecs::schedule::{
+    apply_state_transition, common_conditions::in_state, IntoSystemConfig, IntoSystemSetConfig,
+    NextState, OnEnter, States, SystemSet,
+};
 use bevy::ecs::schedule::{BoxedScheduleLabel, ScheduleLabel, State};
-use bevy::ecs::schedule::{States, SystemSet};
 use bevy::ecs::system::Resource;
 use bevy::ecs::world::FromWorld;
-use bevy::prelude::{
-    apply_state_transition, in_state, IntoSystemConfig, IntoSystemSetConfig, NextState, OnEnter,
-    World,
-};
 use bevy::utils::{default, HashMap, HashSet};
 use std::any::TypeId;
 use std::marker::PhantomData;
@@ -35,7 +34,7 @@ use bevy_common_assets::ron::RonAssetPlugin;
 use crate::standard_dynamic_asset::{StandardDynamicAsset, StandardDynamicAssetCollection};
 
 #[cfg(feature = "progress_tracking")]
-use iyes_progress::ProgressSystemLabel;
+use iyes_progress::TrackedProgressSet;
 
 use crate::dynamic_asset::{DynamicAsset, DynamicAssets};
 use crate::loading_state::systems::{apply_internal_state_transition, run_loading_state};
@@ -96,8 +95,6 @@ pub struct LoadingState<State> {
     loading_state: State,
     dynamic_assets: HashMap<String, Box<dyn DynamicAsset>>,
 
-    dynamic_asset_collections: HashMap<TypeId, Vec<String>>,
-
     #[cfg(feature = "standard_dynamic_assets")]
     standard_dynamic_asset_collection_file_endings: Vec<&'static str>,
 }
@@ -155,7 +152,6 @@ where
             failure_state: None,
             loading_state: load,
             dynamic_assets: HashMap::default(),
-            dynamic_asset_collections: Default::default(),
             #[cfg(feature = "standard_dynamic_assets")]
             standard_dynamic_asset_collection_file_endings: vec!["assets.ron"],
         }
@@ -252,57 +248,6 @@ where
         self
     }
 
-    /// Register files to be loaded as a certain type of [`DynamicAssetCollection`]
-    ///
-    /// During the loading state, the given dynamic asset collections will be loaded and their
-    /// content registered. This will happen before trying to resolve any dynamic assets
-    /// as part of asset collections.
-    ///
-    /// You need to register a loader for your asset type yourself.
-    /// If you want to see some code, take a look at the `custom_dynamic_assets` example.
-
-    /// Add an [`AssetCollection`] to the [`LoadingState`]
-    ///
-    /// The added collection will be loaded and inserted into your Bevy app as a resource.
-    /// ```edition2021
-    /// # use bevy_asset_loader::prelude::*;
-    /// # use bevy::prelude::*;
-    /// # use bevy::asset::AssetPlugin;
-    /// # fn main() {
-    ///     App::new()
-    /// #       .add_plugins(MinimalPlugins)
-    /// #       .init_resource::<iyes_progress::ProgressCounter>()
-    /// #       .add_plugin(AssetPlugin::default())
-    ///         .add_loading_state(
-    ///           LoadingState::new(GameState::Loading)
-    ///             .continue_to_state(GameState::Menu)
-    ///             .with_collection::<AudioAssets>()
-    ///             .with_collection::<ImageAssets>()
-    ///         )
-    /// #       .add_state::<GameState>()
-    /// #       .set_runner(|mut app| app.schedule.run(&mut app.world))
-    /// #       .run();
-    /// # }
-    /// # #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
-    /// # enum GameState {
-    /// #     #[default]
-    /// #     Loading,
-    /// #     Menu
-    /// # }
-    /// # #[derive(AssetCollection, Resource)]
-    /// # pub struct AudioAssets {
-    /// #     #[asset(path = "audio/background.ogg")]
-    /// #     pub background: Handle<AudioSource>,
-    /// # }
-    /// # #[derive(AssetCollection, Resource)]
-    /// # pub struct ImageAssets {
-    /// #     #[asset(path = "images/player.png")]
-    /// #     pub player: Handle<Image>,
-    /// #     #[asset(path = "images/tree.png")]
-    /// #     pub tree: Handle<Image>,
-    /// # }
-    /// ```
-
     /// Insert a map of asset keys with corresponding standard dynamic assets
     #[must_use]
     #[cfg(feature = "standard_dynamic_assets")]
@@ -317,53 +262,6 @@ where
 
         self
     }
-
-    /// Add any [`FromWorld`] resource to be initialized after all asset collections are loaded.
-    /// ```edition2021
-    /// # use bevy_asset_loader::prelude::*;
-    /// # use bevy::prelude::*;
-    /// # use bevy::asset::AssetPlugin;
-    /// # fn main() {
-    ///     App::new()
-    /// #       .add_plugins(MinimalPlugins)
-    /// #       .init_resource::<iyes_progress::ProgressCounter>()
-    /// #       .add_plugin(AssetPlugin::default())
-    ///         .add_loading_state(
-    ///           LoadingState::new(GameState::Loading)
-    ///             .continue_to_state(GameState::Menu)
-    ///             .with_collection::<TextureForAtlas>()
-    ///             .init_resource::<TextureAtlasFromWorld>()
-    ///         )
-    /// #       .add_state::<GameState>()
-    /// #       .set_runner(|mut app| app.schedule.run(&mut app.world))
-    /// #       .run();
-    /// # }
-    /// # #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
-    /// # enum GameState {
-    /// #     #[default]
-    /// #     Loading,
-    /// #     Menu
-    /// # }
-    /// # #[derive(Resource)]
-    /// # struct TextureAtlasFromWorld {
-    /// #     atlas: Handle<TextureAtlas>
-    /// # }
-    /// # impl FromWorld for TextureAtlasFromWorld {
-    /// #     fn from_world(world: &mut World) -> Self {
-    /// #         let cell = world.cell();
-    /// #         let assets = cell.get_resource::<TextureForAtlas>().expect("TextureForAtlas not loaded");
-    /// #         let mut atlases = cell.get_resource_mut::<Assets<TextureAtlas>>().expect("TextureAtlases missing");
-    /// #         TextureAtlasFromWorld {
-    /// #             atlas: atlases.add(TextureAtlas::from_grid(assets.array.clone(), Vec2::new(250., 250.), 1, 4, None, None))
-    /// #         }
-    /// #     }
-    /// # }
-    /// # #[derive(AssetCollection, Resource)]
-    /// # pub struct TextureForAtlas {
-    /// #     #[asset(path = "images/female_adventurer.ogg")]
-    /// #     pub array: Handle<Image>,
-    /// # }
-    /// ```
 
     /// Set all file endings that should be loaded as [`StandardDynamicAssetCollection`].
     ///
@@ -461,12 +359,8 @@ where
         let loading_state_schedule = LoadingStateSchedule(self.loading_state.clone());
         let configure_loading_state = app.get_schedule(loading_state_schedule.clone()).is_none();
         app.init_schedule(loading_state_schedule.clone())
-            // Todo move to a AssetLoaderPlugin? Any other one-time setup?
+            // Todo move to a AssetLoaderPlugin (can be added in `build` after check if already there)? Any other one-time setup?
             .add_system(apply_internal_state_transition::<S>.in_base_set(CoreSet::StateTransitions))
-            .init_schedule(OnExitInternalLoadingState(
-                self.loading_state.clone(),
-                InternalLoadingState::Initialize,
-            ))
             .init_schedule(OnEnterInternalLoadingState(
                 self.loading_state.clone(),
                 InternalLoadingState::LoadingAssets,
@@ -510,36 +404,39 @@ where
                     .after(CoreSet::StateTransitions)
                     .before(CoreSet::Update)
                     .run_if(in_state(self.loading_state.clone())),
-            )
-            .configure_set(
-                InternalLoadingStateSet::Initialize
-                    .run_if(in_state(InternalLoadingState::Initialize)),
-            )
-            .configure_set(
-                InternalLoadingStateSet::CheckDynamicAssetCollections.run_if(in_state(
-                    InternalLoadingState::LoadingDynamicAssetCollections,
-                )),
-            )
-            .configure_set(
-                InternalLoadingStateSet::ResumeDynamicAssetCollections
-                    .after(InternalLoadingStateSet::CheckDynamicAssetCollections)
-                    .run_if(in_state(
+            );
+            let mut loading_state_schedule = app.get_schedule_mut(loading_state_schedule).unwrap();
+            loading_state_schedule
+                .configure_set(
+                    InternalLoadingStateSet::Initialize
+                        .run_if(in_state(InternalLoadingState::Initialize)),
+                )
+                .configure_set(
+                    InternalLoadingStateSet::CheckDynamicAssetCollections.run_if(in_state(
                         InternalLoadingState::LoadingDynamicAssetCollections,
                     )),
-            )
-            .configure_set(
-                InternalLoadingStateSet::CheckAssets
-                    .run_if(in_state(InternalLoadingState::LoadingAssets)),
-            )
-            .configure_set(
-                InternalLoadingStateSet::Finalize.run_if(in_state(InternalLoadingState::Finalize)),
-            );
+                )
+                .configure_set(
+                    InternalLoadingStateSet::ResumeDynamicAssetCollections
+                        .after(InternalLoadingStateSet::CheckDynamicAssetCollections)
+                        .run_if(in_state(
+                            InternalLoadingState::LoadingDynamicAssetCollections,
+                        )),
+                )
+                .configure_set(
+                    InternalLoadingStateSet::CheckAssets
+                        .run_if(in_state(InternalLoadingState::LoadingAssets)),
+                )
+                .configure_set(
+                    InternalLoadingStateSet::Finalize
+                        .run_if(in_state(InternalLoadingState::Finalize)),
+                );
 
             #[cfg(feature = "progress_tracking")]
             app.add_system(
                 run_loading_state::<S>
-                    .after(ProgressSystemLabel::Preparation)
-                    .in_set(LoadingStateSet(self.loading_state)),
+                    .in_set(TrackedProgressSet)
+                    .in_base_set(LoadingStateSet(self.loading_state)),
             );
             #[cfg(not(feature = "progress_tracking"))]
             app.add_system(
@@ -662,17 +559,113 @@ impl<State: States> Default for LoadingStateSchedules<State> {
 pub trait LoadingStateAppExt {
     /// Add a loading state to your app
     fn add_loading_state<S: States>(&mut self, loading_state: LoadingState<S>) -> &mut Self;
-    /// Add a collection to a loading state
-    fn add_collection_to_loading_state<A: AssetCollection, S: States>(
+
+    /// Add an [`AssetCollection`] to the [`LoadingState`]
+    ///
+    /// The added collection will be loaded and inserted into your Bevy app as a resource.
+    /// ```edition2021
+    /// # use bevy_asset_loader::prelude::*;
+    /// # use bevy::prelude::*;
+    /// # use bevy::asset::AssetPlugin;
+    /// # fn main() {
+    ///     App::new()
+    /// #       .add_plugins(MinimalPlugins)
+    /// #       .init_resource::<iyes_progress::ProgressCounter>()
+    /// #       .add_plugin(AssetPlugin::default())
+    ///         .add_loading_state(
+    ///           LoadingState::new(GameState::Loading)
+    ///             .continue_to_state(GameState::Menu)
+    ///             .with_collection::<AudioAssets>()
+    ///             .with_collection::<ImageAssets>()
+    ///         )
+    /// #       .add_state::<GameState>()
+    /// #       .set_runner(|mut app| app.schedule.run(&mut app.world))
+    /// #       .run();
+    /// # }
+    /// # #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
+    /// # enum GameState {
+    /// #     #[default]
+    /// #     Loading,
+    /// #     Menu
+    /// # }
+    /// # #[derive(AssetCollection, Resource)]
+    /// # pub struct AudioAssets {
+    /// #     #[asset(path = "audio/background.ogg")]
+    /// #     pub background: Handle<AudioSource>,
+    /// # }
+    /// # #[derive(AssetCollection, Resource)]
+    /// # pub struct ImageAssets {
+    /// #     #[asset(path = "images/player.png")]
+    /// #     pub player: Handle<Image>,
+    /// #     #[asset(path = "images/tree.png")]
+    /// #     pub tree: Handle<Image>,
+    /// # }
+    /// ```
+    fn add_collection_to_loading_state<S: States, A: AssetCollection>(
         &mut self,
         loading_state: S,
     ) -> &mut Self;
+
+    /// Register files to be loaded as a certain type of [`DynamicAssetCollection`]
+    ///
+    /// During the loading state, the given dynamic asset collections will be loaded and their
+    /// content registered. This will happen before trying to resolve any dynamic assets
+    /// as part of asset collections.
+    ///
+    /// You need to register a loader for your asset type yourself.
+    /// If you want to see some code, take a look at the `custom_dynamic_assets` example.
     fn add_dynamic_collection_to_loading_state<S: States, C: DynamicAssetCollection + Asset>(
         &mut self,
         loading_state: S,
         file: &str,
     ) -> &mut Self;
 
+    /// Add any [`FromWorld`] resource to be initialized after all asset collections are loaded.
+    /// ```edition2021
+    /// # use bevy_asset_loader::prelude::*;
+    /// # use bevy::prelude::*;
+    /// # use bevy::asset::AssetPlugin;
+    /// # fn main() {
+    ///     App::new()
+    /// #       .add_plugins(MinimalPlugins)
+    /// #       .init_resource::<iyes_progress::ProgressCounter>()
+    /// #       .add_plugin(AssetPlugin::default())
+    ///         .add_loading_state(
+    ///           LoadingState::new(GameState::Loading)
+    ///             .continue_to_state(GameState::Menu)
+    ///             .with_collection::<TextureForAtlas>()
+    ///             .init_resource::<TextureAtlasFromWorld>()
+    ///         )
+    /// #       .add_state::<GameState>()
+    /// #       .set_runner(|mut app| app.schedule.run(&mut app.world))
+    /// #       .run();
+    /// # }
+    /// # #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
+    /// # enum GameState {
+    /// #     #[default]
+    /// #     Loading,
+    /// #     Menu
+    /// # }
+    /// # #[derive(Resource)]
+    /// # struct TextureAtlasFromWorld {
+    /// #     atlas: Handle<TextureAtlas>
+    /// # }
+    /// # impl FromWorld for TextureAtlasFromWorld {
+    /// #     fn from_world(world: &mut World) -> Self {
+    /// #         let cell = world.cell();
+    /// #         let assets = cell.get_resource::<TextureForAtlas>().expect("TextureForAtlas not loaded");
+    /// #         let mut atlases = cell.get_resource_mut::<Assets<TextureAtlas>>().expect("TextureAtlases missing");
+    /// #         TextureAtlasFromWorld {
+    /// #             atlas: atlases.add(TextureAtlas::from_grid(assets.array.clone(), Vec2::new(250., 250.), 1, 4, None, None))
+    /// #         }
+    /// #     }
+    /// # }
+    /// # #[derive(AssetCollection, Resource)]
+    /// # pub struct TextureForAtlas {
+    /// #     #[asset(path = "images/female_adventurer.ogg")]
+    /// #     pub array: Handle<Image>,
+    /// # }
+    /// ```
     fn init_resource_after_loading_state<S: States, A: Resource + FromWorld>(
         &mut self,
         loading_state: S,
@@ -686,7 +679,7 @@ impl LoadingStateAppExt for App {
         self
     }
 
-    fn add_collection_to_loading_state<A: AssetCollection, S: States>(
+    fn add_collection_to_loading_state<S: States, A: AssetCollection>(
         &mut self,
         loading_state: S,
     ) -> &mut Self {
@@ -732,7 +725,7 @@ impl LoadingStateAppExt for App {
                 load_dynamic_asset_collections::<S, C>,
             )
             .add_system_to_schedule(
-                LoadingStateSchedule(loading_state.clone()),
+                LoadingStateSchedule(loading_state),
                 check_dynamic_asset_collections::<S, C>
                     .in_set(InternalLoadingStateSet::CheckDynamicAssetCollections),
             )

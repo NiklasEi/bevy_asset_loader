@@ -10,7 +10,8 @@ fn main() {
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
         )
-        .add_collection_to_loading_state::<MyAssets, _>(MyStates::AssetLoading)
+        .add_collection_to_loading_state::<_, MyAssets>(MyStates::AssetLoading)
+        .insert_resource(Msaa::Off)
         .add_plugins(DefaultPlugins)
         .add_system_to_schedule(OnEnter(MyStates::Next), draw_atlas)
         .add_system(animate_sprite_system.run_if(in_state(MyStates::Next)))

@@ -2,10 +2,10 @@ use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssetCollections, Dyna
 use crate::loading_state::{AssetLoaderConfiguration, InternalLoadingState, LoadingAssetHandles};
 use bevy::asset::{Asset, AssetServer, Assets, LoadState};
 use bevy::ecs::change_detection::ResMut;
-use bevy::ecs::schedule::{State, States};
+use bevy::ecs::schedule::{NextState, State, States};
 use bevy::ecs::system::{Res, SystemState};
 use bevy::ecs::world::World;
-use bevy::prelude::NextState;
+use bevy::log::debug;
 use std::any::TypeId;
 
 #[allow(clippy::type_complexity)]
@@ -99,6 +99,7 @@ pub(crate) fn resume_to_loading_asset_collections<S: States>(
         .get(&state.0)
         .expect("No asset loader configuration for current state");
     if config.loading_dynamic_collections.is_empty() {
+        debug!("No dynamic asset collection file left loading. Resuming to 'LoadingAssets'");
         loading_state.set(InternalLoadingState::LoadingAssets);
     }
 }

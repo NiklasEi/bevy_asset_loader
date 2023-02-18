@@ -8,16 +8,15 @@ use bevy_asset_loader::prelude::*;
 /// them by adding up their pixel data.
 fn main() {
     App::new()
-        .add_loading_state(
-            LoadingState::new(MyStates::AssetLoading)
-                .continue_to_state(MyStates::Next)
-                .with_collection::<ImageAssets>()
-                .init_resource::<CombinedImage>(),
-        )
         .add_state::<MyStates>()
-        .insert_resource(Msaa { samples: 1 })
+        .add_loading_state(
+            LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
+        )
+        .add_collection_to_loading_state::<_, ImageAssets>(MyStates::AssetLoading)
+        .init_resource_after_loading_state::<_, CombinedImage>(MyStates::AssetLoading)
+        .insert_resource(Msaa::Off)
         .add_plugins(DefaultPlugins)
-        .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(draw))
+        .add_system_to_schedule(OnEnter(MyStates::Next), draw)
         .run();
 }
 
