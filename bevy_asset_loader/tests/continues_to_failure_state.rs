@@ -20,12 +20,12 @@ fn continues_to_failure_state() {
         .add_loading_state(
             LoadingState::new(MyStates::Load)
                 .continue_to_state(MyStates::Next)
-                .on_failure_continue_to_state(MyStates::Error)
-                .with_collection::<Audio>(),
+                .on_failure_continue_to_state(MyStates::Error),
         )
-        .add_system_set(SystemSet::on_update(MyStates::Load).with_system(timeout))
-        .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(fail))
-        .add_system_set(SystemSet::on_enter(MyStates::Error).with_system(exit))
+        .add_collection_to_loading_state::<_, Audio>(MyStates::Load)
+        .add_system(timeout.run_if(in_state(MyStates::Load)))
+        .add_system_to_schedule(OnEnter(MyStates::Next), fail)
+        .add_system_to_schedule(OnEnter(MyStates::Error), exit)
         .run();
 }
 

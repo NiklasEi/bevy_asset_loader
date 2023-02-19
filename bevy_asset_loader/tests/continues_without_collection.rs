@@ -18,8 +18,8 @@ fn continues_without_collection() {
         .add_plugin(AssetPlugin::default())
         .add_loading_state(LoadingState::new(MyStates::Load).continue_to_state(MyStates::Next))
         .init_resource::<TestState>()
-        .add_system_set(SystemSet::on_update(MyStates::Load).with_system(expect))
-        .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(exit))
+        .add_system(expect.run_if(in_state(MyStates::Load)))
+        .add_system_to_schedule(OnEnter(MyStates::Next), exit)
         .run();
 }
 

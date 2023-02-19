@@ -1,4 +1,4 @@
-#![allow(dead_code)]
+#![allow(dead_code, unused_imports)]
 
 use bevy::app::AppExit;
 use bevy::asset::AssetPlugin;
@@ -7,28 +7,23 @@ use bevy::prelude::*;
 use bevy_asset_loader::asset_collection::AssetCollection;
 use bevy_asset_loader::loading_state::{LoadingState, LoadingStateAppExt};
 
-#[cfg_attr(
-    all(
-        not(feature = "2d"),
-        not(feature = "3d"),
-        not(feature = "progress_tracking")
-    ),
-    test
-)]
+#[cfg(all(
+    not(feature = "2d"),
+    not(feature = "3d"),
+    not(feature = "progress_tracking")
+))]
+#[test]
 fn multiple_asset_collections() {
     App::new()
         .add_plugins(MinimalPlugins)
         .add_plugin(AssetPlugin::default())
         .add_plugin(AudioPlugin::default())
-        .add_loading_state(
-            LoadingState::new(MyStates::Load)
-                .continue_to_state(MyStates::Next)
-                .with_collection::<PlopAudio>()
-                .with_collection::<BackgroundAudio>(),
-        )
+        .add_loading_state(LoadingState::new(MyStates::Load).continue_to_state(MyStates::Next))
+        .add_collection_to_loading_state::<_, PlopAudio>(MyStates::Load)
+        .add_collection_to_loading_state::<_, BackgroundAudio>(MyStates::Load)
         .add_state::<MyStates>()
-        .add_system_set(SystemSet::on_update(MyStates::Load).with_system(timeout))
-        .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(expect))
+        .add_system(timeout.run_if(in_state(MyStates::Load)))
+        .add_system_to_schedule(OnEnter(MyStates::Next), expect)
         .run();
 }
 

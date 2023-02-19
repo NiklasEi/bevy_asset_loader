@@ -1,4 +1,4 @@
-#![allow(dead_code)]
+#![allow(dead_code, unused_imports)]
 
 use bevy::app::AppExit;
 use bevy::asset::AssetPlugin;
@@ -7,14 +7,11 @@ use bevy::prelude::*;
 use bevy_asset_loader::asset_collection::AssetCollection;
 use bevy_asset_loader::loading_state::{LoadingState, LoadingStateAppExt};
 
-// #[cfg_attr(
-//     all(
-//         not(feature = "2d"),
-//         not(feature = "3d"),
-//         not(feature = "progress_tracking")
-//     ),
-//     test
-// )]
+#[cfg(all(
+    not(feature = "2d"),
+    not(feature = "3d"),
+    not(feature = "progress_tracking")
+))]
 #[test]
 fn multiple_loading_states() {
     App::new()

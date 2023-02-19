@@ -392,13 +392,7 @@ where
                 loading_state_schedule.clone(),
                 finish_loading_state::<S>.in_set(InternalLoadingStateSet::Finalize),
             )
-            .add_systems_to_schedule(
-                OnEnter(self.loading_state.clone()),
-                (
-                    reset_loading_state,
-                    apply_state_transition::<InternalLoadingState>,
-                ),
-            )
+            .add_system_to_schedule(OnEnter(self.loading_state.clone()), reset_loading_state)
             .configure_set(
                 LoadingStateSet(self.loading_state.clone())
                     .after(CoreSet::StateTransitions)
@@ -456,22 +450,19 @@ where
 /// Systems in this set check the loading state of assets and will change the [`InternalLoadingState`] accordingly.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]
 #[system_set(base)]
-pub struct LoadingStateSet<S: States>(S);
+pub(crate) struct LoadingStateSet<S: States>(S);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]
-pub enum InternalLoadingStateSet {
+pub(crate) enum InternalLoadingStateSet {
     Initialize,
     CheckDynamicAssetCollections,
     ResumeDynamicAssetCollections,
     CheckAssets,
     Finalize,
-    Done,
 }
 
 #[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash)]
 pub(crate) struct OnEnterInternalLoadingState<S: States>(pub S, pub InternalLoadingState);
-#[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash)]
-pub(crate) struct OnExitInternalLoadingState<S: States>(pub S, pub InternalLoadingState);
 #[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash)]
 pub(crate) struct LoadingStateSchedule<S: States>(pub S);
 

@@ -14,7 +14,7 @@ use iyes_progress::{HiddenProgress, Progress, ProgressCounter};
 use crate::asset_collection::AssetCollection;
 use crate::loading_state::{
     AssetLoaderConfiguration, InternalLoadingState, LoadingAssetHandles, LoadingStateSchedule,
-    OnEnterInternalLoadingState, OnExitInternalLoadingState,
+    OnEnterInternalLoadingState,
 };
 
 pub(crate) fn init_resource<Asset: Resource + FromWorld>(world: &mut World) {
@@ -170,8 +170,8 @@ pub(crate) fn finish_loading_state<S: States>(
     loading_state.set(InternalLoadingState::Done);
 }
 
-pub(crate) fn reset_loading_state(mut state: ResMut<NextState<InternalLoadingState>>) {
-    state.set(InternalLoadingState::Initialize);
+pub(crate) fn reset_loading_state(mut state: ResMut<State<InternalLoadingState>>) {
+    state.0 = InternalLoadingState::Initialize;
 }
 
 pub(crate) fn run_loading_state<S: States>(world: &mut World) {
@@ -198,12 +198,6 @@ pub fn apply_internal_state_transition<S: States>(world: &mut World) {
         trace!(
             "Switching internal state of loading state from {exited_state:?} to {entered_state:?}"
         );
-        if world
-            .resource::<Schedules>()
-            .contains(&OnExitInternalLoadingState(state.clone(), exited_state))
-        {
-            world.run_schedule(OnExitInternalLoadingState(state.clone(), exited_state));
-        }
         if world
             .resource::<Schedules>()
             .contains(&OnEnterInternalLoadingState(state.clone(), entered_state))
