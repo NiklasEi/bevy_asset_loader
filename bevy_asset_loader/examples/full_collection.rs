@@ -70,7 +70,7 @@ fn expectations(
     texture_atlases: Res<Assets<TextureAtlas>>,
     mut quit: EventWriter<AppExit>,
 ) {
-    println!("Done loading the collection. Checking expectations...");
+    info!("Done loading the collection. Checking expectations...");
 
     assert_eq!(
         asset_server.get_load_state(assets.single_file.clone()),
@@ -192,8 +192,8 @@ fn expectations(
         );
     }
 
-    println!("Everything looks good!");
-    println!("Quitting the application...");
+    info!("Everything looks good!");
+    info!("Quitting the application...");
     quit.send(AppExit);
 }
 

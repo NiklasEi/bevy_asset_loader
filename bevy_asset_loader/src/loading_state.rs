@@ -4,8 +4,8 @@ mod systems;
 use bevy::app::{App, CoreSet};
 use bevy::asset::{Asset, HandleUntyped};
 use bevy::ecs::schedule::{
-    apply_state_transition, common_conditions::in_state, IntoSystemConfig, IntoSystemSetConfig,
-    NextState, OnEnter, States, SystemSet,
+    common_conditions::in_state, IntoSystemConfig, IntoSystemSetConfig, NextState, OnEnter, States,
+    SystemSet,
 };
 use bevy::ecs::schedule::{BoxedScheduleLabel, ScheduleLabel, State};
 use bevy::ecs::system::Resource;

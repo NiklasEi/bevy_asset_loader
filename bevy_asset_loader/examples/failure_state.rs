@@ -33,8 +33,8 @@ fn fail() {
 }
 
 fn ok(mut quit: EventWriter<AppExit>) {
-    println!("As expected, bevy_asset_loader switched to the failure state");
-    println!("Quitting the application...");
+    info!("As expected, bevy_asset_loader switched to the failure state");
+    info!("Quitting the application...");
     quit.send(AppExit);
 }
 
