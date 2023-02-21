@@ -41,7 +41,7 @@ struct TestState {
 
 impl Default for TestState {
     fn default() -> Self {
-        TestState { wait_frames: 1 }
+        TestState { wait_frames: 4 }
     }
 }
 

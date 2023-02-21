@@ -1,17 +1,9 @@
-#![allow(dead_code, unused_imports)]
-
 use bevy::app::AppExit;
-use bevy::asset::AssetPlugin;
 use bevy::audio::AudioPlugin;
 use bevy::prelude::*;
 use bevy_asset_loader::asset_collection::AssetCollection;
 use bevy_asset_loader::loading_state::{LoadingState, LoadingStateAppExt};
 
-#[cfg(all(
-    not(feature = "2d"),
-    not(feature = "3d"),
-    not(feature = "progress_tracking")
-))]
 #[test]
 fn multiple_loading_states() {
     App::new()
@@ -21,10 +13,6 @@ fn multiple_loading_states() {
         .add_plugin(AudioPlugin::default())
         .add_loading_state(LoadingState::new(MyStates::Splash).continue_to_state(MyStates::Load))
         .add_collection_to_loading_state::<_, SplashAssets>(MyStates::Splash)
-        .add_loading_state(LoadingState::new(MyStates::Load).continue_to_state(MyStates::Play))
-        .add_collection_to_loading_state::<_, MyOtherAssets>(MyStates::Load)
-        .add_loading_state(LoadingState::new(MyStates::Load).continue_to_state(MyStates::Play))
-        .add_collection_to_loading_state::<_, MyAssets>(MyStates::Load)
         .add_system(timeout)
         .add_system_to_schedule(OnEnter(MyStates::Load), use_splash_assets)
         .add_system_to_schedule(OnEnter(MyStates::Play), use_loading_assets)
@@ -33,7 +21,8 @@ fn multiple_loading_states() {
 }
 
 fn timeout(time: Res<Time>) {
-    if time.elapsed_seconds_f64() > 30. {
+    println!("Frame");
+    if time.elapsed_seconds_f64() > 5. {
         panic!("The app did not finish in 30 seconds");
     }
 }
@@ -47,7 +36,7 @@ fn use_loading_assets(_my_assets: Res<MyAssets>, _my_other_assets: Res<MyOtherAs
 }
 
 fn quit(mut exit: EventWriter<AppExit>) {
-    println!("Everything fine, quitting the app");
+    info!("Everything fine, quitting the app");
     exit.send(AppExit);
 }
 

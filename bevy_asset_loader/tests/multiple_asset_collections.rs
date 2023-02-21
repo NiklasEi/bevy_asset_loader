@@ -15,13 +15,13 @@ use bevy_asset_loader::loading_state::{LoadingState, LoadingStateAppExt};
 #[test]
 fn multiple_asset_collections() {
     App::new()
+        .add_state::<MyStates>()
         .add_plugins(MinimalPlugins)
         .add_plugin(AssetPlugin::default())
         .add_plugin(AudioPlugin::default())
         .add_loading_state(LoadingState::new(MyStates::Load).continue_to_state(MyStates::Next))
         .add_collection_to_loading_state::<_, PlopAudio>(MyStates::Load)
         .add_collection_to_loading_state::<_, BackgroundAudio>(MyStates::Load)
-        .add_state::<MyStates>()
         .add_system(timeout.run_if(in_state(MyStates::Load)))
         .add_system_to_schedule(OnEnter(MyStates::Next), expect)
         .run();
