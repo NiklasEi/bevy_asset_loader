@@ -1,7 +1,7 @@
 mod dynamic_asset_systems;
 mod systems;
 
-use bevy::app::{App, CoreSet};
+use bevy::app::{App, CoreSet, IntoSystemAppConfig};
 use bevy::asset::{Asset, HandleUntyped};
 use bevy::ecs::schedule::{
     common_conditions::in_state, IntoSystemConfig, IntoSystemSetConfig, NextState, OnEnter, States,
@@ -375,24 +375,21 @@ where
             ));
 
         if configure_loading_state {
-            app.add_system_to_schedule(
-                loading_state_schedule.clone(),
+            app.add_systems((
                 resume_to_loading_asset_collections::<S>
+                    .in_schedule(loading_state_schedule.clone())
                     .in_set(InternalLoadingStateSet::ResumeDynamicAssetCollections),
-            )
-            .add_system_to_schedule(
-                loading_state_schedule.clone(),
-                initialize_loading_state.in_set(InternalLoadingStateSet::Initialize),
-            )
-            .add_system_to_schedule(
-                loading_state_schedule.clone(),
-                resume_to_finalize::<S>.in_set(InternalLoadingStateSet::CheckAssets),
-            )
-            .add_system_to_schedule(
-                loading_state_schedule.clone(),
-                finish_loading_state::<S>.in_set(InternalLoadingStateSet::Finalize),
-            )
-            .add_system_to_schedule(OnEnter(self.loading_state.clone()), reset_loading_state)
+                initialize_loading_state
+                    .in_schedule(loading_state_schedule.clone())
+                    .in_set(InternalLoadingStateSet::Initialize),
+                resume_to_finalize::<S>
+                    .in_schedule(loading_state_schedule.clone())
+                    .in_set(InternalLoadingStateSet::CheckAssets),
+                finish_loading_state::<S>
+                    .in_schedule(loading_state_schedule.clone())
+                    .in_set(InternalLoadingStateSet::Finalize),
+            ))
+            .add_system(reset_loading_state.in_schedule(OnEnter(self.loading_state.clone())))
             .configure_set(
                 LoadingStateSet(self.loading_state.clone())
                     .after(CoreSet::StateTransitions)
@@ -674,13 +671,16 @@ impl LoadingStateAppExt for App {
         &mut self,
         loading_state: S,
     ) -> &mut Self {
-        self.add_system_to_schedule(
-            OnEnterInternalLoadingState(loading_state.clone(), InternalLoadingState::LoadingAssets),
-            start_loading_collection::<S, A>,
+        self.add_system(
+            start_loading_collection::<S, A>.in_schedule(OnEnterInternalLoadingState(
+                loading_state.clone(),
+                InternalLoadingState::LoadingAssets,
+            )),
         )
-        .add_system_to_schedule(
-            LoadingStateSchedule(loading_state),
-            check_loading_collection::<S, A>.in_set(InternalLoadingStateSet::CheckAssets),
+        .add_system(
+            check_loading_collection::<S, A>
+                .in_schedule(LoadingStateSchedule(loading_state))
+                .in_set(InternalLoadingStateSet::CheckAssets),
         )
     }
 
@@ -708,16 +708,15 @@ impl LoadingStateAppExt for App {
             .insert(loading_state.clone(), dynamic_collections_for_state);
 
         self.init_resource::<LoadingAssetHandles<C>>()
-            .add_system_to_schedule(
+            .add_system(load_dynamic_asset_collections::<S, C>.in_schedule(
                 OnEnterInternalLoadingState(
                     loading_state.clone(),
                     InternalLoadingState::LoadingDynamicAssetCollections,
                 ),
-                load_dynamic_asset_collections::<S, C>,
-            )
-            .add_system_to_schedule(
-                LoadingStateSchedule(loading_state),
+            ))
+            .add_system(
                 check_dynamic_asset_collections::<S, C>
+                    .in_schedule(LoadingStateSchedule(loading_state))
                     .in_set(InternalLoadingStateSet::CheckDynamicAssetCollections),
             )
     }
@@ -726,9 +725,9 @@ impl LoadingStateAppExt for App {
         &mut self,
         loading_state: S,
     ) -> &mut Self {
-        self.add_system_to_schedule(
-            OnEnterInternalLoadingState(loading_state, InternalLoadingState::Finalize),
-            init_resource::<A>,
-        )
+        self.add_system(init_resource::<A>.in_schedule(OnEnterInternalLoadingState(
+            loading_state,
+            InternalLoadingState::Finalize,
+        )))
     }
 }

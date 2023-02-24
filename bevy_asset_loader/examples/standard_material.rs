@@ -17,7 +17,7 @@ fn main() {
             brightness: 0.2,
         })
         .add_plugins(DefaultPlugins)
-        .add_system_to_schedule(OnEnter(MyStates::Next), spawn_player)
+        .add_system(spawn_player.in_schedule(OnEnter(MyStates::Next)))
         .run();
 }
 

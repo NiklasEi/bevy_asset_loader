@@ -23,7 +23,7 @@ fn main() {
         .init_collection::<ImageAssets>()
         // This system listens for mouse clicks and then loads + inserts the AudioAssets collection
         .add_system(load_and_play_audio)
-        .add_startup_system(draw)
+        .add_system(draw.on_startup())
         .run();
 }
 

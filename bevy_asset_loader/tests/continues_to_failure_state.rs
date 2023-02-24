@@ -24,8 +24,8 @@ fn continues_to_failure_state() {
         )
         .add_collection_to_loading_state::<_, Audio>(MyStates::Load)
         .add_system(timeout.run_if(in_state(MyStates::Load)))
-        .add_system_to_schedule(OnEnter(MyStates::Next), fail)
-        .add_system_to_schedule(OnEnter(MyStates::Error), exit)
+        .add_system(fail.in_schedule(OnEnter(MyStates::Next)))
+        .add_system(exit.in_schedule(OnEnter(MyStates::Error)))
         .run();
 }
 

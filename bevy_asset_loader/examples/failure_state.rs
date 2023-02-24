@@ -13,8 +13,8 @@ fn main() {
         )
         .add_collection_to_loading_state::<_, MyAssets>(MyStates::AssetLoading)
         .add_system(timeout.run_if(in_state(MyStates::AssetLoading)))
-        .add_system_to_schedule(OnEnter(MyStates::Next), fail)
-        .add_system_to_schedule(OnEnter(MyStates::ErrorScreen), ok)
+        .add_system(fail.in_schedule(OnEnter(MyStates::Next)))
+        .add_system(ok.in_schedule(OnEnter(MyStates::ErrorScreen)))
         .run();
 }
 

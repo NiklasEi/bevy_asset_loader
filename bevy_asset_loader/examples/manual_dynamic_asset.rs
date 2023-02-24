@@ -27,11 +27,11 @@ fn main() {
             OnEnter(MyStates::Next),
             (spawn_player_and_tree, play_background_audio),
         )
-        .add_system_to_schedule(OnEnter(MyStates::Menu), menu)
+        .add_system(menu.in_schedule(OnEnter(MyStates::Menu)))
         .add_system(character_setup.run_if(in_state(MyStates::Menu)))
         .add_system(update_menu.run_if(in_state(MyStates::Menu)))
-        .add_system_to_schedule(OnExit(MyStates::Menu), exit_menu)
-        .add_system_to_schedule(OnEnter(MyStates::Next), render_optional_background)
+        .add_system(exit_menu.in_schedule(OnExit(MyStates::Menu)))
+        .add_system(render_optional_background.in_schedule(OnEnter(MyStates::Next)))
         .add_system(move_player.run_if(in_state(MyStates::Next)))
         .run();
 }

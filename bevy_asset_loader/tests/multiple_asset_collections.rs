@@ -23,7 +23,7 @@ fn multiple_asset_collections() {
         .add_collection_to_loading_state::<_, PlopAudio>(MyStates::Load)
         .add_collection_to_loading_state::<_, BackgroundAudio>(MyStates::Load)
         .add_system(timeout.run_if(in_state(MyStates::Load)))
-        .add_system_to_schedule(OnEnter(MyStates::Next), expect)
+        .add_system(expect.in_schedule(OnEnter(MyStates::Next)))
         .run();
 }
 

@@ -22,7 +22,7 @@ fn main() {
         // track progress during `MyStates::AssetLoading` and continue to `MyStates::Next` when progress is completed
         .add_plugin(ProgressPlugin::new(MyStates::AssetLoading).continue_to(MyStates::Next))
         // gracefully quit the app when `MyStates::Next` is reached
-        .add_system_to_schedule(OnEnter(MyStates::Next), expect)
+        .add_system(expect.in_schedule(OnEnter(MyStates::Next)))
         .add_system(
             track_fake_long_task
                 .before(print_progress)

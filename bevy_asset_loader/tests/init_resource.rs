@@ -23,7 +23,7 @@ fn init_resource() {
         .add_collection_to_loading_state::<_, MyAssets>(MyStates::Load)
         .init_resource_after_loading_state::<_, PostProcessed>(MyStates::Load)
         .add_system(timeout.run_if(in_state(MyStates::Load)))
-        .add_system_to_schedule(OnEnter(MyStates::Next), expect)
+        .add_system(expect.in_schedule(OnEnter(MyStates::Next)))
         .run();
 }
 

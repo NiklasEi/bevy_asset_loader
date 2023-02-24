@@ -16,7 +16,7 @@ fn main() {
         .init_resource_after_loading_state::<_, CombinedImage>(MyStates::AssetLoading)
         .insert_resource(Msaa::Off)
         .add_plugins(DefaultPlugins)
-        .add_system_to_schedule(OnEnter(MyStates::Next), draw)
+        .add_system(draw.in_schedule(OnEnter(MyStates::Next)))
         .run();
 }
 
