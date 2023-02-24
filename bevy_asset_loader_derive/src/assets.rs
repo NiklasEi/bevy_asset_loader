@@ -121,10 +121,6 @@ impl AssetField {
                                             .path()
                                             .to_str()
                                             .expect("Path should be valid UTF-8")
-                                            .strip_prefix(&#asset_path)
-                                            .expect("Should start with folder path")
-                                            .strip_prefix("/")
-                                            .expect("Should be a folder")
                                             .to_owned();
                                         folder_map.insert(path, handle.typed());
                                     }
@@ -151,10 +147,6 @@ impl AssetField {
                                             .path()
                                             .to_str()
                                             .expect("Path should be valid UTF-8")
-                                            .strip_prefix(&#asset_path)
-                                            .expect("Should start with folder path")
-                                            .strip_prefix(std::path::MAIN_SEPARATOR)
-                                            .expect("Should be a folder")
                                             .to_owned();
                                         folder_map.insert(path, handle);
                                     }

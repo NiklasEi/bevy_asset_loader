@@ -127,7 +127,7 @@ fn expectations(
                 .path()
                 .to_str()
                 .unwrap(),
-            &format!("images/{name}")
+            name
         );
     }
     assert_eq!(assets.mapped_folder_typed.len(), 6);
@@ -143,7 +143,7 @@ fn expectations(
                 .path()
                 .to_str()
                 .unwrap(),
-            &format!("images/{name}")
+            name
         );
     }
     assert_eq!(assets.files_untyped.len(), 2);
