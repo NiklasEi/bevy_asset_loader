@@ -3,13 +3,13 @@ use bevy::asset::LoadState;
 use bevy::diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin};
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
-use iyes_progress::{ProgressCounter, ProgressPlugin};
+use iyes_progress::{ProgressCounter, ProgressPlugin, TrackedProgressSet};
 
 /// This example shows how to track the loading progress of your collections using `iyes_progress`
 ///
 /// Running it will print the current progress for every frame. The five assets from
 /// the two collections will be loaded rather quickly (one/a few frames). The final task
-/// completes after one second. At that point, `iyes_progress` will continue to the next state
+/// completes after two seconds. At that point, `iyes_progress` will continue to the next state
 /// and the app will terminate.
 fn main() {
     App::new()
@@ -26,6 +26,7 @@ fn main() {
         .add_system(
             track_fake_long_task
                 .before(print_progress)
+                .in_set(TrackedProgressSet)
                 .run_if(in_state(MyStates::AssetLoading)),
         )
         .add_system(print_progress)
