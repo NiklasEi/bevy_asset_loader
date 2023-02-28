@@ -11,8 +11,8 @@ jobs:
         os: [windows-latest, ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/cache@v2
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/bin/
