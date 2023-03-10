@@ -23,9 +23,8 @@ fn main() {
         .add_collection_to_loading_state::<_, FontAssets>(MyStates::MenuAssetLoading)
         .insert_resource(Msaa::Off)
         .insert_resource(ShowBackground(false))
-        .add_systems_to_schedule(
-            OnEnter(MyStates::Next),
-            (spawn_player_and_tree, play_background_audio),
+        .add_systems(
+            (spawn_player_and_tree, play_background_audio).in_schedule(OnEnter(MyStates::Next)),
         )
         .add_system(menu.in_schedule(OnEnter(MyStates::Menu)))
         .add_system(character_setup.run_if(in_state(MyStates::Menu)))

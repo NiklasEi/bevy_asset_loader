@@ -9,7 +9,7 @@ use iyes_progress::{ProgressCounter, ProgressPlugin, TrackedProgressSet};
 ///
 /// Running it will print the current progress for every frame. The five assets from
 /// the two collections will be loaded rather quickly (one/a few frames). The final task
-/// completes after two seconds. At that point, `iyes_progress` will continue to the next state
+/// completes after four seconds. At that point, `iyes_progress` will continue to the next state
 /// and the app will terminate.
 fn main() {
     App::new()
@@ -36,7 +36,7 @@ fn main() {
 // Time in seconds to complete a custom long-running task.
 // If assets are loaded earlier, the current state will not
 // be changed until the 'fake long task' is completed (thanks to 'iyes_progress')
-const DURATION_LONG_TASK_IN_SECS: f64 = 2.0;
+const DURATION_LONG_TASK_IN_SECS: f64 = 4.0;
 
 #[derive(AssetCollection, Resource)]
 struct AudioAssets {

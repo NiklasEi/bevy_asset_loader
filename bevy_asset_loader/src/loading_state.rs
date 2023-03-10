@@ -1,7 +1,7 @@
 mod dynamic_asset_systems;
 mod systems;
 
-use bevy::app::{App, CoreSet, IntoSystemAppConfig};
+use bevy::app::{App, CoreSet, IntoSystemAppConfig, Plugin};
 use bevy::asset::{Asset, HandleUntyped};
 use bevy::ecs::schedule::{
     common_conditions::in_state, IntoSystemConfig, IntoSystemSetConfig, NextState, OnEnter, States,
@@ -354,13 +354,15 @@ where
             ));
         }
 
+        if !app.is_plugin_added::<InternalAssetLoaderPlugin<S>>() {
+            app.add_plugin(InternalAssetLoaderPlugin::<S>::new());
+        }
+
         app.init_resource::<LoadingStateSchedules<S>>();
 
         let loading_state_schedule = LoadingStateSchedule(self.loading_state.clone());
         let configure_loading_state = app.get_schedule(loading_state_schedule.clone()).is_none();
         app.init_schedule(loading_state_schedule.clone())
-            // Todo move to a AssetLoaderPlugin (can be added in `build` after check if already there)? Any other one-time setup?
-            .add_system(apply_internal_state_transition::<S>.in_base_set(CoreSet::StateTransitions))
             .init_schedule(OnEnterInternalLoadingState(
                 self.loading_state.clone(),
                 InternalLoadingState::LoadingAssets,
@@ -729,5 +731,29 @@ impl LoadingStateAppExt for App {
             loading_state,
             InternalLoadingState::Finalize,
         )))
+    }
+}
+
+struct InternalAssetLoaderPlugin<S> {
+    _state_marker: PhantomData<S>,
+}
+
+impl<S> InternalAssetLoaderPlugin<S>
+where
+    S: States,
+{
+    fn new() -> Self {
+        InternalAssetLoaderPlugin {
+            _state_marker: PhantomData::default(),
+        }
+    }
+}
+
+impl<S> Plugin for InternalAssetLoaderPlugin<S>
+where
+    S: States,
+{
+    fn build(&self, app: &mut App) {
+        app.add_system(apply_internal_state_transition::<S>.in_base_set(CoreSet::StateTransitions));
     }
 }
