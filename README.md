@@ -9,7 +9,7 @@ This [Bevy][bevy] plugin reduces boilerplate for handling game assets. The crate
 
 In most cases you will want to load your asset collections during loading states (think loading screens). During such a state, all assets are loaded and their loading process is observed. Only when asset collections can be build with fully loaded asset handles, the collections are inserted as resources. If you do not want to use a loading state, asset collections can still result in cleaner code and improved maintainability (see the ["usage without a loading state"](#usage-without-a-loading-state) section).
 
-_The `main` branch and the latest release support Bevy version `0.9` (see [version table](#compatible-bevy-versions))_
+_The `main` branch and the latest release support Bevy version `0.10` (see [version table](#compatible-bevy-versions))_
 
 ## Loading states
 
@@ -18,14 +18,18 @@ A loading state is responsible for managing the loading process during a configu
 If your `LoadingState` is set up, you can start your game logic from the next state and use the asset collections as resources in your systems. The loading state guarantees that all handles in your collections are fully loaded by the time the next state starts.
 
 ```rust ignore
-app.add_loading_state(
-    LoadingState::new(GameState::Loading)
-        .continue_to_state(GameState::Next)
-        .with_collection::<MyAssets>()
-)
+app
+    .add_state::<GameState>()
+    .add_loading_state(
+        LoadingState::new(GameState::Loading)
+            .continue_to_state(GameState::Next)
+    )
+    .add_collection_to_loading_state::<_, MyAssets>(GameState::Loading)
 ```
 
-*Note that you can configure the same loading state in multiple places (e.g. in different plugins). All collections added anywhere in your application will be considered.*
+Your Bevy state needs to be added to the application before you can add a loading state.
+
+You can add collections to a loading state in multiple places (e.g. in different plugins). All collections added anywhere in your application will be loaded. Important is, that the loading state itself is added to the application before you try to add any collections to it.
 
 ## Compile time vs. Run time (dynamic) assets
 
@@ -40,12 +44,12 @@ use bevy_asset_loader::prelude::*;
 
 fn main() {
     App::new()
+        .add_state::<GameState>()
         .add_loading_state(
             LoadingState::new(GameState::AssetLoading)
                 .continue_to_state(GameState::Next)
-                .with_collection::<MyAssets>()
         )
-        .add_state::<GameState>()
+        .add_collection_to_loading_state::<_, MyAssets>(GameState::AssetLoading)
         .add_plugins(DefaultPlugins)
         .add_system(use_my_assets.in_schedule(OnEnter(GameState::Next)))
         .run();
@@ -353,9 +357,9 @@ Any field in an asset collection without any attribute is required to implement 
 
 ## Initializing FromWorld resources
 
-In situations where you would like to prepare other resources based on your loaded asset collections you can use `LoadingState::init_resource` to initialize `FromWorld` resources. See [init_resource.rs](/bevy_asset_loader/examples/init_resource.rs) for an example that loads two images and then combines their pixel data into a third image.
+In situations where you would like to prepare other resources based on your loaded asset collections you can use `App::init_resource_after_loading_state` to initialize `FromWorld` resources. See [init_resource.rs](/bevy_asset_loader/examples/init_resource.rs) for an example that loads two images and then combines their pixel data into a third image.
 
-`LoadingState::init_resource` does the same as Bevy's `App::init_resource`, but at a different point in time. While Bevy inserts your resources at the very beginning, `bevy_asset_loader` will initialize them only after your loaded asset collections are inserted. That means you can use your asset collections in the `FromWorld` implementation.
+`App::init_resource_after_loading_state` does the same as Bevy's `App::init_resource`, but at a different point in time. While Bevy inserts your resources at the very beginning, `bevy_asset_loader` will initialize them only after your loaded asset collections are inserted. That means you can use your asset collections in the `FromWorld` implementation.
 
 ## Progress tracking
 
@@ -365,7 +369,7 @@ See [`progress_tracking`](/bevy_asset_loader/examples/progress_tracking.rs) for 
 
 ### A note on system ordering
 
-The loading state runs in a single exclusive system `at_start`. This means that any parallel system in the loading state will always run after all asset handles have been checked for their status. You can thus read the current progress in each frame in a parallel system without worrying about frame lag.
+The loading state runs in a base set between `CoreSet::StateTransitions` and `CoreSet::Update`. This means that systems running in `CoreSet::Update` can already see the reported progress of all tracked asset collections for the current frame.
 
 ## Failure state
 
