@@ -47,7 +47,7 @@ fn main() {
         )
         .add_state::<GameState>()
         .add_plugins(DefaultPlugins)
-        .add_system_set(SystemSet::on_enter(GameState::Next).with_system(use_my_assets))
+        .add_system(use_my_assets.in_schedule(OnEnter(GameState::Next)))
         .run();
 }
 

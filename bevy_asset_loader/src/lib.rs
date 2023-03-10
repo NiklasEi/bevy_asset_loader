@@ -17,17 +17,15 @@
 //! #       .add_plugins(MinimalPlugins)
 //! #       .init_resource::<iyes_progress::ProgressCounter>()
 //! #       .add_plugin(AssetPlugin::default())
+//!         .add_state::<GameState>()
 //!         .add_loading_state(
 //!             LoadingState::new(GameState::Loading)
 //!                 .continue_to_state(GameState::Next)
-//!                 .with_collection::<AudioAssets>()
-//!                 .with_collection::<ImageAssets>()
 //!         )
-//!         .add_state::<GameState>()
-//!         .add_system_set(SystemSet::on_update(GameState::Next)
-//!             .with_system(use_asset_handles)
-//!         )
-//! #       .set_runner(|mut app| app.schedule.run(&mut app.world))
+//!         .add_collection_to_loading_state::<_, AudioAssets>(GameState::Loading)
+//!         .add_collection_to_loading_state::<_, ImageAssets>(GameState::Loading)
+//!         .add_system(use_asset_handles.run_if(in_state(GameState::Next)))
+//! #       .set_runner(|mut app| app.update())
 //!         .run();
 //! }
 //!
