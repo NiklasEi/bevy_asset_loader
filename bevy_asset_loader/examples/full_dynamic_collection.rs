@@ -6,17 +6,17 @@ use bevy_asset_loader::prelude::*;
 
 fn main() {
     App::new()
+        .add_state::<MyStates>()
         .add_plugins(DefaultPlugins)
         .add_loading_state(
-            LoadingState::new(MyStates::AssetLoading)
-                .continue_to_state(MyStates::Next)
-                .with_dynamic_collections::<StandardDynamicAssetCollection>(vec![
-                    "full_dynamic_collection.assets.ron",
-                ])
-                .with_collection::<MyAssets>(),
+            LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
         )
-        .add_state(MyStates::AssetLoading)
-        .add_system_set(SystemSet::on_update(MyStates::Next).with_system(expectations))
+        .add_dynamic_collection_to_loading_state::<_, StandardDynamicAssetCollection>(
+            MyStates::AssetLoading,
+            "full_dynamic_collection.assets.ron",
+        )
+        .add_collection_to_loading_state::<_, MyAssets>(MyStates::AssetLoading)
+        .add_system(expectations.run_if(in_state(MyStates::Next)))
         .run();
 }
 
@@ -90,7 +90,7 @@ fn expectations(
     texture_atlases: Res<Assets<TextureAtlas>>,
     mut quit: EventWriter<AppExit>,
 ) {
-    println!("Done loading the collection. Checking expectations...");
+    info!("Done loading the collection. Checking expectations...");
 
     assert_eq!(
         asset_server.get_load_state(assets.single_file.clone()),
@@ -214,13 +214,14 @@ fn expectations(
     assert_eq!(assets.optional_files_untyped, None);
     assert_eq!(assets.optional_files_typed, None);
 
-    println!("Everything looks good!");
-    println!("Quitting the application...");
+    info!("Everything looks good!");
+    info!("Quitting the application...");
     quit.send(AppExit);
 }
 
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
 enum MyStates {
+    #[default]
     AssetLoading,
     Next,
 }

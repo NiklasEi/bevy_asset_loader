@@ -8,19 +8,18 @@ use bevy_asset_loader::loading_state::{LoadingState, LoadingStateAppExt};
 #[cfg(all(
     not(feature = "2d"),
     not(feature = "3d"),
-    not(feature = "progress_tracking"),
-    not(feature = "stageless")
+    not(feature = "progress_tracking")
 ))]
 #[test]
 fn continues_without_collection() {
     App::new()
-        .add_state(MyStates::Load)
+        .add_state::<MyStates>()
         .add_plugins(MinimalPlugins)
         .add_plugin(AssetPlugin::default())
         .add_loading_state(LoadingState::new(MyStates::Load).continue_to_state(MyStates::Next))
         .init_resource::<TestState>()
-        .add_system_set(SystemSet::on_update(MyStates::Load).with_system(expect))
-        .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(exit))
+        .add_system(expect.run_if(in_state(MyStates::Load)))
+        .add_system(exit.in_schedule(OnEnter(MyStates::Next)))
         .run();
 }
 
@@ -42,12 +41,13 @@ struct TestState {
 
 impl Default for TestState {
     fn default() -> Self {
-        TestState { wait_frames: 1 }
+        TestState { wait_frames: 4 }
     }
 }
 
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
 enum MyStates {
+    #[default]
     Load,
     Next,
 }

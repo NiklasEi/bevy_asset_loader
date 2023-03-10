@@ -1,23 +1,22 @@
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 
-/// This example demonstrates how you can use [`LoadingState::init_resource`] to initialize
+/// This example demonstrates how you can use [`App::init_resource_after_loading_state`] to initialize
 /// assets implementing [`FromWorld`] after your collections are inserted into the ECS.
 ///
 /// In this showcase we load two images in an [`AssetCollection`] and then combine
 /// them by adding up their pixel data.
 fn main() {
     App::new()
+        .add_state::<MyStates>()
         .add_loading_state(
-            LoadingState::new(MyStates::AssetLoading)
-                .continue_to_state(MyStates::Next)
-                .with_collection::<ImageAssets>()
-                .init_resource::<CombinedImage>(),
+            LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
         )
-        .add_state(MyStates::AssetLoading)
-        .insert_resource(Msaa { samples: 1 })
+        .add_collection_to_loading_state::<_, ImageAssets>(MyStates::AssetLoading)
+        .init_resource_after_loading_state::<_, CombinedImage>(MyStates::AssetLoading)
+        .insert_resource(Msaa::Off)
         .add_plugins(DefaultPlugins)
-        .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(draw))
+        .add_system(draw.in_schedule(OnEnter(MyStates::Next)))
         .run();
 }
 
@@ -84,8 +83,9 @@ fn draw(
     });
 }
 
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
 enum MyStates {
+    #[default]
     AssetLoading,
     Next,
 }

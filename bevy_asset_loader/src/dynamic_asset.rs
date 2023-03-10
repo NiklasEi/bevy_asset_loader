@@ -3,7 +3,7 @@ use std::any::TypeId;
 use std::fmt::Debug;
 
 use bevy::asset::{AssetServer, HandleUntyped};
-use bevy::ecs::schedule::StateData;
+use bevy::ecs::schedule::States;
 use bevy::ecs::system::Resource;
 use bevy::ecs::world::World;
 use std::marker::PhantomData;
@@ -60,7 +60,7 @@ pub trait DynamicAssetCollection {
 
 /// Resource keeping track of dynamic asset collection files for different loading states
 #[derive(Resource, Debug)]
-pub struct DynamicAssetCollections<State: StateData> {
+pub struct DynamicAssetCollections<State: States> {
     /// Dynamic asset collection files for different loading states.
     ///
     /// The file lists get loaded and emptied at the beginning of the loading states.
@@ -69,7 +69,7 @@ pub struct DynamicAssetCollections<State: StateData> {
     pub(crate) _marker: PhantomData<State>,
 }
 
-impl<State: StateData> Default for DynamicAssetCollections<State> {
+impl<State: States> Default for DynamicAssetCollections<State> {
     fn default() -> Self {
         DynamicAssetCollections {
             files: HashMap::default(),

@@ -7,38 +7,31 @@ const PLAYER_SPEED: f32 = 5.;
 /// load them from a file instead ().
 fn main() {
     App::new()
+        .add_state::<MyStates>()
         .add_plugins(DefaultPlugins)
         .add_loading_state(
-            LoadingState::new(MyStates::AssetLoading)
-                .continue_to_state(MyStates::Next)
-                // This collection has a dynamic asset where the file path is resolved at run time
-                // and one optional image asset for the background.
-                // => see the ImageAssets definition below
-                .with_collection::<ImageAssets>()
-                .with_collection::<AudioAssets>(),
+            LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
         )
+        // This collection has a dynamic asset where the file path is resolved at run time
+        // and one optional image asset for the background.
+        // => see the ImageAssets definition below
+        .add_collection_to_loading_state::<_, ImageAssets>(MyStates::AssetLoading)
+        .add_collection_to_loading_state::<_, AudioAssets>(MyStates::AssetLoading)
         .add_loading_state(
-            LoadingState::new(MyStates::MenuAssetLoading)
-                .continue_to_state(MyStates::Menu)
-                .with_collection::<FontAssets>(),
+            LoadingState::new(MyStates::MenuAssetLoading).continue_to_state(MyStates::Menu),
         )
-        .add_state(MyStates::MenuAssetLoading)
-        .insert_resource(Msaa { samples: 1 })
+        .add_collection_to_loading_state::<_, FontAssets>(MyStates::MenuAssetLoading)
+        .insert_resource(Msaa::Off)
         .insert_resource(ShowBackground(false))
-        .add_system_set(
-            SystemSet::on_enter(MyStates::Next)
-                .with_system(spawn_player_and_tree)
-                .with_system(play_background_audio),
+        .add_systems(
+            (spawn_player_and_tree, play_background_audio).in_schedule(OnEnter(MyStates::Next)),
         )
-        .add_system_set(SystemSet::on_enter(MyStates::Menu).with_system(menu))
-        .add_system_set(
-            SystemSet::on_update(MyStates::Menu)
-                .with_system(character_setup)
-                .with_system(update_menu),
-        )
-        .add_system_set(SystemSet::on_exit(MyStates::Menu).with_system(exit_menu))
-        .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(render_optional_background))
-        .add_system_set(SystemSet::on_update(MyStates::Next).with_system(move_player))
+        .add_system(menu.in_schedule(OnEnter(MyStates::Menu)))
+        .add_system(character_setup.run_if(in_state(MyStates::Menu)))
+        .add_system(update_menu.run_if(in_state(MyStates::Menu)))
+        .add_system(exit_menu.in_schedule(OnExit(MyStates::Menu)))
+        .add_system(render_optional_background.in_schedule(OnEnter(MyStates::Next)))
+        .add_system(move_player.run_if(in_state(MyStates::Next)))
         .run();
 }
 
@@ -59,7 +52,7 @@ struct ImageAssets {
 // This system decides which file to load as the character sprite based on some player input
 fn character_setup(
     mut commands: Commands,
-    mut state: ResMut<State<MyStates>>,
+    mut state: ResMut<NextState<MyStates>>,
     mut dynamic_assets: ResMut<DynamicAssets>,
     mut show_background: ResMut<ShowBackground>,
     mouse_input: Res<Input<MouseButton>>,
@@ -98,9 +91,7 @@ fn character_setup(
             }),
         );
     }
-    state
-        .set(MyStates::AssetLoading)
-        .expect("Failed to change state");
+    state.set(MyStates::AssetLoading);
 }
 
 #[derive(Resource)]
@@ -173,8 +164,9 @@ fn move_player(input: Res<Input<KeyCode>>, mut player: Query<&mut Transform, Wit
     }
 }
 
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
 enum MyStates {
+    #[default]
     MenuAssetLoading,
     Menu,
     AssetLoading,
@@ -213,10 +205,8 @@ fn menu(mut commands: Commands, font_assets: Res<FontAssets>) {
                             color: Color::rgb(1., 1., 1.),
                         },
                     }],
-                    alignment: TextAlignment {
-                        vertical: VerticalAlign::Center,
-                        horizontal: HorizontalAlign::Center,
-                    },
+                    alignment: TextAlignment::Center,
+                    ..Default::default()
                 },
                 ..Default::default()
             });
@@ -230,10 +220,8 @@ fn menu(mut commands: Commands, font_assets: Res<FontAssets>) {
                             color: Color::rgb(1., 1., 1.),
                         },
                     }],
-                    alignment: TextAlignment {
-                        vertical: VerticalAlign::Center,
-                        horizontal: HorizontalAlign::Center,
-                    },
+                    alignment: TextAlignment::Center,
+                    ..Default::default()
                 },
                 ..Default::default()
             }).insert(BackgroundText);

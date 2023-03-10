@@ -6,22 +6,22 @@ use bevy_common_assets::ron::RonAssetPlugin;
 
 fn main() {
     App::new()
-        .insert_resource(Msaa { samples: 1 })
+        .insert_resource(Msaa::Off)
         .add_plugins(DefaultPlugins)
         // We need to make sure that our dynamic asset collections can be loaded from the asset file
         .add_plugin(RonAssetPlugin::<CustomDynamicAssetCollection>::new(&[
             "my-assets.ron",
         ]))
+        .add_state::<MyStates>()
         .add_loading_state(
-            LoadingState::new(MyStates::AssetLoading)
-                .continue_to_state(MyStates::Next)
-                .with_dynamic_collections::<CustomDynamicAssetCollection>(vec![
-                    "custom.my-assets.ron",
-                ])
-                .with_collection::<MyAssets>(),
+            LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
         )
-        .add_state(MyStates::AssetLoading)
-        .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(render_stuff))
+        .add_dynamic_collection_to_loading_state::<_, CustomDynamicAssetCollection>(
+            MyStates::AssetLoading,
+            "custom.my-assets.ron",
+        )
+        .add_collection_to_loading_state::<_, MyAssets>(MyStates::AssetLoading)
+        .add_system(render_stuff.in_schedule(OnEnter(MyStates::Next)))
         .run();
 }
 
@@ -54,7 +54,7 @@ fn render_stuff(mut commands: Commands, assets: Res<MyAssets>) {
 
     commands.spawn(Camera2dBundle {
         camera: Camera {
-            priority: 1,
+            order: 1,
             ..default()
         },
         camera_2d: Camera2d {
@@ -204,8 +204,9 @@ impl DynamicAssetCollection for CustomDynamicAssetCollection {
     }
 }
 
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
 enum MyStates {
+    #[default]
     AssetLoading,
     Next,
 }

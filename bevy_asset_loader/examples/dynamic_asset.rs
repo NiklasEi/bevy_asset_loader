@@ -6,24 +6,22 @@ use bevy_asset_loader::prelude::*;
 /// The assets loaded in this example are defined in `assets/dynamic_asset.assets`
 fn main() {
     App::new()
+        .add_state::<MyStates>()
         .add_plugins(DefaultPlugins)
         .add_loading_state(
-            LoadingState::new(MyStates::AssetLoading)
-                .continue_to_state(MyStates::Next)
-                .with_dynamic_collections::<StandardDynamicAssetCollection>(vec![
-                    "dynamic_asset.assets.ron",
-                ])
-                .with_collection::<ImageAssets>()
-                .with_collection::<AudioAssets>(),
+            LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
         )
-        .add_state(MyStates::AssetLoading)
-        .insert_resource(Msaa { samples: 1 })
-        .add_system_set(
-            SystemSet::on_enter(MyStates::Next)
-                .with_system(spawn_player_and_tree)
-                .with_system(play_background_audio),
+        .add_dynamic_collection_to_loading_state::<_, StandardDynamicAssetCollection>(
+            MyStates::AssetLoading,
+            "dynamic_asset.assets.ron",
         )
-        .add_system_set(SystemSet::on_update(MyStates::Next).with_system(animate_sprite_system))
+        .add_collection_to_loading_state::<_, ImageAssets>(MyStates::AssetLoading)
+        .add_collection_to_loading_state::<_, AudioAssets>(MyStates::AssetLoading)
+        .insert_resource(Msaa::Off)
+        .add_systems(
+            (spawn_player_and_tree, play_background_audio).in_schedule(OnEnter(MyStates::Next)),
+        )
+        .add_system(animate_sprite_system.run_if(in_state(MyStates::Next)))
         .run();
 }
 
@@ -72,8 +70,9 @@ fn play_background_audio(audio_assets: Res<AudioAssets>, audio: Res<Audio>) {
     audio.play(audio_assets.background.clone());
 }
 
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
 enum MyStates {
+    #[default]
     AssetLoading,
     Next,
 }

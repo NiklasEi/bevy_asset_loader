@@ -9,9 +9,7 @@ This [Bevy][bevy] plugin reduces boilerplate for handling game assets. The crate
 
 In most cases you will want to load your asset collections during loading states (think loading screens). During such a state, all assets are loaded and their loading process is observed. Only when asset collections can be build with fully loaded asset handles, the collections are inserted as resources. If you do not want to use a loading state, asset collections can still result in cleaner code and improved maintainability (see the ["usage without a loading state"](#usage-without-a-loading-state) section).
 
-_`bevy_asset_loader` supports `iyes_loopless` states with the [`stageless`](#stageless-support) feature._
-
-_The `main` branch and the latest release support Bevy version `0.9` (see [version table](#compatible-bevy-versions))_
+_The `main` branch and the latest release support Bevy version `0.10` (see [version table](#compatible-bevy-versions))_
 
 ## Loading states
 
@@ -20,14 +18,18 @@ A loading state is responsible for managing the loading process during a configu
 If your `LoadingState` is set up, you can start your game logic from the next state and use the asset collections as resources in your systems. The loading state guarantees that all handles in your collections are fully loaded by the time the next state starts.
 
 ```rust ignore
-app.add_loading_state(
-    LoadingState::new(GameState::Loading)
-        .continue_to_state(GameState::Next)
-        .with_collection::<MyAssets>()
-)
+app
+    .add_state::<GameState>()
+    .add_loading_state(
+        LoadingState::new(GameState::Loading)
+            .continue_to_state(GameState::Next)
+    )
+    .add_collection_to_loading_state::<_, MyAssets>(GameState::Loading)
 ```
 
-*Note that you can configure the same loading state in multiple places (e.g. in different plugins). All collections added anywhere in your application will be considered.*
+Your Bevy state needs to be added to the application before you can add a loading state.
+
+You can add collections to a loading state in multiple places (e.g. in different plugins). All collections added anywhere in your application will be loaded. Important is, that the loading state itself is added to the application before you try to add any collections to it.
 
 ## Compile time vs. Run time (dynamic) assets
 
@@ -42,14 +44,14 @@ use bevy_asset_loader::prelude::*;
 
 fn main() {
     App::new()
+        .add_state::<GameState>()
         .add_loading_state(
             LoadingState::new(GameState::AssetLoading)
                 .continue_to_state(GameState::Next)
-                .with_collection::<MyAssets>()
         )
-        .add_state(GameState::AssetLoading)
+        .add_collection_to_loading_state::<_, MyAssets>(GameState::AssetLoading)
         .add_plugins(DefaultPlugins)
-        .add_system_set(SystemSet::on_enter(GameState::Next).with_system(use_my_assets))
+        .add_system(use_my_assets.in_schedule(OnEnter(GameState::Next)))
         .run();
 }
 
@@ -65,8 +67,9 @@ fn use_my_assets(_my_assets: Res<MyAssets>) {
     // do something using the asset handles from the resource
 }
 
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
 enum GameState {
+    #[default]
     AssetLoading,
     Next,
 }
@@ -354,9 +357,9 @@ Any field in an asset collection without any attribute is required to implement 
 
 ## Initializing FromWorld resources
 
-In situations where you would like to prepare other resources based on your loaded asset collections you can use `LoadingState::init_resource` to initialize `FromWorld` resources. See [init_resource.rs](/bevy_asset_loader/examples/init_resource.rs) for an example that loads two images and then combines their pixel data into a third image.
+In situations where you would like to prepare other resources based on your loaded asset collections you can use `App::init_resource_after_loading_state` to initialize `FromWorld` resources. See [init_resource.rs](/bevy_asset_loader/examples/init_resource.rs) for an example that loads two images and then combines their pixel data into a third image.
 
-`LoadingState::init_resource` does the same as Bevy's `App::init_resource`, but at a different point in time. While Bevy inserts your resources at the very beginning, `bevy_asset_loader` will initialize them only after your loaded asset collections are inserted. That means you can use your asset collections in the `FromWorld` implementation.
+`App::init_resource_after_loading_state` does the same as Bevy's `App::init_resource`, but at a different point in time. While Bevy inserts your resources at the very beginning, `bevy_asset_loader` will initialize them only after your loaded asset collections are inserted. That means you can use your asset collections in the `FromWorld` implementation.
 
 ## Progress tracking
 
@@ -364,11 +367,9 @@ With the feature `progress_tracking`, you can integrate with [`iyes_progress`][i
 
 See [`progress_tracking`](/bevy_asset_loader/examples/progress_tracking.rs) for a complete example.
 
-When using `stageless` feature, you need to add `progress_tracking_stageless` feature in addition to `progress_tracking`.
-
 ### A note on system ordering
 
-The loading state runs in a single exclusive system `at_start`. This means that any parallel system in the loading state will always run after all asset handles have been checked for their status. You can thus read the current progress in each frame in a parallel system without worrying about frame lag.
+The loading state runs in a base set between `CoreSet::StateTransitions` and `CoreSet::Update`. This means that systems running in `CoreSet::Update` can already see the reported progress of all tracked asset collections for the current frame.
 
 ## Failure state
 
@@ -401,62 +402,20 @@ struct MyAssets {
 }
 ```
 
-## Stageless support
-
-`bevy_asset_loader` can integrate with `iyes_loopless`, which implements ideas from Bevy's [Stageless RFC](https://github.com/bevyengine/rfcs/pull/45). The integration can be enabled with the `stageless` feature.
-
-Currently, you must initialize the `iyes_loopless` state before you initialize your `AssetLoader`. This is a limitation due to the way `iyes_loopless` works. The following is a minimal example of integrating `bevy_asset_loader` with `iyes_loopless`:
-
-```rust no_run
-use bevy::prelude::*;
-use bevy_asset_loader::prelude::*;
-use iyes_loopless::prelude::*;
-
-fn main() {
-    App::new()
-        .add_loopless_state(MyStates::AssetLoading)
-        .add_loading_state(
-          LoadingState::new(MyStates::AssetLoading)
-            .continue_to_state(MyStates::Next)
-            .with_collection::<AudioAssets>()
-        )
-        .add_plugins(DefaultPlugins)
-        .add_enter_system(MyStates::Next, use_my_assets)
-        .run();
-}
-
-#[derive(AssetCollection, Resource)]
-struct AudioAssets {
-    #[asset(path = "audio/background.ogg")]
-    background: Handle<AudioSource>,
-}
-
-fn use_my_assets(_audio_assets: Res<AudioAssets>) {
-  // do something using the asset handles from the resources
-}
-
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
-enum MyStates {
-    AssetLoading,
-    Next,
-}
-```
-
-When using stageless with the `progress_tracking` feature, remember to also enable the `progress_tracking_stageless` feature. See [the stageless examples](/bevy_asset_loader/examples/README.md#examples-for-stageless) for different use cases with `iyes_loopless` integration.
-
 ## Compatible Bevy versions
 
 The main branch is compatible with the latest Bevy release, while the branch `bevy_main` tries to track the `main` branch of Bevy (PRs updating the tracked commit are welcome).
 
 Compatibility of `bevy_asset_loader` versions:
 | `bevy_asset_loader` | `bevy` |
-| :--                 |  :--   |
+| :--                 | :--    |
+| `0.15`              | `0.10` |
 | `0.14`              | `0.9`  |
 | `0.12` - `0.13`     | `0.8`  |
 | `0.10` - `0.11`     | `0.7`  |
 | `0.8` - `0.9`       | `0.6`  |
 | `0.1` - `0.7`       | `0.5`  |
-| `main`              | `0.8`  |
+| `main`              | `0.10` |
 | `bevy_main`         | `main` |
 
 ## License

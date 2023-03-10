@@ -9,24 +9,23 @@ use bevy_asset_loader::loading_state::{LoadingState, LoadingStateAppExt};
 #[cfg(all(
     not(feature = "2d"),
     not(feature = "3d"),
-    not(feature = "progress_tracking"),
-    not(feature = "stageless")
+    not(feature = "progress_tracking")
 ))]
 #[test]
 fn continues_to_failure_state() {
     App::new()
-        .add_state(MyStates::Load)
+        .add_state::<MyStates>()
         .add_plugins(MinimalPlugins)
         .add_plugin(AssetPlugin::default())
         .add_loading_state(
             LoadingState::new(MyStates::Load)
                 .continue_to_state(MyStates::Next)
-                .on_failure_continue_to_state(MyStates::Error)
-                .with_collection::<Audio>(),
+                .on_failure_continue_to_state(MyStates::Error),
         )
-        .add_system_set(SystemSet::on_update(MyStates::Load).with_system(timeout))
-        .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(fail))
-        .add_system_set(SystemSet::on_enter(MyStates::Error).with_system(exit))
+        .add_collection_to_loading_state::<_, Audio>(MyStates::Load)
+        .add_system(timeout.run_if(in_state(MyStates::Load)))
+        .add_system(fail.in_schedule(OnEnter(MyStates::Next)))
+        .add_system(exit.in_schedule(OnEnter(MyStates::Error)))
         .run();
 }
 
@@ -50,8 +49,9 @@ struct Audio {
     no_loader_for_ogg_files: Handle<AudioSource>,
 }
 
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
 enum MyStates {
+    #[default]
     Load,
     Error,
     Next,

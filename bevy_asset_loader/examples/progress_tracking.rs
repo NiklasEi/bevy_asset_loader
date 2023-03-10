@@ -3,31 +3,31 @@ use bevy::asset::LoadState;
 use bevy::diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin};
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
-use iyes_progress::{ProgressCounter, ProgressPlugin};
+use iyes_progress::{ProgressCounter, ProgressPlugin, TrackedProgressSet};
 
 /// This example shows how to track the loading progress of your collections using `iyes_progress`
 ///
 /// Running it will print the current progress for every frame. The five assets from
 /// the two collections will be loaded rather quickly (one/a few frames). The final task
-/// completes after one second. At that point, `iyes_progress` will continue to the next state
+/// completes after four seconds. At that point, `iyes_progress` will continue to the next state
 /// and the app will terminate.
 fn main() {
     App::new()
-        .add_loading_state(
-            LoadingState::new(MyStates::AssetLoading)
-                .with_collection::<TextureAssets>()
-                .with_collection::<AudioAssets>(),
-        )
-        .add_state(MyStates::AssetLoading)
+        .add_state::<MyStates>()
+        .add_loading_state(LoadingState::new(MyStates::AssetLoading))
+        .add_collection_to_loading_state::<_, TextureAssets>(MyStates::AssetLoading)
+        .add_collection_to_loading_state::<_, AudioAssets>(MyStates::AssetLoading)
         .add_plugins(DefaultPlugins)
         .add_plugin(FrameTimeDiagnosticsPlugin::default())
         // track progress during `MyStates::AssetLoading` and continue to `MyStates::Next` when progress is completed
         .add_plugin(ProgressPlugin::new(MyStates::AssetLoading).continue_to(MyStates::Next))
         // gracefully quit the app when `MyStates::Next` is reached
-        .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(expect))
-        .add_system_set(
-            SystemSet::on_update(MyStates::AssetLoading)
-                .with_system(track_fake_long_task.before(print_progress)),
+        .add_system(expect.in_schedule(OnEnter(MyStates::Next)))
+        .add_system(
+            track_fake_long_task
+                .before(print_progress)
+                .in_set(TrackedProgressSet)
+                .run_if(in_state(MyStates::AssetLoading)),
         )
         .add_system(print_progress)
         .run();
@@ -36,7 +36,7 @@ fn main() {
 // Time in seconds to complete a custom long-running task.
 // If assets are loaded earlier, the current state will not
 // be changed until the 'fake long task' is completed (thanks to 'iyes_progress')
-const DURATION_LONG_TASK_IN_SECS: f64 = 2.0;
+const DURATION_LONG_TASK_IN_SECS: f64 = 4.0;
 
 #[derive(AssetCollection, Resource)]
 struct AudioAssets {
@@ -121,8 +121,9 @@ fn print_progress(
     }
 }
 
-#[derive(Component, Clone, Eq, PartialEq, Debug, Hash, Copy)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
 enum MyStates {
+    #[default]
     AssetLoading,
     Next,
 }

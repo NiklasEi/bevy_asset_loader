@@ -1,4 +1,4 @@
-#![allow(dead_code)]
+#![allow(dead_code, unused_imports)]
 
 use bevy::app::AppExit;
 use bevy::asset::AssetPlugin;
@@ -7,28 +7,23 @@ use bevy::prelude::*;
 use bevy_asset_loader::asset_collection::AssetCollection;
 use bevy_asset_loader::loading_state::{LoadingState, LoadingStateAppExt};
 
-#[cfg_attr(
-    all(
-        not(feature = "2d"),
-        not(feature = "3d"),
-        not(feature = "progress_tracking"),
-        not(feature = "stageless")
-    ),
-    test
-)]
+#[cfg(all(
+    not(feature = "2d"),
+    not(feature = "3d"),
+    not(feature = "progress_tracking")
+))]
+#[test]
 fn can_run_without_next_state() {
     App::new()
-        .add_state(MyStates::Load)
+        .add_state::<MyStates>()
         .add_plugins(MinimalPlugins)
         .add_plugin(AssetPlugin::default())
         .add_plugin(AudioPlugin::default())
-        .add_loading_state(LoadingState::new(MyStates::Load).with_collection::<MyAssets>())
+        .add_loading_state(LoadingState::new(MyStates::Load))
+        .add_collection_to_loading_state::<_, MyAssets>(MyStates::Load)
         .init_resource::<TestState>()
-        .add_system_set(
-            SystemSet::on_update(MyStates::Load)
-                .with_system(timeout)
-                .with_system(expect),
-        )
+        .add_system(expect.run_if(in_state(MyStates::Load)))
+        .add_system(timeout.run_if(in_state(MyStates::Load)))
         .run();
 }
 
@@ -72,7 +67,8 @@ struct MyAssets {
     background: Handle<AudioSource>,
 }
 
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
 enum MyStates {
+    #[default]
     Load,
 }

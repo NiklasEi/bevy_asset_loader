@@ -6,14 +6,13 @@ use bevy_asset_loader::prelude::*;
 
 fn main() {
     App::new()
+        .add_state::<MyStates>()
         .add_plugins(DefaultPlugins)
         .add_loading_state(
-            LoadingState::new(MyStates::AssetLoading)
-                .continue_to_state(MyStates::Next)
-                .with_collection::<MyAssets>(),
+            LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
         )
-        .add_state(MyStates::AssetLoading)
-        .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(expectations))
+        .add_collection_to_loading_state::<_, MyAssets>(MyStates::AssetLoading)
+        .add_system(expectations.in_schedule(OnEnter(MyStates::Next)))
         .run();
 }
 
@@ -71,7 +70,7 @@ fn expectations(
     texture_atlases: Res<Assets<TextureAtlas>>,
     mut quit: EventWriter<AppExit>,
 ) {
-    println!("Done loading the collection. Checking expectations...");
+    info!("Done loading the collection. Checking expectations...");
 
     assert_eq!(
         asset_server.get_load_state(assets.single_file.clone()),
@@ -193,8 +192,8 @@ fn expectations(
         );
     }
 
-    println!("Everything looks good!");
-    println!("Quitting the application...");
+    info!("Everything looks good!");
+    info!("Quitting the application...");
     quit.send(AppExit);
 }
 
@@ -215,8 +214,9 @@ impl<const R: u8, const G: u8, const B: u8, const A: u8> FromWorld
     }
 }
 
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
 enum MyStates {
+    #[default]
     AssetLoading,
     Next,
 }

@@ -68,7 +68,7 @@ impl DynamicAsset for StandardDynamicAsset {
             StandardDynamicAsset::File { path } => vec![asset_server.load_untyped(path)],
             StandardDynamicAsset::Folder { path } => asset_server
                 .load_folder(path)
-                .unwrap_or_else(|_| panic!("Failed to load '{}' as a folder", path)),
+                .unwrap_or_else(|_| panic!("Failed to load '{path}' as a folder")),
             StandardDynamicAsset::Files { paths } => paths
                 .iter()
                 .map(|path| asset_server.load_untyped(path))
@@ -139,7 +139,7 @@ impl DynamicAsset for StandardDynamicAsset {
             StandardDynamicAsset::Folder { path } => Ok(DynamicAssetType::Collection(
                 asset_server
                     .load_folder(path)
-                    .unwrap_or_else(|_| panic!("Failed to load '{}' as a folder", path)),
+                    .unwrap_or_else(|_| panic!("Failed to load '{path}' as a folder")),
             )),
             StandardDynamicAsset::Files { paths } => Ok(DynamicAssetType::Collection(
                 paths
