@@ -3,7 +3,7 @@ use bevy::asset::LoadState;
 use bevy::diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin};
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
-use iyes_progress::{ProgressCounter, ProgressPlugin, TrackedProgressSet};
+use iyes_progress::{Progress, ProgressCounter, ProgressPlugin, ProgressSystem};
 
 /// This example shows how to track the loading progress of your collections using `iyes_progress`
 ///
@@ -25,8 +25,8 @@ fn main() {
         .add_system(expect.in_schedule(OnEnter(MyStates::Next)))
         .add_system(
             track_fake_long_task
+                .track_progress()
                 .before(print_progress)
-                .in_set(TrackedProgressSet)
                 .run_if(in_state(MyStates::AssetLoading)),
         )
         .add_system(print_progress)
@@ -57,12 +57,12 @@ struct TextureAssets {
     female_adventurer: Handle<TextureAtlas>,
 }
 
-fn track_fake_long_task(time: Res<Time>, progress: Res<ProgressCounter>) {
+fn track_fake_long_task(time: Res<Time>) -> Progress {
     if time.elapsed_seconds_f64() > DURATION_LONG_TASK_IN_SECS {
         info!("Long task is completed");
-        progress.manually_track(true.into());
+        true.into()
     } else {
-        progress.manually_track(false.into());
+        false.into()
     }
 }
 
