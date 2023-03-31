@@ -402,6 +402,10 @@ struct MyAssets {
 }
 ```
 
+## Unloading assets
+
+Bevy unloads an asset when there are no strong asset handles left pointing to the asset. An `AssetCollection` stores strong handles and ensures that assets contained in it are not removed from memory. If you want to unload assets, you need to remove any `AssetCollection` resource that holds handles pointing to those assets. You, for example, could do this when leaving the state that needed the collection.
+
 ## Compatible Bevy versions
 
 The main branch is compatible with the latest Bevy release, while the branch `bevy_main` tries to track the `main` branch of Bevy (PRs updating the tracked commit are welcome).
