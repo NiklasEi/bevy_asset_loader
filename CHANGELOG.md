@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.16.0
+- Remove features coming from optional dependencies
+
 ## v0.15.0
 - Option to load folders as maps of path to handle (resolves [#32](https://github.com/NiklasEi/bevy_asset_loader/issues/32))
 - Changed the default file ending for standard dynamic asset files from `.assets` to `.assets.ron`
