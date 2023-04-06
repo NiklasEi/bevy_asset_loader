@@ -317,26 +317,23 @@ where
     /// ```
     #[allow(unused_mut)]
     pub fn build(mut self, app: &mut App) {
-        app.init_resource::<AssetLoaderConfiguration<S>>();
-        {
-            let mut asset_loader_configuration = app
-                .world
-                .get_resource_mut::<AssetLoaderConfiguration<S>>()
-                .unwrap();
-            let mut loading_config = asset_loader_configuration
-                .state_configurations
-                .remove(&self.loading_state)
-                .unwrap_or_default();
-            if self.next_state.is_some() {
-                loading_config.next = self.next_state;
-            }
-            if self.failure_state.is_some() {
-                loading_config.failure = self.failure_state;
-            }
-            asset_loader_configuration
-                .state_configurations
-                .insert(self.loading_state.clone(), loading_config);
+        let mut asset_loader_configuration = AssetLoaderConfiguration::default();
+        let mut loading_config = asset_loader_configuration
+            .state_configurations
+            .remove(&self.loading_state)
+            .unwrap_or_default();
+        if self.next_state.is_some() {
+            loading_config.next = self.next_state;
         }
+        if self.failure_state.is_some() {
+            loading_config.failure = self.failure_state;
+        }
+        asset_loader_configuration
+            .state_configurations
+            .insert(self.loading_state.clone(), loading_config);
+
+        app.init_resource::<AssetLoaderConfiguration<S>>();
+
         app.init_resource::<State<InternalLoadingState>>();
         app.init_resource::<NextState<InternalLoadingState>>();
 
@@ -431,11 +428,11 @@ where
             );
         }
 
-        app.init_resource::<DynamicAssets>();
-        let mut dynamic_assets = app.world.get_resource_mut::<DynamicAssets>().unwrap();
+        let mut dynamic_assets = DynamicAssets::default();
         for (key, asset) in self.dynamic_assets {
             dynamic_assets.register_asset(key, asset);
         }
+        app.insert_resource(dynamic_assets);
     }
 }
 
