@@ -332,7 +332,7 @@ where
             .state_configurations
             .insert(self.loading_state.clone(), loading_config);
 
-        app.init_resource::<AssetLoaderConfiguration<S>>();
+        app.insert_resource(asset_loader_configuration);
 
         app.init_resource::<State<InternalLoadingState>>();
         app.init_resource::<NextState<InternalLoadingState>>();
