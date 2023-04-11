@@ -12,6 +12,7 @@ use bevy::ecs::system::Resource;
 use bevy::ecs::world::FromWorld;
 use bevy::utils::{default, HashMap, HashSet};
 use std::any::TypeId;
+use std::array::IntoIter;
 use std::marker::PhantomData;
 
 use crate::asset_collection::AssetCollection;
@@ -155,7 +156,7 @@ where
         }
     }
 
-    /// The [`LoadingState`] will set this Bevy [`State`](::bevy::ecs::schedule::State) after all asset collections
+    /// The [`LoadingState`] will set this Bevy [`State`](State) after all asset collections
     /// are loaded and inserted as resources.
     /// ```edition2021
     /// # use bevy_asset_loader::prelude::*;
@@ -202,7 +203,7 @@ where
         self
     }
 
-    /// The [`LoadingState`] will set this Bevy [`State`](::bevy::ecs::schedule::State) if an asset fails to load.
+    /// The [`LoadingState`] will set this Bevy [`State`](State) if an asset fails to load.
     /// ```edition2021
     /// # use bevy_asset_loader::prelude::*;
     /// # use bevy::prelude::*;
@@ -337,8 +338,8 @@ where
                 .state_configurations
                 .insert(self.loading_state.clone(), loading_config);
         }
-        app.init_resource::<State<InternalLoadingState>>();
-        app.init_resource::<NextState<InternalLoadingState>>();
+        app.init_resource::<State<InternalLoadingState<S>>>();
+        app.init_resource::<NextState<InternalLoadingState<S>>>();
 
         app.init_resource::<DynamicAssetCollections<S>>();
         #[cfg(feature = "standard_dynamic_assets")]
@@ -375,7 +376,7 @@ where
                 resume_to_loading_asset_collections::<S>
                     .in_schedule(loading_state_schedule.clone())
                     .in_set(InternalLoadingStateSet::ResumeDynamicAssetCollections),
-                initialize_loading_state
+                initialize_loading_state::<S>
                     .in_schedule(loading_state_schedule.clone())
                     .in_set(InternalLoadingStateSet::Initialize),
                 resume_to_finalize::<S>
@@ -385,7 +386,7 @@ where
                     .in_schedule(loading_state_schedule.clone())
                     .in_set(InternalLoadingStateSet::Finalize),
             ))
-            .add_system(reset_loading_state.in_schedule(OnEnter(self.loading_state.clone())))
+            .add_system(reset_loading_state::<S>.in_schedule(OnEnter(self.loading_state.clone())))
             .configure_set(
                 LoadingStateSet(self.loading_state.clone())
                     .after(CoreSet::StateTransitions)
@@ -396,27 +397,27 @@ where
             loading_state_schedule
                 .configure_set(
                     InternalLoadingStateSet::Initialize
-                        .run_if(in_state(InternalLoadingState::Initialize)),
+                        .run_if(in_state(InternalLoadingState::<S>::Initialize)),
                 )
                 .configure_set(
                     InternalLoadingStateSet::CheckDynamicAssetCollections.run_if(in_state(
-                        InternalLoadingState::LoadingDynamicAssetCollections,
+                        InternalLoadingState::<S>::LoadingDynamicAssetCollections,
                     )),
                 )
                 .configure_set(
                     InternalLoadingStateSet::ResumeDynamicAssetCollections
                         .after(InternalLoadingStateSet::CheckDynamicAssetCollections)
                         .run_if(in_state(
-                            InternalLoadingState::LoadingDynamicAssetCollections,
+                            InternalLoadingState::<S>::LoadingDynamicAssetCollections,
                         )),
                 )
                 .configure_set(
                     InternalLoadingStateSet::CheckAssets
-                        .run_if(in_state(InternalLoadingState::LoadingAssets)),
+                        .run_if(in_state(InternalLoadingState::<S>::LoadingAssets)),
                 )
                 .configure_set(
                     InternalLoadingStateSet::Finalize
-                        .run_if(in_state(InternalLoadingState::Finalize)),
+                        .run_if(in_state(InternalLoadingState::<S>::Finalize)),
                 );
 
             #[cfg(feature = "progress_tracking")]
@@ -455,12 +456,12 @@ pub(crate) enum InternalLoadingStateSet {
 }
 
 #[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash)]
-pub(crate) struct OnEnterInternalLoadingState<S: States>(pub S, pub InternalLoadingState);
+pub(crate) struct OnEnterInternalLoadingState<S: States>(pub S, pub InternalLoadingState<S>);
 #[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash)]
 pub(crate) struct LoadingStateSchedule<S: States>(pub S);
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, States)]
-pub(crate) enum InternalLoadingState {
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+pub(crate) enum InternalLoadingState<S: States> {
     /// Starting point. Here it will be decided whether or not dynamic asset collections need to be loaded.
     #[default]
     Initialize,
@@ -471,7 +472,22 @@ pub(crate) enum InternalLoadingState {
     /// All collections are loaded and inserted. Time to e.g. run custom [insert_resource](bevy_asset_loader::AssetLoader::insert_resource).
     Finalize,
     /// A 'parking' state in case no next state is defined
-    Done,
+    Done(PhantomData<S>),
+}
+
+impl<S: States> States for InternalLoadingState<S> {
+    type Iter = IntoIter<Self, 5>;
+
+    fn variants() -> Self::Iter {
+        [
+            Self::Initialize,
+            Self::LoadingDynamicAssetCollections,
+            Self::LoadingAssets,
+            Self::Finalize,
+            Self::Done(PhantomData::default()),
+        ]
+        .into_iter()
+    }
 }
 
 /// This resource is used for handles from asset collections and loading dynamic asset collection files.

@@ -121,7 +121,7 @@ fn count_loaded_handles<S: States, Assets: AssetCollection>(cell: WorldCell) -> 
 
 pub(crate) fn resume_to_finalize<S: States>(
     loader_configuration: Res<AssetLoaderConfiguration<S>>,
-    mut internal_state: ResMut<NextState<InternalLoadingState>>,
+    mut internal_state: ResMut<NextState<InternalLoadingState<S>>>,
     user_state: Res<State<S>>,
     mut next_user_state: ResMut<NextState<S>>,
 ) {
@@ -138,8 +138,8 @@ pub(crate) fn resume_to_finalize<S: States>(
     }
 }
 
-pub(crate) fn initialize_loading_state(
-    mut loading_state: ResMut<NextState<InternalLoadingState>>,
+pub(crate) fn initialize_loading_state<S: States>(
+    mut loading_state: ResMut<NextState<InternalLoadingState<S>>>,
     #[cfg(feature = "progress_tracking")] mut progress_counter: ResMut<ProgressCounter>,
 ) {
     #[cfg(feature = "progress_tracking")]
@@ -151,7 +151,7 @@ pub(crate) fn finish_loading_state<S: States>(
     state: Res<State<S>>,
     mut next_state: ResMut<NextState<S>>,
     #[cfg(feature = "progress_tracking")] mut progress_counter: ResMut<ProgressCounter>,
-    mut loading_state: ResMut<NextState<InternalLoadingState>>,
+    mut loading_state: ResMut<NextState<InternalLoadingState<S>>>,
     asset_loader_configuration: Res<AssetLoaderConfiguration<S>>,
 ) {
     #[cfg(feature = "progress_tracking")]
@@ -167,10 +167,10 @@ pub(crate) fn finish_loading_state<S: States>(
         }
     }
 
-    loading_state.set(InternalLoadingState::Done);
+    loading_state.set(InternalLoadingState::Done(PhantomData::default()));
 }
 
-pub(crate) fn reset_loading_state(mut state: ResMut<State<InternalLoadingState>>) {
+pub(crate) fn reset_loading_state<S: States>(mut state: ResMut<State<InternalLoadingState<S>>>) {
     state.0 = InternalLoadingState::Initialize;
 }
 
@@ -182,25 +182,28 @@ pub(crate) fn run_loading_state<S: States>(world: &mut World) {
 pub fn apply_internal_state_transition<S: States>(world: &mut World) {
     let state = world.resource::<State<S>>().0.clone();
     if world
-        .resource::<NextState<InternalLoadingState>>()
+        .resource::<NextState<InternalLoadingState<S>>>()
         .0
         .is_some()
     {
         let entered_state = world
-            .resource_mut::<NextState<InternalLoadingState>>()
+            .resource_mut::<NextState<InternalLoadingState<S>>>()
             .0
             .take()
             .unwrap();
         let exited_state = mem::replace(
-            &mut world.resource_mut::<State<InternalLoadingState>>().0,
-            entered_state,
+            &mut world.resource_mut::<State<InternalLoadingState<S>>>().0,
+            entered_state.clone(),
         );
         trace!(
             "Switching internal state of loading state from {exited_state:?} to {entered_state:?}"
         );
         if world
             .resource::<Schedules>()
-            .contains(&OnEnterInternalLoadingState(state.clone(), entered_state))
+            .contains(&OnEnterInternalLoadingState(
+                state.clone(),
+                entered_state.clone(),
+            ))
         {
             world.run_schedule(OnEnterInternalLoadingState(state, entered_state));
         }

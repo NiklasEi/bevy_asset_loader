@@ -91,7 +91,7 @@ pub(crate) fn check_dynamic_asset_collections<S: States, C: DynamicAssetCollecti
 
 pub(crate) fn resume_to_loading_asset_collections<S: States>(
     state: Res<State<S>>,
-    mut loading_state: ResMut<NextState<InternalLoadingState>>,
+    mut loading_state: ResMut<NextState<InternalLoadingState<S>>>,
     asset_loader_config: Res<AssetLoaderConfiguration<S>>,
 ) {
     let config = asset_loader_config
