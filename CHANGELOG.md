@@ -1,5 +1,10 @@
 # Changelog
 
+- Fix running loading states in parallel states, meaning using multiple state types (resolves [#125](https://github.com/NiklasEi/bevy_asset_loader/issues/125))
+- Dynamic asset files can be loaded multiple times now
+  - This allows re-entering a loading state containing dynamic assets (see [#126](https://github.com/NiklasEi/bevy_asset_loader/issues/126))
+  - and loading dynamic assets in multiple states (see [#123](https://github.com/NiklasEi/bevy_asset_loader/issues/123))
+
 ## v0.16.0
 - Remove features coming from optional dependencies
 

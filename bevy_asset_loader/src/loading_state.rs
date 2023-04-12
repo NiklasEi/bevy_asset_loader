@@ -705,21 +705,9 @@ impl LoadingStateAppExt for App {
             .world
             .get_resource_mut::<DynamicAssetCollections<S>>()
             .unwrap();
-        let mut dynamic_collections_for_state = dynamic_asset_collections
-            .files
-            .remove(&loading_state)
-            .unwrap_or_default();
-        let mut dynamic_files = dynamic_collections_for_state
-            .remove(&TypeId::of::<C>())
-            .unwrap_or_default();
-        dynamic_files.push(file.to_owned());
-        dynamic_collections_for_state.insert(TypeId::of::<C>(), dynamic_files);
-        dynamic_asset_collections
-            .files
-            .insert(loading_state.clone(), dynamic_collections_for_state);
 
-        self.init_resource::<LoadingAssetHandles<C>>()
-            .add_system(load_dynamic_asset_collections::<S, C>.in_schedule(
+        if dynamic_asset_collections.register_file::<C>(loading_state.clone(), file) {
+            self.add_system(load_dynamic_asset_collections::<S, C>.in_schedule(
                 OnEnterInternalLoadingState(
                     loading_state.clone(),
                     InternalLoadingState::LoadingDynamicAssetCollections,
@@ -729,7 +717,10 @@ impl LoadingStateAppExt for App {
                 check_dynamic_asset_collections::<S, C>
                     .in_schedule(LoadingStateSchedule(loading_state))
                     .in_set(InternalLoadingStateSet::CheckDynamicAssetCollections),
-            )
+            );
+        }
+
+        self
     }
 
     fn init_resource_after_loading_state<S: States, A: Resource + FromWorld>(
