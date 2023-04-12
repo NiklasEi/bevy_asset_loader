@@ -13,11 +13,11 @@ use iyes_progress::{Progress, ProgressCounter, ProgressPlugin, ProgressSystem};
 /// and the app will terminate.
 fn main() {
     App::new()
+        .add_plugins(DefaultPlugins)
         .add_state::<MyStates>()
         .add_loading_state(LoadingState::new(MyStates::AssetLoading))
         .add_collection_to_loading_state::<_, TextureAssets>(MyStates::AssetLoading)
         .add_collection_to_loading_state::<_, AudioAssets>(MyStates::AssetLoading)
-        .add_plugins(DefaultPlugins)
         .add_plugin(FrameTimeDiagnosticsPlugin::default())
         // track progress during `MyStates::AssetLoading` and continue to `MyStates::Next` when progress is completed
         .add_plugin(ProgressPlugin::new(MyStates::AssetLoading).continue_to(MyStates::Next))

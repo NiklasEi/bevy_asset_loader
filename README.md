@@ -45,12 +45,12 @@ use bevy_asset_loader::prelude::*;
 fn main() {
     App::new()
         .add_state::<GameState>()
+        .add_plugins(DefaultPlugins)
         .add_loading_state(
             LoadingState::new(GameState::AssetLoading)
                 .continue_to_state(GameState::Next)
         )
         .add_collection_to_loading_state::<_, MyAssets>(GameState::AssetLoading)
-        .add_plugins(DefaultPlugins)
         .add_system(use_my_assets.in_schedule(OnEnter(GameState::Next)))
         .run();
 }
@@ -110,6 +110,8 @@ The file ending is `.assets.ron` by default, but can be configured via `LoadingS
 Dynamic assets can be optional. This requires the derive attribute `optional` on the field and the type to be an `Option`. The value of the field will be `None` in case the given key cannot be resolved at run time.
 
 The example [full_dynamic_collection](/bevy_asset_loader/examples/full_dynamic_collection.rs) shows all supported field types for dynamic assets.
+
+Note that adding a dynamic asset file to a loading state requires the `AssetServer` resource to be available. In most cases that means that you should add the `DefaultPlugins` before configuring your loading state.
 
 ### Custom dynamic assets
 
