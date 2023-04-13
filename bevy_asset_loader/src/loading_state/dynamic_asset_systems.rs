@@ -12,33 +12,27 @@ use std::any::TypeId;
 pub(crate) fn load_dynamic_asset_collections<S: States, C: DynamicAssetCollection + Asset>(
     world: &mut World,
     system_state: &mut SystemState<(
-        ResMut<DynamicAssetCollections<S>>,
-        ResMut<LoadingAssetHandles<C>>,
+        Res<DynamicAssetCollections<S>>,
         Res<AssetServer>,
         Res<State<S>>,
         ResMut<AssetLoaderConfiguration<S>>,
     )>,
 ) {
-    let (
-        mut dynamic_asset_collections,
-        mut loading_collections,
-        asset_server,
-        state,
-        mut asset_loader_config,
-    ) = system_state.get_mut(world);
+    let (dynamic_asset_collections, asset_server, state, mut asset_loader_config) =
+        system_state.get_mut(world);
+    let mut loading_collections: LoadingAssetHandles<(S, C)> = LoadingAssetHandles::default();
 
-    let files = dynamic_asset_collections
-        .files
-        .get_mut(&state.0)
-        .expect("Failed to get list of dynamic asset collections for current loading state");
-    for file in files.remove(&TypeId::of::<C>()).unwrap_or_default() {
-        loading_collections
-            .handles
-            .push(asset_server.load_untyped(file));
+    if let Some(files) = dynamic_asset_collections.get_files::<C>(&state.0) {
+        for file in files {
+            loading_collections
+                .handles
+                .push(asset_server.load_untyped(file));
+        }
     }
     if let Some(config) = asset_loader_config.state_configurations.get_mut(&state.0) {
         config.loading_dynamic_collections.insert(TypeId::of::<C>());
     }
+    world.insert_resource(loading_collections);
 }
 
 #[allow(clippy::type_complexity)]
@@ -46,7 +40,7 @@ pub(crate) fn check_dynamic_asset_collections<S: States, C: DynamicAssetCollecti
     world: &mut World,
     system_state: &mut SystemState<(
         Res<AssetServer>,
-        Option<ResMut<LoadingAssetHandles<C>>>,
+        Option<ResMut<LoadingAssetHandles<(S, C)>>>,
         Res<State<S>>,
         Res<Assets<C>>,
         ResMut<DynamicAssets>,
@@ -86,7 +80,7 @@ pub(crate) fn check_dynamic_asset_collections<S: States, C: DynamicAssetCollecti
             .loading_dynamic_collections
             .remove(&TypeId::of::<C>());
     }
-    world.remove_resource::<LoadingAssetHandles<C>>();
+    world.remove_resource::<LoadingAssetHandles<(S, C)>>();
 }
 
 pub(crate) fn resume_to_loading_asset_collections<S: States>(

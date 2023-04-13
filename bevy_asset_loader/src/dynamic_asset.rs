@@ -2,7 +2,7 @@ use bevy::utils::HashMap;
 use std::any::TypeId;
 use std::fmt::Debug;
 
-use bevy::asset::{AssetServer, HandleUntyped};
+use bevy::asset::{Asset, AssetServer, HandleUntyped};
 use bevy::ecs::schedule::States;
 use bevy::ecs::system::Resource;
 use bevy::ecs::world::World;
@@ -28,8 +28,8 @@ pub trait DynamicAsset: Debug + Send + Sync {
 
 /// Resource to dynamically resolve keys to assets.
 ///
-/// This resource is set by a [`LoadingState`](crate::loading_state::LoadingState) and is read when entering the corresponding Bevy [`State`](::bevy::ecs::schedule::State).
-/// If you want to manage your dynamic assets manually, they should be configured in a previous [`State`](::bevy::ecs::schedule::State).
+/// This resource is set by a [`LoadingState`](crate::loading_state::LoadingState) and is read when entering the corresponding Bevy [`State`](State).
+/// If you want to manage your dynamic assets manually, they should be configured in a previous [`State`](State).
 ///
 /// See the `manual_dynamic_asset` example.
 #[derive(Resource, Default)]
@@ -61,12 +61,45 @@ pub trait DynamicAssetCollection {
 /// Resource keeping track of dynamic asset collection files for different loading states
 #[derive(Resource, Debug)]
 pub struct DynamicAssetCollections<State: States> {
-    /// Dynamic asset collection files for different loading states.
+    files: HashMap<State, HashMap<TypeId, Vec<String>>>,
+    _marker: PhantomData<State>,
+}
+
+impl<State: States> DynamicAssetCollections<State> {
+    /// Register a file containing dynamic asset definitions to be loaded and applied to the given loading state
     ///
-    /// The file lists get loaded and emptied at the beginning of the loading states.
-    /// Make sure to add any file you would like to load before entering the loading state!
-    pub files: HashMap<State, HashMap<TypeId, Vec<String>>>,
-    pub(crate) _marker: PhantomData<State>,
+    /// The file will be read every time the loading state is entered
+    pub fn register_file<C: DynamicAssetCollection + Asset>(
+        &mut self,
+        loading_state: State,
+        file: &str,
+    ) -> bool {
+        let mut dynamic_collections_for_state =
+            self.files.remove(&loading_state).unwrap_or_default();
+        let initialize_dynamic_assets =
+            !dynamic_collections_for_state.contains_key(&TypeId::of::<C>());
+        let mut dynamic_files = dynamic_collections_for_state
+            .remove(&TypeId::of::<C>())
+            .unwrap_or_default();
+        dynamic_files.push(file.to_owned());
+        dynamic_collections_for_state.insert(TypeId::of::<C>(), dynamic_files);
+        self.files
+            .insert(loading_state, dynamic_collections_for_state);
+
+        initialize_dynamic_assets
+    }
+
+    /// Get all currently registered files to be loaded for the given loading state and dynamic asset collection type.
+    pub fn get_files<C: DynamicAssetCollection + Asset>(
+        &self,
+        loading_state: &State,
+    ) -> Option<&Vec<String>> {
+        let files = self
+            .files
+            .get(loading_state)
+            .expect("Failed to get list of dynamic asset collections for current loading state");
+        files.get(&TypeId::of::<C>())
+    }
 }
 
 impl<State: States> Default for DynamicAssetCollections<State> {
