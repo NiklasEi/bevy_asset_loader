@@ -4,6 +4,7 @@
 - Dynamic asset files can be loaded multiple times now
   - This allows re-entering a loading state containing dynamic assets (see [#126](https://github.com/NiklasEi/bevy_asset_loader/issues/126))
   - and loading dynamic assets in multiple states (see [#123](https://github.com/NiklasEi/bevy_asset_loader/issues/123))
+- Fix crash with non default exit criteria (see [#121](https://github.com/NiklasEi/bevy_asset_loader/issues/121))
 
 ## v0.16.0
 - Remove features coming from optional dependencies

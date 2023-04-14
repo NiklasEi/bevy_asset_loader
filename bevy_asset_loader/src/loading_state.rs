@@ -390,8 +390,7 @@ where
             .configure_set(
                 LoadingStateSet(self.loading_state.clone())
                     .after(CoreSet::StateTransitions)
-                    .before(CoreSet::Update)
-                    .run_if(in_state(self.loading_state.clone())),
+                    .before(CoreSet::Update),
             );
             let mut loading_state_schedule = app.get_schedule_mut(loading_state_schedule).unwrap();
             loading_state_schedule
@@ -424,11 +423,14 @@ where
             app.add_system(
                 run_loading_state::<S>
                     .in_set(TrackedProgressSet)
-                    .in_base_set(LoadingStateSet(self.loading_state)),
+                    .in_base_set(LoadingStateSet(self.loading_state.clone()))
+                    .run_if(in_state(self.loading_state)),
             );
             #[cfg(not(feature = "progress_tracking"))]
             app.add_system(
-                run_loading_state::<S>.in_base_set(LoadingStateSet(self.loading_state.clone())),
+                run_loading_state::<S>
+                    .in_base_set(LoadingStateSet(self.loading_state.clone()))
+                    .run_if(in_state(self.loading_state)),
             );
         }
 
