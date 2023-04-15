@@ -21,7 +21,7 @@ fn main() {
             "custom.my-assets.ron",
         )
         .add_collection_to_loading_state::<_, MyAssets>(MyStates::AssetLoading)
-        .add_system(render_stuff.in_schedule(OnEnter(MyStates::Next)))
+        .add_systems(OnEnter(MyStates::Next), render_stuff)
         .run();
 }
 

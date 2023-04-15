@@ -51,7 +51,7 @@ fn main() {
                 .continue_to_state(GameState::Next)
         )
         .add_collection_to_loading_state::<_, MyAssets>(GameState::AssetLoading)
-        .add_system(use_my_assets.in_schedule(OnEnter(GameState::Next)))
+        .add_systems(OnEnter(GameState::Next), use_my_assets)
         .run();
 }
 

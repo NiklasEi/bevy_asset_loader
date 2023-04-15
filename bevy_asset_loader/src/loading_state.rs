@@ -1,15 +1,17 @@
 mod dynamic_asset_systems;
 mod systems;
 
-use bevy::app::{App, CoreSet, IntoSystemAppConfig, Plugin};
+use bevy::app::{App, Plugin};
 use bevy::asset::{Asset, HandleUntyped};
-use bevy::ecs::schedule::{
-    common_conditions::in_state, IntoSystemConfig, IntoSystemSetConfig, NextState, OnEnter, States,
-    SystemSet,
+use bevy::ecs::{
+    schedule::{
+        common_conditions::in_state, BoxedScheduleLabel, IntoSystemConfigs, IntoSystemSetConfig,
+        NextState, OnEnter, ScheduleLabel, State, States, SystemSet,
+    },
+    system::Resource,
+    world::FromWorld,
 };
-use bevy::ecs::schedule::{BoxedScheduleLabel, ScheduleLabel, State};
-use bevy::ecs::system::Resource;
-use bevy::ecs::world::FromWorld;
+use bevy::prelude::{StateTransition, Update};
 use bevy::utils::{default, HashMap, HashSet};
 use std::any::TypeId;
 use std::array::IntoIter;
@@ -58,7 +60,7 @@ use crate::loading_state::systems::{apply_internal_state_transition, run_loading
 ///         )
 ///         .add_collection_to_loading_state::<_, AudioAssets>(GameState::Loading)
 ///         .add_collection_to_loading_state::<_, ImageAssets>(GameState::Loading)
-///         .add_system(play_audio.in_schedule(OnEnter(GameState::Menu)))
+///         .add_systems(OnEnter(GameState::Menu), play_audio)
 /// #       .set_runner(|mut app| app.update())
 ///         .run();
 /// }
@@ -372,25 +374,19 @@ where
             ));
 
         if configure_loading_state {
-            app.add_systems((
-                resume_to_loading_asset_collections::<S>
-                    .in_schedule(loading_state_schedule.clone())
-                    .in_set(InternalLoadingStateSet::ResumeDynamicAssetCollections),
-                initialize_loading_state::<S>
-                    .in_schedule(loading_state_schedule.clone())
-                    .in_set(InternalLoadingStateSet::Initialize),
-                resume_to_finalize::<S>
-                    .in_schedule(loading_state_schedule.clone())
-                    .in_set(InternalLoadingStateSet::CheckAssets),
-                finish_loading_state::<S>
-                    .in_schedule(loading_state_schedule.clone())
-                    .in_set(InternalLoadingStateSet::Finalize),
-            ))
-            .add_system(reset_loading_state::<S>.in_schedule(OnEnter(self.loading_state.clone())))
-            .configure_set(
-                LoadingStateSet(self.loading_state.clone())
-                    .after(CoreSet::StateTransitions)
-                    .before(CoreSet::Update),
+            app.add_systems(
+                loading_state_schedule.clone(),
+                (
+                    resume_to_loading_asset_collections::<S>
+                        .in_set(InternalLoadingStateSet::ResumeDynamicAssetCollections),
+                    initialize_loading_state::<S>.in_set(InternalLoadingStateSet::Initialize),
+                    resume_to_finalize::<S>.in_set(InternalLoadingStateSet::CheckAssets),
+                    finish_loading_state::<S>.in_set(InternalLoadingStateSet::Finalize),
+                ),
+            )
+            .add_systems(
+                OnEnter(self.loading_state.clone()),
+                reset_loading_state::<S>,
             );
             let mut loading_state_schedule = app.get_schedule_mut(loading_state_schedule).unwrap();
             loading_state_schedule
@@ -420,17 +416,16 @@ where
                 );
 
             #[cfg(feature = "progress_tracking")]
-            app.add_system(
+            app.add_systems(
+                Update,
                 run_loading_state::<S>
                     .in_set(TrackedProgressSet)
-                    .in_base_set(LoadingStateSet(self.loading_state.clone()))
                     .run_if(in_state(self.loading_state)),
             );
             #[cfg(not(feature = "progress_tracking"))]
-            app.add_system(
-                run_loading_state::<S>
-                    .in_base_set(LoadingStateSet(self.loading_state.clone()))
-                    .run_if(in_state(self.loading_state)),
+            app.add_systems(
+                Update,
+                run_loading_state::<S>.run_if(in_state(self.loading_state)),
             );
         }
 
@@ -441,12 +436,6 @@ where
         }
     }
 }
-
-/// This set runs after [`CoreSet::StateTransitions`] and before [`CoreSet::Update`].
-/// Systems in this set check the loading state of assets and will change the [`InternalLoadingState`] accordingly.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]
-#[system_set(base)]
-pub(crate) struct LoadingStateSet<S: States>(S);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]
 pub(crate) enum InternalLoadingStateSet {
@@ -685,16 +674,13 @@ impl LoadingStateAppExt for App {
         &mut self,
         loading_state: S,
     ) -> &mut Self {
-        self.add_system(
-            start_loading_collection::<S, A>.in_schedule(OnEnterInternalLoadingState(
-                loading_state.clone(),
-                InternalLoadingState::LoadingAssets,
-            )),
+        self.add_systems(
+            OnEnterInternalLoadingState(loading_state.clone(), InternalLoadingState::LoadingAssets),
+            start_loading_collection::<S, A>,
         )
-        .add_system(
-            check_loading_collection::<S, A>
-                .in_schedule(LoadingStateSchedule(loading_state))
-                .in_set(InternalLoadingStateSet::CheckAssets),
+        .add_systems(
+            LoadingStateSchedule(loading_state),
+            check_loading_collection::<S, A>.in_set(InternalLoadingStateSet::CheckAssets),
         )
     }
 
@@ -709,15 +695,16 @@ impl LoadingStateAppExt for App {
             .unwrap();
 
         if dynamic_asset_collections.register_file::<C>(loading_state.clone(), file) {
-            self.add_system(load_dynamic_asset_collections::<S, C>.in_schedule(
+            self.add_systems(
                 OnEnterInternalLoadingState(
                     loading_state.clone(),
                     InternalLoadingState::LoadingDynamicAssetCollections,
                 ),
-            ))
-            .add_system(
+                load_dynamic_asset_collections::<S, C>,
+            )
+            .add_systems(
+                LoadingStateSchedule(loading_state),
                 check_dynamic_asset_collections::<S, C>
-                    .in_schedule(LoadingStateSchedule(loading_state))
                     .in_set(InternalLoadingStateSet::CheckDynamicAssetCollections),
             );
         }
@@ -729,10 +716,10 @@ impl LoadingStateAppExt for App {
         &mut self,
         loading_state: S,
     ) -> &mut Self {
-        self.add_system(init_resource::<A>.in_schedule(OnEnterInternalLoadingState(
-            loading_state,
-            InternalLoadingState::Finalize,
-        )))
+        self.add_systems(
+            OnEnterInternalLoadingState(loading_state, InternalLoadingState::Finalize),
+            init_resource::<A>,
+        )
     }
 }
 
@@ -756,6 +743,6 @@ where
     S: States,
 {
     fn build(&self, app: &mut App) {
-        app.add_system(apply_internal_state_transition::<S>.in_base_set(CoreSet::StateTransitions));
+        app.add_systems(StateTransition, apply_internal_state_transition::<S>);
     }
 }

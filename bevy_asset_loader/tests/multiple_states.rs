@@ -22,12 +22,10 @@ fn main() {
         .add_collection_to_loading_state::<_, GameStateCollection>(Game::Booting)
         .add_loading_state(LoadingState::new(Loading::Loading).continue_to_state(Loading::Finalize))
         .add_collection_to_loading_state::<_, LoadingStateCollection>(Loading::Loading)
-        .add_system(go_to_loading_loading.in_schedule(OnEnter(Game::Loading)))
-        .add_system(probe_game_state.in_schedule(OnEnter(Game::Loading)))
-        .add_system(go_to_game_play_loading_done.in_schedule(OnEnter(Loading::Finalize)))
-        .add_system(probe_loading_state.in_schedule(OnEnter(Game::Play)))
-        .add_system(quit.in_set(OnUpdate(Game::Play)))
-        .add_system(timeout)
+        .add_systems(Update, (quit.run_if(in_state(Game::Play)), timeout))
+        .add_systems(OnEnter(Game::Loading), (go_to_loading_loading, probe_game_state))
+        .add_systems(OnEnter(Loading::Finalize), go_to_game_play_loading_done)
+        .add_systems(OnEnter(Game::Play), probe_loading_state)
         .run();
 }
 

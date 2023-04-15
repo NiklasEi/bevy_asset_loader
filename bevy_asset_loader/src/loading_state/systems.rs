@@ -6,7 +6,6 @@ use bevy::log::{debug, info, trace, warn};
 use bevy::prelude::{NextState, Res, ResMut, Resource, Schedules};
 use std::any::TypeId;
 use std::marker::PhantomData;
-use std::mem;
 
 #[cfg(feature = "progress_tracking")]
 use iyes_progress::{HiddenProgress, Progress, ProgressCounter};
@@ -35,7 +34,7 @@ pub(crate) fn start_loading_collection<S: States, Assets: AssetCollection>(
 
     let mut config = asset_loader_configuration
         .state_configurations
-        .get_mut(&state.0)
+        .get_mut(state.get())
         .unwrap_or_else(|| {
             panic!(
                 "Could not find a loading configuration for state {:?}",
@@ -105,7 +104,7 @@ fn count_loaded_handles<S: States, Assets: AssetCollection>(cell: WorldCell) -> 
         .expect("Cannot get AssetLoaderConfiguration resource");
     if let Some(mut config) = asset_loader_configuration
         .state_configurations
-        .get_mut(&state.0)
+        .get_mut(state.get())
     {
         if failure {
             config.loading_failed = true;
@@ -125,7 +124,10 @@ pub(crate) fn resume_to_finalize<S: States>(
     user_state: Res<State<S>>,
     mut next_user_state: ResMut<NextState<S>>,
 ) {
-    if let Some(configuration) = loader_configuration.state_configurations.get(&user_state.0) {
+    if let Some(configuration) = loader_configuration
+        .state_configurations
+        .get(user_state.get())
+    {
         if configuration.loading_collections == 0 {
             internal_state.set(InternalLoadingState::Finalize);
         }
@@ -156,10 +158,10 @@ pub(crate) fn finish_loading_state<S: States>(
 ) {
     #[cfg(feature = "progress_tracking")]
     progress_counter.persist_progress_hidden(HiddenProgress(Progress { total: 0, done: 1 }));
-    info!("Loading state '{:?}' is done", state.0);
+    info!("Loading state '{:?}' is done", state.get());
     if let Some(config) = asset_loader_configuration
         .state_configurations
-        .get(&state.0)
+        .get(state.get())
     {
         if let Some(next) = config.next.as_ref() {
             next_state.set(next.clone());
@@ -170,17 +172,18 @@ pub(crate) fn finish_loading_state<S: States>(
     loading_state.set(InternalLoadingState::Done(PhantomData::default()));
 }
 
-pub(crate) fn reset_loading_state<S: States>(mut state: ResMut<State<InternalLoadingState<S>>>) {
-    state.0 = InternalLoadingState::Initialize;
+pub(crate) fn reset_loading_state<S: States>(world: &mut World) {
+    world.remove_resource::<State<InternalLoadingState<S>>>();
+    world.init_resource::<State<InternalLoadingState<S>>>();
 }
 
 pub(crate) fn run_loading_state<S: States>(world: &mut World) {
-    let state = world.resource::<State<S>>().0.clone();
+    let state = world.resource::<State<S>>().get().clone();
     world.run_schedule(LoadingStateSchedule(state));
 }
 
 pub fn apply_internal_state_transition<S: States>(world: &mut World) {
-    let state = world.resource::<State<S>>().0.clone();
+    let state = world.resource::<State<S>>().get().clone();
     if world
         .resource::<NextState<InternalLoadingState<S>>>()
         .0
@@ -191,10 +194,11 @@ pub fn apply_internal_state_transition<S: States>(world: &mut World) {
             .0
             .take()
             .unwrap();
-        let exited_state = mem::replace(
-            &mut world.resource_mut::<State<InternalLoadingState<S>>>().0,
-            entered_state.clone(),
-        );
+
+        let exited_state = world
+            .remove_resource::<State<InternalLoadingState<S>>>()
+            .unwrap_or_default();
+        world.insert_resource(State::new(entered_state.clone()));
         trace!(
             "Switching internal state of loading state from {exited_state:?} to {entered_state:?}"
         );

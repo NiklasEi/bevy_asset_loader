@@ -22,8 +22,8 @@ fn main() {
         // This requires the extension trait `AssetCollectionApp` to be in scope.
         .init_collection::<ImageAssets>()
         // This system listens for mouse clicks and then loads + inserts the AudioAssets collection
-        .add_system(load_and_play_audio)
-        .add_system(draw.on_startup())
+        .add_systems(Startup, draw)
+        .add_systems(Update, load_and_play_audio)
         .run();
 }
 

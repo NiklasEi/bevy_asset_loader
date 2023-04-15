@@ -13,7 +13,7 @@ fn main() {
             LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
         )
         .add_collection_to_loading_state::<_, MyAssets>(MyStates::AssetLoading)
-        .add_system(expectations.in_schedule(OnEnter(MyStates::Next)))
+        .add_systems(OnEnter(MyStates::Next), expectations)
         .run();
 }
 
