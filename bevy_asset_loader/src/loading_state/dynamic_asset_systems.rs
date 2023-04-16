@@ -29,7 +29,10 @@ pub(crate) fn load_dynamic_asset_collections<S: States, C: DynamicAssetCollectio
                 .push(asset_server.load_untyped(file));
         }
     }
-    if let Some(config) = asset_loader_config.state_configurations.get_mut(state.get()) {
+    if let Some(config) = asset_loader_config
+        .state_configurations
+        .get_mut(state.get())
+    {
         config.loading_dynamic_collections.insert(TypeId::of::<C>());
     }
     world.insert_resource(loading_collections);

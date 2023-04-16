@@ -26,7 +26,7 @@ fn main() {
             MyStates::SplashAssetLoading,
             "full_dynamic_collection.assets.ron",
         )
-        .add_systems(OnUpdate(MyStates::Splash), splash_countdown)
+        .add_systems(Update, splash_countdown.run_if(in_state(MyStates::Splash)))
         .add_loading_state(
             LoadingState::new(MyStates::MainMenuAssetLoading).continue_to_state(MyStates::MainMenu),
         )
@@ -35,8 +35,7 @@ fn main() {
             "full_dynamic_collection.assets.ron",
         )
         .add_collection_to_loading_state::<_, MainMenuAssets>(MyStates::MainMenuAssetLoading)
-        .add_systems(Update, timeout)
-        .add_systems(OnUpdate(MyStates::MainMenu), quit)
+        .add_systems(Update, (timeout, quit.run_if(in_state(MyStates::MainMenu))))
         .run();
 }
 
