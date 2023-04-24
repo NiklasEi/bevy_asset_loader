@@ -15,7 +15,6 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_state::<MyStates>()
-        .init_resource::<iyes_progress::ProgressCounter>()
         .add_loading_state(LoadingState::new(MyStates::AssetLoading))
         .add_collection_to_loading_state::<_, TextureAssets>(MyStates::AssetLoading)
         .add_collection_to_loading_state::<_, AudioAssets>(MyStates::AssetLoading)

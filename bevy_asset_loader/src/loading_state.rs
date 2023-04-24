@@ -387,7 +387,8 @@ where
             .add_systems(
                 OnEnter(self.loading_state.clone()),
                 reset_loading_state::<S>,
-            );
+            )
+            .configure_set(Update, LoadingStateSet(self.loading_state.clone()));
             let mut loading_state_schedule = app.get_schedule_mut(loading_state_schedule).unwrap();
             loading_state_schedule
                 .configure_set(
@@ -420,12 +421,15 @@ where
                 Update,
                 run_loading_state::<S>
                     .in_set(TrackedProgressSet)
+                    .in_set(LoadingStateSet(self.loading_state.clone()))
                     .run_if(in_state(self.loading_state)),
             );
             #[cfg(not(feature = "progress_tracking"))]
             app.add_systems(
                 Update,
-                run_loading_state::<S>.run_if(in_state(self.loading_state)),
+                run_loading_state::<S>
+                    .in_set(LoadingStateSet(self.loading_state.clone()))
+                    .run_if(in_state(self.loading_state)),
             );
         }
 
@@ -436,6 +440,10 @@ where
         }
     }
 }
+
+///  Systems in this set check the loading state of assets and will change the [`InternalLoadingState`] accordingly.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]
+pub(crate) struct LoadingStateSet<S: States>(S);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]
 pub(crate) enum InternalLoadingStateSet {
