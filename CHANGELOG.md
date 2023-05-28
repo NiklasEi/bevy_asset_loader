@@ -8,6 +8,8 @@
 
 ## v0.16.0
 - Remove features coming from optional dependencies
+- Allow usage of non default exit criteria; workaround for [bevy#8386](https://github.com/bevyengine/bevy/issues/8386)
+- Move compile error to field with missing `FromWorld` impl
 
 ## v0.15.0
 - Option to load folders as maps of path to handle (resolves [#32](https://github.com/NiklasEi/bevy_asset_loader/issues/32))
