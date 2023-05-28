@@ -3,6 +3,7 @@ use bevy::asset::LoadState;
 use bevy::prelude::*;
 use bevy::utils::HashMap;
 use bevy_asset_loader::prelude::*;
+use std::path::Path;
 
 fn main() {
     App::new()
@@ -12,7 +13,7 @@ fn main() {
             LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
         )
         .add_collection_to_loading_state::<_, MyAssets>(MyStates::AssetLoading)
-        .add_system(expectations.in_schedule(OnEnter(MyStates::Next)))
+        .add_systems(OnEnter(MyStates::Next), expectations)
         .run();
 }
 
@@ -166,13 +167,8 @@ fn expectations(
             LoadState::Loaded
         );
         assert_eq!(
-            name,
-            asset_server
-                .get_handle_path(handle.clone())
-                .unwrap()
-                .path()
-                .to_str()
-                .unwrap()
+            Path::new(name),
+            asset_server.get_handle_path(handle.clone()).unwrap().path()
         );
     }
     assert_eq!(assets.mapped_files_typed.len(), 2);
@@ -182,13 +178,8 @@ fn expectations(
             LoadState::Loaded
         );
         assert_eq!(
-            name,
-            asset_server
-                .get_handle_path(handle.clone())
-                .unwrap()
-                .path()
-                .to_str()
-                .unwrap()
+            Path::new(name),
+            asset_server.get_handle_path(handle.clone()).unwrap().path()
         );
     }
 

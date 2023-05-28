@@ -22,8 +22,13 @@ fn can_run_without_next_state() {
         .add_loading_state(LoadingState::new(MyStates::Load))
         .add_collection_to_loading_state::<_, MyAssets>(MyStates::Load)
         .init_resource::<TestState>()
-        .add_system(expect.run_if(in_state(MyStates::Load)))
-        .add_system(timeout.run_if(in_state(MyStates::Load)))
+        .add_systems(
+            Update,
+            (
+                expect.run_if(in_state(MyStates::Load)),
+                timeout.run_if(in_state(MyStates::Load)),
+            ),
+        )
         .run();
 }
 

@@ -22,8 +22,8 @@ fn init_resource() {
         .add_loading_state(LoadingState::new(MyStates::Load).continue_to_state(MyStates::Next))
         .add_collection_to_loading_state::<_, MyAssets>(MyStates::Load)
         .init_resource_after_loading_state::<_, PostProcessed>(MyStates::Load)
-        .add_system(timeout.run_if(in_state(MyStates::Load)))
-        .add_system(expect.in_schedule(OnEnter(MyStates::Next)))
+        .add_systems(Update, timeout.run_if(in_state(MyStates::Load)))
+        .add_systems(OnEnter(MyStates::Next), expect)
         .run();
 }
 

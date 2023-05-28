@@ -1,5 +1,14 @@
 # Changelog
 
+- Fix running loading states in parallel states, meaning using multiple state types (resolves [#125](https://github.com/NiklasEi/bevy_asset_loader/issues/125))
+- Dynamic asset files can be loaded multiple times now
+  - This allows re-entering a loading state containing dynamic assets (see [#126](https://github.com/NiklasEi/bevy_asset_loader/issues/126))
+  - and loading dynamic assets in multiple states (see [#123](https://github.com/NiklasEi/bevy_asset_loader/issues/123))
+- Fix crash with non default exit criteria (see [#121](https://github.com/NiklasEi/bevy_asset_loader/issues/121))
+
+## v0.16.0
+- Remove features coming from optional dependencies
+
 ## v0.15.0
 - Option to load folders as maps of path to handle (resolves [#32](https://github.com/NiklasEi/bevy_asset_loader/issues/32))
 - Changed the default file ending for standard dynamic asset files from `.assets` to `.assets.ron`

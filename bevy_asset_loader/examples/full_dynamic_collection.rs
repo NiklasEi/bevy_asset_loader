@@ -16,7 +16,7 @@ fn main() {
             "full_dynamic_collection.assets.ron",
         )
         .add_collection_to_loading_state::<_, MyAssets>(MyStates::AssetLoading)
-        .add_system(expectations.run_if(in_state(MyStates::Next)))
+        .add_systems(Update, expectations.run_if(in_state(MyStates::Next)))
         .run();
 }
 

@@ -23,10 +23,9 @@ fn multiple_loading_states() {
         .add_loading_state(LoadingState::new(MyStates::Load).continue_to_state(MyStates::Play))
         .add_collection_to_loading_state::<_, MyAssets>(MyStates::Load)
         .add_collection_to_loading_state::<_, MyOtherAssets>(MyStates::Load)
-        .add_system(timeout)
-        .add_system(use_splash_assets.in_schedule(OnEnter(MyStates::Load)))
-        .add_system(use_loading_assets.in_schedule(OnEnter(MyStates::Play)))
-        .add_system(quit.run_if(in_state(MyStates::Play)))
+        .add_systems(Update, (quit.run_if(in_state(MyStates::Play)), timeout))
+        .add_systems(OnEnter(MyStates::Load), use_splash_assets)
+        .add_systems(OnEnter(MyStates::Play), use_loading_assets)
         .run();
 }
 

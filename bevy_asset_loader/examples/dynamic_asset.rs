@@ -19,9 +19,13 @@ fn main() {
         .add_collection_to_loading_state::<_, AudioAssets>(MyStates::AssetLoading)
         .insert_resource(Msaa::Off)
         .add_systems(
-            (spawn_player_and_tree, play_background_audio).in_schedule(OnEnter(MyStates::Next)),
+            OnEnter(MyStates::Next),
+            (spawn_player_and_tree, play_background_audio),
         )
-        .add_system(animate_sprite_system.run_if(in_state(MyStates::Next)))
+        .add_systems(
+            Update,
+            animate_sprite_system.run_if(in_state(MyStates::Next)),
+        )
         .run();
 }
 

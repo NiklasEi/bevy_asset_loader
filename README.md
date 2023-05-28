@@ -45,13 +45,13 @@ use bevy_asset_loader::prelude::*;
 fn main() {
     App::new()
         .add_state::<GameState>()
+        .add_plugins(DefaultPlugins)
         .add_loading_state(
             LoadingState::new(GameState::AssetLoading)
                 .continue_to_state(GameState::Next)
         )
         .add_collection_to_loading_state::<_, MyAssets>(GameState::AssetLoading)
-        .add_plugins(DefaultPlugins)
-        .add_system(use_my_assets.in_schedule(OnEnter(GameState::Next)))
+        .add_systems(OnEnter(GameState::Next), use_my_assets)
         .run();
 }
 
@@ -110,6 +110,8 @@ The file ending is `.assets.ron` by default, but can be configured via `LoadingS
 Dynamic assets can be optional. This requires the derive attribute `optional` on the field and the type to be an `Option`. The value of the field will be `None` in case the given key cannot be resolved at run time.
 
 The example [full_dynamic_collection](/bevy_asset_loader/examples/full_dynamic_collection.rs) shows all supported field types for dynamic assets.
+
+Note that adding a dynamic asset file to a loading state requires the `AssetServer` resource to be available. In most cases that means that you should add the `DefaultPlugins` before configuring your loading state.
 
 ### Custom dynamic assets
 
@@ -402,6 +404,10 @@ struct MyAssets {
 }
 ```
 
+## Unloading assets
+
+Bevy unloads an asset when there are no strong asset handles left pointing to the asset. An `AssetCollection` stores strong handles and ensures that assets contained in it are not removed from memory. If you want to unload assets, you need to remove any `AssetCollection` resource that holds handles pointing to those assets. You, for example, could do this when leaving the state that needed the collection.
+
 ## Compatible Bevy versions
 
 The main branch is compatible with the latest Bevy release, while the branch `bevy_main` tries to track the `main` branch of Bevy (PRs updating the tracked commit are welcome).
@@ -409,7 +415,7 @@ The main branch is compatible with the latest Bevy release, while the branch `be
 Compatibility of `bevy_asset_loader` versions:
 | `bevy_asset_loader` | `bevy` |
 | :--                 | :--    |
-| `0.15`              | `0.10` |
+| `0.15` - `0.16`     | `0.10` |
 | `0.14`              | `0.9`  |
 | `0.12` - `0.13`     | `0.8`  |
 | `0.10` - `0.11`     | `0.7`  |

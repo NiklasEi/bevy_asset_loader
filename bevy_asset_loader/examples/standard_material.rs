@@ -6,6 +6,7 @@ use bevy_asset_loader::prelude::*;
 /// Requires the feature '3d'
 fn main() {
     App::new()
+        .add_plugins(DefaultPlugins)
         .add_state::<MyStates>()
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
@@ -16,8 +17,7 @@ fn main() {
             color: Color::WHITE,
             brightness: 0.2,
         })
-        .add_plugins(DefaultPlugins)
-        .add_system(spawn_player.in_schedule(OnEnter(MyStates::Next)))
+        .add_systems(OnEnter(MyStates::Next), spawn_player)
         .run();
 }
 

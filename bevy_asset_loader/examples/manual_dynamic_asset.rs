@@ -24,14 +24,23 @@ fn main() {
         .insert_resource(Msaa::Off)
         .insert_resource(ShowBackground(false))
         .add_systems(
-            (spawn_player_and_tree, play_background_audio).in_schedule(OnEnter(MyStates::Next)),
+            OnEnter(MyStates::Next),
+            (
+                spawn_player_and_tree,
+                play_background_audio,
+                render_optional_background,
+            ),
         )
-        .add_system(menu.in_schedule(OnEnter(MyStates::Menu)))
-        .add_system(character_setup.run_if(in_state(MyStates::Menu)))
-        .add_system(update_menu.run_if(in_state(MyStates::Menu)))
-        .add_system(exit_menu.in_schedule(OnExit(MyStates::Menu)))
-        .add_system(render_optional_background.in_schedule(OnEnter(MyStates::Next)))
-        .add_system(move_player.run_if(in_state(MyStates::Next)))
+        .add_systems(OnEnter(MyStates::Menu), menu)
+        .add_systems(OnExit(MyStates::Menu), exit_menu)
+        .add_systems(
+            Update,
+            (
+                character_setup.run_if(in_state(MyStates::Menu)),
+                update_menu.run_if(in_state(MyStates::Menu)),
+                move_player.run_if(in_state(MyStates::Next)),
+            ),
+        )
         .run();
 }
 
