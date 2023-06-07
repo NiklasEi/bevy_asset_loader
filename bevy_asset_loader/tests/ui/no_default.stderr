@@ -17,5 +17,6 @@ error[E0277]: the trait bound `NoDefault: std::default::Default` is not satisfie
   = note: required for `NoDefault` to implement `FromWorld`
 help: consider annotating `NoDefault` with `#[derive(Default)]`
   |
-11| #[derive(Default)]
+11+ #[derive(Default)]
+12| struct NoDefault;
   |
