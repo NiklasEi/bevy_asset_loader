@@ -6,13 +6,13 @@ error[E0277]: the trait bound `NoDefault: std::default::Default` is not satisfie
   |
   = help: the following other types implement trait `FromWorld`:
             BlitPipeline
+            CASNode
+            CASPipeline
             Children
             ComponentIdFor<T>
             FallbackImage
             FallbackImageCubemap
-            FxaaPipeline
-            GlobalLightMeta
-            GltfLoader
+            FallbackImageZero
           and $N others
   = note: required for `NoDefault` to implement `FromWorld`
 help: consider annotating `NoDefault` with `#[derive(Default)]`

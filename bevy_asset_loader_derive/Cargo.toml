@@ -1,10 +1,10 @@
 [package]
 name = "bevy_asset_loader_derive"
-version = "0.16.1"
+version = "0.17.0-dev"
 authors = ["Niklas Eicker <git@nikl.me>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
-description = "Macro implementation for #[derive(AssetCollection)]"
+description = "Macro implementation for bevy_asset_loader"
 repository = "https://github.com/NiklasEi/bevy_asset_loader"
 homepage = "https://github.com/NiklasEi/bevy_asset_loader"
 documentation = "https://docs.rs/bevy_asset_loader_derive"

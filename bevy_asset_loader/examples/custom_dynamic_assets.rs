@@ -1,5 +1,6 @@
 use bevy::core_pipeline::clear_color::ClearColorConfig;
 use bevy::prelude::*;
+use bevy::reflect::{TypePath, TypeUuid};
 use bevy::utils::HashMap;
 use bevy_asset_loader::prelude::*;
 use bevy_common_assets::ron::RonAssetPlugin;
@@ -192,7 +193,7 @@ impl DynamicAsset for CustomDynamicAsset {
     }
 }
 
-#[derive(serde::Deserialize, bevy::reflect::TypeUuid)]
+#[derive(serde::Deserialize, TypeUuid, TypePath)]
 #[uuid = "18dc82eb-d5f5-4d72-b0c4-e2b234367c35"]
 pub struct CustomDynamicAssetCollection(HashMap<String, CustomDynamicAsset>);
 

@@ -1,6 +1,6 @@
 use bevy::app::AppExit;
 use bevy::asset::LoadState;
-use bevy::diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin};
+use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 use iyes_progress::{Progress, ProgressCounter, ProgressPlugin, ProgressSystem};
@@ -106,7 +106,7 @@ fn expect(
 
 fn print_progress(
     progress: Option<Res<ProgressCounter>>,
-    diagnostics: Res<Diagnostics>,
+    diagnostics: Res<DiagnosticsStore>,
     mut last_done: Local<u32>,
 ) {
     if let Some(progress) = progress.map(|counter| counter.progress()) {
