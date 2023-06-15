@@ -1,0 +1,22 @@
+error[E0277]: the trait bound `NoDefault: std::default::Default` is not satisfied
+ --> tests/ui/no_default.rs:8:5
+  |
+8 |     no_default: NoDefault,
+  |     ^^^^^^^^^^ the trait `std::default::Default` is not implemented for `NoDefault`
+  |
+  = help: the following other types implement trait `FromWorld`:
+            BlitPipeline
+            Children
+            ComponentIdFor<T>
+            FallbackImage
+            FallbackImageCubemap
+            FxaaPipeline
+            GlobalLightMeta
+            GltfLoader
+          and $N others
+  = note: required for `NoDefault` to implement `FromWorld`
+help: consider annotating `NoDefault` with `#[derive(Default)]`
+  |
+11+ #[derive(Default)]
+12| struct NoDefault;
+  |

@@ -421,8 +421,8 @@ Compatibility of `bevy_asset_loader` versions:
 | `0.10` - `0.11`     | `0.7`  |
 | `0.8` - `0.9`       | `0.6`  |
 | `0.1` - `0.7`       | `0.5`  |
-| `main`              | `0.10` |
-| `bevy_main`         | `main` |
+| branch `main`       | `0.10` |
+| branch `bevy_main`  | `main` |
 
 ## License
 

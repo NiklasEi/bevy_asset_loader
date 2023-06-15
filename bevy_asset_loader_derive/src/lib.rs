@@ -16,7 +16,7 @@ use std::result::Result::{Err, Ok};
 
 use crate::assets::*;
 use proc_macro2::Ident;
-use quote::{quote, ToTokens, TokenStreamExt};
+use quote::{quote, quote_spanned, ToTokens, TokenStreamExt};
 use syn::{Data, Field, Fields, Index, Lit, Meta, NestedMeta};
 
 /// Derive macro for [`AssetCollection`]
@@ -173,7 +173,7 @@ fn impl_asset_collection(
     let mut prepare_from_world = quote! {};
     prepare_from_world.append_all(from_world_fields.iter().fold(
         quote!(),
-        |es, _| quote! (#es ::bevy::ecs::world::FromWorld::from_world(world),),
+        |es, ident| quote_spanned! {ident.span() => #es ::bevy::ecs::world::FromWorld::from_world(world),},
     ));
 
     let mut asset_creation = assets.iter().fold(quote!(), |token_stream, asset| {
