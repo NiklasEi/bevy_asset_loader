@@ -1,5 +1,7 @@
 # Changelog
 
+- Use "/" in paths used as keys for mapped collections on all platforms (resolves [#135](https://github.com/NiklasEi/bevy_asset_loader/issues/135))
+
 ## v0.16.1
 - Fix running loading states in parallel states, meaning using multiple state types (resolves [#125](https://github.com/NiklasEi/bevy_asset_loader/issues/125))
 - Dynamic asset files can be loaded multiple times now
