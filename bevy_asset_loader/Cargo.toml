@@ -23,6 +23,7 @@ progress_tracking = ["dep:iyes_progress"]
 bevy = { version = "0.10", default-features = false, features = ["bevy_asset"] }
 bevy_asset_loader_derive = { version = "=0.16.1", path = "../bevy_asset_loader_derive" }
 anyhow = "1"
+path-slash = "0.2"
 
 bevy_common_assets = { version = "0.6.0", features = ["ron"], optional = true }
 serde = { version = "1", optional = true }

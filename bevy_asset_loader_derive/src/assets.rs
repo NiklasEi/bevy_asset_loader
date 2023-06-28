@@ -115,14 +115,13 @@ impl AssetField {
                                     let mut folder_map = ::bevy::utils::HashMap::default();
                                     let handles = asset_server.load_folder(#asset_path).unwrap();
                                     for handle in handles {
-                                        let path: String = asset_server
+                                        let asset_path = asset_server
                                             .get_handle_path(&handle)
-                                            .expect("Handle should have a path")
-                                            .path()
-                                            .to_str()
+                                            .expect("Handle should have a path");
+                                        let key: String = ::bevy_asset_loader::path_slash::PathExt::to_slash(asset_path.path())
                                             .expect("Path should be valid UTF-8")
-                                            .to_owned();
-                                        folder_map.insert(path, handle.typed());
+                                            .into();
+                                        folder_map.insert(key, handle.typed());
                                     }
                                     folder_map
                                 },)
@@ -141,14 +140,13 @@ impl AssetField {
                                     let mut folder_map = ::bevy::utils::HashMap::default();
                                     let handles = asset_server.load_folder(#asset_path).unwrap();
                                     for handle in handles {
-                                        let path: String = asset_server
+                                        let asset_path = asset_server
                                             .get_handle_path(&handle)
-                                            .expect("Handle should have a path")
-                                            .path()
-                                            .to_str()
+                                            .expect("Handle should have a path");
+                                        let key: String = ::bevy_asset_loader::path_slash::PathExt::to_slash(asset_path.path())
                                             .expect("Path should be valid UTF-8")
-                                            .to_owned();
-                                        folder_map.insert(path, handle);
+                                            .into();
+                                        folder_map.insert(key, handle);
                                     }
                                     folder_map
                                 },)
@@ -265,14 +263,13 @@ impl AssetField {
                                     let asset_server = world.get_resource::<AssetServer>().expect("Cannot get AssetServer");
                                     let mut folder_map = ::bevy::utils::HashMap::default();
                                     for handle in handles {
-                                        let path: String = asset_server
+                                        let asset_path = asset_server
                                             .get_handle_path(&handle)
-                                            .expect("Handle should have a path")
-                                            .path()
-                                            .to_str()
+                                            .expect("Handle should have a path");
+                                        let key: String = ::bevy_asset_loader::path_slash::PathExt::to_slash(asset_path.path())
                                             .expect("Path should be valid UTF-8")
-                                            .to_owned();
-                                        folder_map.insert(path, handle.typed());
+                                            .into();
+                                        folder_map.insert(key, handle.typed());
                                     }
                                     folder_map
                                 },
@@ -294,14 +291,13 @@ impl AssetField {
                                         let asset_server = world.get_resource::<AssetServer>().expect("Cannot get AssetServer");
                                         let mut folder_map = ::bevy::utils::HashMap::default();
                                         for handle in handles {
-                                            let path: String = asset_server
+                                            let asset_path = asset_server
                                                 .get_handle_path(&handle)
-                                                .expect("Handle should have a path")
-                                                .path()
-                                                .to_str()
+                                                .expect("Handle should have a path");
+                                            let key: String = ::bevy_asset_loader::path_slash::PathExt::to_slash(asset_path.path())
                                                 .expect("Path should be valid UTF-8")
-                                                .to_owned();
-                                            folder_map.insert(path, handle);
+                                                .into();
+                                            folder_map.insert(key, handle);
                                         }
                                         folder_map
                                     },
@@ -334,14 +330,13 @@ impl AssetField {
                                         let asset_server = world.get_resource::<AssetServer>().expect("Cannot get AssetServer");
                                         let mut folder_map = ::bevy::utils::HashMap::default();
                                         for handle in handles {
-                                            let path: String = asset_server
+                                            let asset_path = asset_server
                                                 .get_handle_path(&handle)
-                                                .expect("Handle should have a path")
-                                                .path()
-                                                .to_str()
+                                                .expect("Handle should have a path");
+                                            let key: String = ::bevy_asset_loader::path_slash::PathExt::to_slash(asset_path.path())
                                                 .expect("Path should be valid UTF-8")
-                                                .to_owned();
-                                            folder_map.insert(path, handle.typed());
+                                                .into();
+                                            folder_map.insert(key, handle.typed());
                                         }
                                         folder_map
                                     },
@@ -364,14 +359,13 @@ impl AssetField {
                                         let asset_server = world.get_resource::<AssetServer>().expect("Cannot get AssetServer");
                                         let mut folder_map = ::bevy::utils::HashMap::default();
                                         for handle in handles {
-                                            let path: String = asset_server
+                                            let asset_path = asset_server
                                                 .get_handle_path(&handle)
-                                                .expect("Handle should have a path")
-                                                .path()
-                                                .to_str()
+                                                .expect("Handle should have a path");
+                                            let key: String = ::bevy_asset_loader::path_slash::PathExt::to_slash(asset_path.path())
                                                 .expect("Path should be valid UTF-8")
-                                                .to_owned();
-                                            folder_map.insert(path, handle);
+                                                .into();
+                                            folder_map.insert(key, handle);
                                         }
                                         folder_map
                                     },
