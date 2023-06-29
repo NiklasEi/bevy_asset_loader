@@ -20,19 +20,19 @@ standard_dynamic_assets = ["dep:bevy_common_assets", "dep:serde"]
 progress_tracking = ["dep:iyes_progress"]
 
 [dependencies]
-bevy = { git = "https://github.com/bevyengine/bevy", default-features = false, features = ["bevy_asset"], rev = "13f50c7a" }
+bevy = { git = "https://github.com/bevyengine/bevy", default-features = false, features = ["bevy_asset"] }
 bevy_asset_loader_derive = { version = "=0.17.0-dev", path = "../bevy_asset_loader_derive" }
 anyhow = "1"
 
-bevy_common_assets = { git = "https://github.com/NiklasEi/bevy_common_assets", features = ["ron"], optional = true, rev = "395844b" }
+bevy_common_assets = { git = "https://github.com/NiklasEi/bevy_common_assets", features = ["ron"], optional = true }
 serde = { version = "1", optional = true }
-iyes_progress = { git = "https://github.com/NiklasEi/iyes_progress", optional = true, rev = "cd156190" }
+iyes_progress = { git = "https://github.com/NiklasEi/iyes_progress", optional = true }
 
 [dev-dependencies]
-bevy = { git = "https://github.com/bevyengine/bevy", features = ["vorbis"], rev = "13f50c7a" }
+bevy = { git = "https://github.com/bevyengine/bevy", features = ["vorbis"] }
 anyhow = "1"
-iyes_progress = { git = "https://github.com/NiklasEi/iyes_progress", rev = "cd156190" }
-bevy_common_assets = { git = "https://github.com/NiklasEi/bevy_common_assets", features = ["ron"], rev = "395844b" }
+iyes_progress = { git = "https://github.com/NiklasEi/iyes_progress" }
+bevy_common_assets = { git = "https://github.com/NiklasEi/bevy_common_assets", features = ["ron"] }
 serde = { version = "1" }
 trybuild = { version = "1.0" }
 
