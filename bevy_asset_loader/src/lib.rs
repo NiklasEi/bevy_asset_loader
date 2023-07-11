@@ -14,9 +14,8 @@
 //! # /*
 //!         .add_plugins(DefaultPlugins)
 //! # */
-//! #       .add_plugins(MinimalPlugins)
+//! #       .add_plugins((MinimalPlugins, AssetPlugin::default()))
 //! #       .init_resource::<iyes_progress::ProgressCounter>()
-//! #       .add_plugin(AssetPlugin::default())
 //!         .add_state::<GameState>()
 //!         .add_loading_state(
 //!             LoadingState::new(GameState::Loading)
@@ -24,7 +23,7 @@
 //!         )
 //!         .add_collection_to_loading_state::<_, AudioAssets>(GameState::Loading)
 //!         .add_collection_to_loading_state::<_, ImageAssets>(GameState::Loading)
-//!         .add_system(use_asset_handles.run_if(in_state(GameState::Next)))
+//!         .add_systems(Update, use_asset_handles.run_if(in_state(GameState::Next)))
 //! #       .set_runner(|mut app| app.update())
 //!         .run();
 //! }
@@ -47,8 +46,11 @@
 //!
 //! // since this function runs in MyState::Next, we know our assets are loaded.
 //! // We can get their handles from the AudioAssets resource.
-//! fn use_asset_handles(audio_assets: Res<AudioAssets>, audio: Res<Audio>) {
-//!     audio.play(audio_assets.background.clone());
+//! fn use_asset_handles(mut commands: Commands, audio_assets: Res<AudioAssets>) {
+//!     commands.spawn(AudioBundle {
+//!         source: audio_assets.background.clone(),
+//!         ..default()
+//!     });
 //! }
 //!
 //! #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]

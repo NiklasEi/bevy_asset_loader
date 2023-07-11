@@ -1,5 +1,6 @@
 use bevy::core_pipeline::clear_color::ClearColorConfig;
 use bevy::prelude::*;
+use bevy::reflect::{TypePath, TypeUuid};
 use bevy::utils::HashMap;
 use bevy_asset_loader::prelude::*;
 use bevy_common_assets::ron::RonAssetPlugin;
@@ -7,11 +8,11 @@ use bevy_common_assets::ron::RonAssetPlugin;
 fn main() {
     App::new()
         .insert_resource(Msaa::Off)
-        .add_plugins(DefaultPlugins)
+        .add_plugins((
+            DefaultPlugins,
+            RonAssetPlugin::<CustomDynamicAssetCollection>::new(&["my-assets.ron"]),
+        ))
         // We need to make sure that our dynamic asset collections can be loaded from the asset file
-        .add_plugin(RonAssetPlugin::<CustomDynamicAssetCollection>::new(&[
-            "my-assets.ron",
-        ]))
         .add_state::<MyStates>()
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
@@ -21,7 +22,7 @@ fn main() {
             "custom.my-assets.ron",
         )
         .add_collection_to_loading_state::<_, MyAssets>(MyStates::AssetLoading)
-        .add_system(render_stuff.in_schedule(OnEnter(MyStates::Next)))
+        .add_systems(OnEnter(MyStates::Next), render_stuff)
         .run();
 }
 
@@ -192,7 +193,7 @@ impl DynamicAsset for CustomDynamicAsset {
     }
 }
 
-#[derive(serde::Deserialize, bevy::reflect::TypeUuid)]
+#[derive(serde::Deserialize, TypeUuid, TypePath)]
 #[uuid = "18dc82eb-d5f5-4d72-b0c4-e2b234367c35"]
 pub struct CustomDynamicAssetCollection(HashMap<String, CustomDynamicAsset>);
 

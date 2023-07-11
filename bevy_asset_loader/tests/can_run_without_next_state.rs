@@ -16,14 +16,21 @@ use bevy_asset_loader::loading_state::{LoadingState, LoadingStateAppExt};
 fn can_run_without_next_state() {
     App::new()
         .add_state::<MyStates>()
-        .add_plugins(MinimalPlugins)
-        .add_plugin(AssetPlugin::default())
-        .add_plugin(AudioPlugin::default())
+        .add_plugins((
+            MinimalPlugins,
+            AssetPlugin::default(),
+            AudioPlugin::default(),
+        ))
         .add_loading_state(LoadingState::new(MyStates::Load))
         .add_collection_to_loading_state::<_, MyAssets>(MyStates::Load)
         .init_resource::<TestState>()
-        .add_system(expect.run_if(in_state(MyStates::Load)))
-        .add_system(timeout.run_if(in_state(MyStates::Load)))
+        .add_systems(
+            Update,
+            (
+                expect.run_if(in_state(MyStates::Load)),
+                timeout.run_if(in_state(MyStates::Load)),
+            ),
+        )
         .run();
 }
 

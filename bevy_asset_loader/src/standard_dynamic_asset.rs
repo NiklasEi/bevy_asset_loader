@@ -6,7 +6,7 @@ use bevy::ecs::world::World;
 use bevy::math::Vec2;
 
 use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssets};
-use bevy::reflect::TypeUuid;
+use bevy::reflect::{TypePath, TypeUuid};
 use bevy::utils::HashMap;
 
 /// These asset variants can be loaded from configuration files. They will then replace
@@ -160,7 +160,7 @@ pub struct RegisterStandardDynamicAsset<K: Into<String> + Sync + Send + 'static>
 }
 
 impl<K: Into<String> + Sync + Send + 'static> Command for RegisterStandardDynamicAsset<K> {
-    fn write(self, world: &mut World) {
+    fn apply(self, world: &mut World) {
         let mut dynamic_assets = world.resource_mut::<DynamicAssets>();
         dynamic_assets.register_asset(self.key, Box::new(self.asset));
     }
@@ -170,7 +170,7 @@ impl<K: Into<String> + Sync + Send + 'static> Command for RegisterStandardDynami
 ///
 /// These assets are loaded at the beginning of a loading state
 /// and combined in [`DynamicAssets`](DynamicAssets).
-#[derive(serde::Deserialize, TypeUuid)]
+#[derive(serde::Deserialize, TypeUuid, TypePath)]
 #[uuid = "2df82c01-9c71-4aa8-adc4-71c5824768f1"]
 pub struct StandardDynamicAssetCollection(pub HashMap<String, StandardDynamicAsset>);
 

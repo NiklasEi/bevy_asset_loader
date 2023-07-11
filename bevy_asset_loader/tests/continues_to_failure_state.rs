@@ -15,17 +15,16 @@ use bevy_asset_loader::loading_state::{LoadingState, LoadingStateAppExt};
 fn continues_to_failure_state() {
     App::new()
         .add_state::<MyStates>()
-        .add_plugins(MinimalPlugins)
-        .add_plugin(AssetPlugin::default())
+        .add_plugins((MinimalPlugins, AssetPlugin::default()))
         .add_loading_state(
             LoadingState::new(MyStates::Load)
                 .continue_to_state(MyStates::Next)
                 .on_failure_continue_to_state(MyStates::Error),
         )
         .add_collection_to_loading_state::<_, Audio>(MyStates::Load)
-        .add_system(timeout.run_if(in_state(MyStates::Load)))
-        .add_system(fail.in_schedule(OnEnter(MyStates::Next)))
-        .add_system(exit.in_schedule(OnEnter(MyStates::Error)))
+        .add_systems(Update, timeout.run_if(in_state(MyStates::Load)))
+        .add_systems(OnEnter(MyStates::Next), fail)
+        .add_systems(OnEnter(MyStates::Error), exit)
         .run();
 }
 
