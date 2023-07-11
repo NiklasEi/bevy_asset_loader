@@ -4,7 +4,7 @@ use bevy::ecs::system::SystemState;
 use bevy::ecs::world::{FromWorld, World, WorldCell};
 use bevy::log::{debug, info, trace, warn};
 use bevy::prelude::{NextState, Res, ResMut, Resource, Schedules};
-use std::any::TypeId;
+use std::any::{type_name, TypeId};
 use std::marker::PhantomData;
 
 #[cfg(feature = "progress_tracking")]
@@ -158,7 +158,11 @@ pub(crate) fn finish_loading_state<S: States>(
 ) {
     #[cfg(feature = "progress_tracking")]
     progress_counter.persist_progress_hidden(HiddenProgress(Progress { total: 0, done: 1 }));
-    info!("Loading state '{:?}' is done", state.get());
+    info!(
+        "Loading state '{}::{:?}' is done",
+        type_name::<S>(),
+        state.get()
+    );
     if let Some(config) = asset_loader_configuration
         .state_configurations
         .get(state.get())

@@ -37,8 +37,10 @@ fn load_and_play_audio(world: &mut World) {
         world.init_collection::<AudioAssets>();
 
         let audio_assets = world.get_resource::<AudioAssets>().unwrap();
-        let audio = world.get_resource::<Audio>().unwrap();
-        audio.play(audio_assets.background.clone());
+        world.spawn(AudioBundle {
+            source: audio_assets.background.clone(),
+            settings: PlaybackSettings::LOOP,
+        });
     }
 }
 

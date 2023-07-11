@@ -146,8 +146,11 @@ fn render_optional_background(mut commands: Commands, image_assets: Res<ImageAss
     }
 }
 
-fn play_background_audio(audio_assets: Res<AudioAssets>, audio: Res<Audio>) {
-    audio.play(audio_assets.background.clone());
+fn play_background_audio(mut commands: Commands, audio_assets: Res<AudioAssets>) {
+    commands.spawn(AudioBundle {
+        source: audio_assets.background.clone(),
+        settings: PlaybackSettings::LOOP,
+    });
 }
 
 fn move_player(input: Res<Input<KeyCode>>, mut player: Query<&mut Transform, With<Player>>) {

@@ -346,13 +346,13 @@ where
         app.init_resource::<DynamicAssetCollections<S>>();
         #[cfg(feature = "standard_dynamic_assets")]
         if !app.is_plugin_added::<RonAssetPlugin<StandardDynamicAssetCollection>>() {
-            app.add_plugin(RonAssetPlugin::<StandardDynamicAssetCollection>::new(
+            app.add_plugins(RonAssetPlugin::<StandardDynamicAssetCollection>::new(
                 &self.standard_dynamic_asset_collection_file_endings,
             ));
         }
 
         if !app.is_plugin_added::<InternalAssetLoaderPlugin<S>>() {
-            app.add_plugin(InternalAssetLoaderPlugin::<S>::new());
+            app.add_plugins(InternalAssetLoaderPlugin::<S>::new());
         }
 
         app.init_resource::<LoadingStateSchedules<S>>();
