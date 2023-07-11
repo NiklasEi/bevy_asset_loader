@@ -24,16 +24,39 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
-      - uses: taiki-e/install-action@v1
-        with:
-          tool: cargo-hack
       - name: Install alsa and udev
         run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
         if: runner.os == 'linux'
-      - name: Build & run tests for feature combinations
-        run: cargo hack test --keep-going --feature-powerset --group-features "2d","3d","standard_dynamic_assets" --exclude-features "progress_tracking" -p bevy_asset_loader
+      - name: Build & run tests for 2d, 3d, standard
+        run: cargo test -p bevy_asset_loader
       - name: Build & run tests for derive package
-        run: cargo hack test --keep-going --feature-powerset  --group-features "2d","3d" -p bevy_asset_loader_derive
+        run: cargo test -p bevy_asset_loader_derive
+  test-2d-3d-dynamic:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-build-stable-${{ hashFiles('**/Cargo.toml') }}
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+      - name: Install alsa and udev
+        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
+        if: runner.os == 'linux'
+      - name: Build & run tests for 2d, 3d, standard
+        run: cargo test --features "2d","3d","standard_dynamic_assets" -p bevy_asset_loader
+      - name: Build & run tests for derive package
+        run: cargo test --features "2d","3d" -p bevy_asset_loader_derive
   progress-tracking-test:
     strategy:
       matrix:
@@ -53,14 +76,13 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
-      - uses: taiki-e/install-action@v1
-        with:
-          tool: cargo-hack
       - name: Install alsa and udev
         run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
         if: runner.os == 'linux'
-      - name: Build & run tests for feature combinations
-        run: cargo hack test --keep-going --feature-powerset --group-features "2d","3d","standard_dynamic_assets" --features "progress_tracking" -p bevy_asset_loader
+      - name: Build & run tests progress tracking
+        run: cargo test --features "progress_tracking" -p bevy_asset_loader
+      - name: Build & run tests progress tracking and 2d,3d,dynamic
+        run: cargo test --features "2d","3d","standard_dynamic_assets","progress_tracking" -p bevy_asset_loader
   lint:
     runs-on: ubuntu-latest
     steps:
