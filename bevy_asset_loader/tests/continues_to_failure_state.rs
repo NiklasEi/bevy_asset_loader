@@ -15,8 +15,7 @@ use bevy_asset_loader::loading_state::{LoadingState, LoadingStateAppExt};
 fn continues_to_failure_state() {
     App::new()
         .add_state::<MyStates>()
-        .add_plugins(MinimalPlugins)
-        .add_plugin(AssetPlugin::default())
+        .add_plugins((MinimalPlugins, AssetPlugin::default()))
         .add_loading_state(
             LoadingState::new(MyStates::Load)
                 .continue_to_state(MyStates::Next)

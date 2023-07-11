@@ -15,9 +15,11 @@ use bevy_asset_loader::prelude::*;
 fn main() {
     App::new()
         .add_state::<MyStates>()
-        .add_plugins(MinimalPlugins)
-        .add_plugin(AssetPlugin::default())
-        .add_plugin(AudioPlugin::default())
+        .add_plugins((
+            MinimalPlugins,
+            AssetPlugin::default(),
+            AudioPlugin::default(),
+        ))
         .insert_resource(SplashTimer(Timer::from_seconds(1.0, TimerMode::Once)))
         .add_loading_state(
             LoadingState::new(MyStates::SplashAssetLoading).continue_to_state(MyStates::Splash),

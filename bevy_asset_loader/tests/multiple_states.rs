@@ -13,9 +13,11 @@ use bevy_asset_loader::prelude::{AssetCollection, LoadingState, LoadingStateAppE
 #[test]
 fn main() {
     App::new()
-        .add_plugins(MinimalPlugins)
-        .add_plugin(AssetPlugin::default())
-        .add_plugin(AudioPlugin::default())
+        .add_plugins((
+            MinimalPlugins,
+            AssetPlugin::default(),
+            AudioPlugin::default(),
+        ))
         .add_state::<Loading>()
         .add_state::<Game>()
         .add_loading_state(LoadingState::new(Game::Booting).continue_to_state(Game::Loading))

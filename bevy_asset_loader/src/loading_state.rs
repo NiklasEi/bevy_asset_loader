@@ -52,9 +52,8 @@ use crate::loading_state::systems::{apply_internal_state_transition, run_loading
 /// fn main() {
 ///     App::new()
 ///         .add_state::<GameState>()
-///         .add_plugins(MinimalPlugins)
+///         .add_plugins((MinimalPlugins, AssetPlugin::default()))
 /// #       .init_resource::<iyes_progress::ProgressCounter>()
-///         .add_plugin(AssetPlugin::default())
 ///         .add_loading_state(LoadingState::new(GameState::Loading)
 ///             .continue_to_state(GameState::Menu)
 ///         )
@@ -65,8 +64,11 @@ use crate::loading_state::systems::{apply_internal_state_transition, run_loading
 ///         .run();
 /// }
 ///
-/// fn play_audio(audio_assets: Res<AudioAssets>, audio: Res<Audio>) {
-///     audio.play(audio_assets.background.clone());
+/// fn play_audio(mut commands: Commands, audio_assets: Res<AudioAssets>) {
+///     commands.spawn(AudioBundle {
+///         source: audio_assets.background.clone(),
+///         ..default()
+///     });
 /// }
 ///
 /// #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
@@ -115,9 +117,8 @@ where
     /// # fn main() {
     ///     App::new()
     /// #       .add_state::<GameState>()
-    /// #       .add_plugins(MinimalPlugins)
+    /// #       .add_plugins((MinimalPlugins, AssetPlugin::default()))
     /// #       .init_resource::<iyes_progress::ProgressCounter>()
-    /// #       .add_plugin(AssetPlugin::default())
     ///         .add_loading_state(
     ///           LoadingState::new(GameState::Loading)
     ///             .continue_to_state(GameState::Menu)
@@ -167,9 +168,8 @@ where
     /// # fn main() {
     ///     App::new()
     /// #       .add_state::<GameState>()
-    /// #       .add_plugins(MinimalPlugins)
+    /// #       .add_plugins((MinimalPlugins, AssetPlugin::default()))
     /// #       .init_resource::<iyes_progress::ProgressCounter>()
-    /// #       .add_plugin(AssetPlugin::default())
     ///         .add_loading_state(
     ///           LoadingState::new(GameState::Loading)
     ///             .continue_to_state(GameState::Menu)
@@ -213,9 +213,8 @@ where
     /// # fn main() {
     ///     App::new()
     /// #       .add_state::<GameState>()
-    /// #       .add_plugins(MinimalPlugins)
+    /// #       .add_plugins((MinimalPlugins, AssetPlugin::default()))
     /// #       .init_resource::<iyes_progress::ProgressCounter>()
-    /// #       .add_plugin(AssetPlugin::default())
     ///         .add_loading_state(
     ///           LoadingState::new(GameState::Loading)
     ///             .continue_to_state(GameState::Menu)
@@ -287,9 +286,8 @@ where
     /// # fn main() {
     ///     App::new()
     /// #       .add_state::<GameState>()
-    /// #       .add_plugins(MinimalPlugins)
+    /// #       .add_plugins((MinimalPlugins, AssetPlugin::default()))
     /// #       .init_resource::<iyes_progress::ProgressCounter>()
-    /// #       .add_plugin(AssetPlugin::default())
     ///         .add_loading_state(
     ///           LoadingState::new(GameState::Loading)
     ///             .continue_to_state(GameState::Menu)
@@ -569,9 +567,8 @@ pub trait LoadingStateAppExt {
     /// # fn main() {
     ///     App::new()
     /// #       .add_state::<GameState>()
-    /// #       .add_plugins(MinimalPlugins)
+    /// #       .add_plugins((MinimalPlugins, AssetPlugin::default()))
     /// #       .init_resource::<iyes_progress::ProgressCounter>()
-    /// #       .add_plugin(AssetPlugin::default())
     ///         .add_loading_state(
     ///           LoadingState::new(GameState::Loading)
     ///             .continue_to_state(GameState::Menu)
@@ -626,10 +623,9 @@ pub trait LoadingStateAppExt {
     /// # use bevy::asset::AssetPlugin;
     /// # fn main() {
     ///     App::new()
-    /// #       .add_plugins(MinimalPlugins)
+    /// #       .add_plugins((MinimalPlugins, AssetPlugin::default()))
     /// #       .add_state::<GameState>()
     /// #       .init_resource::<iyes_progress::ProgressCounter>()
-    /// #       .add_plugin(AssetPlugin::default())
     ///         .add_loading_state(
     ///           LoadingState::new(GameState::Loading)
     ///             .continue_to_state(GameState::Menu)
