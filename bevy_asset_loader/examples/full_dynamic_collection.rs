@@ -3,6 +3,7 @@ use bevy::asset::LoadState;
 use bevy::prelude::*;
 use bevy::utils::HashMap;
 use bevy_asset_loader::prelude::*;
+use path_slash::PathExt;
 
 fn main() {
     App::new()
@@ -130,12 +131,13 @@ fn expectations(
             LoadState::Loaded
         );
         assert_eq!(
-            asset_server
+            &asset_server
                 .get_handle_path(handle.clone())
                 .unwrap()
                 .path()
-                .to_str()
-                .unwrap(),
+                .to_slash()
+                .unwrap()
+                .to_string(),
             name
         );
     }
@@ -153,12 +155,13 @@ fn expectations(
             LoadState::Loaded
         );
         assert_eq!(
-            asset_server
+            &asset_server
                 .get_handle_path(handle.clone())
                 .unwrap()
                 .path()
-                .to_str()
-                .unwrap(),
+                .to_slash()
+                .unwrap()
+                .to_string(),
             name
         );
     }

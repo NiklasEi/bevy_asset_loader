@@ -75,7 +75,7 @@ enum GameState {
 }
 ```
 
-The [full_collection](/bevy_asset_loader/examples/full_collection.rs) example showcases all the different kinds of fields that an asset collection can contain using only derive macro attributes.
+The [full_collection](bevy_asset_loader/examples/full_collection.rs) example showcases all the different kinds of fields that an asset collection can contain using only derive macro attributes.
 
 ### Dynamic assets
 
@@ -93,7 +93,7 @@ struct ImageAssets {
 }
 ```
 
-The keys `player` and `tree` in the example above should either be set manually in the `DynamicAssets` resource prior to the loading state (see the [manual_dynamic_asset](/bevy_asset_loader/examples/manual_dynamic_asset.rs) example), or be part of a dynamic assets file (see [dynamic_asset](/bevy_asset_loader/examples/dynamic_asset.rs)). A dynamic assets file for the collection above might look like this:
+The keys `player` and `tree` in the example above should either be set manually in the `DynamicAssets` resource prior to the loading state (see the [manual_dynamic_asset](bevy_asset_loader/examples/manual_dynamic_asset.rs) example), or be part of a dynamic assets file (see [dynamic_asset](bevy_asset_loader/examples/dynamic_asset.rs)). A dynamic assets file for the collection above might look like this:
 ```ron
 ({
     "player": File (
@@ -109,13 +109,13 @@ The file ending is `.assets.ron` by default, but can be configured via `LoadingS
 
 Dynamic assets can be optional. This requires the derive attribute `optional` on the field and the type to be an `Option`. The value of the field will be `None` in case the given key cannot be resolved at run time.
 
-The example [full_dynamic_collection](/bevy_asset_loader/examples/full_dynamic_collection.rs) shows all supported field types for dynamic assets.
+The example [full_dynamic_collection](bevy_asset_loader/examples/full_dynamic_collection.rs) shows all supported field types for dynamic assets.
 
 Note that adding a dynamic asset file to a loading state requires the `AssetServer` resource to be available. In most cases that means that you should add the `DefaultPlugins` before configuring your loading state.
 
 ### Custom dynamic assets
 
-You can define your own types to load as dynamic assets. Take a look at the [custom_dynamic_assets.rs](/bevy_asset_loader/examples/custom_dynamic_assets.rs) example for some code.
+You can define your own types to load as dynamic assets. Take a look at the [custom_dynamic_assets.rs](bevy_asset_loader/examples/custom_dynamic_assets.rs) example for some code.
 
 ## Supported asset fields
 
@@ -281,7 +281,7 @@ struct MyAssets {
 
 ### Standard materials
 
-You can directly load standard materials if you enable the feature `3d`. For a complete example please take a look at [standard_material.rs](/bevy_asset_loader/examples/standard_material.rs).
+You can directly load standard materials if you enable the feature `3d`. For a complete example please take a look at [standard_material.rs](bevy_asset_loader/examples/standard_material.rs).
 
 ```rust
 use bevy::prelude::*;
@@ -313,7 +313,7 @@ struct MyAssets {
 
 ### Texture atlases
 
-You can directly load texture atlases from sprite sheets if you enable the feature `2d`. For a complete example please take a look at [atlas_from_grid.rs](/bevy_asset_loader/examples/atlas_from_grid.rs).
+You can directly load texture atlases from sprite sheets if you enable the feature `2d`. For a complete example please take a look at [atlas_from_grid.rs](bevy_asset_loader/examples/atlas_from_grid.rs).
 
 ```rust
 use bevy::prelude::*;
@@ -359,7 +359,7 @@ Any field in an asset collection without any attribute is required to implement 
 
 ## Initializing FromWorld resources
 
-In situations where you would like to prepare other resources based on your loaded asset collections you can use `App::init_resource_after_loading_state` to initialize `FromWorld` resources. See [init_resource.rs](/bevy_asset_loader/examples/init_resource.rs) for an example that loads two images and then combines their pixel data into a third image.
+In situations where you would like to prepare other resources based on your loaded asset collections you can use `App::init_resource_after_loading_state` to initialize `FromWorld` resources. See [init_resource.rs](bevy_asset_loader/examples/init_resource.rs) for an example that loads two images and then combines their pixel data into a third image.
 
 `App::init_resource_after_loading_state` does the same as Bevy's `App::init_resource`, but at a different point in time. While Bevy inserts your resources at the very beginning, `bevy_asset_loader` will initialize them only after your loaded asset collections are inserted. That means you can use your asset collections in the `FromWorld` implementation.
 
@@ -367,7 +367,7 @@ In situations where you would like to prepare other resources based on your load
 
 With the feature `progress_tracking`, you can integrate with [`iyes_progress`][iyes_progress] to track asset loading during a loading state. This, for example, enables progress bars.
 
-See [`progress_tracking`](/bevy_asset_loader/examples/progress_tracking.rs) for a complete example.
+See [`progress_tracking`](bevy_asset_loader/examples/progress_tracking.rs) for a complete example.
 
 ### A note on system ordering
 
@@ -383,7 +383,7 @@ In most cases this happens, an asset file is missing or a certain file ending do
 
 Although the pattern of a loading state is quite nice, you might have reasons not to use it. In this case `bevy_asset_loader` can still be helpful. Deriving `AssetCollection` on a resource can significantly reduce the boilerplate for managing assets.
 
-You can directly initialise asset collections on the bevy `App` or `World`. See [no_loading_state.rs](/bevy_asset_loader/examples/no_loading_state.rs) for a complete example.
+You can directly initialise asset collections on the bevy `App` or `World`. See [no_loading_state.rs](bevy_asset_loader/examples/no_loading_state.rs) for a complete example.
 
 ```rust no_run
 use bevy::prelude::*;
@@ -433,7 +433,7 @@ Dual-licensed under either of
 
 at your option.
 
-Assets in the examples might be distributed under different terms. See the [readme](/bevy_asset_loader/examples/README.md#credits) in the `bevy_asset_loader/examples` directory.
+Assets in the examples might be distributed under different terms. See the [readme](bevy_asset_loader/examples/README.md#credits) in the `bevy_asset_loader/examples` directory.
 
 ## Contribution
 
