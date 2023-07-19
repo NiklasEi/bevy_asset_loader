@@ -9,7 +9,7 @@ This [Bevy][bevy] plugin reduces boilerplate for handling game assets. The crate
 
 In most cases you will want to load your asset collections during loading states (think loading screens). During such a state, all assets are loaded and their loading process is observed. Only when asset collections can be build with fully loaded asset handles, the collections are inserted as resources. If you do not want to use a loading state, asset collections can still result in cleaner code and improved maintainability (see the ["usage without a loading state"](#usage-without-a-loading-state) section).
 
-_The `main` branch and the latest release support Bevy version `0.10` (see [version table](#compatible-bevy-versions))_
+_The `main` branch and the latest release support Bevy version `0.11` (see [version table](#compatible-bevy-versions))_
 
 ## Loading states
 
@@ -415,13 +415,14 @@ The main branch is compatible with the latest Bevy release, while the branch `be
 Compatibility of `bevy_asset_loader` versions:
 | `bevy_asset_loader` | `bevy` |
 | :--                 | :--    |
+| `0.17`              | `0.11` |
 | `0.15` - `0.16`     | `0.10` |
 | `0.14`              | `0.9`  |
 | `0.12` - `0.13`     | `0.8`  |
 | `0.10` - `0.11`     | `0.7`  |
 | `0.8` - `0.9`       | `0.6`  |
 | `0.1` - `0.7`       | `0.5`  |
-| branch `main`       | `0.10` |
+| branch `main`       | `0.11` |
 | branch `bevy_main`  | `main` |
 
 ## License
