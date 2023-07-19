@@ -43,6 +43,13 @@ impl DynamicAssets {
         self.key_asset_map.get(key).map(|boxed| boxed.as_ref())
     }
 
+    /// Iterate over all the known key→asset mappings
+    pub fn iter_assets(&self) -> impl Iterator<Item = (&str, &dyn DynamicAsset)> {
+        self.key_asset_map
+            .iter()
+            .map(|(k, v)| (k.as_str(), v.as_ref()))
+    }
+
     /// Set the corresponding dynamic asset for the given key.
     ///
     /// In case the key is already known, its value will be overwritten.
