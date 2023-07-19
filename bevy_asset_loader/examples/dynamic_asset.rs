@@ -3,7 +3,7 @@ use bevy_asset_loader::prelude::*;
 
 /// This example shows how to load an asset collection with dynamic assets defined in a `.ron` file.
 ///
-/// The assets loaded in this example are defined in `assets/dynamic_asset.assets`
+/// The assets loaded in this example are defined in `assets/dynamic_asset.assets.ron`
 fn main() {
     App::new()
         .add_state::<MyStates>()

@@ -5,6 +5,10 @@ use bevy::utils::HashMap;
 use bevy_asset_loader::prelude::*;
 use path_slash::PathExt;
 
+/// This example requires the `standard_dynamic_assets` feature for loading the ron file
+/// and the `2d` and `3d` features for `TextureAtlas` and `StandardMaterial` dynamic assets.
+/// It showcases all possible configurations for dynamic assets.
+
 fn main() {
     App::new()
         .add_state::<MyStates>()
@@ -26,48 +30,48 @@ struct MyAssets {
     // Single files loaded into a Handle<T>
 
     // File without post-processing
-    // Type in `assets/my.assets`: `File`
+    // Type in `assets/full_dynamic_collection.assets.ron`: `File`
     #[asset(key = "single_file")]
     single_file: Handle<AudioSource>,
     // This file will be converted to a standard material
     // The configuration for that is part of the `.assets` file
-    // Type in `assets/my.assets`: `StandardMaterial`
+    // Type in `assets/full_dynamic_collection.assets.ron`: `StandardMaterial`
     #[asset(key = "standard_material")]
     standard_material: Handle<StandardMaterial>,
     // This file will be converted to a texture atlas
     // The configuration for that is part of the `.assets` file
-    // Type in `assets/my.assets`: `TextureAtlas`
+    // Type in `assets/full_dynamic_collection.assets.ron`: `TextureAtlas`
     #[asset(key = "texture_atlas")]
     texture_atlas: Handle<TextureAtlas>,
     // Optional asset
-    // The key `optional_file` is not defined in `assets/my.assets`, so the value of this field
+    // The key `optional_file` is not defined in `assets/full_dynamic_collection.assets.ron`, so the value of this field
     // will be `None`
-    // Type in `assets/my.assets`: `File`, `StandardMaterial`, or `TextureAtlas`
+    // Type in `assets/full_dynamic_collection.assets.ron`: `File`, `StandardMaterial`, or `TextureAtlas`
     #[asset(key = "optional_file", optional)]
     optional_file: Option<Handle<AudioSource>>,
 
     // Collections of files
 
     // Untyped folder
-    // Type in `assets/my.assets`: `Folder`
+    // Type in `assets/full_dynamic_collection.assets.ron`: `Folder`
     #[asset(key = "folder_untyped", collection)]
     folder_untyped: Vec<HandleUntyped>,
     #[asset(key = "folder_untyped", collection(mapped))]
     folder_untyped_mapped: HashMap<String, HandleUntyped>,
     // Typed folder
-    // Type in `assets/my.assets`: `Folder`
+    // Type in `assets/full_dynamic_collection.assets.ron`: `Folder`
     #[asset(key = "folder_typed", collection(typed))]
     folder_typed: Vec<Handle<Image>>,
     #[asset(key = "folder_typed", collection(typed, mapped))]
     folder_typed_mapped: HashMap<String, Handle<Image>>,
     // Untyped files
-    // Type in `assets/my.assets`: `Files`
+    // Type in `assets/full_dynamic_collection.assets.ron`: `Files`
     #[asset(key = "files_untyped", collection)]
     files_untyped: Vec<HandleUntyped>,
     #[asset(key = "files_untyped", collection(mapped))]
     files_untyped_mapped: HashMap<String, HandleUntyped>,
     // Typed files
-    // Type in `assets/my.assets`: `Files`
+    // Type in `assets/full_dynamic_collection.assets.ron`: `Files`
     #[asset(key = "files_typed", collection(typed))]
     files_typed: Vec<Handle<Image>>,
     #[asset(key = "files_typed", collection(typed, mapped))]
