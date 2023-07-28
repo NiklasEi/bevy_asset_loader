@@ -80,11 +80,9 @@ impl<State: States> DynamicAssetCollections<State> {
         &mut self,
         loading_state: State,
         file: &str,
-    ) -> bool {
+    ) {
         let mut dynamic_collections_for_state =
             self.files.remove(&loading_state).unwrap_or_default();
-        let initialize_dynamic_assets =
-            !dynamic_collections_for_state.contains_key(&TypeId::of::<C>());
         let mut dynamic_files = dynamic_collections_for_state
             .remove(&TypeId::of::<C>())
             .unwrap_or_default();
@@ -92,8 +90,6 @@ impl<State: States> DynamicAssetCollections<State> {
         dynamic_collections_for_state.insert(TypeId::of::<C>(), dynamic_files);
         self.files
             .insert(loading_state, dynamic_collections_for_state);
-
-        initialize_dynamic_assets
     }
 
     /// Get all currently registered files to be loaded for the given loading state and dynamic asset collection type.
