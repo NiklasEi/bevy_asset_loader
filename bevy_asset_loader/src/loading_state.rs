@@ -414,6 +414,11 @@ where
                         .run_if(in_state(InternalLoadingState::<S>::Finalize)),
                 );
 
+            #[cfg(feature = "standard_dynamic_assets")]
+            app.register_dynamic_asset_collection::<_, StandardDynamicAssetCollection>(
+                self.loading_state.clone(),
+            );
+
             #[cfg(feature = "progress_tracking")]
             app.add_systems(
                 Update,
@@ -602,6 +607,15 @@ pub trait LoadingStateAppExt {
         loading_state: S,
     ) -> &mut Self;
 
+    /// Register a new [`DynamicAssetCollection`] to be handled in the loading state
+    ///
+    /// You do not need to call this for [`StandardDynamicAssetCollection`], only if you want to use
+    /// your own dynamic asset collection types.
+    fn register_dynamic_asset_collection<S: States, C: DynamicAssetCollection + Asset>(
+        &mut self,
+        loading_state: S,
+    ) -> &mut Self;
+
     /// Register files to be loaded as a certain type of [`DynamicAssetCollection`]
     ///
     /// During the loading state, the given dynamic asset collections will be loaded and their
@@ -688,6 +702,24 @@ impl LoadingStateAppExt for App {
         )
     }
 
+    fn register_dynamic_asset_collection<S: States, C: DynamicAssetCollection + Asset>(
+        &mut self,
+        loading_state: S,
+    ) -> &mut Self {
+        self.add_systems(
+            OnEnterInternalLoadingState(
+                loading_state.clone(),
+                InternalLoadingState::LoadingDynamicAssetCollections,
+            ),
+            load_dynamic_asset_collections::<S, C>,
+        )
+        .add_systems(
+            LoadingStateSchedule(loading_state),
+            check_dynamic_asset_collections::<S, C>
+                .in_set(InternalLoadingStateSet::CheckDynamicAssetCollections),
+        )
+    }
+
     fn add_dynamic_collection_to_loading_state<S: States, C: DynamicAssetCollection + Asset>(
         &mut self,
         loading_state: S,
@@ -698,21 +730,7 @@ impl LoadingStateAppExt for App {
             .get_resource_mut::<DynamicAssetCollections<S>>()
             .unwrap();
 
-        if dynamic_asset_collections.register_file::<C>(loading_state.clone(), file) {
-            self.add_systems(
-                OnEnterInternalLoadingState(
-                    loading_state.clone(),
-                    InternalLoadingState::LoadingDynamicAssetCollections,
-                ),
-                load_dynamic_asset_collections::<S, C>,
-            )
-            .add_systems(
-                LoadingStateSchedule(loading_state),
-                check_dynamic_asset_collections::<S, C>
-                    .in_set(InternalLoadingStateSet::CheckDynamicAssetCollections),
-            );
-        }
-
+        dynamic_asset_collections.register_file::<C>(loading_state.clone(), file);
         self
     }
 

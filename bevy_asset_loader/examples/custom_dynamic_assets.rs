@@ -17,6 +17,9 @@ fn main() {
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
         )
+        .register_dynamic_asset_collection::<_, CustomDynamicAssetCollection>(
+            MyStates::AssetLoading,
+        )
         .add_dynamic_collection_to_loading_state::<_, CustomDynamicAssetCollection>(
             MyStates::AssetLoading,
             "custom.my-assets.ron",
