@@ -4,6 +4,7 @@ use bevy::app::AppExit;
 use bevy::asset::AssetPlugin;
 use bevy::audio::AudioPlugin;
 use bevy::prelude::*;
+use bevy::utils::HashMap;
 use bevy_asset_loader::asset_collection::AssetCollection;
 use bevy_asset_loader::loading_state::{LoadingState, LoadingStateAppExt};
 
@@ -22,8 +23,7 @@ fn multiple_asset_collections() {
             AudioPlugin::default(),
         ))
         .add_loading_state(LoadingState::new(MyStates::Load).continue_to_state(MyStates::Next))
-        .add_collection_to_loading_state::<_, PlopAudio>(MyStates::Load)
-        .add_collection_to_loading_state::<_, BackgroundAudio>(MyStates::Load)
+        .add_collection_to_loading_state::<_, AudioCollection>(MyStates::Load)
         .add_systems(Update, timeout.run_if(in_state(MyStates::Load)))
         .add_systems(OnEnter(MyStates::Next), expect)
         .run();
@@ -35,28 +35,20 @@ fn timeout(time: Res<Time>) {
     }
 }
 
-fn expect(
-    collection: Option<Res<PlopAudio>>,
-    other_collection: Option<Res<BackgroundAudio>>,
-    mut exit: EventWriter<AppExit>,
-) {
-    if collection.is_none() || other_collection.is_none() {
+fn expect(collection: Option<Res<AudioCollection>>, mut exit: EventWriter<AppExit>) {
+    if collection.is_none() {
         panic!("At least one asset collection was not inserted");
     } else {
+        // make sure the asset paths use slash on all OS
+        assert!(collection.unwrap().files.contains_key("audio/plop.ogg"));
         exit.send(AppExit);
     }
 }
 
 #[derive(AssetCollection, Resource)]
-struct PlopAudio {
-    #[asset(path = "audio/plop.ogg")]
-    plop: Handle<AudioSource>,
-}
-
-#[derive(AssetCollection, Resource)]
-struct BackgroundAudio {
-    #[asset(path = "audio/background.ogg")]
-    background: Handle<AudioSource>,
+struct AudioCollection {
+    #[asset(path = "audio", collection(typed, mapped))]
+    files: HashMap<String, Handle<AudioSource>>,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]

@@ -3,7 +3,7 @@ use bevy_asset_loader::prelude::*;
 
 /// This example shows how to load an asset collection with dynamic assets defined in a `.ron` file.
 ///
-/// The assets loaded in this example are defined in `assets/dynamic_asset.assets`
+/// The assets loaded in this example are defined in `assets/dynamic_asset.assets.ron`
 fn main() {
     App::new()
         .add_state::<MyStates>()
@@ -19,9 +19,13 @@ fn main() {
         .add_collection_to_loading_state::<_, AudioAssets>(MyStates::AssetLoading)
         .insert_resource(Msaa::Off)
         .add_systems(
-            (spawn_player_and_tree, play_background_audio).in_schedule(OnEnter(MyStates::Next)),
+            OnEnter(MyStates::Next),
+            (spawn_player_and_tree, play_background_audio),
         )
-        .add_system(animate_sprite_system.run_if(in_state(MyStates::Next)))
+        .add_systems(
+            Update,
+            animate_sprite_system.run_if(in_state(MyStates::Next)),
+        )
         .run();
 }
 
@@ -66,8 +70,11 @@ fn spawn_player_and_tree(mut commands: Commands, image_assets: Res<ImageAssets>)
     });
 }
 
-fn play_background_audio(audio_assets: Res<AudioAssets>, audio: Res<Audio>) {
-    audio.play(audio_assets.background.clone());
+fn play_background_audio(mut commands: Commands, audio_assets: Res<AudioAssets>) {
+    commands.spawn(AudioBundle {
+        source: audio_assets.background.clone(),
+        settings: PlaybackSettings::LOOP,
+    });
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]

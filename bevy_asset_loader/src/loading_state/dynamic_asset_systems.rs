@@ -22,14 +22,17 @@ pub(crate) fn load_dynamic_asset_collections<S: States, C: DynamicAssetCollectio
         system_state.get_mut(world);
     let mut loading_collections: LoadingAssetHandles<(S, C)> = LoadingAssetHandles::default();
 
-    if let Some(files) = dynamic_asset_collections.get_files::<C>(&state.0) {
+    if let Some(files) = dynamic_asset_collections.get_files::<C>(state.get()) {
         for file in files {
             loading_collections
                 .handles
                 .push(asset_server.load_untyped(file));
         }
     }
-    if let Some(config) = asset_loader_config.state_configurations.get_mut(&state.0) {
+    if let Some(config) = asset_loader_config
+        .state_configurations
+        .get_mut(state.get())
+    {
         config.loading_dynamic_collections.insert(TypeId::of::<C>());
     }
     world.insert_resource(loading_collections);
@@ -74,7 +77,7 @@ pub(crate) fn check_dynamic_asset_collections<S: States, C: DynamicAssetCollecti
         }
         let config = asset_loader_config
             .state_configurations
-            .get_mut(&state.0)
+            .get_mut(state.get())
             .expect("No asset loader configuration for current state");
         config
             .loading_dynamic_collections
@@ -90,7 +93,7 @@ pub(crate) fn resume_to_loading_asset_collections<S: States>(
 ) {
     let config = asset_loader_config
         .state_configurations
-        .get(&state.0)
+        .get(state.get())
         .expect("No asset loader configuration for current state");
     if config.loading_dynamic_collections.is_empty() {
         debug!("No dynamic asset collection file left loading. Resuming to 'LoadingAssets'");

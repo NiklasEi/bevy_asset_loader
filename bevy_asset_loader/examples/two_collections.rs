@@ -15,9 +15,10 @@ fn main() {
         .add_collection_to_loading_state::<_, AudioAssets>(MyStates::AssetLoading)
         .insert_resource(Msaa::Off)
         .add_systems(
-            (spawn_player_and_tree, play_background_audio).in_schedule(OnEnter(MyStates::Next)),
+            OnEnter(MyStates::Next),
+            (spawn_player_and_tree, play_background_audio),
         )
-        .add_system(move_player.run_if(in_state(MyStates::Next)))
+        .add_systems(Update, move_player.run_if(in_state(MyStates::Next)))
         .run();
 }
 
@@ -56,8 +57,11 @@ fn spawn_player_and_tree(mut commands: Commands, image_assets: Res<ImageAssets>)
     });
 }
 
-fn play_background_audio(audio_assets: Res<AudioAssets>, audio: Res<Audio>) {
-    audio.play(audio_assets.background.clone());
+fn play_background_audio(mut commands: Commands, audio_assets: Res<AudioAssets>) {
+    commands.spawn(AudioBundle {
+        source: audio_assets.background.clone(),
+        settings: PlaybackSettings::LOOP,
+    });
 }
 
 fn move_player(input: Res<Input<KeyCode>>, mut player: Query<&mut Transform, With<Player>>) {

@@ -15,18 +15,19 @@ use bevy_asset_loader::loading_state::{LoadingState, LoadingStateAppExt};
 fn multiple_loading_states() {
     App::new()
         .add_state::<MyStates>()
-        .add_plugins(MinimalPlugins)
-        .add_plugin(AssetPlugin::default())
-        .add_plugin(AudioPlugin::default())
+        .add_plugins((
+            MinimalPlugins,
+            AssetPlugin::default(),
+            AudioPlugin::default(),
+        ))
         .add_loading_state(LoadingState::new(MyStates::Splash).continue_to_state(MyStates::Load))
         .add_collection_to_loading_state::<_, SplashAssets>(MyStates::Splash)
         .add_loading_state(LoadingState::new(MyStates::Load).continue_to_state(MyStates::Play))
         .add_collection_to_loading_state::<_, MyAssets>(MyStates::Load)
         .add_collection_to_loading_state::<_, MyOtherAssets>(MyStates::Load)
-        .add_system(timeout)
-        .add_system(use_splash_assets.in_schedule(OnEnter(MyStates::Load)))
-        .add_system(use_loading_assets.in_schedule(OnEnter(MyStates::Play)))
-        .add_system(quit.run_if(in_state(MyStates::Play)))
+        .add_systems(Update, (quit.run_if(in_state(MyStates::Play)), timeout))
+        .add_systems(OnEnter(MyStates::Load), use_splash_assets)
+        .add_systems(OnEnter(MyStates::Play), use_loading_assets)
         .run();
 }
 

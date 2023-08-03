@@ -1,13 +1,20 @@
 # Changelog
 
+## v0.17.0
+- update to Bevy 0.11
+- Use "/" in paths used as keys for mapped collections on all platforms (resolves [#135](https://github.com/NiklasEi/bevy_asset_loader/issues/135))
+
+## v0.16.1
 - Fix running loading states in parallel states, meaning using multiple state types (resolves [#125](https://github.com/NiklasEi/bevy_asset_loader/issues/125))
 - Dynamic asset files can be loaded multiple times now
-  - This allows re-entering a loading state containing dynamic assets (see [#126](https://github.com/NiklasEi/bevy_asset_loader/issues/126))
-  - and loading dynamic assets in multiple states (see [#123](https://github.com/NiklasEi/bevy_asset_loader/issues/123))
+  - re-entering a loading state containing dynamic assets (see [#126](https://github.com/NiklasEi/bevy_asset_loader/issues/126))
+  - loading dynamic assets in multiple states (see [#123](https://github.com/NiklasEi/bevy_asset_loader/issues/123))
 - Fix crash with non default exit criteria (see [#121](https://github.com/NiklasEi/bevy_asset_loader/issues/121))
 
 ## v0.16.0
 - Remove features coming from optional dependencies
+- Allow usage of non default exit criteria; workaround for [bevy#8386](https://github.com/bevyengine/bevy/issues/8386)
+- Move compile error to field with missing `FromWorld` impl
 
 ## v0.15.0
 - Option to load folders as maps of path to handle (resolves [#32](https://github.com/NiklasEi/bevy_asset_loader/issues/32))

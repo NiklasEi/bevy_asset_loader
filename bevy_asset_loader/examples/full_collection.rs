@@ -3,6 +3,7 @@ use bevy::asset::LoadState;
 use bevy::prelude::*;
 use bevy::utils::HashMap;
 use bevy_asset_loader::prelude::*;
+use path_slash::PathExt;
 use std::path::Path;
 
 fn main() {
@@ -13,7 +14,7 @@ fn main() {
             LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
         )
         .add_collection_to_loading_state::<_, MyAssets>(MyStates::AssetLoading)
-        .add_system(expectations.in_schedule(OnEnter(MyStates::Next)))
+        .add_systems(OnEnter(MyStates::Next), expectations)
         .run();
 }
 
@@ -121,12 +122,13 @@ fn expectations(
             LoadState::Loaded
         );
         assert_eq!(
-            asset_server
+            &asset_server
                 .get_handle_path(handle.clone())
                 .unwrap()
                 .path()
-                .to_str()
-                .unwrap(),
+                .to_slash()
+                .unwrap()
+                .to_string(),
             name
         );
     }
@@ -137,12 +139,13 @@ fn expectations(
             LoadState::Loaded
         );
         assert_eq!(
-            asset_server
+            &asset_server
                 .get_handle_path(handle.clone())
                 .unwrap()
                 .path()
-                .to_str()
-                .unwrap(),
+                .to_slash()
+                .unwrap()
+                .to_string(),
             name
         );
     }

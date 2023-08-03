@@ -15,9 +15,11 @@ use bevy_asset_loader::prelude::*;
 fn main() {
     App::new()
         .add_state::<MyStates>()
-        .add_plugins(MinimalPlugins)
-        .add_plugin(AssetPlugin::default())
-        .add_plugin(AudioPlugin::default())
+        .add_plugins((
+            MinimalPlugins,
+            AssetPlugin::default(),
+            AudioPlugin::default(),
+        ))
         .insert_resource(SplashTimer(Timer::from_seconds(1.0, TimerMode::Once)))
         .add_loading_state(
             LoadingState::new(MyStates::SplashAssetLoading).continue_to_state(MyStates::Splash),
@@ -26,7 +28,7 @@ fn main() {
             MyStates::SplashAssetLoading,
             "full_dynamic_collection.assets.ron",
         )
-        .add_system(splash_countdown.in_set(OnUpdate(MyStates::Splash)))
+        .add_systems(Update, splash_countdown.run_if(in_state(MyStates::Splash)))
         .add_loading_state(
             LoadingState::new(MyStates::MainMenuAssetLoading).continue_to_state(MyStates::MainMenu),
         )
@@ -35,8 +37,7 @@ fn main() {
             "full_dynamic_collection.assets.ron",
         )
         .add_collection_to_loading_state::<_, MainMenuAssets>(MyStates::MainMenuAssetLoading)
-        .add_system(timeout)
-        .add_system(quit.in_set(OnUpdate(MyStates::MainMenu)))
+        .add_systems(Update, (timeout, quit.run_if(in_state(MyStates::MainMenu))))
         .run();
 }
 

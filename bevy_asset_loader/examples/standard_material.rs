@@ -17,7 +17,7 @@ fn main() {
             color: Color::WHITE,
             brightness: 0.2,
         })
-        .add_system(spawn_player.in_schedule(OnEnter(MyStates::Next)))
+        .add_systems(OnEnter(MyStates::Next), spawn_player)
         .run();
 }
 

@@ -43,6 +43,13 @@ impl DynamicAssets {
         self.key_asset_map.get(key).map(|boxed| boxed.as_ref())
     }
 
+    /// Iterate over all the known key→asset mappings
+    pub fn iter_assets(&self) -> impl Iterator<Item = (&str, &dyn DynamicAsset)> {
+        self.key_asset_map
+            .iter()
+            .map(|(k, v)| (k.as_str(), v.as_ref()))
+    }
+
     /// Set the corresponding dynamic asset for the given key.
     ///
     /// In case the key is already known, its value will be overwritten.
@@ -73,11 +80,9 @@ impl<State: States> DynamicAssetCollections<State> {
         &mut self,
         loading_state: State,
         file: &str,
-    ) -> bool {
+    ) {
         let mut dynamic_collections_for_state =
             self.files.remove(&loading_state).unwrap_or_default();
-        let initialize_dynamic_assets =
-            !dynamic_collections_for_state.contains_key(&TypeId::of::<C>());
         let mut dynamic_files = dynamic_collections_for_state
             .remove(&TypeId::of::<C>())
             .unwrap_or_default();
@@ -85,8 +90,6 @@ impl<State: States> DynamicAssetCollections<State> {
         dynamic_collections_for_state.insert(TypeId::of::<C>(), dynamic_files);
         self.files
             .insert(loading_state, dynamic_collections_for_state);
-
-        initialize_dynamic_assets
     }
 
     /// Get all currently registered files to be loaded for the given loading state and dynamic asset collection type.

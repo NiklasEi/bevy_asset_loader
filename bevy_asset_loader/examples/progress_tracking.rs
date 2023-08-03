@@ -1,6 +1,6 @@
 use bevy::app::AppExit;
 use bevy::asset::LoadState;
-use bevy::diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin};
+use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 use iyes_progress::{Progress, ProgressCounter, ProgressPlugin, ProgressSystem};
@@ -13,23 +13,28 @@ use iyes_progress::{Progress, ProgressCounter, ProgressPlugin, ProgressSystem};
 /// and the app will terminate.
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins((
+            DefaultPlugins,
+            // track progress during `MyStates::AssetLoading` and continue to `MyStates::Next` when progress is completed
+            ProgressPlugin::new(MyStates::AssetLoading).continue_to(MyStates::Next),
+            FrameTimeDiagnosticsPlugin::default(),
+        ))
         .add_state::<MyStates>()
         .add_loading_state(LoadingState::new(MyStates::AssetLoading))
         .add_collection_to_loading_state::<_, TextureAssets>(MyStates::AssetLoading)
         .add_collection_to_loading_state::<_, AudioAssets>(MyStates::AssetLoading)
-        .add_plugin(FrameTimeDiagnosticsPlugin::default())
-        // track progress during `MyStates::AssetLoading` and continue to `MyStates::Next` when progress is completed
-        .add_plugin(ProgressPlugin::new(MyStates::AssetLoading).continue_to(MyStates::Next))
         // gracefully quit the app when `MyStates::Next` is reached
-        .add_system(expect.in_schedule(OnEnter(MyStates::Next)))
-        .add_system(
-            track_fake_long_task
-                .track_progress()
-                .before(print_progress)
-                .run_if(in_state(MyStates::AssetLoading)),
+        .add_systems(OnEnter(MyStates::Next), expect)
+        .add_systems(
+            Update,
+            (
+                track_fake_long_task
+                    .track_progress()
+                    .before(print_progress)
+                    .run_if(in_state(MyStates::AssetLoading)),
+                print_progress,
+            ),
         )
-        .add_system(print_progress)
         .run();
 }
 
@@ -103,7 +108,7 @@ fn expect(
 
 fn print_progress(
     progress: Option<Res<ProgressCounter>>,
-    diagnostics: Res<Diagnostics>,
+    diagnostics: Res<DiagnosticsStore>,
     mut last_done: Local<u32>,
 ) {
     if let Some(progress) = progress.map(|counter| counter.progress()) {
