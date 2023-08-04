@@ -17,7 +17,6 @@ use std::result::Result::{Err, Ok};
 use crate::assets::*;
 use proc_macro2::Ident;
 use quote::{quote, quote_spanned, ToTokens, TokenStreamExt};
-use syn::meta::ParseNestedMeta;
 use syn::punctuated::Punctuated;
 use syn::{Data, Expr, ExprLit, Field, Fields, Index, Lit, LitStr, Meta, Token};
 
