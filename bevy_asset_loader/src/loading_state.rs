@@ -486,7 +486,7 @@ impl<S: States> States for InternalLoadingState<S> {
             Self::LoadingDynamicAssetCollections,
             Self::LoadingAssets,
             Self::Finalize,
-            Self::Done(PhantomData::default()),
+            Self::Done(PhantomData),
         ]
         .into_iter()
     }
@@ -755,7 +755,7 @@ where
 {
     fn new() -> Self {
         InternalAssetLoaderPlugin {
-            _state_marker: PhantomData::default(),
+            _state_marker: PhantomData,
         }
     }
 }

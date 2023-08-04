@@ -109,7 +109,7 @@ impl<State: States> Default for DynamicAssetCollections<State> {
     fn default() -> Self {
         DynamicAssetCollections {
             files: HashMap::default(),
-            _marker: PhantomData::default(),
+            _marker: PhantomData,
         }
     }
 }

@@ -173,7 +173,7 @@ pub(crate) fn finish_loading_state<S: States>(
         }
     }
 
-    loading_state.set(InternalLoadingState::Done(PhantomData::default()));
+    loading_state.set(InternalLoadingState::Done(PhantomData));
 }
 
 pub(crate) fn reset_loading_state<S: States>(world: &mut World) {

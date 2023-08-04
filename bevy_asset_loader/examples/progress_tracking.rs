@@ -17,7 +17,7 @@ fn main() {
             DefaultPlugins,
             // track progress during `MyStates::AssetLoading` and continue to `MyStates::Next` when progress is completed
             ProgressPlugin::new(MyStates::AssetLoading).continue_to(MyStates::Next),
-            FrameTimeDiagnosticsPlugin::default(),
+            FrameTimeDiagnosticsPlugin,
         ))
         .add_state::<MyStates>()
         .add_loading_state(LoadingState::new(MyStates::AssetLoading))
