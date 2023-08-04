@@ -1,7 +1,7 @@
-//! This crate adds support for auto deriving [`AssetCollection`]
+//! This crate adds support for deriving [`AssetCollection`]
 //!
-//! You do not have to use it directly. Just import ``AssetCollection`` from ``bevy_asset_loader``
-//! and use ``#[derive(AssetCollection)]`` to derive the trait.
+//! You do not have to use it directly. Just import [`AssetCollection`] from `bevy_asset_loader`
+//! and use `#[derive(AssetCollection)]` to derive the trait.
 
 #![forbid(unsafe_code)]
 #![warn(unused_imports)]
@@ -17,6 +17,7 @@ use std::result::Result::{Err, Ok};
 use crate::assets::*;
 use proc_macro2::Ident;
 use quote::{quote, quote_spanned, ToTokens, TokenStreamExt};
+use syn::meta::ParseNestedMeta;
 use syn::punctuated::Punctuated;
 use syn::{Data, Expr, ExprLit, Field, Fields, Index, Lit, LitStr, Meta, Token};
 
@@ -231,10 +232,11 @@ enum ParseFieldError {
 fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
     let mut builder = AssetBuilder::default();
     let mut errors = vec![];
-    for attr in field.attrs.iter() {
-        if !attr.path().is_ident(ASSET_ATTRIBUTE) {
-            continue;
-        }
+    for attr in field
+        .attrs
+        .iter()
+        .filter(|attribute| attribute.path().is_ident(ASSET_ATTRIBUTE))
+    {
         let asset_meta_list = attr.parse_args_with(Punctuated::<Meta, Token![,]>::parse_terminated);
 
         builder.field_ident = Some(field.clone().ident.unwrap());
