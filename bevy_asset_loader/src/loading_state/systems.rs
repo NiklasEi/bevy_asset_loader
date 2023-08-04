@@ -32,7 +32,7 @@ pub(crate) fn start_loading_collection<S: States, Assets: AssetCollection>(
     );
     let (mut asset_loader_configuration, state) = system_state.get_mut(world);
 
-    let mut config = asset_loader_configuration
+    let config = asset_loader_configuration
         .state_configurations
         .get_mut(state.get())
         .unwrap_or_else(|| {
@@ -102,7 +102,7 @@ fn count_loaded_handles<S: States, Assets: AssetCollection>(cell: WorldCell) -> 
     let mut asset_loader_configuration = cell
         .get_resource_mut::<AssetLoaderConfiguration<S>>()
         .expect("Cannot get AssetLoaderConfiguration resource");
-    if let Some(mut config) = asset_loader_configuration
+    if let Some(config) = asset_loader_configuration
         .state_configurations
         .get_mut(state.get())
     {
