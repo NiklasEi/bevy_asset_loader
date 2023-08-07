@@ -9,9 +9,12 @@
     ),
     "combined_image": CombinedImage (
         bottom_layer: "images/tree.png",
-        top_layer: "images/player.png",
+        top_layer_key: "player",
     ),
     "cube": Cube (
         size: 1.3,
     ),
+    "player": Standard(File (
+        path: "images/player.png",
+    )),
 })

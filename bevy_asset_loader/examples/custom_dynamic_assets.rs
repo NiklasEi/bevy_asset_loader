@@ -90,7 +90,8 @@ struct MyAssets {
 enum CustomDynamicAsset {
     CombinedImage {
         bottom_layer: String,
-        top_layer: String,
+        // here we reference a dynamic asset by key instead of directly expecting an image path
+        top_layer_key: String,
     },
     StandardMaterial {
         base_color: [f32; 4],
@@ -99,6 +100,8 @@ enum CustomDynamicAsset {
     Cube {
         size: f32,
     },
+    // This way you can use StandardDynamicAsset together with your own custom dynamic assets in the same files
+    Standard(StandardDynamicAsset),
 }
 
 impl DynamicAsset for CustomDynamicAsset {
@@ -108,36 +111,40 @@ impl DynamicAsset for CustomDynamicAsset {
     fn load(&self, asset_server: &AssetServer) -> Vec<HandleUntyped> {
         match self {
             CustomDynamicAsset::CombinedImage {
-                top_layer,
+                top_layer_key,
                 bottom_layer,
             } => vec![
                 asset_server.load_untyped(bottom_layer),
-                asset_server.load_untyped(top_layer),
+                asset_server.load_untyped(bottom_layer),
             ],
             CustomDynamicAsset::StandardMaterial {
                 base_color_texture, ..
             } => vec![asset_server.load_untyped(base_color_texture)],
             CustomDynamicAsset::Cube { .. } => vec![],
+            CustomDynamicAsset::Standard(standard) => standard.load(asset_server),
         }
     }
 
     // This method is called when all asset handles returned from `load` are done loading.
     // The handles that you return, should also be loaded.
     fn build(&self, world: &mut World) -> Result<DynamicAssetType, anyhow::Error> {
+        if let CustomDynamicAsset::Standard(standard) = self {
+            return standard.build(world);
+        }
         let cell = world.cell();
         let asset_server = cell
             .get_resource::<AssetServer>()
             .expect("Failed to get asset server");
         match self {
             CustomDynamicAsset::CombinedImage {
-                top_layer,
+                top_layer_key,
                 bottom_layer,
             } => {
                 let mut images = cell
                     .get_resource_mut::<Assets<Image>>()
                     .expect("Failed to get image assets");
                 let first = images
-                    .get(&asset_server.load(top_layer))
+                    .get(&asset_server.load(bottom_layer))
                     .expect("Failed to get first layer");
                 let second = images
                     .get(&asset_server.load(bottom_layer))
@@ -191,6 +198,9 @@ impl DynamicAsset for CustomDynamicAsset {
                     .clone_untyped();
 
                 Ok(DynamicAssetType::Single(handle))
+            }
+            CustomDynamicAsset::Standard(_) => {
+                unreachable!("This case is already handled earlier in the method")
             }
         }
     }

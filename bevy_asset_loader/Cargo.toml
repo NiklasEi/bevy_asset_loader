@@ -95,3 +95,5 @@ required-features = ["2d", "3d", "standard_dynamic_assets"]
 [[example]]
 name = "custom_dynamic_assets"
 path = "examples/custom_dynamic_assets.rs"
+# These features are only needed because we reference standard dynmaic assets in the custom ones
+required-features = ["2d", "standard_dynamic_assets"]
