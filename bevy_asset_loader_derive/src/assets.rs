@@ -428,6 +428,20 @@ impl AssetField {
             }
         }
     }
+
+    pub(crate) fn attach_token_stream_for_collecting_dependencies(&self, token_stream: TokenStream) -> TokenStream {
+        match self {
+            AssetField::Dynamic(dynamic) | AssetField::DynamicFileCollection(dynamic, _, _)|AssetField::OptionalDynamic(dynamic)
+                | AssetField::OptionalDynamicFileCollection(dynamic, _, _) => {
+                let asset_key = dynamic.key.clone();
+                quote!(
+                    #token_stream
+                    dynamic_asset_keys.push(#asset_key.into());
+                )
+            }
+            _ => token_stream
+        }
+    }
 }
 
 #[derive(Default, Debug)]

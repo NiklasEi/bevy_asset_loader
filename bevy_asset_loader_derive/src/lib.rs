@@ -162,12 +162,44 @@ fn impl_asset_collection(
     });
     let load_function = quote! {
             fn load(world: &mut ::bevy::ecs::world::World) -> Vec<::bevy::prelude::HandleUntyped> {
+                let dependencies = Self::dependencies(world);
                 let cell = world.cell();
                 let asset_server = cell.get_resource::<::bevy::prelude::AssetServer>().expect("Cannot get AssetServer");
                 let asset_keys = cell.get_resource::<bevy_asset_loader::prelude::DynamicAssets>().expect("Cannot get bevy_asset_loader::prelude::DynamicAssets");
                 let mut handles = vec![];
                 #asset_loading
                 handles
+            }
+    };
+
+
+    let collecting_dependencies = assets.iter().fold(quote!(), |token_stream, asset| {
+        asset.attach_token_stream_for_collecting_dependencies(token_stream)
+    });
+    let dependencies_function = quote! {
+            fn dependencies(world: &mut ::bevy::ecs::world::World) -> Vec<String> {
+                let cell = world.cell();
+                let asset_keys = cell.get_resource::<::bevy_asset_loader::prelude::DynamicAssets>().expect("Cannot get bevy_asset_loader::prelude::DynamicAssets");
+                let mut dynamic_asset_keys: Vec<String> = vec![];
+                #collecting_dependencies
+
+                let mut dependency_keys: Vec<String> = vec![];
+                let mut new_dependencies: Vec<String> = vec![];
+                while !dynamic_asset_keys.is_empty() {
+                    for dependency in dynamic_asset_keys.drain(..) {
+                        if dependency_keys.contains(&dependency) || new_dependencies.contains(&dependency) {
+                            continue;
+                        }
+                        let dynamic_asset = asset_keys.get_asset(&dependency).unwrap_or_else(|| panic!("Failed to get asset for key '{}' while resolving dependencies", &dependency));
+                        new_dependencies.push(dependency);
+                    }
+                    for new_dependency in new_dependencies.drain(..) {
+                        let dynamic_asset = asset_keys.get_asset(&new_dependency).unwrap_or_else(|| panic!("Failed to get asset for key '{}' while resolving dependencies", &new_dependency));
+                        dynamic_asset_keys.extend(dynamic_asset.dependencies());
+                        dependency_keys.push(new_dependency);
+                    }
+                }
+                dependency_keys
             }
     };
 
@@ -207,6 +239,8 @@ fn impl_asset_collection(
             #create_function
 
             #load_function
+
+            #dependencies_function
         }
     };
     Ok(impl_asset_collection)

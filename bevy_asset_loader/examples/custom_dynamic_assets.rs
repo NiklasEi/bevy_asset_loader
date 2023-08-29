@@ -204,6 +204,13 @@ impl DynamicAsset for CustomDynamicAsset {
             }
         }
     }
+
+    fn dependencies(&self) -> Vec<String> {
+        match self {
+            CustomDynamicAsset::CombinedImage { top_layer_key, .. } => vec![top_layer_key.into()],
+            _ => vec![],
+        }
+    }
 }
 
 #[derive(serde::Deserialize, TypeUuid, TypePath)]

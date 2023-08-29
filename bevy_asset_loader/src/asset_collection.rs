@@ -25,6 +25,8 @@ pub trait AssetCollection: Resource {
     fn create(world: &mut World) -> Self;
     /// Start loading all the assets in the collection
     fn load(world: &mut World) -> Vec<HandleUntyped>;
+    /// Gather all dynamic asset keys that this asset depends on
+    fn dependencies(world: &mut World) -> Vec<String>;
 }
 
 /// Extension trait for [`App`](::bevy::app::App) enabling initialisation of [asset collections](crate::asset_collection::AssetCollection)

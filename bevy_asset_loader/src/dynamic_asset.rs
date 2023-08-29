@@ -24,6 +24,13 @@ pub trait DynamicAsset: Debug + Send + Sync {
 
     /// Return the handle(s) defining this asset
     fn build(&self, world: &mut World) -> Result<DynamicAssetType, anyhow::Error>;
+
+    /// Asset keys of other dynamic assets that this asset depends on
+    ///
+    /// All keys returned here will be loaded when [`Self::build`] is called.
+    fn dependencies(&self) -> Vec<String> {
+        return vec![];
+    }
 }
 
 /// Resource to dynamically resolve keys to assets.
