@@ -16,6 +16,39 @@ pub enum DynamicAssetType {
     Collection(Vec<HandleUntyped>),
 }
 
+/// Untracked asset handles that a dynamic asset key resolves to
+pub enum UntrackedDynamicAssetType {
+    /// Dynamic asset that is defined by a single handle
+    Single(HandleId),
+    /// Dynamic asset that is defined by multiple handles
+    Collection(Vec<HandleId>),
+}
+
+/// Cached untracked asset handles for all dynamic assets that have been loaded
+///
+/// This cache is not cleaned up and can contain unloaded handles!
+pub struct DynamicAssetCache {
+    key_asset_map: HashMap<String, UntrackedDynamicAssetType>,
+}
+
+impl DynamicAssetCache {
+    /// Get the cached asset handles corresponding to the given key.
+    pub fn get_asset(&self, key: &String) -> Option<&UntrackedDynamicAssetType> {
+        self.key_asset_map.get(key)
+    }
+
+    /// Insert an asset into the cache. The asset does not have to be loaded.
+    ///
+    /// Optional previous asset for the given key is returned
+    pub fn insert_asset(
+        &mut self,
+        key: String,
+        asset: UntrackedDynamicAssetType,
+    ) -> Option<UntrackedDynamicAssetType> {
+        self.key_asset_map.insert(key, asset)
+    }
+}
+
 /// Any type implementing this trait can be assigned to asset keys as part of a dynamic
 /// asset collection.
 pub trait DynamicAsset: Debug + Send + Sync {
