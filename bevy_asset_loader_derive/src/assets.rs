@@ -232,7 +232,7 @@ impl AssetField {
                     let asset = asset_keys.get_asset(#asset_key.into()).unwrap_or_else(|| panic!("Failed to get asset for key '{}'", #asset_key));
                     match asset.build(world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
                         ::bevy_asset_loader::prelude::DynamicAssetType::Single(handle) => handle.typed(),
-                        _ => panic!("The dynamic asset '{}' cannot be created (expected `File`, `StandardMaterial`, or `TextureAtlas`), got {:?}", #asset_key, asset)
+                        _ => panic!("The dynamic asset '{}' cannot be created. Expected a single handle, but got {:?}", #asset_key, asset)
                     }
                 },)
             }
@@ -243,7 +243,7 @@ impl AssetField {
                     let asset = asset_keys.get_asset(#asset_key.into());
                     asset.map(|asset| match asset.build(world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
                             ::bevy_asset_loader::prelude::DynamicAssetType::Single(handle) => handle.typed(),
-                            _ => panic!("The dynamic asset '{}' cannot be created (expected `File`, `StandardMaterial`, or `TextureAtlas`), got {:?}", #asset_key, asset)
+                            _ => panic!("The dynamic asset '{}' cannot be created. Expected a single handle, but got {:?}", #asset_key, asset)
                         }
                     )
                 },)
@@ -254,39 +254,43 @@ impl AssetField {
                 let load = match typed {
                     Typed::Yes => {
                         match mapped {
-                            Mapped::No => quote!(match asset.build(world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
-                                ::bevy_asset_loader::prelude::DynamicAssetType::Collection(mut handles) => handles.drain(..).map(|handle| handle.typed()).collect(),
-                                _ => panic!("The dynamic asset '{}' cannot be created (expected `Folder` or `Files`), got {:?}", #asset_key, asset),
-                            }),
-                            Mapped::Yes => quote!(match asset.build(world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
-                                ::bevy_asset_loader::prelude::DynamicAssetType::Collection(mut handles) => {
-                                    let asset_server = world.get_resource::<AssetServer>().expect("Cannot get AssetServer");
-                                    let mut folder_map = ::bevy::utils::HashMap::default();
-                                    for handle in handles {
-                                        let asset_path = asset_server
-                                            .get_handle_path(&handle)
-                                            .expect("Handle should have a path");
-                                        let key: String = ::bevy_asset_loader::path_slash::PathExt::to_slash(asset_path.path())
-                                            .expect("Path should be valid UTF-8")
-                                            .into();
-                                        folder_map.insert(key, handle.typed());
-                                    }
-                                    folder_map
-                                },
-                                _ => panic!("The dynamic asset '{}' cannot be created (expected `Folder` or `Files`), got {:?}", #asset_key, asset),
+                            Mapped::No => quote!(
+                                match asset.build(world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
+                                    ::bevy_asset_loader::prelude::DynamicAssetType::Collection(mut handles) => handles.drain(..).map(|handle| handle.typed()).collect(),
+                                    _ => panic!("The dynamic asset '{}' cannot be created. Expected a collection of handles, but got {:?}", #asset_key, asset),
+                                }
+                            ),
+                            Mapped::Yes => quote!(
+                                match asset.build(world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
+                                    ::bevy_asset_loader::prelude::DynamicAssetType::Collection(mut handles) => {
+                                        let asset_server = world.get_resource::<AssetServer>().expect("Cannot get AssetServer");
+                                        let mut folder_map = ::bevy::utils::HashMap::default();
+                                        for handle in handles {
+                                            let asset_path = asset_server
+                                                .get_handle_path(&handle)
+                                                .expect("Handle should have a path");
+                                            let key: String = ::bevy_asset_loader::path_slash::PathExt::to_slash(asset_path.path())
+                                                .expect("Path should be valid UTF-8")
+                                                .into();
+                                            folder_map.insert(key, handle.typed());
+                                        }
+                                        folder_map
+                                    },
+                                    _ => panic!("The dynamic asset '{}' cannot be created. Expected a collection of handles, but got {:?}", #asset_key, asset),
                             })
                         }
                     }
                     Typed::No => {
                         match mapped {
                             Mapped::No =>
-                                quote!(match asset.build(world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
+                                quote!(
+                                match asset.build(world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
                                     ::bevy_asset_loader::prelude::DynamicAssetType::Collection(handles) => handles,
-                                    _ =>
-                                        panic!("The dynamic asset '{}' cannot be created (expected `Folder` or `Files`), got {:?}", #asset_key, asset),
+                                    _ => panic!("The dynamic asset '{}' cannot be created. Expected a collection of handles, but got {:?}", #asset_key, asset),
                                 }),
                             Mapped::Yes =>
-                                quote!(match asset.build(world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
+                                quote!(
+                                match asset.build(world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
                                     ::bevy_asset_loader::prelude::DynamicAssetType::Collection(handles) => {
                                         let asset_server = world.get_resource::<AssetServer>().expect("Cannot get AssetServer");
                                         let mut folder_map = ::bevy::utils::HashMap::default();
@@ -301,8 +305,7 @@ impl AssetField {
                                         }
                                         folder_map
                                     },
-                                    _ =>
-                                        panic!("The dynamic asset '{}' cannot be created (expected `Folder` or `Files`), got {:?}", #asset_key, asset),
+                                    _ => panic!("The dynamic asset '{}' cannot be created. Expected a collection of handles, but got {:?}", #asset_key, asset),
                                 })
                         }
                     }
@@ -321,7 +324,7 @@ impl AssetField {
                             Mapped::No => quote!(
                                 asset.map(|asset| match asset.build(world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
                                     ::bevy_asset_loader::prelude::DynamicAssetType::Collection(mut handles) => handles.drain(..).map(|handle| handle.typed()).collect(),
-                                    _ => panic!("The dynamic asset '{}' cannot be created (expected `Folder` or `Files`), got {:?}", #asset_key, asset),
+                                    _ => panic!("The dynamic asset '{}' cannot be created. Expected a collection of handles, but got {:?}", #asset_key, asset),
                                 })
                             ),
                             Mapped::Yes => quote!(
@@ -340,7 +343,7 @@ impl AssetField {
                                         }
                                         folder_map
                                     },
-                                    _ => panic!("The dynamic asset '{}' cannot be created (expected `Folder` or `Files`), got {:?}", #asset_key, asset),
+                                    _ => panic!("The dynamic asset '{}' cannot be created. Expected a collection of handles, but got {:?}", #asset_key, asset),
                                 })
                             )
                         }
@@ -350,7 +353,7 @@ impl AssetField {
                             Mapped::No => quote!(
                                 asset.map(|asset| match asset.build(world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
                                     ::bevy_asset_loader::prelude::DynamicAssetType::Collection(handles) => handles,
-                                    _ => panic!("The dynamic asset '{}' cannot be created (expected `Folder` or `Files`), got {:?}", #asset_key, asset),
+                                    _ => panic!("The dynamic asset '{}' cannot be created. Expected a collection of handles, but got {:?}", #asset_key, asset),
                                 })
                             ),
                             Mapped::Yes => quote!(
@@ -369,7 +372,7 @@ impl AssetField {
                                         }
                                         folder_map
                                     },
-                                    _ => panic!("The dynamic asset '{}' cannot be created (expected `Folder` or `Files`), got {:?}", #asset_key, asset),
+                                    _ => panic!("The dynamic asset '{}' cannot be created. Expected a collection of handles, but got {:?}", #asset_key, asset),
                                 })
                             )
                         }

@@ -165,7 +165,7 @@ fn impl_asset_collection(
                 let dependencies = Self::dependencies(world);
                 let cell = world.cell();
                 let asset_server = cell.get_resource::<::bevy::prelude::AssetServer>().expect("Cannot get AssetServer");
-                let asset_keys = cell.get_resource::<bevy_asset_loader::prelude::DynamicAssets>().expect("Cannot get bevy_asset_loader::prelude::DynamicAssets");
+                let asset_keys = cell.get_resource::<::bevy_asset_loader::prelude::DynamicAssets>().expect("Cannot get bevy_asset_loader::prelude::DynamicAssets");
                 let mut handles = vec![];
                 #asset_loading
                 handles

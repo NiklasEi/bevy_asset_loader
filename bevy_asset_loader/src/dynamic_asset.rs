@@ -2,13 +2,13 @@ use bevy::utils::HashMap;
 use std::any::TypeId;
 use std::fmt::Debug;
 
-use bevy::asset::{Asset, AssetServer, HandleUntyped};
+use bevy::asset::{Asset, AssetServer, HandleId, HandleUntyped};
 use bevy::ecs::schedule::States;
 use bevy::ecs::system::Resource;
 use bevy::ecs::world::World;
 use std::marker::PhantomData;
 
-/// Different typed that can generate the asset field value of a dynamic asset
+/// The asset handles that a dynamic asset key resolves to
 pub enum DynamicAssetType {
     /// Dynamic asset that is defined by a single handle
     Single(HandleUntyped),
