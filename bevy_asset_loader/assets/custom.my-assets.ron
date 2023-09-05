@@ -11,6 +11,14 @@
         bottom_layer: "images/tree.png",
         top_layer: "images/player.png",
     ),
+    "tree": File(path: "images/tree.png"),
+    "images": [
+        CombinedImage (
+            bottom_layer: "images/tree.png",
+            top_layer: "images/player.png",
+        ),
+        File(path: "images/player.png")
+    ],
     "cube": Cube (
         size: 1.3,
     ),

@@ -1,3 +1,4 @@
+use anyhow::Error;
 use bevy::core_pipeline::clear_color::ClearColorConfig;
 use bevy::prelude::*;
 use bevy::reflect::{TypePath, TypeUuid};
@@ -10,9 +11,10 @@ fn main() {
         .insert_resource(Msaa::Off)
         .add_plugins((
             DefaultPlugins,
+            // We need to make sure that our dynamic asset collections can be loaded from the asset file
+            // You could also use other file formats than `ron` here
             RonAssetPlugin::<CustomDynamicAssetCollection>::new(&["my-assets.ron"]),
         ))
-        // We need to make sure that our dynamic asset collections can be loaded from the asset file
         .add_state::<MyStates>()
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
@@ -72,12 +74,26 @@ fn render_stuff(mut commands: Commands, assets: Res<MyAssets>) {
         transform: Transform::from_xyz(0.0, 200.0, 0.0),
         ..default()
     });
+    // The two images that are part of the collection in `custom.my-assets.ron`
+    // The first is the combined image, the second is the player sprite
+    commands.spawn(SpriteBundle {
+        texture: assets.images[0].clone(),
+        transform: Transform::from_xyz(-200.0, 200.0, 0.0),
+        ..default()
+    });
+    commands.spawn(SpriteBundle {
+        texture: assets.images[1].clone(),
+        transform: Transform::from_xyz(200.0, 200.0, 0.0),
+        ..default()
+    });
 }
 
 #[derive(AssetCollection, Resource)]
 struct MyAssets {
     #[asset(key = "combined_image")]
     combined_image: Handle<Image>,
+    #[asset(key = "images", collection(typed))]
+    images: Vec<Handle<Image>>,
     #[asset(key = "tree_standard_material")]
     tree_standard_material: Handle<StandardMaterial>,
     #[asset(key = "player_standard_material")]
@@ -99,6 +115,9 @@ enum CustomDynamicAsset {
     Cube {
         size: f32,
     },
+    // This allows us to use all the standard dynamic assets in the same files as our custom ones
+    #[serde(untagged)]
+    Standard(StandardDynamicAsset),
 }
 
 impl DynamicAsset for CustomDynamicAsset {
@@ -118,12 +137,16 @@ impl DynamicAsset for CustomDynamicAsset {
                 base_color_texture, ..
             } => vec![asset_server.load_untyped(base_color_texture)],
             CustomDynamicAsset::Cube { .. } => vec![],
+            CustomDynamicAsset::Standard(standard) => standard.load(asset_server),
         }
     }
 
     // This method is called when all asset handles returned from `load` are done loading.
     // The handles that you return, should also be loaded.
     fn build(&self, world: &mut World) -> Result<DynamicAssetType, anyhow::Error> {
+        if let CustomDynamicAsset::Standard(standard) = self {
+            return standard.build(world);
+        }
         let cell = world.cell();
         let asset_server = cell
             .get_resource::<AssetServer>()
@@ -192,13 +215,56 @@ impl DynamicAsset for CustomDynamicAsset {
 
                 Ok(DynamicAssetType::Single(handle))
             }
+            CustomDynamicAsset::Standard(_) => unreachable!("standard assets are already handled"),
+        }
+    }
+}
+
+#[derive(serde::Deserialize, Debug, Clone)]
+#[serde(untagged)]
+enum CustomDynamicAssets {
+    Single(CustomDynamicAsset),
+    Collection(Vec<CustomDynamicAsset>),
+}
+
+impl DynamicAsset for CustomDynamicAssets {
+    fn load(&self, asset_server: &AssetServer) -> Vec<HandleUntyped> {
+        match self {
+            CustomDynamicAssets::Single(single) => single.load(asset_server),
+            CustomDynamicAssets::Collection(collection) => collection
+                .iter()
+                .flat_map(|single| single.load(asset_server))
+                .collect(),
+        }
+    }
+
+    fn build(&self, world: &mut World) -> Result<DynamicAssetType, Error> {
+        match self {
+            CustomDynamicAssets::Single(single) => single.build(world),
+            CustomDynamicAssets::Collection(collection) => {
+                let results: Result<Vec<DynamicAssetType>, Error> = collection
+                    .iter()
+                    .map(|single| single.build(world))
+                    .collect();
+                results.map(|mut dynamic_assets| {
+                    DynamicAssetType::Collection(
+                        dynamic_assets
+                            .drain(..)
+                            .flat_map(|asset| match asset {
+                                DynamicAssetType::Single(single) => vec![single],
+                                DynamicAssetType::Collection(collection) => collection,
+                            })
+                            .collect(),
+                    )
+                })
+            }
         }
     }
 }
 
 #[derive(serde::Deserialize, TypeUuid, TypePath)]
 #[uuid = "18dc82eb-d5f5-4d72-b0c4-e2b234367c35"]
-pub struct CustomDynamicAssetCollection(HashMap<String, CustomDynamicAsset>);
+pub struct CustomDynamicAssetCollection(HashMap<String, CustomDynamicAssets>);
 
 impl DynamicAssetCollection for CustomDynamicAssetCollection {
     fn register(&self, dynamic_assets: &mut DynamicAssets) {
