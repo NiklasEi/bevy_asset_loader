@@ -247,18 +247,19 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                     errors.push(ParseFieldError::Missing2dFeature(
                         meta_list.into_token_stream(),
                     ));
-                    #[cfg(feature = "2d")] {
-                        let texture_atlas_meta_list =
-                            meta_list.parse_args_with(Punctuated::<Meta, Token![,]>::parse_terminated);
+                    #[cfg(feature = "2d")]
+                    {
+                        let texture_atlas_meta_list = meta_list
+                            .parse_args_with(Punctuated::<Meta, Token![,]>::parse_terminated);
                         for attribute in texture_atlas_meta_list.unwrap() {
                             match attribute {
                                 Meta::NameValue(named_value) => {
                                     let path = named_value.path.get_ident().unwrap().clone();
                                     if path == TextureAtlasAttribute::TILE_SIZE_X {
                                         if let Expr::Lit(ExprLit {
-                                                             lit: Lit::Float(width),
-                                                             ..
-                                                         }) = &named_value.value
+                                            lit: Lit::Float(width),
+                                            ..
+                                        }) = &named_value.value
                                         {
                                             builder.tile_size_x =
                                                 Some(width.base10_parse::<f32>().unwrap());
@@ -270,9 +271,9 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                                         }
                                     } else if path == TextureAtlasAttribute::TILE_SIZE_Y {
                                         if let Expr::Lit(ExprLit {
-                                                             lit: Lit::Float(height),
-                                                             ..
-                                                         }) = &named_value.value
+                                            lit: Lit::Float(height),
+                                            ..
+                                        }) = &named_value.value
                                         {
                                             builder.tile_size_y =
                                                 Some(height.base10_parse::<f32>().unwrap());
@@ -284,9 +285,9 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                                         }
                                     } else if path == TextureAtlasAttribute::COLUMNS {
                                         if let Expr::Lit(ExprLit {
-                                                             lit: Lit::Int(columns),
-                                                             ..
-                                                         }) = &named_value.value
+                                            lit: Lit::Int(columns),
+                                            ..
+                                        }) = &named_value.value
                                         {
                                             builder.columns =
                                                 Some(columns.base10_parse::<usize>().unwrap());
@@ -298,11 +299,12 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                                         }
                                     } else if path == TextureAtlasAttribute::ROWS {
                                         if let Expr::Lit(ExprLit {
-                                                             lit: Lit::Int(rows),
-                                                             ..
-                                                         }) = &named_value.value
+                                            lit: Lit::Int(rows),
+                                            ..
+                                        }) = &named_value.value
                                         {
-                                            builder.rows = Some(rows.base10_parse::<usize>().unwrap());
+                                            builder.rows =
+                                                Some(rows.base10_parse::<usize>().unwrap());
                                         } else {
                                             errors.push(ParseFieldError::WrongAttributeType(
                                                 named_value.into_token_stream(),
@@ -311,9 +313,9 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                                         }
                                     } else if path == TextureAtlasAttribute::PADDING_X {
                                         if let Expr::Lit(ExprLit {
-                                                             lit: Lit::Float(padding_x),
-                                                             ..
-                                                         }) = &named_value.value
+                                            lit: Lit::Float(padding_x),
+                                            ..
+                                        }) = &named_value.value
                                         {
                                             builder.padding_x =
                                                 Some(padding_x.base10_parse::<f32>().unwrap());
@@ -325,9 +327,9 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                                         }
                                     } else if path == TextureAtlasAttribute::PADDING_Y {
                                         if let Expr::Lit(ExprLit {
-                                                             lit: Lit::Float(padding_y),
-                                                             ..
-                                                         }) = &named_value.value
+                                            lit: Lit::Float(padding_y),
+                                            ..
+                                        }) = &named_value.value
                                         {
                                             builder.padding_y =
                                                 Some(padding_y.base10_parse::<f32>().unwrap());
@@ -339,9 +341,9 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                                         }
                                     } else if path == TextureAtlasAttribute::OFFSET_X {
                                         if let Expr::Lit(ExprLit {
-                                                             lit: Lit::Float(offset_x),
-                                                             ..
-                                                         }) = &named_value.value
+                                            lit: Lit::Float(offset_x),
+                                            ..
+                                        }) = &named_value.value
                                         {
                                             builder.offset_x =
                                                 Some(offset_x.base10_parse::<f32>().unwrap());
@@ -353,9 +355,9 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                                         }
                                     } else if path == TextureAtlasAttribute::OFFSET_Y {
                                         if let Expr::Lit(ExprLit {
-                                                             lit: Lit::Float(offset_y),
-                                                             ..
-                                                         }) = &named_value.value
+                                            lit: Lit::Float(offset_y),
+                                            ..
+                                        }) = &named_value.value
                                         {
                                             builder.offset_y =
                                                 Some(offset_y.base10_parse::<f32>().unwrap());
