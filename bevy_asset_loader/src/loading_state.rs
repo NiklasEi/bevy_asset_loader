@@ -261,7 +261,7 @@ where
         self
     }
 
-    /// Set all file endings that should be loaded as [`StandardDynamicAssetCollection`].
+    /// Set all file endings that should be loaded as a map containing asset keys and their [`StandardDynamicAsset`].
     ///
     /// The default file ending is `.assets`
     #[must_use]
@@ -607,9 +607,9 @@ pub trait LoadingStateAppExt {
         loading_state: S,
     ) -> &mut Self;
 
-    /// Register a new [`DynamicAssetCollection`] to be handled in the loading state
+    /// Register a new [`DynamicAsset`] type to be handled in the loading state
     ///
-    /// You do not need to call this for [`StandardDynamicAssetCollection`], only if you want to use
+    /// You do not need to call this for [`StandardDynamicAsset`], only if you want to use
     /// your own dynamic asset collection types.
     fn register_dynamic_asset<S: States, C: DynamicAsset + TypeUuid + TypePath + Clone>(
         &mut self,
