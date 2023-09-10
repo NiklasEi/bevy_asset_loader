@@ -82,9 +82,7 @@ pub mod standard_dynamic_asset;
 pub mod prelude {
     #[doc(hidden)]
     #[cfg(feature = "standard_dynamic_assets")]
-    pub use crate::standard_dynamic_asset::{
-        RegisterStandardDynamicAsset, StandardDynamicAsset, StandardDynamicAssetCollection,
-    };
+    pub use crate::standard_dynamic_asset::{RegisterStandardDynamicAsset, StandardDynamicAsset};
     #[doc(hidden)]
     pub use crate::{
         asset_collection::{AssetCollection, AssetCollectionApp, AssetCollectionWorld},

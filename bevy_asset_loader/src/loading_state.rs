@@ -2,7 +2,7 @@ mod dynamic_asset_systems;
 mod systems;
 
 use bevy::app::{App, Plugin};
-use bevy::asset::{Asset, HandleUntyped};
+use bevy::asset::HandleUntyped;
 use bevy::ecs::{
     schedule::{
         common_conditions::in_state, BoxedScheduleLabel, IntoSystemConfigs, IntoSystemSetConfig,
@@ -12,13 +12,16 @@ use bevy::ecs::{
     world::FromWorld,
 };
 use bevy::prelude::{StateTransition, Update};
+use bevy::reflect::{TypePath, TypeUuid};
 use bevy::utils::{default, HashMap, HashSet};
 use std::any::TypeId;
 use std::array::IntoIter;
 use std::marker::PhantomData;
 
 use crate::asset_collection::AssetCollection;
-use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssetCollections};
+use crate::dynamic_asset::{
+    DynamicAsset, DynamicAssetCollections, DynamicAssetMap, DynamicAssets, OneOrManyDynamicAssets,
+};
 
 use systems::{
     check_loading_collection, finish_loading_state, init_resource, initialize_loading_state,
@@ -34,12 +37,11 @@ use dynamic_asset_systems::{
 use bevy_common_assets::ron::RonAssetPlugin;
 
 #[cfg(feature = "standard_dynamic_assets")]
-use crate::standard_dynamic_asset::{StandardDynamicAsset, StandardDynamicAssetCollection};
+use crate::standard_dynamic_asset::StandardDynamicAsset;
 
 #[cfg(feature = "progress_tracking")]
 use iyes_progress::TrackedProgressSet;
 
-use crate::dynamic_asset::{DynamicAsset, DynamicAssets};
 use crate::loading_state::systems::{apply_internal_state_transition, run_loading_state};
 
 /// A Bevy plugin to configure automatic asset loading
@@ -343,8 +345,8 @@ where
 
         app.init_resource::<DynamicAssetCollections<S>>();
         #[cfg(feature = "standard_dynamic_assets")]
-        if !app.is_plugin_added::<RonAssetPlugin<StandardDynamicAssetCollection>>() {
-            app.add_plugins(RonAssetPlugin::<StandardDynamicAssetCollection>::new(
+        if !app.is_plugin_added::<RonAssetPlugin<DynamicAssetMap<OneOrManyDynamicAssets<StandardDynamicAsset>>>>() {
+            app.add_plugins(RonAssetPlugin::<DynamicAssetMap<OneOrManyDynamicAssets<StandardDynamicAsset>>>::new(
                 &self.standard_dynamic_asset_collection_file_endings,
             ));
         }
@@ -415,9 +417,7 @@ where
                 );
 
             #[cfg(feature = "standard_dynamic_assets")]
-            app.register_dynamic_asset_collection::<_, StandardDynamicAssetCollection>(
-                self.loading_state.clone(),
-            );
+            app.register_dynamic_asset::<_, StandardDynamicAsset>(self.loading_state.clone());
 
             #[cfg(feature = "progress_tracking")]
             app.add_systems(
@@ -611,7 +611,7 @@ pub trait LoadingStateAppExt {
     ///
     /// You do not need to call this for [`StandardDynamicAssetCollection`], only if you want to use
     /// your own dynamic asset collection types.
-    fn register_dynamic_asset_collection<S: States, C: DynamicAssetCollection + Asset>(
+    fn register_dynamic_asset<S: States, C: DynamicAsset + TypeUuid + TypePath + Clone>(
         &mut self,
         loading_state: S,
     ) -> &mut Self;
@@ -624,7 +624,10 @@ pub trait LoadingStateAppExt {
     ///
     /// You need to register a loader for your asset type yourself.
     /// If you want to see some code, take a look at the `custom_dynamic_assets` example.
-    fn add_dynamic_collection_to_loading_state<S: States, C: DynamicAssetCollection + Asset>(
+    fn add_dynamic_collection_to_loading_state<
+        S: States,
+        C: DynamicAsset + TypeUuid + TypePath + Clone,
+    >(
         &mut self,
         loading_state: S,
         file: &str,
@@ -702,7 +705,7 @@ impl LoadingStateAppExt for App {
         )
     }
 
-    fn register_dynamic_asset_collection<S: States, C: DynamicAssetCollection + Asset>(
+    fn register_dynamic_asset<S: States, C: DynamicAsset + TypeUuid + TypePath + Clone>(
         &mut self,
         loading_state: S,
     ) -> &mut Self {
@@ -720,7 +723,10 @@ impl LoadingStateAppExt for App {
         )
     }
 
-    fn add_dynamic_collection_to_loading_state<S: States, C: DynamicAssetCollection + Asset>(
+    fn add_dynamic_collection_to_loading_state<
+        S: States,
+        C: DynamicAsset + TypeUuid + TypePath + Clone,
+    >(
         &mut self,
         loading_state: S,
         file: &str,
@@ -730,7 +736,10 @@ impl LoadingStateAppExt for App {
             .get_resource_mut::<DynamicAssetCollections<S>>()
             .unwrap();
 
-        dynamic_asset_collections.register_file::<C>(loading_state.clone(), file);
+        dynamic_asset_collections.register_file::<DynamicAssetMap<OneOrManyDynamicAssets<C>>>(
+            loading_state.clone(),
+            file,
+        );
         self
     }
 

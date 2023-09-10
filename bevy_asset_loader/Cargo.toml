@@ -16,7 +16,7 @@ readme = "README.md"
 2d = ["bevy/bevy_sprite", "bevy_asset_loader_derive/2d"]
 # This feature adds support for bevy's StandardMaterial assets
 3d = ["bevy/bevy_pbr", "bevy/bevy_render", "bevy_asset_loader_derive/3d"]
-standard_dynamic_assets = ["dep:bevy_common_assets", "dep:serde"]
+standard_dynamic_assets = ["dep:bevy_common_assets"]
 progress_tracking = ["dep:iyes_progress"]
 
 [dependencies]
@@ -26,7 +26,7 @@ anyhow = "1"
 path-slash = "0.2"
 
 bevy_common_assets = { path = "../../bevy_common_assets", version = "0.7.0", features = ["ron"], optional = true }
-serde = { version = "1", optional = true }
+serde = { version = "1" }
 iyes_progress = { version = "0.9.0", optional = true }
 
 [dev-dependencies]

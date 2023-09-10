@@ -11,7 +11,7 @@ fn main() {
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
         )
-        .add_dynamic_collection_to_loading_state::<_, StandardDynamicAssetCollection>(
+        .add_dynamic_collection_to_loading_state::<_, StandardDynamicAsset>(
             MyStates::AssetLoading,
             "dynamic_asset.assets.ron",
         )
@@ -36,6 +36,8 @@ struct ImageAssets {
     player: Handle<TextureAtlas>,
     #[asset(key = "image.tree")]
     tree: Handle<Image>,
+    #[asset(key = "images", collection(typed))]
+    images: Vec<Handle<Image>>,
 }
 
 #[derive(AssetCollection, Resource)]
@@ -46,8 +48,6 @@ struct AudioAssets {
 
 fn spawn_player_and_tree(mut commands: Commands, image_assets: Res<ImageAssets>) {
     commands.spawn(Camera2dBundle::default());
-    let mut transform = Transform::from_translation(Vec3::new(0., 0., 1.));
-    transform.scale = Vec3::splat(0.5);
     commands
         .spawn(SpriteSheetBundle {
             transform: Transform {
@@ -65,9 +65,21 @@ fn spawn_player_and_tree(mut commands: Commands, image_assets: Res<ImageAssets>)
         .insert(Player);
     commands.spawn(SpriteBundle {
         texture: image_assets.tree.clone(),
-        transform: Transform::from_translation(Vec3::new(50., 30., 1.)),
+        transform: Transform::from_translation(Vec3::new(0., 30., 1.)),
         ..Default::default()
     });
+
+    for (index, image) in image_assets.images.iter().enumerate() {
+        commands.spawn(SpriteBundle {
+            texture: image.clone(),
+            transform: Transform::from_translation(Vec3::new(
+                -50. + 100. * index as f32,
+                -100.,
+                1.,
+            )),
+            ..Default::default()
+        });
+    }
 }
 
 fn play_background_audio(mut commands: Commands, audio_assets: Res<AudioAssets>) {

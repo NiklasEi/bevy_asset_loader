@@ -238,9 +238,9 @@ use bevy_asset_loader::asset_collection::AssetCollection;
 
 #[derive(AssetCollection, Resource)]
 struct MyAssets {
-    #[asset(key = "files_untyped", collection)]
+    #[asset(key = "files", collection)]
     files_untyped: Vec<HandleUntyped>,
-    #[asset(key = "files_typed", collection(typed))]
+    #[asset(key = "files", collection(typed))]
     files_typed: Vec<Handle<Image>>,
 }
 ```
@@ -248,12 +248,10 @@ struct MyAssets {
 The corresponding assets file differs from the folder example:
 ```ron
 ({
-    "files_untyped": Files (
-        paths: ["images/tree.png", "images/player.png"],
-    ),
-    "files_typed": Files (
-        paths: ["images/tree.png", "images/player.png"],
-    ),
+    "files": [
+        File(path: "images/tree.png"),
+        File(path: "images/player.png"),
+    ],
 })
 ```
 

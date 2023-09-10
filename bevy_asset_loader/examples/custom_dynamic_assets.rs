@@ -1,8 +1,7 @@
-use anyhow::Error;
 use bevy::core_pipeline::clear_color::ClearColorConfig;
 use bevy::prelude::*;
 use bevy::reflect::{TypePath, TypeUuid};
-use bevy::utils::HashMap;
+use bevy_asset_loader::dynamic_asset::{DynamicAssetMap, OneOrManyDynamicAssets};
 use bevy_asset_loader::prelude::*;
 use bevy_common_assets::ron::RonAssetPlugin;
 
@@ -13,16 +12,17 @@ fn main() {
             DefaultPlugins,
             // We need to make sure that our dynamic asset collections can be loaded from the asset file
             // You could also use other file formats than `ron` here
-            RonAssetPlugin::<CustomDynamicAssetCollection>::new(&["my-assets.ron"]),
+            // Leave away [`OneOrManyDynamicAssets`] if you don't want to support vectors of your dynamic asset definitions
+            RonAssetPlugin::<DynamicAssetMap<OneOrManyDynamicAssets<CustomDynamicAsset>>>::new(&[
+                "my-assets.ron",
+            ]),
         ))
         .add_state::<MyStates>()
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
         )
-        .register_dynamic_asset_collection::<_, CustomDynamicAssetCollection>(
-            MyStates::AssetLoading,
-        )
-        .add_dynamic_collection_to_loading_state::<_, CustomDynamicAssetCollection>(
+        .register_dynamic_asset::<_, CustomDynamicAsset>(MyStates::AssetLoading)
+        .add_dynamic_collection_to_loading_state::<_, CustomDynamicAsset>(
             MyStates::AssetLoading,
             "custom.my-assets.ron",
         )
@@ -102,7 +102,8 @@ struct MyAssets {
     cube: Handle<Mesh>,
 }
 
-#[derive(serde::Deserialize, Debug, Clone)]
+#[derive(serde::Deserialize, Debug, Clone, TypeUuid, TypePath)]
+#[uuid = "28dc82ab-d5f5-4d72-b0c4-e2b231367c35"]
 enum CustomDynamicAsset {
     CombinedImage {
         bottom_layer: String,
@@ -216,60 +217,6 @@ impl DynamicAsset for CustomDynamicAsset {
                 Ok(DynamicAssetType::Single(handle))
             }
             CustomDynamicAsset::Standard(_) => unreachable!("standard assets are already handled"),
-        }
-    }
-}
-
-#[derive(serde::Deserialize, Debug, Clone)]
-#[serde(untagged)]
-enum CustomDynamicAssets {
-    Single(CustomDynamicAsset),
-    Collection(Vec<CustomDynamicAsset>),
-}
-
-impl DynamicAsset for CustomDynamicAssets {
-    fn load(&self, asset_server: &AssetServer) -> Vec<HandleUntyped> {
-        match self {
-            CustomDynamicAssets::Single(single) => single.load(asset_server),
-            CustomDynamicAssets::Collection(collection) => collection
-                .iter()
-                .flat_map(|single| single.load(asset_server))
-                .collect(),
-        }
-    }
-
-    fn build(&self, world: &mut World) -> Result<DynamicAssetType, Error> {
-        match self {
-            CustomDynamicAssets::Single(single) => single.build(world),
-            CustomDynamicAssets::Collection(collection) => {
-                let results: Result<Vec<DynamicAssetType>, Error> = collection
-                    .iter()
-                    .map(|single| single.build(world))
-                    .collect();
-                results.map(|mut dynamic_assets| {
-                    DynamicAssetType::Collection(
-                        dynamic_assets
-                            .drain(..)
-                            .flat_map(|asset| match asset {
-                                DynamicAssetType::Single(single) => vec![single],
-                                DynamicAssetType::Collection(collection) => collection,
-                            })
-                            .collect(),
-                    )
-                })
-            }
-        }
-    }
-}
-
-#[derive(serde::Deserialize, TypeUuid, TypePath)]
-#[uuid = "18dc82eb-d5f5-4d72-b0c4-e2b234367c35"]
-pub struct CustomDynamicAssetCollection(HashMap<String, CustomDynamicAssets>);
-
-impl DynamicAssetCollection for CustomDynamicAssetCollection {
-    fn register(&self, dynamic_assets: &mut DynamicAssets) {
-        for (key, asset) in self.0.iter() {
-            dynamic_assets.register_asset(key, Box::new(asset.clone()));
         }
     }
 }
