@@ -92,7 +92,7 @@ pub mod prelude {
             DynamicAsset, DynamicAssetCollection, DynamicAssetCollections, DynamicAssetType,
             DynamicAssets,
         },
-        loading_state::{LoadingState, LoadingStateAppExt},
+        loading_state::{LoadingState, LoadingStateAppExt, LoadingStateSet},
     };
 }
 

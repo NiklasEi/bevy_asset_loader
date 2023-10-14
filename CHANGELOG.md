@@ -1,5 +1,7 @@
 # Changelog
 
+- Make `loading_state::LoadingStateSet` public for explicit system ordering
+
 ## v0.17.0
 - update to Bevy 0.11
 - Use "/" in paths used as keys for mapped collections on all platforms (resolves [#135](https://github.com/NiklasEi/bevy_asset_loader/issues/135))

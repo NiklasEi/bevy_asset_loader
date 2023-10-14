@@ -446,7 +446,7 @@ where
 
 ///  Systems in this set check the loading state of assets and will change the [`InternalLoadingState`] accordingly.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]
-pub(crate) struct LoadingStateSet<S: States>(S);
+pub struct LoadingStateSet<S: States>(pub S);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]
 pub(crate) enum InternalLoadingStateSet {
