@@ -27,13 +27,10 @@ fn main() {
         .add_systems(OnEnter(MyStates::Next), expect)
         .add_systems(
             Update,
-            (
-                track_fake_long_task
-                    .track_progress()
-                    .before(print_progress)
-                    .run_if(in_state(MyStates::AssetLoading)),
-                print_progress,
-            ),
+            (track_fake_long_task.track_progress(), print_progress)
+                .chain()
+                .run_if(in_state(MyStates::AssetLoading))
+                .after(LoadingStateSet(MyStates::AssetLoading)),
         )
         .run();
 }

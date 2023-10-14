@@ -371,7 +371,7 @@ See [`progress_tracking`](bevy_asset_loader/examples/progress_tracking.rs) for a
 
 ### A note on system ordering
 
-The loading state runs in a base set between `CoreSet::StateTransitions` and `CoreSet::Update`. This means that systems running in `CoreSet::Update` can already see the reported progress of all tracked asset collections for the current frame.
+The loading state is organized in a private schedule that runs in a single system during the `Update` schedule. If you want to explicitly order against the system running the loading state, you can do so with the system set `LoadingStateSet`.
 
 ## Failure state
 

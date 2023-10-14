@@ -5,14 +5,14 @@ error[E0277]: the trait bound `NoDefault: std::default::Default` is not satisfie
   |     ^^^^^^^^^^ the trait `std::default::Default` is not implemented for `NoDefault`
   |
   = help: the following other types implement trait `FromWorld`:
-            BlitPipeline
             CASNode
-            CASPipeline
+            MainPass2dNode
             Children
-            FallbackImage
-            FallbackImageCubemap
-            FallbackImageZero
-            FxaaPipeline
+            Parent
+            SceneLoader
+            MsaaWritebackNode
+            Material2dPipeline<M>
+            BlitPipeline
           and $N others
   = note: required for `NoDefault` to implement `FromWorld`
 help: consider annotating `NoDefault` with `#[derive(Default)]`
