@@ -22,15 +22,10 @@ pub enum StandardDynamicAsset {
     ///
     /// Subdirectories are also included.
     /// This is not supported for web builds! If you need compatibility with web builds,
-    /// consider using [`StandardDynamicAsset::Files`] instead.
+    /// consider using a vector of [`StandardDynamicAsset::File`] instead.
     Folder {
         /// Asset file folder path
         path: String,
-    },
-    /// A list of files to be loaded as a vector of handles
-    Files {
-        /// Asset file paths
-        paths: Vec<String>,
     },
     /// A dynamic standard material asset directly loaded from an image file
     #[cfg(feature = "3d")]
@@ -69,10 +64,6 @@ impl DynamicAsset for StandardDynamicAsset {
             StandardDynamicAsset::Folder { path } => asset_server
                 .load_folder(path)
                 .unwrap_or_else(|_| panic!("Failed to load '{path}' as a folder")),
-            StandardDynamicAsset::Files { paths } => paths
-                .iter()
-                .map(|path| asset_server.load_untyped(path))
-                .collect(),
             #[cfg(feature = "3d")]
             StandardDynamicAsset::StandardMaterial { path } => {
                 vec![asset_server.load_untyped(path)]
@@ -140,12 +131,6 @@ impl DynamicAsset for StandardDynamicAsset {
                 asset_server
                     .load_folder(path)
                     .unwrap_or_else(|_| panic!("Failed to load '{path}' as a folder")),
-            )),
-            StandardDynamicAsset::Files { paths } => Ok(DynamicAssetType::Collection(
-                paths
-                    .iter()
-                    .map(|path| asset_server.load_untyped(path))
-                    .collect(),
             )),
         }
     }

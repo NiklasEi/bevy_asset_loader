@@ -416,11 +416,6 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                     let mut paths = vec![];
                     for path in paths_meta_list.unwrap() {
                         paths.push(path.value());
-                        // } else {
-                        //     errors.push(ParseFieldError::UnknownAttributeType(
-                        //         attribute.into_token_stream(),
-                        //     ));
-                        // }
                     }
                     builder.asset_paths = Some(paths);
                 }

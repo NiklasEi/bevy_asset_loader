@@ -1,6 +1,24 @@
 # Changelog
 
 - Support collections of dynamic assets in dynamic asset files (resolves [#78](https://github.com/NiklasEi/bevy_asset_loader/issues/78))
+  - Remove `Files` in preference of collections of `File`
+    - Previously:
+        ```ron
+        ({
+            "images": Files (
+                paths: ["images/tree.png", "images/player.png"],
+            )
+        })
+        ```
+    - Now:
+        ```ron
+        ({
+            "images": [
+              File(path: "images/tree.png"),
+              File(path: "images/player.png")
+            ]
+        })
+        ```
 
 ## v0.17.0
 - update to Bevy 0.11
