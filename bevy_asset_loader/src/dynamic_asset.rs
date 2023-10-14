@@ -1,11 +1,13 @@
-use bevy::utils::HashMap;
+use bevy::utils::{HashMap, Uuid};
 use std::any::TypeId;
 use std::fmt::Debug;
 
+use anyhow::Error;
 use bevy::asset::{Asset, AssetServer, HandleUntyped};
 use bevy::ecs::schedule::States;
 use bevy::ecs::system::Resource;
 use bevy::ecs::world::World;
+use bevy::reflect::{TypePath, TypeUuid};
 use std::marker::PhantomData;
 
 /// Different typed that can generate the asset field value of a dynamic asset
@@ -112,4 +114,74 @@ impl<State: States> Default for DynamicAssetCollections<State> {
             _marker: PhantomData,
         }
     }
+}
+
+#[derive(serde::Deserialize, Debug, Clone, TypePath)]
+#[serde(untagged)]
+/// Enable deserialization of vectors containing dynamic assets
+/// See the [dynamic_asset](https://github.com/NiklasEi/bevy_asset_loader/blob/main/bevy_asset_loader/examples/dynamic_asset.rs) example
+pub enum OneOrManyDynamicAssets<T: DynamicAsset + TypeUuid + TypePath + Clone> {
+    /// Deserialize a single dynamic asset
+    Single(T),
+    /// Deserialize a collection of dynamic assets
+    Collection(Vec<T>),
+}
+
+impl<T: TypeUuid + TypePath + DynamicAsset + Clone> TypeUuid for OneOrManyDynamicAssets<T> {
+    const TYPE_UUID: Uuid = T::TYPE_UUID;
+}
+
+impl<T: DynamicAsset + TypeUuid + TypePath + Clone> DynamicAsset for OneOrManyDynamicAssets<T> {
+    fn load(&self, asset_server: &AssetServer) -> Vec<HandleUntyped> {
+        match self {
+            OneOrManyDynamicAssets::Single(single) => single.load(asset_server),
+            OneOrManyDynamicAssets::Collection(collection) => collection
+                .iter()
+                .flat_map(|single| single.load(asset_server))
+                .collect(),
+        }
+    }
+
+    fn build(&self, world: &mut World) -> Result<DynamicAssetType, Error> {
+        match self {
+            OneOrManyDynamicAssets::Single(single) => single.build(world),
+            OneOrManyDynamicAssets::Collection(collection) => {
+                let results: Result<Vec<DynamicAssetType>, Error> = collection
+                    .iter()
+                    .map(|single| single.build(world))
+                    .collect();
+                results.map(|mut dynamic_assets| {
+                    DynamicAssetType::Collection(
+                        dynamic_assets
+                            .drain(..)
+                            .flat_map(|asset| match asset {
+                                DynamicAssetType::Single(single) => vec![single],
+                                DynamicAssetType::Collection(collection) => collection,
+                            })
+                            .collect(),
+                    )
+                })
+            }
+        }
+    }
+}
+
+#[derive(serde::Deserialize, TypePath)]
+/// The actual asset type that gets loaded from dynamic asset files
+///
+/// Files contain a map of asset keys and dynamic assets
+pub struct DynamicAssetMap<T: DynamicAsset + TypeUuid + TypePath + Clone>(
+    HashMap<String, OneOrManyDynamicAssets<T>>,
+);
+
+impl<T: DynamicAsset + TypeUuid + TypePath + Clone> DynamicAssetCollection for DynamicAssetMap<T> {
+    fn register(&self, dynamic_assets: &mut DynamicAssets) {
+        for (key, asset) in self.0.iter() {
+            dynamic_assets.register_asset(key, Box::new(asset.clone()));
+        }
+    }
+}
+
+impl<T: DynamicAsset + TypeUuid + TypePath + Clone> TypeUuid for DynamicAssetMap<T> {
+    const TYPE_UUID: Uuid = T::TYPE_UUID;
 }

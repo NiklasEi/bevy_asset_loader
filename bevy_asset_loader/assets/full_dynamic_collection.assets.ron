@@ -18,10 +18,12 @@
     "folder_typed": Folder (
         path: "images",
     ),
-    "files_untyped": Files (
-        paths: ["images/tree.png", "images/player.png"],
-    ),
-    "files_typed": Files (
-        paths: ["images/tree.png", "images/player.png"],
-    ),
+    "files_untyped": [
+        File(path: "images/tree.png"),
+        File(path: "images/player.png")
+    ],
+    "files_typed": [
+        File(path: "images/tree.png"),
+        File(path: "images/player.png")
+    ],
 })

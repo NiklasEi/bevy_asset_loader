@@ -5,13 +5,13 @@ use bevy::ecs::world::World;
 #[cfg(feature = "2d")]
 use bevy::math::Vec2;
 
-use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssets};
+use crate::dynamic_asset::DynamicAssets;
 use bevy::reflect::{TypePath, TypeUuid};
-use bevy::utils::HashMap;
 
 /// These asset variants can be loaded from configuration files. They will then replace
 /// a dynamic asset based on their keys.
-#[derive(Debug, Clone, serde::Deserialize)]
+#[derive(serde::Deserialize, Debug, Clone, TypeUuid, TypePath)]
+#[uuid = "ffd1c91b-1d97-4af0-a0c9-9767a5f4e168"]
 pub enum StandardDynamicAsset {
     /// A dynamic asset directly loaded from a single file
     File {
@@ -22,15 +22,10 @@ pub enum StandardDynamicAsset {
     ///
     /// Subdirectories are also included.
     /// This is not supported for web builds! If you need compatibility with web builds,
-    /// consider using [`StandardDynamicAsset::Files`] instead.
+    /// consider using a vector of [`StandardDynamicAsset::File`] instead.
     Folder {
         /// Asset file folder path
         path: String,
-    },
-    /// A list of files to be loaded as a vector of handles
-    Files {
-        /// Asset file paths
-        paths: Vec<String>,
     },
     /// A dynamic standard material asset directly loaded from an image file
     #[cfg(feature = "3d")]
@@ -69,10 +64,6 @@ impl DynamicAsset for StandardDynamicAsset {
             StandardDynamicAsset::Folder { path } => asset_server
                 .load_folder(path)
                 .unwrap_or_else(|_| panic!("Failed to load '{path}' as a folder")),
-            StandardDynamicAsset::Files { paths } => paths
-                .iter()
-                .map(|path| asset_server.load_untyped(path))
-                .collect(),
             #[cfg(feature = "3d")]
             StandardDynamicAsset::StandardMaterial { path } => {
                 vec![asset_server.load_untyped(path)]
@@ -141,12 +132,6 @@ impl DynamicAsset for StandardDynamicAsset {
                     .load_folder(path)
                     .unwrap_or_else(|_| panic!("Failed to load '{path}' as a folder")),
             )),
-            StandardDynamicAsset::Files { paths } => Ok(DynamicAssetType::Collection(
-                paths
-                    .iter()
-                    .map(|path| asset_server.load_untyped(path))
-                    .collect(),
-            )),
         }
     }
 }
@@ -163,21 +148,5 @@ impl<K: Into<String> + Sync + Send + 'static> Command for RegisterStandardDynami
     fn apply(self, world: &mut World) {
         let mut dynamic_assets = world.resource_mut::<DynamicAssets>();
         dynamic_assets.register_asset(self.key, Box::new(self.asset));
-    }
-}
-
-/// The asset defining a mapping from asset keys to dynamic assets
-///
-/// These assets are loaded at the beginning of a loading state
-/// and combined in [`DynamicAssets`](DynamicAssets).
-#[derive(serde::Deserialize, TypeUuid, TypePath)]
-#[uuid = "2df82c01-9c71-4aa8-adc4-71c5824768f1"]
-pub struct StandardDynamicAssetCollection(pub HashMap<String, StandardDynamicAsset>);
-
-impl DynamicAssetCollection for StandardDynamicAssetCollection {
-    fn register(&self, dynamic_assets: &mut DynamicAssets) {
-        for (key, asset) in self.0.iter() {
-            dynamic_assets.register_asset(key, Box::new(asset.clone()));
-        }
     }
 }

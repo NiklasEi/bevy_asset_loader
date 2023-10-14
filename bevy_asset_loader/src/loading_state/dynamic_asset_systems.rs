@@ -1,15 +1,22 @@
-use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssetCollections, DynamicAssets};
+use crate::dynamic_asset::{
+    DynamicAsset, DynamicAssetCollection, DynamicAssetCollections, DynamicAssetMap, DynamicAssets,
+    OneOrManyDynamicAssets,
+};
 use crate::loading_state::{AssetLoaderConfiguration, InternalLoadingState, LoadingAssetHandles};
-use bevy::asset::{Asset, AssetServer, Assets, LoadState};
+use bevy::asset::{AssetServer, Assets, LoadState};
 use bevy::ecs::change_detection::ResMut;
 use bevy::ecs::schedule::{NextState, State, States};
 use bevy::ecs::system::{Res, SystemState};
 use bevy::ecs::world::World;
 use bevy::log::debug;
+use bevy::reflect::{TypePath, TypeUuid};
 use std::any::TypeId;
 
 #[allow(clippy::type_complexity)]
-pub(crate) fn load_dynamic_asset_collections<S: States, C: DynamicAssetCollection + Asset>(
+pub(crate) fn load_dynamic_asset_collections<
+    S: States,
+    C: DynamicAsset + TypeUuid + TypePath + Clone,
+>(
     world: &mut World,
     system_state: &mut SystemState<(
         Res<DynamicAssetCollections<S>>,
@@ -22,7 +29,9 @@ pub(crate) fn load_dynamic_asset_collections<S: States, C: DynamicAssetCollectio
         system_state.get_mut(world);
     let mut loading_collections: LoadingAssetHandles<(S, C)> = LoadingAssetHandles::default();
 
-    if let Some(files) = dynamic_asset_collections.get_files::<C>(state.get()) {
+    if let Some(files) = dynamic_asset_collections
+        .get_files::<DynamicAssetMap<OneOrManyDynamicAssets<C>>>(state.get())
+    {
         for file in files {
             loading_collections
                 .handles
@@ -39,13 +48,16 @@ pub(crate) fn load_dynamic_asset_collections<S: States, C: DynamicAssetCollectio
 }
 
 #[allow(clippy::type_complexity)]
-pub(crate) fn check_dynamic_asset_collections<S: States, C: DynamicAssetCollection + Asset>(
+pub(crate) fn check_dynamic_asset_collections<
+    S: States,
+    C: DynamicAsset + TypeUuid + TypePath + Clone,
+>(
     world: &mut World,
     system_state: &mut SystemState<(
         Res<AssetServer>,
         Option<ResMut<LoadingAssetHandles<(S, C)>>>,
         Res<State<S>>,
-        Res<Assets<C>>,
+        Res<Assets<DynamicAssetMap<OneOrManyDynamicAssets<C>>>>,
         ResMut<DynamicAssets>,
         ResMut<AssetLoaderConfiguration<S>>,
     )>,
@@ -71,7 +83,7 @@ pub(crate) fn check_dynamic_asset_collections<S: States, C: DynamicAssetCollecti
         }
         for collection in loading_collections.handles.drain(..) {
             let collection = dynamic_asset_collections
-                .get(&collection.typed_weak::<C>())
+                .get(&collection.typed_weak::<DynamicAssetMap<OneOrManyDynamicAssets<C>>>())
                 .unwrap();
             collection.register(&mut asset_keys);
         }

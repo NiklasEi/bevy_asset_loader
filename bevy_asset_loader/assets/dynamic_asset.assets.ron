@@ -12,4 +12,8 @@
     "sounds.background": File (
         path: "audio/background.ogg",
     ),
+    "images": [
+        File(path: "images/tree.png"),
+        File(path: "images/player.png")
+    ],
 })

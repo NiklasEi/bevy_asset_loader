@@ -24,7 +24,7 @@ fn main() {
         .add_loading_state(
             LoadingState::new(MyStates::SplashAssetLoading).continue_to_state(MyStates::Splash),
         )
-        .add_dynamic_collection_to_loading_state::<_, StandardDynamicAssetCollection>(
+        .add_dynamic_collection_to_loading_state::<_, StandardDynamicAsset>(
             MyStates::SplashAssetLoading,
             "full_dynamic_collection.assets.ron",
         )
@@ -32,7 +32,7 @@ fn main() {
         .add_loading_state(
             LoadingState::new(MyStates::MainMenuAssetLoading).continue_to_state(MyStates::MainMenu),
         )
-        .add_dynamic_collection_to_loading_state::<_, StandardDynamicAssetCollection>(
+        .add_dynamic_collection_to_loading_state::<_, StandardDynamicAsset>(
             MyStates::MainMenuAssetLoading,
             "full_dynamic_collection.assets.ron",
         )

@@ -159,7 +159,7 @@ The following sections describe more types of asset fields that you can load thr
 
 #### Folders
 
-*This asset field type is not supported in web builds. See [Files](#list-of-paths) for a web compatible way of loading a collection of files.*
+*This asset field type is not supported in web builds. File paths need to be known on the web. See [the next section](#lists-of-assets) for a web compatible way of loading a collection of files.*
 
 You can load all files in a folder as a vector of untyped handles. This field requires the additional derive macro attribute `collection`:
 ```rust
@@ -203,9 +203,7 @@ struct MyAssets {
 })
 ```
 
-Loading folders is not supported for web builds. If you want to be compatible with Wasm, load you handles from a list of paths instead (see next section).
-
-#### List of paths
+#### Lists of assets
 
 If you want to load a list of asset files with the same type into a vector of `Handle<T>`, you can list their paths in an attribute:
 ```rust
@@ -238,9 +236,9 @@ use bevy_asset_loader::asset_collection::AssetCollection;
 
 #[derive(AssetCollection, Resource)]
 struct MyAssets {
-    #[asset(key = "files_untyped", collection)]
+    #[asset(key = "files", collection)]
     files_untyped: Vec<HandleUntyped>,
-    #[asset(key = "files_typed", collection(typed))]
+    #[asset(key = "files", collection(typed))]
     files_typed: Vec<Handle<Image>>,
 }
 ```
@@ -248,12 +246,10 @@ struct MyAssets {
 The corresponding assets file differs from the folder example:
 ```ron
 ({
-    "files_untyped": Files (
-        paths: ["images/tree.png", "images/player.png"],
-    ),
-    "files_typed": Files (
-        paths: ["images/tree.png", "images/player.png"],
-    ),
+    "files": [
+        File(path: "images/tree.png"),
+        File(path: "images/player.png"),
+    ],
 })
 ```
 
@@ -272,9 +268,9 @@ struct MyAssets {
     folder: HashMap<String, HandleUntyped>,
     #[asset(paths("images/player.png", "images/tree.png"), collection(typed, mapped))]
     files_typed: HashMap<String, Handle<Image>>,
-    #[asset(key = "files_untyped", collection(mapped))]
+    #[asset(key = "files", collection(mapped))]
     dynamic_files_untyped: HashMap<String, HandleUntyped>,
-    #[asset(key = "files_typed", collection(typed, mapped))]
+    #[asset(key = "files", collection(typed, mapped))]
     dynamic_files_typed: HashMap<String, Handle<Image>>,
 }
 ```
