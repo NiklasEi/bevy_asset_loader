@@ -18,7 +18,7 @@ use crate::assets::*;
 use proc_macro2::Ident;
 use quote::{quote, quote_spanned, ToTokens, TokenStreamExt};
 use syn::punctuated::Punctuated;
-use syn::{Data, Expr, ExprLit, Field, Fields, Index, Lit, LitStr, Meta, Token};
+use syn::{Data, Expr, ExprLit, Field, Fields, Index, Lit, LitStr, Meta, Token, ExprPath};
 
 /// Derive macro for [`AssetCollection`]
 ///
@@ -52,6 +52,12 @@ impl TextureAtlasAttribute {
     pub const OFFSET_X: &'static str = "offset_x";
     #[allow(dead_code)]
     pub const OFFSET_Y: &'static str = "offset_y";
+}
+
+pub(crate) const IMAGE_ATTRIBUTE: &str = "image";
+pub(crate) struct ImageAttribute;
+impl ImageAttribute {
+    pub const SAMPLER: &'static str = "sampler";
 }
 
 pub(crate) const COLLECTION_ATTRIBUTE: &str = "collection";
@@ -421,6 +427,47 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                     }
                     builder.asset_paths = Some(paths);
                 }
+                Meta::List(meta_list) if meta_list.path.is_ident(IMAGE_ATTRIBUTE) => {
+                    let image_meta_list =
+                        meta_list.parse_args_with(Punctuated::<Meta, Token![,]>::parse_terminated);
+                    
+                    for attribute in image_meta_list.unwrap() {
+                        match attribute {
+                            Meta::NameValue(named_value) => {
+                                let path = named_value.path.get_ident().unwrap().clone();
+                                if path == ImageAttribute::SAMPLER {
+                                    if let Expr::Path(ExprPath {
+                                        path,
+                                        ..
+                                    }) = &named_value.value
+                                    {
+                                        let sampler = match path.get_ident().unwrap().to_string().as_str() {
+                                            "linear" => Some(SamplerType::Linear),
+                                            "nearest" => Some(SamplerType::Nearest),
+                                            _ => None
+                                        };
+
+                                        if sampler.is_none() {
+                                            errors.push(ParseFieldError::UnknownAttribute(named_value.value.into_token_stream()));
+                                        }
+
+                                        builder.sampler = sampler;
+                                    } else {
+                                        errors.push(ParseFieldError::WrongAttributeType(
+                                            named_value.into_token_stream(),
+                                            "path",
+                                        ));
+                                    }
+                                }
+                            },
+                            _ => {
+                                errors.push(ParseFieldError::UnknownAttributeType(
+                                    attribute.into_token_stream(),
+                                ));
+                            }
+                        }
+                    }
+                },
                 Meta::List(meta_list) => errors.push(ParseFieldError::UnknownAttribute(
                     meta_list.into_token_stream(),
                 )),

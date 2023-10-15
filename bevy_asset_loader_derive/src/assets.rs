@@ -16,6 +16,19 @@ pub(crate) struct TextureAtlasAssetField {
     pub offset_y: f32,
 }
 
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub(crate) enum SamplerType {
+    Linear,
+    Nearest
+}
+
+#[derive(PartialEq, Debug)]
+pub(crate) struct ImageAssetField {
+    pub field_ident: Ident,
+    pub asset_path: String,
+    pub sampler: SamplerType,
+}
+
 #[derive(PartialEq, Debug)]
 pub(crate) struct BasicAssetField {
     pub field_ident: Ident,
@@ -43,6 +56,7 @@ pub(crate) enum AssetField {
     Folder(BasicAssetField, Typed, Mapped),
     Files(MultipleFilesField, Typed, Mapped),
     TextureAtlas(TextureAtlasAssetField),
+    Image(ImageAssetField),
     StandardMaterial(BasicAssetField),
     Dynamic(DynamicAssetField),
     OptionalDynamic(DynamicAssetField),
@@ -93,6 +107,40 @@ impl AssetField {
                     let asset_server = world.get_resource::<AssetServer>().expect("Cannot get AssetServer");
                     asset_server.get_handle(#asset_path)
                 },)
+            }
+            AssetField::Image(image) => {
+                let field_ident = image.field_ident.clone();
+                let asset_path = image.asset_path.clone();
+                match image.sampler {
+                    SamplerType::Linear => {
+                        quote!(#token_stream #field_ident : {
+                            use bevy::render::texture::ImageSampler;
+
+                            let cell = world.cell();
+                            let asset_server = cell.get_resource::<AssetServer>().expect("Cannot get AssetServer");
+                            let mut images = cell.get_resource_mut::<Assets<Image>>().expect("Cannot get resource Assets<Image>");
+
+                            let handle = asset_server.get_handle(#asset_path);
+                            let mut image = images.get_mut(&handle).unwrap();
+                            image.sampler_descriptor = ImageSampler::linear();
+                            handle
+                        },)
+                    },
+                    SamplerType::Nearest => {
+                        quote!(#token_stream #field_ident : {
+                            use bevy::render::texture::ImageSampler;
+
+                            let cell = world.cell();
+                            let asset_server = cell.get_resource::<AssetServer>().expect("Cannot get AssetServer");
+                            let mut images = cell.get_resource_mut::<Assets<Image>>().expect("Cannot get resource Assets<Image>");
+
+                            let handle = asset_server.get_handle(#asset_path);
+                            let mut image = images.get_mut(&handle).unwrap();
+                            image.sampler_descriptor = ImageSampler::nearest();
+                            handle
+                        },)
+                    }
+                }
             }
             AssetField::Folder(basic, typed, mapped) => {
                 let field_ident = basic.field_ident.clone();
@@ -422,6 +470,10 @@ impl AssetField {
                 let asset_path = asset.asset_path.clone();
                 quote!(#token_stream handles.push(asset_server.load_untyped(#asset_path));)
             }
+            AssetField::Image(asset) => {
+                let asset_path = asset.asset_path.clone();
+                quote!(#token_stream handles.push(asset_server.load_untyped(#asset_path));)
+            }
             AssetField::Files(assets, _, _) => {
                 let asset_paths = assets.asset_paths.clone();
                 quote!(#token_stream #(handles.push(asset_server.load_untyped(#asset_paths)));*;)
@@ -449,6 +501,7 @@ pub(crate) struct AssetBuilder {
     pub padding_y: Option<f32>,
     pub offset_x: Option<f32>,
     pub offset_y: Option<f32>,
+    pub sampler: Option<SamplerType>
 }
 
 impl AssetBuilder {
@@ -556,6 +609,13 @@ impl AssetBuilder {
                     self.is_typed.into(),
                     self.is_mapped.into(),
                 ));
+            }
+            if self.sampler.is_some() {
+                return Ok(AssetField::Image(ImageAssetField {
+                    field_ident: self.field_ident.unwrap(),
+                    asset_path: self.asset_path.unwrap(),
+                    sampler: self.sampler.unwrap()
+                }))
             }
             let asset = BasicAssetField {
                 field_ident: self.field_ident.unwrap(),
