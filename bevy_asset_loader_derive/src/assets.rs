@@ -886,6 +886,43 @@ mod test {
     }
 
     #[test]
+    fn image_asset() {
+        let builder_linear = AssetBuilder {
+            field_ident: Some(Ident::new("test", Span::call_site())),
+            asset_path: Some("some/image.png".to_owned()),
+            sampler: Some(SamplerType::Linear),
+            ..Default::default()
+        };
+
+        let builder_nearest = AssetBuilder {
+            field_ident: Some(Ident::new("test", Span::call_site())),
+            asset_path: Some("some/image.png".to_owned()),
+            sampler: Some(SamplerType::Nearest),
+            ..Default::default()
+        };
+
+        let asset_linear = builder_linear.build().expect("This should be a valid ImageAsset");
+        let asset_nearest = builder_nearest.build().expect("This should be a valid ImageAsset");
+
+        assert_eq!(
+            asset_linear,
+            AssetField::Image(ImageAssetField {
+                field_ident: Ident::new("test", Span::call_site()),
+                asset_path: "some/image.png".to_owned(),
+                sampler: SamplerType::Linear
+            })
+        );
+        assert_eq!(
+            asset_nearest,
+            AssetField::Image(ImageAssetField {
+                field_ident: Ident::new("test", Span::call_site()),
+                asset_path: "some/image.png".to_owned(),
+                sampler: SamplerType::Nearest
+            })
+        );
+    }
+
+    #[test]
     fn dynamic_asset_does_only_accept_some_attributes() {
         let mut builder = asset_builder_dynamic();
         builder.asset_path = Some("path".to_owned());
