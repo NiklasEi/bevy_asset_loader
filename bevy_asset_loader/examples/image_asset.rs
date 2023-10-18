@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, render::texture::ImageSampler};
 use bevy_asset_loader::prelude::*;
 
 /// This example demonstrates how you can set a different sampler for an [`Image`].
@@ -17,25 +17,33 @@ fn main() {
 
 #[derive(AssetCollection, Resource)]
 struct ImageAssets {
-    #[asset(path = "images/player.png")]
+    #[asset(path = "images/tree_2.png")]
     #[asset(image(sampler = linear))]
-    player: Handle<Image>,
+    tree_linear: Handle<Image>,
 
-    #[asset(path = "images/tree.png")]
+    #[asset(path = "images/tree_2.png")]
     #[asset(image(sampler = nearest))]
-    tree: Handle<Image>,
+    tree_nearest: Handle<Image>,
 }
 
 fn draw(mut commands: Commands, image_assets: Res<ImageAssets>) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2dBundle {
+        projection: OrthographicProjection {
+            far: 1000.,
+            near: -1000.,
+            scale: 0.25,
+            ..default()
+        },
+        ..default()
+    });
     commands.spawn(SpriteBundle {
-        texture: image_assets.player.clone(),
-        transform: Transform::from_translation(Vec3::new(-150., 0., 1.)),
+        texture: image_assets.tree_linear.clone(),
+        transform: Transform::from_translation(Vec3::new(-50., 0., 1.)),
         ..Default::default()
     });
     commands.spawn(SpriteBundle {
-        texture: image_assets.tree.clone(),
-        transform: Transform::from_translation(Vec3::new(150., 0., 1.)),
+        texture: image_assets.tree_nearest.clone(),
+        transform: Transform::from_translation(Vec3::new(50., 0., 1.)),
         ..Default::default()
     });
 }

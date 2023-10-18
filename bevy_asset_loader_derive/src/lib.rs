@@ -437,20 +437,13 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                                 let path = named_value.path.get_ident().unwrap().clone();
                                 if path == ImageAttribute::SAMPLER {
                                     if let Expr::Path(ExprPath { path, .. }) = &named_value.value {
-                                        let sampler =
-                                            match path.get_ident().unwrap().to_string().as_str() {
-                                                "linear" => Some(SamplerType::Linear),
-                                                "nearest" => Some(SamplerType::Nearest),
-                                                _ => None,
-                                            };
-
-                                        if sampler.is_none() {
+                                        if let Ok(sampler) = SamplerType::try_from(path.get_ident().unwrap().to_string()) {
+                                            builder.sampler = Some(sampler);
+                                        } else {
                                             errors.push(ParseFieldError::UnknownAttribute(
                                                 named_value.value.into_token_stream(),
                                             ));
                                         }
-
-                                        builder.sampler = sampler;
                                     } else {
                                         errors.push(ParseFieldError::WrongAttributeType(
                                             named_value.into_token_stream(),

@@ -22,6 +22,17 @@ pub(crate) enum SamplerType {
     Nearest,
 }
 
+impl TryFrom<String> for SamplerType {
+    type Error = &'static str;
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        match value.as_str() {
+            "linear" => Ok(Self::Linear),
+            "nearest" => Ok(Self::Nearest),
+            _ => Err("Value must be either `linear` or `nearest`")
+        }
+    }   
+}
+
 #[derive(PartialEq, Debug)]
 pub(crate) struct ImageAssetField {
     pub field_ident: Ident,
@@ -111,36 +122,53 @@ impl AssetField {
             AssetField::Image(image) => {
                 let field_ident = image.field_ident.clone();
                 let asset_path = image.asset_path.clone();
-                match image.sampler {
+
+                let sampler = match image.sampler {
                     SamplerType::Linear => {
-                        quote!(#token_stream #field_ident : {
-                            use bevy::render::texture::ImageSampler;
-
-                            let cell = world.cell();
-                            let asset_server = cell.get_resource::<AssetServer>().expect("Cannot get AssetServer");
-                            let mut images = cell.get_resource_mut::<Assets<Image>>().expect("Cannot get resource Assets<Image>");
-
-                            let handle = asset_server.get_handle(#asset_path);
-                            let mut image = images.get_mut(&handle).unwrap();
-                            image.sampler_descriptor = ImageSampler::linear();
-                            handle
-                        },)
+                        "ImageSampler::linear()"
                     }
                     SamplerType::Nearest => {
-                        quote!(#token_stream #field_ident : {
-                            use bevy::render::texture::ImageSampler;
-
-                            let cell = world.cell();
-                            let asset_server = cell.get_resource::<AssetServer>().expect("Cannot get AssetServer");
-                            let mut images = cell.get_resource_mut::<Assets<Image>>().expect("Cannot get resource Assets<Image>");
-
-                            let handle = asset_server.get_handle(#asset_path);
-                            let mut image = images.get_mut(&handle).unwrap();
-                            image.sampler_descriptor = ImageSampler::nearest();
-                            handle
-                        },)
+                        "ImageSampler::nearest()"
                     }
-                }
+                };
+
+                let descriptor = match image.sampler {
+                    SamplerType::Linear => {
+                        "ImageSampler::linear_descriptor()"
+                    }
+                    SamplerType::Nearest => {
+                        "ImageSampler::nearest_descriptor()"
+                    }
+                };
+
+                let sampler_token_stream = sampler.parse::<TokenStream>().unwrap();
+                let descriptor_token_stream = descriptor.parse::<TokenStream>().unwrap();
+
+                quote!(#token_stream #field_ident : {
+                    use bevy::render::texture::ImageSampler;
+                    let cell = world.cell();
+                    let asset_server = cell.get_resource::<AssetServer>().expect("Cannot get AssetServer");
+                    let mut images = cell.get_resource_mut::<Assets<Image>>().expect("Cannot get resource Assets<Image>");
+
+                    let mut handle = asset_server.get_handle(#asset_path);
+                    let mut image = images.get_mut(&handle).expect("Only asset collection fields holding an `Image` handle can be annotated with `image`");
+
+                    let is_different_sampler = if let ImageSampler::Descriptor(descriptor) = &image.sampler_descriptor {
+                        !descriptor.eq(&#descriptor_token_stream)
+                    } else {
+                        false
+                    };
+
+                    if is_different_sampler {
+                        let mut cloned_image = image.clone();
+                        cloned_image.sampler_descriptor = #sampler_token_stream;
+                        handle = images.add(cloned_image);
+                    } else {
+                        image.sampler_descriptor = #sampler_token_stream;
+                    }
+
+                    handle
+                },)
             }
             AssetField::Folder(basic, typed, mapped) => {
                 let field_ident = basic.field_ident.clone();
