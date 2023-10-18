@@ -19,7 +19,7 @@ pub(crate) struct TextureAtlasAssetField {
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub(crate) enum SamplerType {
     Linear,
-    Nearest
+    Nearest,
 }
 
 #[derive(PartialEq, Debug)]
@@ -125,7 +125,7 @@ impl AssetField {
                             image.sampler_descriptor = ImageSampler::linear();
                             handle
                         },)
-                    },
+                    }
                     SamplerType::Nearest => {
                         quote!(#token_stream #field_ident : {
                             use bevy::render::texture::ImageSampler;
@@ -501,7 +501,7 @@ pub(crate) struct AssetBuilder {
     pub padding_y: Option<f32>,
     pub offset_x: Option<f32>,
     pub offset_y: Option<f32>,
-    pub sampler: Option<SamplerType>
+    pub sampler: Option<SamplerType>,
 }
 
 impl AssetBuilder {
@@ -614,8 +614,8 @@ impl AssetBuilder {
                 return Ok(AssetField::Image(ImageAssetField {
                     field_ident: self.field_ident.unwrap(),
                     asset_path: self.asset_path.unwrap(),
-                    sampler: self.sampler.unwrap()
-                }))
+                    sampler: self.sampler.unwrap(),
+                }));
             }
             let asset = BasicAssetField {
                 field_ident: self.field_ident.unwrap(),
@@ -901,8 +901,12 @@ mod test {
             ..Default::default()
         };
 
-        let asset_linear = builder_linear.build().expect("This should be a valid ImageAsset");
-        let asset_nearest = builder_nearest.build().expect("This should be a valid ImageAsset");
+        let asset_linear = builder_linear
+            .build()
+            .expect("This should be a valid ImageAsset");
+        let asset_nearest = builder_nearest
+            .build()
+            .expect("This should be a valid ImageAsset");
 
         assert_eq!(
             asset_linear,

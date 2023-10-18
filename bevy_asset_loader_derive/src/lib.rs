@@ -18,7 +18,7 @@ use crate::assets::*;
 use proc_macro2::Ident;
 use quote::{quote, quote_spanned, ToTokens, TokenStreamExt};
 use syn::punctuated::Punctuated;
-use syn::{Data, Expr, ExprLit, Field, Fields, Index, Lit, LitStr, Meta, Token, ExprPath};
+use syn::{Data, Expr, ExprLit, ExprPath, Field, Fields, Index, Lit, LitStr, Meta, Token};
 
 /// Derive macro for [`AssetCollection`]
 ///
@@ -430,25 +430,24 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                 Meta::List(meta_list) if meta_list.path.is_ident(IMAGE_ATTRIBUTE) => {
                     let image_meta_list =
                         meta_list.parse_args_with(Punctuated::<Meta, Token![,]>::parse_terminated);
-                    
+
                     for attribute in image_meta_list.unwrap() {
                         match attribute {
                             Meta::NameValue(named_value) => {
                                 let path = named_value.path.get_ident().unwrap().clone();
                                 if path == ImageAttribute::SAMPLER {
-                                    if let Expr::Path(ExprPath {
-                                        path,
-                                        ..
-                                    }) = &named_value.value
-                                    {
-                                        let sampler = match path.get_ident().unwrap().to_string().as_str() {
-                                            "linear" => Some(SamplerType::Linear),
-                                            "nearest" => Some(SamplerType::Nearest),
-                                            _ => None
-                                        };
+                                    if let Expr::Path(ExprPath { path, .. }) = &named_value.value {
+                                        let sampler =
+                                            match path.get_ident().unwrap().to_string().as_str() {
+                                                "linear" => Some(SamplerType::Linear),
+                                                "nearest" => Some(SamplerType::Nearest),
+                                                _ => None,
+                                            };
 
                                         if sampler.is_none() {
-                                            errors.push(ParseFieldError::UnknownAttribute(named_value.value.into_token_stream()));
+                                            errors.push(ParseFieldError::UnknownAttribute(
+                                                named_value.value.into_token_stream(),
+                                            ));
                                         }
 
                                         builder.sampler = sampler;
@@ -459,7 +458,7 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                                         ));
                                     }
                                 }
-                            },
+                            }
                             _ => {
                                 errors.push(ParseFieldError::UnknownAttributeType(
                                     attribute.into_token_stream(),
@@ -467,7 +466,7 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                             }
                         }
                     }
-                },
+                }
                 Meta::List(meta_list) => errors.push(ParseFieldError::UnknownAttribute(
                     meta_list.into_token_stream(),
                 )),

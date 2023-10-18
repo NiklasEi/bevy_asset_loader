@@ -26,10 +26,7 @@ struct ImageAssets {
     tree: Handle<Image>,
 }
 
-fn draw(
-    mut commands: Commands,
-    image_assets: Res<ImageAssets>,
-) {
+fn draw(mut commands: Commands, image_assets: Res<ImageAssets>) {
     commands.spawn(Camera2dBundle::default());
     commands.spawn(SpriteBundle {
         texture: image_assets.player.clone(),
