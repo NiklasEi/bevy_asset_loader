@@ -1,11 +1,7 @@
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 
-/// This example demonstrates how you can use [`App::init_resource_after_loading_state`] to initialize
-/// assets implementing [`FromWorld`] after your collections are inserted into the ECS.
-///
-/// In this showcase we load two images in an [`AssetCollection`] and then combine
-/// them by adding up their pixel data.
+/// This example demonstrates how you can set a different sampler for an [`Image`].
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
