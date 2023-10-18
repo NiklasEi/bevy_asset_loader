@@ -1,4 +1,4 @@
-use bevy::{prelude::*, render::texture::ImageSampler};
+use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 
 /// This example demonstrates how you can set a different sampler for an [`Image`].
