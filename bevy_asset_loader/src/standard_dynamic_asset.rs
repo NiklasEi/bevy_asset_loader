@@ -1,5 +1,5 @@
 use crate::dynamic_asset::{DynamicAsset, DynamicAssetType};
-use bevy::asset::{AssetServer, HandleUntyped};
+use bevy::asset::{AssetServer, UntypedAssetId};
 use bevy::ecs::system::Command;
 use bevy::ecs::world::World;
 #[cfg(feature = "2d")]
@@ -63,7 +63,7 @@ pub enum StandardDynamicAsset {
 }
 
 impl DynamicAsset for StandardDynamicAsset {
-    fn load(&self, asset_server: &AssetServer) -> Vec<HandleUntyped> {
+    fn load(&self, asset_server: &AssetServer) -> Vec<UntypedAssetId> {
         match self {
             StandardDynamicAsset::File { path } => vec![asset_server.load_untyped(path)],
             StandardDynamicAsset::Folder { path } => asset_server
@@ -75,7 +75,7 @@ impl DynamicAsset for StandardDynamicAsset {
                 .collect(),
             #[cfg(feature = "3d")]
             StandardDynamicAsset::StandardMaterial { path } => {
-                vec![asset_server.load_untyped(path)]
+                vec![asset_server.load::<bevy::render::texture::Image>(path)]
             }
             #[cfg(feature = "2d")]
             StandardDynamicAsset::TextureAtlas { path, .. } => {

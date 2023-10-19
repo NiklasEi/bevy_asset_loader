@@ -55,9 +55,9 @@ struct MyAssets {
     // Untyped folder
     // Type in `assets/full_dynamic_collection.assets.ron`: `Folder`
     #[asset(key = "folder_untyped", collection)]
-    folder_untyped: Vec<HandleUntyped>,
+    folder_untyped: Vec<UntypedHandle>,
     #[asset(key = "folder_untyped", collection(mapped))]
-    folder_untyped_mapped: HashMap<String, HandleUntyped>,
+    folder_untyped_mapped: HashMap<String, UntypedHandle>,
     // Typed folder
     // Type in `assets/full_dynamic_collection.assets.ron`: `Folder`
     #[asset(key = "folder_typed", collection(typed))]
@@ -67,9 +67,9 @@ struct MyAssets {
     // Untyped files
     // Type in `assets/full_dynamic_collection.assets.ron`: `Files`
     #[asset(key = "files_untyped", collection)]
-    files_untyped: Vec<HandleUntyped>,
+    files_untyped: Vec<UntypedHandle>,
     #[asset(key = "files_untyped", collection(mapped))]
-    files_untyped_mapped: HashMap<String, HandleUntyped>,
+    files_untyped_mapped: HashMap<String, UntypedHandle>,
     // Typed files
     // Type in `assets/full_dynamic_collection.assets.ron`: `Files`
     #[asset(key = "files_typed", collection(typed))]
@@ -79,11 +79,11 @@ struct MyAssets {
 
     // Optional file collections
     #[asset(key = "missing_key", collection, optional)]
-    optional_folder_untyped: Option<Vec<HandleUntyped>>,
+    optional_folder_untyped: Option<Vec<UntypedHandle>>,
     #[asset(key = "missing_key", collection(typed), optional)]
     optional_folder_typed: Option<Vec<Handle<Image>>>,
     #[asset(key = "missing_key", collection, optional)]
-    optional_files_untyped: Option<Vec<HandleUntyped>>,
+    optional_files_untyped: Option<Vec<UntypedHandle>>,
     #[asset(key = "missing_key", collection(typed), optional)]
     optional_files_typed: Option<Vec<Handle<Image>>>,
 }

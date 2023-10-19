@@ -2,7 +2,7 @@ use bevy::utils::HashMap;
 use std::any::TypeId;
 use std::fmt::Debug;
 
-use bevy::asset::{Asset, AssetServer, HandleUntyped};
+use bevy::asset::{Asset, AssetServer, UntypedHandle};
 use bevy::ecs::schedule::States;
 use bevy::ecs::system::Resource;
 use bevy::ecs::world::World;
@@ -11,16 +11,16 @@ use std::marker::PhantomData;
 /// Different typed that can generate the asset field value of a dynamic asset
 pub enum DynamicAssetType {
     /// Dynamic asset that is defined by a single handle
-    Single(HandleUntyped),
+    Single(UntypedHandle),
     /// Dynamic asset that is defined by multiple handles
-    Collection(Vec<HandleUntyped>),
+    Collection(Vec<UntypedHandle>),
 }
 
 /// Any type implementing this trait can be assigned to asset keys as part of a dynamic
 /// asset collection.
 pub trait DynamicAsset: Debug + Send + Sync {
     /// Return handles to all required asset paths
-    fn load(&self, asset_server: &AssetServer) -> Vec<HandleUntyped>;
+    fn load(&self, asset_server: &AssetServer) -> Vec<UntypedHandle>;
 
     /// Return the handle(s) defining this asset
     fn build(&self, world: &mut World) -> Result<DynamicAssetType, anyhow::Error>;

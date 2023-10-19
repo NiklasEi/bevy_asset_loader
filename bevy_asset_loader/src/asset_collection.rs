@@ -1,6 +1,6 @@
 use crate::dynamic_asset::DynamicAssets;
 use bevy::app::App;
-use bevy::asset::HandleUntyped;
+use bevy::asset::UntypedHandle;
 use bevy::ecs::system::Resource;
 use bevy::ecs::world::World;
 
@@ -24,7 +24,7 @@ pub trait AssetCollection: Resource {
     /// Create a new asset collection from the [`AssetServer`](::bevy::asset::AssetServer)
     fn create(world: &mut World) -> Self;
     /// Start loading all the assets in the collection
-    fn load(world: &mut World) -> Vec<HandleUntyped>;
+    fn load(world: &mut World) -> Vec<UntypedHandle>;
 }
 
 /// Extension trait for [`App`](::bevy::app::App) enabling initialisation of [asset collections](crate::asset_collection::AssetCollection)

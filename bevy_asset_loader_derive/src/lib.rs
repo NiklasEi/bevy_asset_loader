@@ -161,7 +161,7 @@ fn impl_asset_collection(
         asset.attach_token_stream_for_loading(token_stream)
     });
     let load_function = quote! {
-            fn load(world: &mut ::bevy::ecs::world::World) -> Vec<::bevy::prelude::HandleUntyped> {
+            fn load(world: &mut ::bevy::ecs::world::World) -> Vec<::bevy::prelude::UntypedHandle> {
                 let cell = world.cell();
                 let asset_server = cell.get_resource::<::bevy::prelude::AssetServer>().expect("Cannot get AssetServer");
                 let asset_keys = cell.get_resource::<bevy_asset_loader::prelude::DynamicAssets>().expect("Cannot get bevy_asset_loader::prelude::DynamicAssets");

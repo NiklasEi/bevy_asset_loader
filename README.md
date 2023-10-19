@@ -169,7 +169,7 @@ use bevy_asset_loader::asset_collection::AssetCollection;
 #[derive(AssetCollection, Resource)]
 struct MyAssets {
     #[asset(path = "images", collection)]
-    folder: Vec<HandleUntyped>,
+    folder: Vec<UntypedHandle>,
 }
 ```
 
@@ -227,7 +227,7 @@ use bevy_asset_loader::asset_collection::AssetCollection;
 #[derive(AssetCollection, Resource)]
 struct MyAssets {
     #[asset(paths("images/player.png", "sound/background.ogg"), collection)]
-    files_untyped: Vec<HandleUntyped>,
+    files_untyped: Vec<UntypedHandle>,
 }
 ```
 
@@ -239,7 +239,7 @@ use bevy_asset_loader::asset_collection::AssetCollection;
 #[derive(AssetCollection, Resource)]
 struct MyAssets {
     #[asset(key = "files_untyped", collection)]
-    files_untyped: Vec<HandleUntyped>,
+    files_untyped: Vec<UntypedHandle>,
     #[asset(key = "files_typed", collection(typed))]
     files_typed: Vec<Handle<Image>>,
 }
@@ -269,11 +269,11 @@ use bevy_asset_loader::asset_collection::AssetCollection;
 #[derive(AssetCollection, Resource)]
 struct MyAssets {
     #[asset(path = "images", collection(mapped))]
-    folder: HashMap<String, HandleUntyped>,
+    folder: HashMap<String, UntypedHandle>,
     #[asset(paths("images/player.png", "images/tree.png"), collection(typed, mapped))]
     files_typed: HashMap<String, Handle<Image>>,
     #[asset(key = "files_untyped", collection(mapped))]
-    dynamic_files_untyped: HashMap<String, HandleUntyped>,
+    dynamic_files_untyped: HashMap<String, UntypedHandle>,
     #[asset(key = "files_typed", collection(typed, mapped))]
     dynamic_files_typed: HashMap<String, Handle<Image>>,
 }

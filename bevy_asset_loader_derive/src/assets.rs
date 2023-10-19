@@ -91,7 +91,7 @@ impl AssetField {
                 let asset_path = basic.asset_path.clone();
                 quote!(#token_stream #field_ident : {
                     let asset_server = world.get_resource::<AssetServer>().expect("Cannot get AssetServer");
-                    asset_server.get_handle(#asset_path)
+                    asset_server.get_handle(#asset_path).unwrap()
                 },)
             }
             AssetField::Folder(basic, typed, mapped) => {
@@ -101,27 +101,29 @@ impl AssetField {
                     Typed::Yes => match mapped {
                         Mapped::No => {
                             quote!(#token_stream #field_ident : {
-                                    let asset_server = world.get_resource::<AssetServer>().expect("Cannot get AssetServer");
-                                    asset_server.load_folder(#asset_path)
+                                    let cell = world.cell();
+                                    let asset_server = cell.get_resource::<AssetServer>().expect("Cannot get AssetServer");
+                                    let folders = cell.get_resource::<Assets<bevy::asset::LoadedFolder>>().expect("Cannot get Assets<LoadedFolder>");
+                                    let handle = asset_server.get_handle(#asset_path).unwrap();
+                                    folders.get(handle)
                                         .unwrap()
-                                        .drain(..)
-                                        .map(|handle| handle.typed())
+                                        .handles
+                                        .iter()
+                                        .map(|handle| handle.clone().typed())
                                         .collect()
                                 },)
                         }
                         Mapped::Yes => {
                             quote!(#token_stream #field_ident : {
-                                    let asset_server = world.get_resource::<AssetServer>().expect("Cannot get AssetServer");
+                                    let cell = world.cell();
+                                    let asset_server = cell.get_resource::<AssetServer>().expect("Cannot get AssetServer");
                                     let mut folder_map = ::bevy::utils::HashMap::default();
-                                    let handles = asset_server.load_folder(#asset_path).unwrap();
-                                    for handle in handles {
-                                        let asset_path = asset_server
-                                            .get_handle_path(&handle)
-                                            .expect("Handle should have a path");
-                                        let key: String = ::bevy_asset_loader::path_slash::PathExt::to_slash(asset_path.path())
-                                            .expect("Path should be valid UTF-8")
-                                            .into();
-                                        folder_map.insert(key, handle.typed());
+                                    let folders = cell.get_resource::<Assets<bevy::asset::LoadedFolder>>().expect("Cannot get Assets<LoadedFolder>");
+                                    let handle = asset_server.get_handle(#asset_path).unwrap();
+                                    let folder = folders.get(handle).unwrap().handles;
+                                    for handle in folder {
+                                        let key = handle.path().unwrap().to_string();
+                                        folder_map.insert(key, handle.clone().typed());
                                     }
                                     folder_map
                                 },)
@@ -130,23 +132,24 @@ impl AssetField {
                     Typed::No => match mapped {
                         Mapped::No => {
                             quote!(#token_stream #field_ident : {
-                                    let asset_server = world.get_resource::<AssetServer>().expect("Cannot get AssetServer");
-                                    asset_server.load_folder(#asset_path).unwrap()
+                                    let cell = world.cell();
+                                    let asset_server = cell.get_resource::<AssetServer>().expect("Cannot get AssetServer");
+                                    let folders = cell.get_resource::<Assets<bevy::asset::LoadedFolder>>().expect("Cannot get Assets<LoadedFolder>");
+                                    let handle = asset_server.load_folder(#asset_path);
+                                    folders.get(handle).expect("test").handles.iter().map(|handle| handle.clone()).collect()
                                 },)
                         }
                         Mapped::Yes => {
                             quote!(#token_stream #field_ident : {
-                                    let asset_server = world.get_resource::<AssetServer>().expect("Cannot get AssetServer");
+                                    let cell = world.cell();
+                                    let asset_server = cell.get_resource::<AssetServer>().expect("Cannot get AssetServer");
                                     let mut folder_map = ::bevy::utils::HashMap::default();
-                                    let handles = asset_server.load_folder(#asset_path).unwrap();
-                                    for handle in handles {
-                                        let asset_path = asset_server
-                                            .get_handle_path(&handle)
-                                            .expect("Handle should have a path");
-                                        let key: String = ::bevy_asset_loader::path_slash::PathExt::to_slash(asset_path.path())
-                                            .expect("Path should be valid UTF-8")
-                                            .into();
-                                        folder_map.insert(key, handle);
+                                    let folders = cell.get_resource::<Assets<bevy::asset::LoadedFolder>>().expect("Cannot get Assets<LoadedFolder>");
+                                    let handle = asset_server.get_handle(#asset_path).unwrap();
+                                    let folder = folders.get(handle).unwrap().handles;
+                                    for handle in folder {
+                                        let key = handle.path().unwrap().to_string();
+                                        folder_map.insert(key, handle.clone());
                                     }
                                     folder_map
                                 },)
@@ -163,7 +166,7 @@ impl AssetField {
                     let mut materials = cell
                         .get_resource_mut::<Assets<StandardMaterial>>()
                         .expect("Cannot get resource Assets<StandardMaterial>");
-                    materials.add(asset_server.get_handle(#asset_path).into())
+                    materials.add(asset_server.get_handle(#asset_path).unwrap().into())
                 },)
             }
             AssetField::TextureAtlas(texture_atlas) => {
@@ -186,7 +189,7 @@ impl AssetField {
                         .get_resource_mut::<Assets<TextureAtlas>>()
                         .expect("Cannot get resource Assets<TextureAtlas>");
                     atlases.add(TextureAtlas::from_grid(
-                        asset_server.get_handle(#asset_path),
+                        asset_server.get_handle(#asset_path).unwrap(),
                         Vec2::new(#tile_size_x, #tile_size_y),
                         #columns,
                         #rows,
@@ -214,12 +217,12 @@ impl AssetField {
                     Typed::No => match mapped {
                         Mapped::No => quote!(#token_stream #field_ident : {
                                 let asset_server = world.get_resource::<AssetServer>().expect("Cannot get AssetServer");
-                                vec![#(asset_server.load_untyped(#asset_paths)),*]
+                                vec![#(asset_server.load(#asset_paths).untyped()),*]
                             },),
                         Mapped::Yes => quote!(#token_stream #field_ident : {
                                 let asset_server = world.get_resource::<AssetServer>().expect("Cannot get AssetServer");
                                 let mut folder_map = ::bevy::utils::HashMap::default();
-                                #(folder_map.insert(#asset_paths.to_owned(), asset_server.load_untyped(#asset_paths)));*;
+                                #(folder_map.insert(#asset_paths.to_owned(), asset_server.load(#asset_paths)));*;
                                 folder_map
                             },),
                     },
@@ -387,11 +390,11 @@ impl AssetField {
         match self {
             AssetField::Basic(asset) => {
                 let asset_path = asset.asset_path.clone();
-                quote!(#token_stream handles.push(asset_server.load_untyped(#asset_path));)
+                quote!(#token_stream handles.push(asset_server.load_untyped(#asset_path).untyped());)
             }
             AssetField::Folder(asset, _, _) => {
                 let asset_path = asset.asset_path.clone();
-                quote!(#token_stream asset_server.load_folder(#asset_path).unwrap().drain(..).for_each(|handle| handles.push(handle));)
+                quote!(#token_stream handles.push(asset_server.load_folder(#asset_path).untyped());)
             }
             AssetField::OptionalDynamic(dynamic)
             | AssetField::OptionalDynamicFileCollection(dynamic, _, _) => {
@@ -416,15 +419,15 @@ impl AssetField {
             }
             AssetField::StandardMaterial(asset) => {
                 let asset_path = asset.asset_path.clone();
-                quote!(#token_stream handles.push(asset_server.load_untyped(#asset_path));)
+                quote!(#token_stream handles.push(asset_server.load_untyped(#asset_path).untyped());)
             }
             AssetField::TextureAtlas(asset) => {
                 let asset_path = asset.asset_path.clone();
-                quote!(#token_stream handles.push(asset_server.load_untyped(#asset_path));)
+                quote!(#token_stream handles.push(asset_server.load_untyped(#asset_path).untyped());)
             }
             AssetField::Files(assets, _, _) => {
                 let asset_paths = assets.asset_paths.clone();
-                quote!(#token_stream #(handles.push(asset_server.load_untyped(#asset_paths)));*;)
+                quote!(#token_stream #(handles.push(asset_server.load_untyped(#asset_paths).untyped()));*;)
             }
         }
     }

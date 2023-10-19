@@ -35,7 +35,7 @@ struct ImageAssets {
     #[asset(path = "images/tree.png")]
     tree: Handle<Image>,
     #[asset(path = "images", collection)]
-    _images: Vec<HandleUntyped>,
+    _images: Vec<UntypedHandle>,
 }
 
 #[derive(Component)]

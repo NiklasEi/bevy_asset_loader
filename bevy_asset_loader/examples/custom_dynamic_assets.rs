@@ -105,18 +105,18 @@ impl DynamicAsset for CustomDynamicAsset {
     // At this point, the content of your dynamic asset file is done loading.
     // You should return untyped handles to any assets that need to finish loading for your
     // dynamic asset to be ready.
-    fn load(&self, asset_server: &AssetServer) -> Vec<HandleUntyped> {
+    fn load(&self, asset_server: &AssetServer) -> Vec<UntypedHandle> {
         match self {
             CustomDynamicAsset::CombinedImage {
                 top_layer,
                 bottom_layer,
             } => vec![
-                asset_server.load_untyped(bottom_layer),
-                asset_server.load_untyped(top_layer),
+                asset_server.load_untyped(bottom_layer).untyped(),
+                asset_server.load_untyped(top_layer).untyped(),
             ],
             CustomDynamicAsset::StandardMaterial {
                 base_color_texture, ..
-            } => vec![asset_server.load_untyped(base_color_texture)],
+            } => vec![asset_server.load_untyped(base_color_texture).untyped()],
             CustomDynamicAsset::Cube { .. } => vec![],
         }
     }
@@ -161,9 +161,7 @@ impl DynamicAsset for CustomDynamicAsset {
                     second.texture_descriptor.format,
                 );
 
-                Ok(DynamicAssetType::Single(
-                    images.add(combined).clone_untyped(),
-                ))
+                Ok(DynamicAssetType::Single(images.add(combined).untyped()))
             }
             CustomDynamicAsset::StandardMaterial {
                 base_color_texture,
@@ -178,9 +176,7 @@ impl DynamicAsset for CustomDynamicAsset {
                 material.base_color_texture = Some(image);
                 material.alpha_mode = AlphaMode::Opaque;
 
-                Ok(DynamicAssetType::Single(
-                    materials.add(material).clone_untyped(),
-                ))
+                Ok(DynamicAssetType::Single(materials.add(material).untyped()))
             }
             CustomDynamicAsset::Cube { size } => {
                 let mut meshes = cell
@@ -188,7 +184,7 @@ impl DynamicAsset for CustomDynamicAsset {
                     .expect("Failed to get mesh assets");
                 let handle = meshes
                     .add(Mesh::from(shape::Cube { size: *size }))
-                    .clone_untyped();
+                    .untyped();
 
                 Ok(DynamicAssetType::Single(handle))
             }
@@ -196,8 +192,7 @@ impl DynamicAsset for CustomDynamicAsset {
     }
 }
 
-#[derive(serde::Deserialize, TypeUuid, TypePath)]
-#[uuid = "18dc82eb-d5f5-4d72-b0c4-e2b234367c35"]
+#[derive(serde::Deserialize, Asset, TypePath)]
 pub struct CustomDynamicAssetCollection(HashMap<String, CustomDynamicAsset>);
 
 impl DynamicAssetCollection for CustomDynamicAssetCollection {
