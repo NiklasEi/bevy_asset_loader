@@ -120,7 +120,7 @@ impl AssetField {
                                     let mut folder_map = ::bevy::utils::HashMap::default();
                                     let folders = cell.get_resource::<Assets<bevy::asset::LoadedFolder>>().expect("Cannot get Assets<LoadedFolder>");
                                     let handle = asset_server.get_handle(#asset_path).unwrap();
-                                    let folder = folders.get(handle).unwrap().handles;
+                                    let folder = &folders.get(handle).unwrap().handles;
                                     for handle in folder {
                                         let key = handle.path().unwrap().to_string();
                                         folder_map.insert(key, handle.clone().typed());
@@ -146,7 +146,7 @@ impl AssetField {
                                     let mut folder_map = ::bevy::utils::HashMap::default();
                                     let folders = cell.get_resource::<Assets<bevy::asset::LoadedFolder>>().expect("Cannot get Assets<LoadedFolder>");
                                     let handle = asset_server.get_handle(#asset_path).unwrap();
-                                    let folder = folders.get(handle).unwrap().handles;
+                                    let folder = &folders.get(handle).unwrap().handles;
                                     for handle in folder {
                                         let key = handle.path().unwrap().to_string();
                                         folder_map.insert(key, handle.clone());
@@ -217,12 +217,12 @@ impl AssetField {
                     Typed::No => match mapped {
                         Mapped::No => quote!(#token_stream #field_ident : {
                                 let asset_server = world.get_resource::<AssetServer>().expect("Cannot get AssetServer");
-                                vec![#(asset_server.load(#asset_paths).untyped()),*]
+                                vec![#(asset_server.get_handle_untyped(#asset_paths).unwrap()),*]
                             },),
                         Mapped::Yes => quote!(#token_stream #field_ident : {
                                 let asset_server = world.get_resource::<AssetServer>().expect("Cannot get AssetServer");
                                 let mut folder_map = ::bevy::utils::HashMap::default();
-                                #(folder_map.insert(#asset_paths.to_owned(), asset_server.load(#asset_paths)));*;
+                                #(folder_map.insert(#asset_paths.to_owned(), asset_server.get_handle_untyped(#asset_paths).unwrap()));*;
                                 folder_map
                             },),
                     },
