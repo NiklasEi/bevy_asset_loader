@@ -28,9 +28,9 @@ impl TryFrom<String> for SamplerType {
         match value.as_str() {
             "linear" => Ok(Self::Linear),
             "nearest" => Ok(Self::Nearest),
-            _ => Err("Value must be either `linear` or `nearest`")
+            _ => Err("Value must be either `linear` or `nearest`"),
         }
-    }   
+    }
 }
 
 #[derive(PartialEq, Debug)]
@@ -124,21 +124,13 @@ impl AssetField {
                 let asset_path = image.asset_path.clone();
 
                 let sampler = match image.sampler {
-                    SamplerType::Linear => {
-                        "ImageSampler::linear()"
-                    }
-                    SamplerType::Nearest => {
-                        "ImageSampler::nearest()"
-                    }
+                    SamplerType::Linear => "ImageSampler::linear()",
+                    SamplerType::Nearest => "ImageSampler::nearest()",
                 };
 
                 let descriptor = match image.sampler {
-                    SamplerType::Linear => {
-                        "ImageSampler::linear_descriptor()"
-                    }
-                    SamplerType::Nearest => {
-                        "ImageSampler::nearest_descriptor()"
-                    }
+                    SamplerType::Linear => "ImageSampler::linear_descriptor()",
+                    SamplerType::Nearest => "ImageSampler::nearest_descriptor()",
                 };
 
                 let sampler_token_stream = sampler.parse::<TokenStream>().unwrap();
