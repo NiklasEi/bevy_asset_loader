@@ -3,8 +3,6 @@ use bevy::asset::LoadState;
 use bevy::prelude::*;
 use bevy::utils::HashMap;
 use bevy_asset_loader::prelude::*;
-use path_slash::PathExt;
-use std::path::Path;
 
 fn main() {
     App::new()
