@@ -266,12 +266,7 @@ impl AssetField {
                                     let asset_server = world.get_resource::<AssetServer>().expect("Cannot get AssetServer");
                                     let mut folder_map = ::bevy::utils::HashMap::default();
                                     for handle in handles {
-                                        let asset_path = asset_server
-                                            .get_handle_path(&handle)
-                                            .expect("Handle should have a path");
-                                        let key: String = ::bevy_asset_loader::path_slash::PathExt::to_slash(asset_path.path())
-                                            .expect("Path should be valid UTF-8")
-                                            .into();
+                                        let key: String = handle.path().unwrap().to_string();
                                         folder_map.insert(key, handle.typed());
                                     }
                                     folder_map
@@ -294,12 +289,7 @@ impl AssetField {
                                         let asset_server = world.get_resource::<AssetServer>().expect("Cannot get AssetServer");
                                         let mut folder_map = ::bevy::utils::HashMap::default();
                                         for handle in handles {
-                                            let asset_path = asset_server
-                                                .get_handle_path(&handle)
-                                                .expect("Handle should have a path");
-                                            let key: String = ::bevy_asset_loader::path_slash::PathExt::to_slash(asset_path.path())
-                                                .expect("Path should be valid UTF-8")
-                                                .into();
+                                            let key: String = handle.path().unwrap().to_string();
                                             folder_map.insert(key, handle);
                                         }
                                         folder_map

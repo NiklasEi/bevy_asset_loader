@@ -1,12 +1,18 @@
 use crate::dynamic_asset::{DynamicAsset, DynamicAssetType};
-use bevy::asset::{AssetServer, UntypedAssetId};
+use bevy::asset::{Asset, AssetServer, Assets, LoadedFolder, UntypedHandle};
 use bevy::ecs::system::Command;
 use bevy::ecs::world::World;
 #[cfg(feature = "2d")]
 use bevy::math::Vec2;
+#[cfg(feature = "3d")]
+use bevy::pbr::StandardMaterial;
+#[cfg(any(feature = "2d", feature = "3d"))]
+use bevy::render::texture::Image;
+#[cfg(feature = "2d")]
+use bevy::sprite::TextureAtlas;
 
 use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssets};
-use bevy::reflect::{TypePath, TypeUuid};
+use bevy::reflect::TypePath;
 use bevy::utils::HashMap;
 
 /// These asset variants can be loaded from configuration files. They will then replace
@@ -63,23 +69,21 @@ pub enum StandardDynamicAsset {
 }
 
 impl DynamicAsset for StandardDynamicAsset {
-    fn load(&self, asset_server: &AssetServer) -> Vec<UntypedAssetId> {
+    fn load(&self, asset_server: &AssetServer) -> Vec<UntypedHandle> {
         match self {
-            StandardDynamicAsset::File { path } => vec![asset_server.load_untyped(path)],
-            StandardDynamicAsset::Folder { path } => asset_server
-                .load_folder(path)
-                .unwrap_or_else(|_| panic!("Failed to load '{path}' as a folder")),
+            StandardDynamicAsset::File { path } => vec![asset_server.load_untyped(path).untyped()],
+            StandardDynamicAsset::Folder { path } => vec![asset_server.load_folder(path).untyped()],
             StandardDynamicAsset::Files { paths } => paths
                 .iter()
-                .map(|path| asset_server.load_untyped(path))
+                .map(|path| asset_server.load_untyped(path).untyped())
                 .collect(),
             #[cfg(feature = "3d")]
             StandardDynamicAsset::StandardMaterial { path } => {
-                vec![asset_server.load::<bevy::render::texture::Image>(path)]
+                vec![asset_server.load::<Image>(path).untyped()]
             }
             #[cfg(feature = "2d")]
             StandardDynamicAsset::TextureAtlas { path, .. } => {
-                vec![asset_server.load_untyped(path)]
+                vec![asset_server.load::<Image>(path).untyped()]
             }
         }
     }
@@ -91,20 +95,16 @@ impl DynamicAsset for StandardDynamicAsset {
             .expect("Cannot get AssetServer");
         match self {
             StandardDynamicAsset::File { path } => Ok(DynamicAssetType::Single(
-                asset_server.get_handle_untyped(path),
+                asset_server.get_handle_untyped(path).unwrap(),
             )),
             #[cfg(feature = "3d")]
             StandardDynamicAsset::StandardMaterial { path } => {
                 let mut materials = cell
-                    .get_resource_mut::<bevy::asset::Assets<bevy::pbr::StandardMaterial>>()
+                    .get_resource_mut::<Assets<StandardMaterial>>()
                     .expect("Cannot get resource Assets<StandardMaterial>");
                 let handle = materials
-                    .add(
-                        asset_server
-                            .get_handle::<bevy::render::texture::Image, &String>(path)
-                            .into(),
-                    )
-                    .clone_untyped();
+                    .add(asset_server.get_handle::<Image>(path).unwrap().into())
+                    .untyped();
 
                 Ok(DynamicAssetType::Single(handle))
             }
@@ -121,30 +121,43 @@ impl DynamicAsset for StandardDynamicAsset {
                 offset_y,
             } => {
                 let mut atlases = cell
-                    .get_resource_mut::<bevy::asset::Assets<bevy::sprite::TextureAtlas>>()
+                    .get_resource_mut::<Assets<TextureAtlas>>()
                     .expect("Cannot get resource Assets<TextureAtlas>");
                 let handle = atlases
-                    .add(bevy::sprite::TextureAtlas::from_grid(
-                        asset_server.get_handle(path),
+                    .add(TextureAtlas::from_grid(
+                        asset_server.get_handle(path).unwrap(),
                         Vec2::new(*tile_size_x, *tile_size_y),
                         *columns,
                         *rows,
                         Some(Vec2::new(padding_x.unwrap_or(0.), padding_y.unwrap_or(0.))),
                         Some(Vec2::new(offset_x.unwrap_or(0.), offset_y.unwrap_or(0.))),
                     ))
-                    .clone_untyped();
+                    .untyped();
 
                 Ok(DynamicAssetType::Single(handle))
             }
-            StandardDynamicAsset::Folder { path } => Ok(DynamicAssetType::Collection(
-                asset_server
-                    .load_folder(path)
-                    .unwrap_or_else(|_| panic!("Failed to load '{path}' as a folder")),
-            )),
+            StandardDynamicAsset::Folder { path } => {
+                let folders = cell
+                    .get_resource_mut::<Assets<LoadedFolder>>()
+                    .expect("Cannot get resource Assets<LoadedFolder>");
+                Ok(DynamicAssetType::Collection(
+                    folders
+                        .get(asset_server.get_handle(path).unwrap())
+                        .unwrap()
+                        .handles
+                        .iter()
+                        .map(|handle| handle.clone())
+                        .collect(),
+                ))
+            }
             StandardDynamicAsset::Files { paths } => Ok(DynamicAssetType::Collection(
                 paths
                     .iter()
-                    .map(|path| asset_server.load_untyped(path))
+                    .map(|path| {
+                        asset_server
+                            .get_handle_untyped(path)
+                            .expect("No Handle for path")
+                    })
                     .collect(),
             )),
         }
@@ -170,8 +183,7 @@ impl<K: Into<String> + Sync + Send + 'static> Command for RegisterStandardDynami
 ///
 /// These assets are loaded at the beginning of a loading state
 /// and combined in [`DynamicAssets`](DynamicAssets).
-#[derive(serde::Deserialize, TypeUuid, TypePath)]
-#[uuid = "2df82c01-9c71-4aa8-adc4-71c5824768f1"]
+#[derive(serde::Deserialize, Asset, TypePath)]
 pub struct StandardDynamicAssetCollection(pub HashMap<String, StandardDynamicAsset>);
 
 impl DynamicAssetCollection for StandardDynamicAssetCollection {
