@@ -97,10 +97,7 @@ impl<State: States> DynamicAssetCollections<State> {
         &self,
         loading_state: &State,
     ) -> Option<&Vec<String>> {
-        let files = self
-            .files
-            .get(loading_state)
-            .expect("Failed to get list of dynamic asset collections for current loading state");
+        let files = self.files.get(loading_state)?;
         files.get(&TypeId::of::<C>())
     }
 }
