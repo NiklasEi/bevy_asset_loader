@@ -178,7 +178,7 @@ fn impl_asset_collection(
     ));
 
     let mut asset_creation = assets.iter().fold(quote!(), |token_stream, asset| {
-        asset.attach_token_stream_for_creation(token_stream)
+        asset.attach_token_stream_for_creation(token_stream, name.to_string())
     });
     let mut index = 0;
     asset_creation.append_all(from_world_fields.iter().fold(quote!(), |es, ident| {

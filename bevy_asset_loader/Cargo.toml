@@ -69,6 +69,7 @@ required-features = ["2d", "standard_dynamic_assets"]
 [[example]]
 name = "no_loading_state"
 path = "examples/no_loading_state.rs"
+required-features = ["2d"]
 
 [[example]]
 name = "standard_material"

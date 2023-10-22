@@ -381,7 +381,9 @@ In most cases this happens, an asset file is missing or a certain file ending do
 
 ## Usage without a loading state
 
-Although the pattern of a loading state is quite nice, you might have reasons not to use it. In this case `bevy_asset_loader` can still be helpful. Deriving `AssetCollection` on a resource can significantly reduce the boilerplate for managing assets.
+Although the pattern of a loading state is quite nice (imo), you might have reasons not to use it. In this case `bevy_asset_loader` can still be helpful. Deriving `AssetCollection` on a resource can significantly reduce the boilerplate for managing assets.
+
+Asset collections loaded without a loading state do not support folders or dynamic assets, since these cannot instantly create handles that will eventually point to the loaded assets.
 
 You can directly initialise asset collections on the bevy `App` or `World`. See [no_loading_state.rs](bevy_asset_loader/examples/no_loading_state.rs) for a complete example.
 

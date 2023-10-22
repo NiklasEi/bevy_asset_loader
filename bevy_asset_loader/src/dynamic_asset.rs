@@ -9,6 +9,7 @@ use bevy::ecs::world::World;
 use std::marker::PhantomData;
 
 /// Different typed that can generate the asset field value of a dynamic asset
+#[derive(Debug)]
 pub enum DynamicAssetType {
     /// Dynamic asset that is defined by a single handle
     Single(UntypedHandle),

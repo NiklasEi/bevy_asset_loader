@@ -69,11 +69,9 @@ impl AssetCollectionWorld for World {
     fn init_collection<A: AssetCollection>(&mut self) {
         if self.get_resource::<A>().is_none() {
             // This resource is required for loading a collection
-            // Since bevy_asset_loader does not have a "real" Plugin,
+            // Since bevy_asset_loader can be used without adding a plugin,
             // we need to make sure the resource exists here
             self.init_resource::<DynamicAssets>();
-            // make sure the assets start to load
-            let _ = A::load(self);
             let collection = A::create(self);
             self.insert_resource(collection);
         }
