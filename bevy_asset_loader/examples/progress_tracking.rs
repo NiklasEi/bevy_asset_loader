@@ -1,5 +1,5 @@
 use bevy::app::AppExit;
-use bevy::asset::LoadState;
+use bevy::asset::RecursiveDependencyLoadState;
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
@@ -76,27 +76,27 @@ fn expect(
     mut quit: EventWriter<AppExit>,
 ) {
     assert_eq!(
-        asset_server.get_load_state(audio_assets.background.clone()),
-        LoadState::Loaded
+        asset_server.get_recursive_dependency_load_state(audio_assets.background.clone()),
+        Some(RecursiveDependencyLoadState::Loaded)
     );
     assert_eq!(
-        asset_server.get_load_state(audio_assets.plop.clone()),
-        LoadState::Loaded
+        asset_server.get_recursive_dependency_load_state(audio_assets.plop.clone()),
+        Some(RecursiveDependencyLoadState::Loaded)
     );
     let atlas = texture_atlases
         .get(&texture_assets.female_adventurer)
         .expect("Texture atlas should be added to its assets resource.");
     assert_eq!(
-        asset_server.get_load_state(atlas.texture.clone()),
-        LoadState::Loaded
+        asset_server.get_recursive_dependency_load_state(atlas.texture.clone()),
+        Some(RecursiveDependencyLoadState::Loaded)
     );
     assert_eq!(
-        asset_server.get_load_state(texture_assets.player.clone()),
-        LoadState::Loaded
+        asset_server.get_recursive_dependency_load_state(texture_assets.player.clone()),
+        Some(RecursiveDependencyLoadState::Loaded)
     );
     assert_eq!(
-        asset_server.get_load_state(texture_assets.tree.clone()),
-        LoadState::Loaded
+        asset_server.get_recursive_dependency_load_state(texture_assets.tree.clone()),
+        Some(RecursiveDependencyLoadState::Loaded)
     );
     info!("Everything looks good!");
     info!("Quitting the application...");
