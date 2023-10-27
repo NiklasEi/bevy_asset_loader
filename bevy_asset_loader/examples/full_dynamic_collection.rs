@@ -32,12 +32,13 @@ struct MyAssets {
     // Type in `assets/full_dynamic_collection.assets.ron`: `File`
     #[asset(key = "single_file")]
     single_file: Handle<AudioSource>,
-    // This file will be converted to a standard material
-    // The configuration for that is part of the `.assets` file
+    // This file will be converted to a standard material and
+    // should be the base color texture image. The configuration
+    // for that is part of the `.assets` file.
     // Type in `assets/full_dynamic_collection.assets.ron`: `StandardMaterial`
     #[asset(key = "standard_material")]
     standard_material: Handle<StandardMaterial>,
-    // This file will be converted to a texture atlas
+    // This image file will be converted to a texture atlas
     // The configuration for that is part of the `.assets` file
     // Type in `assets/full_dynamic_collection.assets.ron`: `TextureAtlas`
     #[asset(key = "texture_atlas")]
