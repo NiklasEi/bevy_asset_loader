@@ -47,8 +47,8 @@ fn expect(collection: Option<Res<AudioCollection>>, mut exit: EventWriter<AppExi
             );
             let files = &collection.files;
             assert!(
-                files.contains_key("audio/plop.ogg"),
-                "Expected path was not in {:?}",
+                files.contains_key("audio/test/plop.ogg"),
+                "Expected path 'audio/test/plop.ogg' was not in {:?}",
                 files
             );
             exit.send(AppExit);
@@ -58,7 +58,7 @@ fn expect(collection: Option<Res<AudioCollection>>, mut exit: EventWriter<AppExi
 
 #[derive(AssetCollection, Resource, Debug)]
 struct AudioCollection {
-    #[asset(path = "audio", collection(typed, mapped))]
+    #[asset(path = "audio/test", collection(typed, mapped))]
     files: HashMap<String, Handle<AudioSource>>,
     #[asset(path = "audio/yipee.ogg")]
     single_file: Handle<AudioSource>,
