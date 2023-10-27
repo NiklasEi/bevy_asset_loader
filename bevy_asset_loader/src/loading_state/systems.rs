@@ -206,7 +206,7 @@ pub fn apply_internal_state_transition<S: States>(world: &mut World) {
         );
         if world
             .resource::<Schedules>()
-            .contains(&OnEnterInternalLoadingState(
+            .contains(OnEnterInternalLoadingState(
                 state.clone(),
                 entered_state.clone(),
             ))

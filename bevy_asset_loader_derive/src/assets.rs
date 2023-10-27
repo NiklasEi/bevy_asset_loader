@@ -138,7 +138,7 @@ impl AssetField {
                                     let asset_server = cell.get_resource::<::bevy::asset::AssetServer>().expect("Cannot get AssetServer");
                                     let folders = cell.get_resource::<::bevy::asset::Assets<::bevy::asset::LoadedFolder>>().expect("Cannot get Assets<LoadedFolder>");
                                     let handle = asset_server.get_handle(#asset_path).unwrap_or_else(|| panic!("Folders are only supported when using a loading state. Consider using 'paths' for {}.{}.", #name, #field));
-                                    folders.get(handle).expect("test").handles.iter().map(|handle| handle.clone()).collect()
+                                    folders.get(handle).expect("test").handles.iter().cloned().collect()
                                 },)
                         }
                         Mapped::Yes => {

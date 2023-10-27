@@ -145,9 +145,7 @@ impl DynamicAsset for StandardDynamicAsset {
                         .get(asset_server.get_handle(path).unwrap())
                         .unwrap()
                         .handles
-                        .iter()
-                        .map(|handle| handle.clone())
-                        .collect(),
+                        .to_vec(),
                 ))
             }
             StandardDynamicAsset::Files { paths } => Ok(DynamicAssetType::Collection(

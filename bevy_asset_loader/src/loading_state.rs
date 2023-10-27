@@ -5,8 +5,8 @@ use bevy::app::{App, Plugin};
 use bevy::asset::{Asset, UntypedHandle};
 use bevy::ecs::{
     schedule::{
-        common_conditions::in_state, BoxedScheduleLabel, IntoSystemConfigs, IntoSystemSetConfigs,
-        NextState, OnEnter, ScheduleLabel, State, States, SystemSet,
+        common_conditions::in_state, InternedScheduleLabel, IntoSystemConfigs,
+        IntoSystemSetConfigs, NextState, OnEnter, ScheduleLabel, State, States, SystemSet,
     },
     system::Resource,
     world::FromWorld,
@@ -530,7 +530,7 @@ impl<State: States> Default for LoadingConfiguration<State> {
 #[derive(Resource)]
 pub struct LoadingStateSchedules<State: States> {
     /// Map to store a schedule per loading state
-    pub schedules: HashMap<State, BoxedScheduleLabel>,
+    pub schedules: HashMap<State, InternedScheduleLabel>,
 }
 
 impl<State: States> Default for LoadingStateSchedules<State> {
