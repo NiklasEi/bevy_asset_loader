@@ -40,12 +40,17 @@ fn expect(collection: Option<Res<AudioCollection>>, mut exit: EventWriter<AppExi
         panic!("At least one asset collection was not inserted");
     } else {
         // make sure the asset paths use slash on all OS
-        assert!(collection.unwrap().files.contains_key("audio/plop.ogg"));
+        let files = &collection.unwrap().files;
+        assert!(
+            files.contains_key("audio/plop.ogg"),
+            "Expected path was not in {:?}",
+            files
+        );
         exit.send(AppExit);
     }
 }
 
-#[derive(AssetCollection, Resource)]
+#[derive(AssetCollection, Resource, Debug)]
 struct AudioCollection {
     #[asset(path = "audio", collection(typed, mapped))]
     files: HashMap<String, Handle<AudioSource>>,
