@@ -39,14 +39,20 @@ fn expect(collection: Option<Res<AudioCollection>>, mut exit: EventWriter<AppExi
     if collection.is_none() {
         panic!("At least one asset collection was not inserted");
     } else {
-        // make sure the asset paths use slash on all OS
-        let files = &collection.unwrap().files;
-        assert!(
-            files.contains_key("audio/plop.ogg"),
-            "Expected path was not in {:?}",
-            files
-        );
-        exit.send(AppExit);
+        if let Some(collection) = collection {
+            // make sure the asset paths use slash on all OS
+            assert_eq!(
+                &collection.single_file.clone().path().unwrap().to_string(),
+                "audio/yipee.ogg"
+            );
+            let files = &collection.files;
+            assert!(
+                files.contains_key("audio/plop.ogg"),
+                "Expected path was not in {:?}",
+                files
+            );
+            exit.send(AppExit);
+        }
     }
 }
 
@@ -54,6 +60,8 @@ fn expect(collection: Option<Res<AudioCollection>>, mut exit: EventWriter<AppExi
 struct AudioCollection {
     #[asset(path = "audio", collection(typed, mapped))]
     files: HashMap<String, Handle<AudioSource>>,
+    #[asset(path = "audio/yipee.ogg")]
+    single_file: Handle<AudioSource>,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
