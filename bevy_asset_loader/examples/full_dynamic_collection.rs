@@ -79,13 +79,26 @@ struct MyAssets {
 
     // Optional file collections
     #[asset(key = "missing_key", collection, optional)]
+    missing_optional_folder: Option<Vec<UntypedHandle>>,
+    #[asset(key = "folder_untyped", collection, optional)]
     optional_folder_untyped: Option<Vec<UntypedHandle>>,
-    #[asset(key = "missing_key", collection(typed), optional)]
+    #[asset(key = "folder_untyped", collection(mapped), optional)]
+    optional_folder_untyped_mapped: Option<HashMap<String, UntypedHandle>>,
+    #[asset(key = "folder_typed", collection(typed), optional)]
     optional_folder_typed: Option<Vec<Handle<Image>>>,
+    #[asset(key = "folder_typed", collection(typed, mapped), optional)]
+    optional_folder_typed_mapped: Option<HashMap<String, Handle<Image>>>,
+
     #[asset(key = "missing_key", collection, optional)]
+    missing_optional_files: Option<Vec<UntypedHandle>>,
+    #[asset(key = "files_untyped", collection, optional)]
     optional_files_untyped: Option<Vec<UntypedHandle>>,
-    #[asset(key = "missing_key", collection(typed), optional)]
+    #[asset(key = "files_untyped", collection(mapped), optional)]
+    optional_files_untyped_mapped: Option<HashMap<String, UntypedHandle>>,
+    #[asset(key = "files_typed", collection(typed), optional)]
     optional_files_typed: Option<Vec<Handle<Image>>>,
+    #[asset(key = "files_typed", collection(typed, mapped), optional)]
+    optional_files_typed_mapped: Option<HashMap<String, Handle<Image>>>,
 }
 
 fn expectations(
@@ -182,10 +195,93 @@ fn expectations(
         assert_eq!(&handle.path().unwrap().to_string(), name);
     }
 
-    assert_eq!(assets.optional_folder_untyped, None);
-    assert_eq!(assets.optional_folder_typed, None);
-    assert_eq!(assets.optional_files_untyped, None);
-    assert_eq!(assets.optional_files_typed, None);
+    assert_eq!(assets.missing_optional_folder, None);
+    let Some(ref optional_folder_untyped) = assets.optional_folder_untyped else {
+        panic!("Optional asset not loaded")
+    };
+    assert_eq!(optional_folder_untyped.len(), 6);
+    for handle in optional_folder_untyped.iter() {
+        assert_eq!(
+            asset_server.get_recursive_dependency_load_state(handle.id()),
+            Some(RecursiveDependencyLoadState::Loaded)
+        );
+    }
+    let Some(ref optional_folder_untyped_mapped) = assets.optional_folder_untyped_mapped else {
+        panic!("Optional asset not loaded")
+    };
+    assert_eq!(optional_folder_untyped_mapped.len(), 6);
+    for (name, handle) in optional_folder_untyped_mapped.iter() {
+        assert_eq!(
+            asset_server.get_recursive_dependency_load_state(handle.id()),
+            Some(RecursiveDependencyLoadState::Loaded)
+        );
+        assert_eq!(&handle.path().unwrap().to_string(), name);
+    }
+    let Some(ref optional_folder_typed) = assets.optional_folder_typed else {
+        panic!("Optional asset not loaded")
+    };
+    assert_eq!(optional_folder_typed.len(), 6);
+    for handle in optional_folder_typed.iter() {
+        assert_eq!(
+            asset_server.get_recursive_dependency_load_state(handle.id()),
+            Some(RecursiveDependencyLoadState::Loaded)
+        );
+    }
+    let Some(ref optional_folder_typed_mapped) = assets.optional_folder_typed_mapped else {
+        panic!("Optional asset not loaded")
+    };
+    assert_eq!(optional_folder_typed_mapped.len(), 6);
+    for (name, handle) in optional_folder_typed_mapped.iter() {
+        assert_eq!(
+            asset_server.get_recursive_dependency_load_state(handle.id()),
+            Some(RecursiveDependencyLoadState::Loaded)
+        );
+        assert_eq!(&handle.path().unwrap().to_string(), name);
+    }
+
+    assert_eq!(assets.missing_optional_files, None);
+    let Some(ref optional_files_untyped) = assets.optional_files_untyped else {
+        panic!("Optional asset not loaded")
+    };
+    assert_eq!(optional_files_untyped.len(), 2);
+    for handle in optional_files_untyped.iter() {
+        assert_eq!(
+            asset_server.get_recursive_dependency_load_state(handle.id()),
+            Some(RecursiveDependencyLoadState::Loaded)
+        );
+    }
+    let Some(ref optional_files_untyped_mapped) = assets.optional_files_untyped_mapped else {
+        panic!("Optional asset not loaded")
+    };
+    assert_eq!(optional_files_untyped_mapped.len(), 2);
+    for (name, handle) in optional_files_untyped_mapped.iter() {
+        assert_eq!(
+            asset_server.get_recursive_dependency_load_state(handle.id()),
+            Some(RecursiveDependencyLoadState::Loaded)
+        );
+        assert_eq!(&handle.path().unwrap().to_string(), name);
+    }
+    let Some(ref optional_files_typed) = assets.optional_files_typed else {
+        panic!("Optional asset not loaded")
+    };
+    assert_eq!(optional_files_typed.len(), 2);
+    for handle in optional_files_typed.iter() {
+        assert_eq!(
+            asset_server.get_recursive_dependency_load_state(handle.clone()),
+            Some(RecursiveDependencyLoadState::Loaded)
+        );
+    }
+    let Some(ref optional_files_typed_mapped) = assets.optional_files_typed_mapped else {
+        panic!("Optional asset not loaded")
+    };
+    assert_eq!(optional_files_typed_mapped.len(), 2);
+    for (name, handle) in optional_files_typed_mapped.iter() {
+        assert_eq!(
+            asset_server.get_recursive_dependency_load_state(handle.clone()),
+            Some(RecursiveDependencyLoadState::Loaded)
+        );
+        assert_eq!(&handle.path().unwrap().to_string(), name);
+    }
 
     info!("Everything looks good!");
     info!("Quitting the application...");

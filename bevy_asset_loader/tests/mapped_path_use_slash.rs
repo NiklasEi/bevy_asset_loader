@@ -38,21 +38,19 @@ fn timeout(time: Res<Time>) {
 fn expect(collection: Option<Res<AudioCollection>>, mut exit: EventWriter<AppExit>) {
     if collection.is_none() {
         panic!("At least one asset collection was not inserted");
-    } else {
-        if let Some(collection) = collection {
-            // make sure the asset paths use slash on all OS
-            assert_eq!(
-                &collection.single_file.clone().path().unwrap().to_string(),
-                "audio/yipee.ogg"
-            );
-            let files = &collection.files;
-            assert!(
-                files.contains_key("audio/test/plop.ogg"),
-                "Expected path 'audio/test/plop.ogg' was not in {:?}",
-                files
-            );
-            exit.send(AppExit);
-        }
+    } else if let Some(collection) = collection {
+        // make sure the asset paths use slash on all OS
+        assert_eq!(
+            &collection.single_file.clone().path().unwrap().to_string(),
+            "audio/yipee.ogg"
+        );
+        let files = &collection.files;
+        assert!(
+            files.contains_key("audio/plop.ogg"),
+            "Expected path 'audio/plop.ogg' was not in {:?}",
+            files
+        );
+        exit.send(AppExit);
     }
 }
 
