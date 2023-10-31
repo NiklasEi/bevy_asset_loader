@@ -122,19 +122,14 @@ impl AssetField {
             AssetField::Image(image) => {
                 let field_ident = image.field_ident.clone();
                 let asset_path = image.asset_path.clone();
-
                 let sampler = match image.sampler {
-                    SamplerType::Linear => "ImageSampler::linear()",
-                    SamplerType::Nearest => "ImageSampler::nearest()",
+                    SamplerType::Linear => quote!(ImageSampler::linear()),
+                    SamplerType::Nearest => quote!(ImageSampler::nearest()),
                 };
-
                 let descriptor = match image.sampler {
-                    SamplerType::Linear => "ImageSampler::linear_descriptor()",
-                    SamplerType::Nearest => "ImageSampler::nearest_descriptor()",
+                    SamplerType::Linear => quote!(ImageSampler::linear_descriptor()),
+                    SamplerType::Nearest => quote!(ImageSampler::nearest_descriptor()),
                 };
-
-                let sampler_token_stream = sampler.parse::<TokenStream>().unwrap();
-                let descriptor_token_stream = descriptor.parse::<TokenStream>().unwrap();
 
                 quote!(#token_stream #field_ident : {
                     use bevy::render::texture::ImageSampler;
@@ -146,17 +141,17 @@ impl AssetField {
                     let mut image = images.get_mut(&handle).expect("Only asset collection fields holding an `Image` handle can be annotated with `image`");
 
                     let is_different_sampler = if let ImageSampler::Descriptor(descriptor) = &image.sampler_descriptor {
-                        !descriptor.eq(&#descriptor_token_stream)
+                        !descriptor.eq(&#descriptor)
                     } else {
                         false
                     };
 
                     if is_different_sampler {
                         let mut cloned_image = image.clone();
-                        cloned_image.sampler_descriptor = #sampler_token_stream;
+                        cloned_image.sampler_descriptor = #sampler;
                         handle = images.add(cloned_image);
                     } else {
-                        image.sampler_descriptor = #sampler_token_stream;
+                        image.sampler_descriptor = #sampler;
                     }
 
                     handle

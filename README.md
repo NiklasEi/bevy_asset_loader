@@ -279,6 +279,26 @@ struct MyAssets {
 }
 ```
 
+### Images
+
+Asset collections support one of the most common operations for image asset: changing their sampler. You can configure either a linear or a nearest sampler like so:
+
+```rust
+use bevy::prelude::*;
+use bevy_asset_loader::asset_collection::AssetCollection;
+
+#[derive(AssetCollection, Resource)]
+struct ImageAssets {
+    #[asset(path = "images/pixel_tree.png")]
+    #[asset(image(sampler = linear))]
+    tree_linear: Handle<Image>,
+
+    #[asset(path = "images/pixel_tree.png")]
+    #[asset(image(sampler = nearest))]
+    tree_nearest: Handle<Image>,
+}
+```
+
 ### Standard materials
 
 You can directly load standard materials if you enable the feature `3d`. For a complete example please take a look at [standard_material.rs](bevy_asset_loader/examples/standard_material.rs).
