@@ -5,6 +5,8 @@ with `cargo run --example <example>`.
 
 | Example                                                    | Description                                                              |
 |------------------------------------------------------------|--------------------------------------------------------------------------|
+| Example                                                    | Description                                                              |
+|------------------------------------------------------------|--------------------------------------------------------------------------|
 | [`atlas_from_grid.rs`](atlas_from_grid.rs)                 | Loading a texture atlas from a sprite sheet                              |
 | [`custom_dynamic_assets.rs`](custom_dynamic_assets.rs)     | Define and use your own dynamic assets                                   |
 | [`dynamic_asset.rs`](dynamic_asset.rs)                     | Load dynamic assets from a `.ron` file                                   |
@@ -17,6 +19,7 @@ with `cargo run --example <example>`.
 | [`progress_tracking.rs`](progress_tracking.rs)             | How to set up progress tracking using `iyes_progress`                    |
 | [`standard_material.rs`](standard_material.rs)             | Loading a standard material from a png file                              |
 | [`two_collections.rs`](two_collections.rs)                 | Load multiple asset collections                                          |
+| [`image_asset.rs`](image_asset.rs)                         | How to set a different sampler for an image asset                        |
 
 ## Credits
 
