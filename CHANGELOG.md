@@ -3,6 +3,9 @@
 - Make `loading_state::LoadingStateSet` public for explicit system ordering
 - Support configuring an image sampler through a derive attribute ([#156](https://github.com/NiklasEi/bevy_asset_loader/pull/156))
   - See [the new example](bevy_asset_loader/examples/image_asset.rs)
+  - This can is also supported in dynamic assets through the new standard dynamic asset `Image`
+- Optional fields of dynamic assets no longer require wrapping their values in `Some`
+  - E.g. configuring `padding_x` for a texture atlas is now just `padding_x: 1.5` instead of `padding_x: Some(1.5)`
 
 ## v0.17.0
 - update to Bevy 0.11
