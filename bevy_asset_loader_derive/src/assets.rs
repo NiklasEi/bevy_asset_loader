@@ -539,13 +539,13 @@ impl AssetBuilder {
         }
         if self.key.is_some()
             && (self.asset_path.is_some()
-            || self.asset_paths.is_some()
-            || missing_fields.len() < 4
-            || self.padding_x.is_some()
-            || self.padding_y.is_some()
-            || self.offset_x.is_some()
-            || self.offset_y.is_some()
-            || self.is_standard_material)
+                || self.asset_paths.is_some()
+                || missing_fields.len() < 4
+                || self.padding_x.is_some()
+                || self.padding_y.is_some()
+                || self.offset_x.is_some()
+                || self.offset_y.is_some()
+                || self.is_standard_material)
         {
             return Err(vec![ParseFieldError::KeyAttributeStandsAlone]);
         }
