@@ -14,7 +14,7 @@ use bevy_asset_loader::loading_state::{LoadingState, LoadingStateAppExt};
     not(feature = "progress_tracking")
 ))]
 #[test]
-fn multiple_asset_collections() {
+fn mapped_path_use_slash() {
     App::new()
         .add_state::<MyStates>()
         .add_plugins((
@@ -56,7 +56,7 @@ fn expect(collection: Option<Res<AudioCollection>>, mut exit: EventWriter<AppExi
 
 #[derive(AssetCollection, Resource, Debug)]
 struct AudioCollection {
-    #[asset(path = "audio/test", collection(typed, mapped))]
+    #[asset(path = "audio", collection(typed, mapped))]
     files: HashMap<String, Handle<AudioSource>>,
     #[asset(path = "audio/yipee.ogg")]
     single_file: Handle<AudioSource>,

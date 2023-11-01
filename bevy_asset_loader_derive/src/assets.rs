@@ -1,4 +1,4 @@
-use crate::{ParseFieldError, TextureAtlasAttribute, TEXTURE_ATLAS_ATTRIBUTE};
+use crate::{ParseFieldError, TextureAtlasAttribute};
 use proc_macro2::{Ident, TokenStream};
 use quote::quote;
 
@@ -509,28 +509,28 @@ impl AssetBuilder {
         if self.tile_size_x.is_none() {
             missing_fields.push(format!(
                 "{}/{}",
-                TEXTURE_ATLAS_ATTRIBUTE,
+                TextureAtlasAttribute::ATTRIBUTE_NAME,
                 TextureAtlasAttribute::TILE_SIZE_X
             ));
         }
         if self.tile_size_y.is_none() {
             missing_fields.push(format!(
                 "{}/{}",
-                TEXTURE_ATLAS_ATTRIBUTE,
+                TextureAtlasAttribute::ATTRIBUTE_NAME,
                 TextureAtlasAttribute::TILE_SIZE_Y
             ));
         }
         if self.columns.is_none() {
             missing_fields.push(format!(
                 "{}/{}",
-                TEXTURE_ATLAS_ATTRIBUTE,
+                TextureAtlasAttribute::ATTRIBUTE_NAME,
                 TextureAtlasAttribute::COLUMNS
             ));
         }
         if self.rows.is_none() {
             missing_fields.push(format!(
                 "{}/{}",
-                TEXTURE_ATLAS_ATTRIBUTE,
+                TextureAtlasAttribute::ATTRIBUTE_NAME,
                 TextureAtlasAttribute::ROWS
             ));
         }

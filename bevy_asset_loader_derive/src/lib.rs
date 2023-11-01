@@ -18,7 +18,9 @@ use crate::assets::*;
 use proc_macro2::Ident;
 use quote::{quote, quote_spanned, ToTokens, TokenStreamExt};
 use syn::punctuated::Punctuated;
-use syn::{Data, Expr, ExprLit, ExprPath, Field, Fields, Index, Lit, LitStr, Meta, Token};
+#[cfg(any(feature = "2d", feature = "3d"))]
+use syn::ExprPath;
+use syn::{Data, Expr, ExprLit, Field, Fields, Index, Lit, LitStr, Meta, Token};
 
 /// Derive macro for [`AssetCollection`]
 ///
@@ -37,9 +39,9 @@ pub(crate) const PATH_ATTRIBUTE: &str = "path";
 pub(crate) const KEY_ATTRIBUTE: &str = "key";
 pub(crate) const OPTIONAL_ATTRIBUTE: &str = "optional";
 
-pub(crate) const TEXTURE_ATLAS_ATTRIBUTE: &str = "texture_atlas";
 pub(crate) struct TextureAtlasAttribute;
 impl TextureAtlasAttribute {
+    pub const ATTRIBUTE_NAME: &'static str = "texture_atlas";
     pub const TILE_SIZE_X: &'static str = "tile_size_x";
     pub const TILE_SIZE_Y: &'static str = "tile_size_y";
     pub const COLUMNS: &'static str = "columns";
@@ -54,9 +56,10 @@ impl TextureAtlasAttribute {
     pub const OFFSET_Y: &'static str = "offset_y";
 }
 
-pub(crate) const IMAGE_ATTRIBUTE: &str = "image";
 pub(crate) struct ImageAttribute;
 impl ImageAttribute {
+    pub const ATTRIBUTE_NAME: &'static str = "image";
+    #[allow(dead_code)]
     pub const SAMPLER: &'static str = "sampler";
 }
 
@@ -183,11 +186,10 @@ fn impl_asset_collection(
             }
     };
 
-    let mut prepare_from_world = quote! {};
-    prepare_from_world.append_all(from_world_fields.iter().fold(
+    let prepare_from_world = from_world_fields.iter().fold(
         quote!(),
         |es, ident| quote_spanned! {ident.span() => #es ::bevy::ecs::world::FromWorld::from_world(world),},
-    ));
+    );
 
     let mut asset_creation = assets.iter().fold(quote!(), |token_stream, asset| {
         asset.attach_token_stream_for_creation(token_stream, name.to_string())
@@ -256,7 +258,11 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
 
         for attribute in asset_meta_list.unwrap() {
             match attribute {
-                Meta::List(meta_list) if meta_list.path.is_ident(TEXTURE_ATLAS_ATTRIBUTE) => {
+                Meta::List(meta_list)
+                    if meta_list
+                        .path
+                        .is_ident(TextureAtlasAttribute::ATTRIBUTE_NAME) =>
+                {
                     #[cfg(not(feature = "2d"))]
                     errors.push(ParseFieldError::Missing2dFeature(
                         meta_list.into_token_stream(),
@@ -433,7 +439,9 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                     }
                     builder.asset_paths = Some(paths);
                 }
-                Meta::List(meta_list) if meta_list.path.is_ident(IMAGE_ATTRIBUTE) => {
+                Meta::List(meta_list)
+                    if meta_list.path.is_ident(ImageAttribute::ATTRIBUTE_NAME) =>
+                {
                     #[cfg(all(not(feature = "2d"), not(feature = "3d")))]
                     errors.push(ParseFieldError::Missing2dOr3dFeature(
                         meta_list.into_token_stream(),
