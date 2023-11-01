@@ -281,7 +281,7 @@ struct MyAssets {
 
 ### Images
 
-Asset collections support one of the most common operations for image asset: changing their sampler. You can configure either a linear or a nearest sampler like so:
+Asset collections support configuring the sampler of an image asset through a derive attribute. You can configure either the sampler like so:
 
 ```rust
 use bevy::prelude::*;
