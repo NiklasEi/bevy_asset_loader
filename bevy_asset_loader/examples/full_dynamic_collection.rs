@@ -1,6 +1,7 @@
 use bevy::app::AppExit;
 use bevy::asset::LoadState;
 use bevy::prelude::*;
+use bevy::render::texture::ImageSampler;
 use bevy::utils::HashMap;
 use bevy_asset_loader::prelude::*;
 use path_slash::PathExt;
@@ -49,6 +50,9 @@ struct MyAssets {
     // Type in `assets/full_dynamic_collection.assets.ron`: `File`, `StandardMaterial`, or `TextureAtlas`
     #[asset(key = "optional_file", optional)]
     optional_file: Option<Handle<AudioSource>>,
+    // Image asset with sampler nearest (good for crisp pixel art)
+    #[asset(key = "pixel_tree")]
+    image_tree_nearest: Handle<Image>,
 
     // Collections of files
 
@@ -93,6 +97,7 @@ fn expectations(
     asset_server: Res<AssetServer>,
     standard_materials: Res<Assets<StandardMaterial>>,
     texture_atlases: Res<Assets<TextureAtlas>>,
+    images: Res<Assets<Image>>,
     mut quit: EventWriter<AppExit>,
 ) {
     info!("Done loading the collection. Checking expectations...");
@@ -121,14 +126,22 @@ fn expectations(
         LoadState::Loaded
     );
     assert_eq!(assets.optional_file, None);
-    assert_eq!(assets.folder_untyped.len(), 6);
+    let image = images
+        .get(&assets.image_tree_nearest)
+        .expect("Image should be added to its asset resource");
+    let ImageSampler::Descriptor(descriptor) = &image.sampler_descriptor else {
+        panic!("Descriptor was not set to non default value nearest");
+    };
+    assert_eq!(descriptor, &ImageSampler::nearest_descriptor());
+
+    assert_eq!(assets.folder_untyped.len(), 7);
     for handle in assets.folder_untyped.iter() {
         assert_eq!(
             asset_server.get_load_state(handle.clone()),
             LoadState::Loaded
         );
     }
-    assert_eq!(assets.folder_untyped_mapped.len(), 6);
+    assert_eq!(assets.folder_untyped_mapped.len(), 7);
     for (name, handle) in assets.folder_untyped_mapped.iter() {
         assert_eq!(
             asset_server.get_load_state(handle.clone()),
@@ -145,14 +158,14 @@ fn expectations(
             name
         );
     }
-    assert_eq!(assets.folder_typed.len(), 6);
+    assert_eq!(assets.folder_typed.len(), 7);
     for handle in assets.folder_typed.iter() {
         assert_eq!(
             asset_server.get_load_state(handle.clone()),
             LoadState::Loaded
         );
     }
-    assert_eq!(assets.folder_typed_mapped.len(), 6);
+    assert_eq!(assets.folder_typed_mapped.len(), 7);
     for (name, handle) in assets.folder_typed_mapped.iter() {
         assert_eq!(
             asset_server.get_load_state(handle.clone()),

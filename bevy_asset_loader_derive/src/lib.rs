@@ -136,6 +136,12 @@ fn impl_asset_collection(
                                         "This attribute requires the '3d' feature",
                                     ));
                                 }
+                                ParseFieldError::Missing2dOr3dFeature(token_stream) => {
+                                    compile_errors.push(syn::Error::new_spanned(
+                                        token_stream,
+                                        "This attribute requires the '3d' or '2d' feature",
+                                    ));
+                                }
                                 ParseFieldError::PathAndPathsAreExclusive => {
                                     compile_errors.push(syn::Error::new_spanned(
                                         field.into_token_stream(),
@@ -232,6 +238,8 @@ enum ParseFieldError {
     Missing2dFeature(proc_macro2::TokenStream),
     #[allow(dead_code)]
     Missing3dFeature(proc_macro2::TokenStream),
+    #[allow(dead_code)]
+    Missing2dOr3dFeature(proc_macro2::TokenStream),
 }
 
 fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
@@ -419,47 +427,50 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                     let mut paths = vec![];
                     for path in paths_meta_list.unwrap() {
                         paths.push(path.value());
-                        // } else {
-                        //     errors.push(ParseFieldError::UnknownAttributeType(
-                        //         attribute.into_token_stream(),
-                        //     ));
-                        // }
                     }
                     builder.asset_paths = Some(paths);
                 }
                 Meta::List(meta_list) if meta_list.path.is_ident(IMAGE_ATTRIBUTE) => {
-                    let image_meta_list =
-                        meta_list.parse_args_with(Punctuated::<Meta, Token![,]>::parse_terminated);
+                    #[cfg(all(not(feature = "2d"), not(feature = "3d")))]
+                    errors.push(ParseFieldError::Missing2dOr3dFeature(
+                        meta_list.into_token_stream(),
+                    ));
+                    #[cfg(any(feature = "2d", feature = "3d"))]
+                    {
+                        let image_meta_list = meta_list
+                            .parse_args_with(Punctuated::<Meta, Token![,]>::parse_terminated);
+                        for attribute in image_meta_list.unwrap() {
+                            match attribute {
+                                Meta::NameValue(named_value) => {
+                                    let path = named_value.path.get_ident().unwrap().clone();
+                                    if path == ImageAttribute::SAMPLER {
+                                        if let Expr::Path(ExprPath { path, .. }) =
+                                            &named_value.value
+                                        {
+                                            let sampler_result = SamplerType::try_from(
+                                                path.get_ident().unwrap().to_string(),
+                                            );
 
-                    for attribute in image_meta_list.unwrap() {
-                        match attribute {
-                            Meta::NameValue(named_value) => {
-                                let path = named_value.path.get_ident().unwrap().clone();
-                                if path == ImageAttribute::SAMPLER {
-                                    if let Expr::Path(ExprPath { path, .. }) = &named_value.value {
-                                        let sampler_result = SamplerType::try_from(
-                                            path.get_ident().unwrap().to_string(),
-                                        );
-
-                                        if sampler_result.is_ok() {
-                                            builder.sampler = Some(sampler_result.unwrap());
+                                            if let Ok(sampler) = sampler_result {
+                                                builder.sampler = Some(sampler);
+                                            } else {
+                                                errors.push(ParseFieldError::UnknownAttribute(
+                                                    named_value.value.into_token_stream(),
+                                                ));
+                                            }
                                         } else {
-                                            errors.push(ParseFieldError::UnknownAttribute(
-                                                named_value.value.into_token_stream(),
+                                            errors.push(ParseFieldError::WrongAttributeType(
+                                                named_value.into_token_stream(),
+                                                "path",
                                             ));
                                         }
-                                    } else {
-                                        errors.push(ParseFieldError::WrongAttributeType(
-                                            named_value.into_token_stream(),
-                                            "path",
-                                        ));
                                     }
                                 }
-                            }
-                            _ => {
-                                errors.push(ParseFieldError::UnknownAttributeType(
-                                    attribute.into_token_stream(),
-                                ));
+                                _ => {
+                                    errors.push(ParseFieldError::UnknownAttributeType(
+                                        attribute.into_token_stream(),
+                                    ));
+                                }
                             }
                         }
                     }

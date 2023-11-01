@@ -299,6 +299,16 @@ struct ImageAssets {
 }
 ```
 
+The corresponding dynamic asset would be
+```ron
+({
+    "pixel_tree": Image (
+        path: "images/tree.png",
+        sampler: Nearest
+    ),
+})
+```
+
 ### Standard materials
 
 You can directly load standard materials if you enable the feature `3d`. For a complete example please take a look at [standard_material.rs](bevy_asset_loader/examples/standard_material.rs).

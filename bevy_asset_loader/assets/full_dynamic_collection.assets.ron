@@ -10,7 +10,11 @@
         tile_size_x: 96.,
         tile_size_y: 99.,
         columns: 8,
-        rows: 1
+        rows: 1,
+    ),
+    "pixel_tree": Image (
+        path: "images/tree.png",
+        sampler: Nearest
     ),
     "folder_untyped": Folder (
         path: "images",
