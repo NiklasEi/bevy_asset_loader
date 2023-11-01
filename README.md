@@ -279,6 +279,36 @@ struct MyAssets {
 }
 ```
 
+### Images
+
+Asset collections support configuring the sampler of an image asset through a derive attribute. You can configure either the sampler like so:
+
+```rust
+use bevy::prelude::*;
+use bevy_asset_loader::asset_collection::AssetCollection;
+
+#[derive(AssetCollection, Resource)]
+struct ImageAssets {
+    #[asset(path = "images/pixel_tree.png")]
+    #[asset(image(sampler = linear))]
+    tree_linear: Handle<Image>,
+
+    #[asset(path = "images/pixel_tree.png")]
+    #[asset(image(sampler = nearest))]
+    tree_nearest: Handle<Image>,
+}
+```
+
+The corresponding dynamic asset would be
+```ron
+({
+    "pixel_tree": Image (
+        path: "images/tree.png",
+        sampler: Nearest
+    ),
+})
+```
+
 ### Standard materials
 
 You can directly load standard materials if you enable the feature `3d`. For a complete example please take a look at [standard_material.rs](bevy_asset_loader/examples/standard_material.rs).

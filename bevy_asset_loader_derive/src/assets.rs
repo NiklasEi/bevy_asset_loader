@@ -16,6 +16,30 @@ pub(crate) struct TextureAtlasAssetField {
     pub offset_y: f32,
 }
 
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub(crate) enum SamplerType {
+    Linear,
+    Nearest,
+}
+
+impl TryFrom<String> for SamplerType {
+    type Error = &'static str;
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        match value.as_str() {
+            "linear" => Ok(Self::Linear),
+            "nearest" => Ok(Self::Nearest),
+            _ => Err("Value must be either `linear` or `nearest`"),
+        }
+    }
+}
+
+#[derive(PartialEq, Debug)]
+pub(crate) struct ImageAssetField {
+    pub field_ident: Ident,
+    pub asset_path: String,
+    pub sampler: SamplerType,
+}
+
 #[derive(PartialEq, Debug)]
 pub(crate) struct BasicAssetField {
     pub field_ident: Ident,
@@ -43,6 +67,7 @@ pub(crate) enum AssetField {
     Folder(BasicAssetField, Typed, Mapped),
     Files(MultipleFilesField, Typed, Mapped),
     TextureAtlas(TextureAtlasAssetField),
+    Image(ImageAssetField),
     StandardMaterial(BasicAssetField),
     Dynamic(DynamicAssetField),
     OptionalDynamic(DynamicAssetField),
@@ -93,6 +118,44 @@ impl AssetField {
                 quote!(#token_stream #field_ident : {
                     let asset_server = world.get_resource::<::bevy::asset::AssetServer>().expect("Cannot get AssetServer");
                     asset_server.load(#asset_path)
+                },)
+            }
+            AssetField::Image(image) => {
+                let field_ident = image.field_ident.clone();
+                let asset_path = image.asset_path.clone();
+                let sampler = match image.sampler {
+                    SamplerType::Linear => quote!(ImageSampler::linear()),
+                    SamplerType::Nearest => quote!(ImageSampler::nearest()),
+                };
+                let descriptor = match image.sampler {
+                    SamplerType::Linear => quote!(ImageSamplerDescriptor::linear()),
+                    SamplerType::Nearest => quote!(ImageSamplerDescriptor::nearest()),
+                };
+
+                quote!(#token_stream #field_ident : {
+                    use bevy::render::texture::{ImageSampler, ImageSamplerDescriptor};
+                    let cell = world.cell();
+                    let asset_server = cell.get_resource::<AssetServer>().expect("Cannot get AssetServer");
+                    let mut images = cell.get_resource_mut::<Assets<Image>>().expect("Cannot get resource Assets<Image>");
+
+                    let mut handle = asset_server.load(#asset_path);
+                    let mut image = images.get_mut(&handle).expect("Only asset collection fields holding an `Image` handle can be annotated with `image`");
+
+                    let is_different_sampler = if let ImageSampler::Descriptor(descriptor) = &image.sampler {
+                        !descriptor.as_wgpu().eq(&#descriptor.as_wgpu())
+                    } else {
+                        false
+                    };
+
+                    if is_different_sampler {
+                        let mut cloned_image = image.clone();
+                        cloned_image.sampler = #sampler;
+                        handle = images.add(cloned_image);
+                    } else {
+                        image.sampler = #sampler;
+                    }
+
+                    handle
                 },)
             }
             AssetField::Folder(basic, typed, mapped) => {
@@ -404,12 +467,10 @@ impl AssetField {
                     }
                 )
             }
-            AssetField::StandardMaterial(asset) => {
-                let asset_path = asset.asset_path.clone();
-                quote!(#token_stream handles.push(asset_server.load::<::bevy::render::texture::Image>(#asset_path).untyped());)
-            }
-            AssetField::TextureAtlas(asset) => {
-                let asset_path = asset.asset_path.clone();
+            AssetField::StandardMaterial(BasicAssetField { asset_path, .. })
+            | AssetField::TextureAtlas(TextureAtlasAssetField { asset_path, .. })
+            | AssetField::Image(ImageAssetField { asset_path, .. }) => {
+                let asset_path = asset_path.clone();
                 quote!(#token_stream handles.push(asset_server.load::<::bevy::render::texture::Image>(#asset_path).untyped());)
             }
             AssetField::Files(assets, _, _) => {
@@ -439,6 +500,7 @@ pub(crate) struct AssetBuilder {
     pub padding_y: Option<f32>,
     pub offset_x: Option<f32>,
     pub offset_y: Option<f32>,
+    pub sampler: Option<SamplerType>,
 }
 
 impl AssetBuilder {
@@ -477,13 +539,13 @@ impl AssetBuilder {
         }
         if self.key.is_some()
             && (self.asset_path.is_some()
-                || self.asset_paths.is_some()
-                || missing_fields.len() < 4
-                || self.padding_x.is_some()
-                || self.padding_y.is_some()
-                || self.offset_x.is_some()
-                || self.offset_y.is_some()
-                || self.is_standard_material)
+            || self.asset_paths.is_some()
+            || missing_fields.len() < 4
+            || self.padding_x.is_some()
+            || self.padding_y.is_some()
+            || self.offset_x.is_some()
+            || self.offset_y.is_some()
+            || self.is_standard_material)
         {
             return Err(vec![ParseFieldError::KeyAttributeStandsAlone]);
         }
@@ -546,6 +608,13 @@ impl AssetBuilder {
                     self.is_typed.into(),
                     self.is_mapped.into(),
                 ));
+            }
+            if self.sampler.is_some() {
+                return Ok(AssetField::Image(ImageAssetField {
+                    field_ident: self.field_ident.unwrap(),
+                    asset_path: self.asset_path.unwrap(),
+                    sampler: self.sampler.unwrap(),
+                }));
             }
             let asset = BasicAssetField {
                 field_ident: self.field_ident.unwrap(),
@@ -811,6 +880,47 @@ mod test {
                 padding_y: 0.0,
                 offset_x: 0.0,
                 offset_y: 3.0,
+            })
+        );
+    }
+
+    #[test]
+    fn image_asset() {
+        let builder_linear = AssetBuilder {
+            field_ident: Some(Ident::new("test", Span::call_site())),
+            asset_path: Some("some/image.png".to_owned()),
+            sampler: Some(SamplerType::Linear),
+            ..Default::default()
+        };
+
+        let builder_nearest = AssetBuilder {
+            field_ident: Some(Ident::new("test", Span::call_site())),
+            asset_path: Some("some/image.png".to_owned()),
+            sampler: Some(SamplerType::Nearest),
+            ..Default::default()
+        };
+
+        let asset_linear = builder_linear
+            .build()
+            .expect("This should be a valid ImageAsset");
+        let asset_nearest = builder_nearest
+            .build()
+            .expect("This should be a valid ImageAsset");
+
+        assert_eq!(
+            asset_linear,
+            AssetField::Image(ImageAssetField {
+                field_ident: Ident::new("test", Span::call_site()),
+                asset_path: "some/image.png".to_owned(),
+                sampler: SamplerType::Linear
+            })
+        );
+        assert_eq!(
+            asset_nearest,
+            AssetField::Image(ImageAssetField {
+                field_ident: Ident::new("test", Span::call_site()),
+                asset_path: "some/image.png".to_owned(),
+                sampler: SamplerType::Nearest
             })
         );
     }

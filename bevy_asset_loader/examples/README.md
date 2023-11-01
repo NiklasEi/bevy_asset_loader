@@ -17,6 +17,7 @@ with `cargo run --example <example>`.
 | [`progress_tracking.rs`](progress_tracking.rs)             | How to set up progress tracking using `iyes_progress`                    |
 | [`standard_material.rs`](standard_material.rs)             | Loading a standard material from a png file                              |
 | [`two_collections.rs`](two_collections.rs)                 | Load multiple asset collections                                          |
+| [`image_asset.rs`](image_asset.rs)                         | How to set different samplers for image assets                           |
 
 ## Credits
 
@@ -27,3 +28,6 @@ by [Jay_You](https://freesound.org/people/Jay_You/sounds/460432/)
 
 Toon character sheets [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/)
 by [Kenny](https://kenney.nl/assets/toon-characters-1)
+
+Pixelart tree [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/)
+by [Kenny](https://www.kenney.nl/assets/tiny-town)

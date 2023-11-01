@@ -98,3 +98,8 @@ required-features = ["2d", "3d", "standard_dynamic_assets"]
 [[example]]
 name = "custom_dynamic_assets"
 path = "examples/custom_dynamic_assets.rs"
+
+[[example]]
+name = "image_asset"
+path = "examples/image_asset.rs"
+required-features = ["2d"]

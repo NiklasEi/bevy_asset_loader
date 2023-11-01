@@ -1,6 +1,7 @@
 use bevy::app::AppExit;
 use bevy::asset::RecursiveDependencyLoadState;
 use bevy::prelude::*;
+use bevy::render::texture::{ImageSampler, ImageSamplerDescriptor};
 use bevy::utils::HashMap;
 use bevy_asset_loader::prelude::*;
 
@@ -31,6 +32,11 @@ struct MyAssets {
     // Example field with type that implements `FromWorld`
     // If no derive attributes are set, `from_world` will be used to set the value.
     from_world: ColorStandardMaterial<{ u8::MAX }, 0, 0, { u8::MAX }>,
+
+    // Image asset with sampler nearest (good for crisp pixel art)
+    #[asset(path = "images/pixel_tree.png")]
+    #[asset(image(sampler = nearest))]
+    image_tree_nearest: Handle<Image>,
 
     // Load collections of assets
 
@@ -68,6 +74,7 @@ fn expectations(
     asset_server: Res<AssetServer>,
     standard_materials: Res<Assets<StandardMaterial>>,
     texture_atlases: Res<Assets<TextureAtlas>>,
+    images: Res<Assets<Image>>,
     mut quit: EventWriter<AppExit>,
 ) {
     info!("Done loading the collection. Checking expectations...");
@@ -99,21 +106,33 @@ fn expectations(
         .get(&assets.from_world.handle)
         .expect("Standard material should be added to its assets resource.");
     assert_eq!(material.base_color, Color::RED);
-    assert_eq!(assets.folder_untyped.len(), 6);
+
+    let image = images
+        .get(&assets.image_tree_nearest)
+        .expect("Image should be added to its asset resource");
+    let ImageSampler::Descriptor(descriptor) = &image.sampler else {
+        panic!("Descriptor was not set to non default value nearest");
+    };
+    assert_eq!(
+        descriptor.as_wgpu(),
+        ImageSamplerDescriptor::nearest().as_wgpu()
+    );
+
+    assert_eq!(assets.folder_untyped.len(), 7);
     for handle in assets.folder_untyped.iter() {
         assert_eq!(
             asset_server.get_recursive_dependency_load_state(handle.id()),
             Some(RecursiveDependencyLoadState::Loaded)
         );
     }
-    assert_eq!(assets.folder_typed.len(), 6);
+    assert_eq!(assets.folder_typed.len(), 7);
     for handle in assets.folder_typed.iter() {
         assert_eq!(
             asset_server.get_recursive_dependency_load_state(handle.id()),
             Some(RecursiveDependencyLoadState::Loaded)
         );
     }
-    assert_eq!(assets.mapped_folder_untyped.len(), 6);
+    assert_eq!(assets.mapped_folder_untyped.len(), 7);
     for (name, handle) in assets.mapped_folder_untyped.iter() {
         assert_eq!(
             asset_server.get_recursive_dependency_load_state(handle.id()),
@@ -121,7 +140,7 @@ fn expectations(
         );
         assert_eq!(&handle.path().unwrap().to_string(), name);
     }
-    assert_eq!(assets.mapped_folder_typed.len(), 6);
+    assert_eq!(assets.mapped_folder_typed.len(), 7);
     for (name, handle) in assets.mapped_folder_typed.iter() {
         assert_eq!(
             asset_server.get_recursive_dependency_load_state(handle.id()),

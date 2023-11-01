@@ -13,11 +13,16 @@ use bevy::sprite::TextureAtlas;
 
 use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssets};
 use bevy::reflect::TypePath;
+#[cfg(any(feature = "3d", feature = "2d"))]
+use bevy::render::texture::ImageSampler;
+#[cfg(any(feature = "3d", feature = "2d"))]
+use bevy::render::texture::ImageSamplerDescriptor;
 use bevy::utils::HashMap;
+use serde::{Deserialize, Deserializer};
 
 /// These asset variants can be loaded from configuration files. They will then replace
 /// a dynamic asset based on their keys.
-#[derive(Debug, Clone, serde::Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub enum StandardDynamicAsset {
     /// A dynamic asset directly loaded from a single file
     File {
@@ -37,6 +42,15 @@ pub enum StandardDynamicAsset {
     Files {
         /// Asset file paths
         paths: Vec<String>,
+    },
+    /// An image asset
+    #[cfg(any(feature = "3d", feature = "2d"))]
+    Image {
+        /// Image file path
+        path: String,
+        /// Sampler
+        #[serde(deserialize_with = "deserialize_some", default)]
+        sampler: Option<ImageSamplerType>,
     },
     /// A dynamic standard material asset directly loaded from an image file
     #[cfg(feature = "3d")]
@@ -58,14 +72,59 @@ pub enum StandardDynamicAsset {
         /// Rows on the sprite sheet
         rows: usize,
         /// Padding between columns in pixels
+        #[serde(deserialize_with = "deserialize_some", default)]
         padding_x: Option<f32>,
         /// Padding between rows in pixels
+        #[serde(deserialize_with = "deserialize_some", default)]
         padding_y: Option<f32>,
         /// Number of pixels offset of the first tile
+        #[serde(deserialize_with = "deserialize_some", default)]
         offset_x: Option<f32>,
         /// Number of pixels offset of the first tile
+        #[serde(deserialize_with = "deserialize_some", default)]
         offset_y: Option<f32>,
     },
+}
+
+#[cfg(any(feature = "3d", feature = "2d"))]
+fn deserialize_some<'de, D, G>(deserializer: D) -> Result<Option<G>, D::Error>
+where
+    D: Deserializer<'de>,
+    G: Deserialize<'de>,
+{
+    let opt: G = G::deserialize(deserializer)?;
+    Ok(Some(opt))
+}
+
+/// Define the image sampler to configure for an image asset
+#[cfg(any(feature = "3d", feature = "2d"))]
+#[derive(Debug, Clone, Deserialize)]
+#[serde(untagged)]
+pub enum ImageSamplerType {
+    /// See [`ImageSampler::nearest`]
+    Nearest,
+    /// See [`ImageSampler::linear`]
+    Linear,
+}
+
+#[cfg(any(feature = "3d", feature = "2d"))]
+impl From<ImageSamplerType> for ImageSamplerDescriptor {
+    fn from(value: ImageSamplerType) -> Self {
+        match value {
+            ImageSamplerType::Nearest => ImageSamplerDescriptor::nearest(),
+            ImageSamplerType::Linear => ImageSamplerDescriptor::linear(),
+        }
+    }
+}
+
+#[cfg(any(feature = "3d", feature = "2d"))]
+impl From<ImageSamplerType> for ImageSampler {
+    fn from(value: ImageSamplerType) -> Self {
+        match value {
+            ImageSamplerType::Nearest => ImageSampler::nearest(),
+            ImageSamplerType::Linear => ImageSampler::linear(),
+        }
+    }
 }
 
 impl DynamicAsset for StandardDynamicAsset {
@@ -77,6 +136,10 @@ impl DynamicAsset for StandardDynamicAsset {
                 .iter()
                 .map(|path| asset_server.load_untyped(path).untyped())
                 .collect(),
+            #[cfg(any(feature = "3d", feature = "2d"))]
+            StandardDynamicAsset::Image { path, .. } => {
+                vec![asset_server.load::<Image>(path).untyped()]
+            }
             #[cfg(feature = "3d")]
             StandardDynamicAsset::StandardMaterial { path } => {
                 vec![asset_server.load::<Image>(path).untyped()]
@@ -97,6 +160,35 @@ impl DynamicAsset for StandardDynamicAsset {
             StandardDynamicAsset::File { path } => Ok(DynamicAssetType::Single(
                 asset_server.get_handle_untyped(path).unwrap(),
             )),
+            #[cfg(any(feature = "3d", feature = "2d"))]
+            StandardDynamicAsset::Image { path, sampler } => {
+                let mut handle = asset_server.load(path);
+                if let Some(sampler) = sampler {
+                    let mut images = cell
+                        .get_resource_mut::<Assets<Image>>()
+                        .expect("Cannot get resource Assets<Image>");
+                    let image = images.get_mut(&handle).unwrap();
+
+                    let is_different_sampler = if let ImageSampler::Descriptor(descriptor) =
+                        &image.sampler
+                    {
+                        let configured_descriptor: ImageSamplerDescriptor = sampler.clone().into();
+                        !descriptor.as_wgpu().eq(&configured_descriptor.as_wgpu())
+                    } else {
+                        false
+                    };
+
+                    if is_different_sampler {
+                        let mut cloned_image = image.clone();
+                        cloned_image.sampler = sampler.clone().into();
+                        handle = images.add(cloned_image);
+                    } else {
+                        image.sampler = sampler.clone().into();
+                    }
+                }
+
+                Ok(DynamicAssetType::Single(handle.untyped()))
+            }
             #[cfg(feature = "3d")]
             StandardDynamicAsset::StandardMaterial { path } => {
                 let mut materials = cell

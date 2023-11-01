@@ -1,6 +1,7 @@
 use bevy::app::AppExit;
 use bevy::asset::RecursiveDependencyLoadState;
 use bevy::prelude::*;
+use bevy::render::texture::{ImageSampler, ImageSamplerDescriptor};
 use bevy::utils::HashMap;
 use bevy_asset_loader::prelude::*;
 
@@ -49,6 +50,9 @@ struct MyAssets {
     // Type in `assets/full_dynamic_collection.assets.ron`: `File`, `StandardMaterial`, or `TextureAtlas`
     #[asset(key = "optional_file", optional)]
     optional_file: Option<Handle<AudioSource>>,
+    // Image asset with sampler nearest (good for crisp pixel art)
+    #[asset(key = "pixel_tree")]
+    image_tree_nearest: Handle<Image>,
 
     // Collections of files
 
@@ -106,6 +110,7 @@ fn expectations(
     asset_server: Res<AssetServer>,
     standard_materials: Res<Assets<StandardMaterial>>,
     texture_atlases: Res<Assets<TextureAtlas>>,
+    images: Res<Assets<Image>>,
     mut quit: EventWriter<AppExit>,
 ) {
     info!("Done loading the collection. Checking expectations...");
@@ -134,14 +139,25 @@ fn expectations(
         Some(RecursiveDependencyLoadState::Loaded)
     );
     assert_eq!(assets.optional_file, None);
-    assert_eq!(assets.folder_untyped.len(), 6);
+    let image = images
+        .get(&assets.image_tree_nearest)
+        .expect("Image should be added to its asset resource");
+    let ImageSampler::Descriptor(descriptor) = &image.sampler else {
+        panic!("Descriptor was not set to non default value nearest");
+    };
+    assert_eq!(
+        descriptor.as_wgpu(),
+        ImageSamplerDescriptor::nearest().as_wgpu()
+    );
+
+    assert_eq!(assets.folder_untyped.len(), 7);
     for handle in assets.folder_untyped.iter() {
         assert_eq!(
             asset_server.get_recursive_dependency_load_state(handle.id()),
             Some(RecursiveDependencyLoadState::Loaded)
         );
     }
-    assert_eq!(assets.folder_untyped_mapped.len(), 6);
+    assert_eq!(assets.folder_untyped_mapped.len(), 7);
     for (name, handle) in assets.folder_untyped_mapped.iter() {
         assert_eq!(
             asset_server.get_recursive_dependency_load_state(handle.id()),
@@ -149,14 +165,14 @@ fn expectations(
         );
         assert_eq!(&handle.path().unwrap().to_string(), name);
     }
-    assert_eq!(assets.folder_typed.len(), 6);
+    assert_eq!(assets.folder_typed.len(), 7);
     for handle in assets.folder_typed.iter() {
         assert_eq!(
             asset_server.get_recursive_dependency_load_state(handle.id()),
             Some(RecursiveDependencyLoadState::Loaded)
         );
     }
-    assert_eq!(assets.folder_typed_mapped.len(), 6);
+    assert_eq!(assets.folder_typed_mapped.len(), 7);
     for (name, handle) in assets.folder_typed_mapped.iter() {
         assert_eq!(
             asset_server.get_recursive_dependency_load_state(handle.id()),
@@ -199,7 +215,7 @@ fn expectations(
     let Some(ref optional_folder_untyped) = assets.optional_folder_untyped else {
         panic!("Optional asset not loaded")
     };
-    assert_eq!(optional_folder_untyped.len(), 6);
+    assert_eq!(optional_folder_untyped.len(), 7);
     for handle in optional_folder_untyped.iter() {
         assert_eq!(
             asset_server.get_recursive_dependency_load_state(handle.id()),
@@ -209,7 +225,7 @@ fn expectations(
     let Some(ref optional_folder_untyped_mapped) = assets.optional_folder_untyped_mapped else {
         panic!("Optional asset not loaded")
     };
-    assert_eq!(optional_folder_untyped_mapped.len(), 6);
+    assert_eq!(optional_folder_untyped_mapped.len(), 7);
     for (name, handle) in optional_folder_untyped_mapped.iter() {
         assert_eq!(
             asset_server.get_recursive_dependency_load_state(handle.id()),
@@ -220,7 +236,7 @@ fn expectations(
     let Some(ref optional_folder_typed) = assets.optional_folder_typed else {
         panic!("Optional asset not loaded")
     };
-    assert_eq!(optional_folder_typed.len(), 6);
+    assert_eq!(optional_folder_typed.len(), 7);
     for handle in optional_folder_typed.iter() {
         assert_eq!(
             asset_server.get_recursive_dependency_load_state(handle.id()),
@@ -230,7 +246,7 @@ fn expectations(
     let Some(ref optional_folder_typed_mapped) = assets.optional_folder_typed_mapped else {
         panic!("Optional asset not loaded")
     };
-    assert_eq!(optional_folder_typed_mapped.len(), 6);
+    assert_eq!(optional_folder_typed_mapped.len(), 7);
     for (name, handle) in optional_folder_typed_mapped.iter() {
         assert_eq!(
             asset_server.get_recursive_dependency_load_state(handle.id()),
