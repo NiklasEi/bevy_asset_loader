@@ -99,3 +99,4 @@ path = "examples/custom_dynamic_assets.rs"
 [[example]]
 name = "image_asset"
 path = "examples/image_asset.rs"
+required-features = ["2d"]
