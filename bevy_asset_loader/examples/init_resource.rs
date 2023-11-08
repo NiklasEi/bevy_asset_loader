@@ -15,7 +15,6 @@ fn main() {
         )
         .add_collection_to_loading_state::<_, ImageAssets>(MyStates::AssetLoading)
         .init_resource_after_loading_state::<_, CombinedImage>(MyStates::AssetLoading)
-        .insert_resource(Msaa::Off)
         .add_systems(OnEnter(MyStates::Next), draw)
         .run();
 }

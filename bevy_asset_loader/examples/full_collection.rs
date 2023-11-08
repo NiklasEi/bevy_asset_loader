@@ -1,11 +1,9 @@
 use bevy::app::AppExit;
-use bevy::asset::LoadState;
+use bevy::asset::RecursiveDependencyLoadState;
 use bevy::prelude::*;
-use bevy::render::texture::ImageSampler;
+use bevy::render::texture::{ImageSampler, ImageSamplerDescriptor};
 use bevy::utils::HashMap;
 use bevy_asset_loader::prelude::*;
-use path_slash::PathExt;
-use std::path::Path;
 
 fn main() {
     App::new()
@@ -44,25 +42,25 @@ struct MyAssets {
 
     // A folder (not supported on the web)
     #[asset(path = "images", collection)]
-    folder_untyped: Vec<HandleUntyped>,
+    folder_untyped: Vec<UntypedHandle>,
     // A folder loaded to typed asset handles (not supported on the web)
     #[asset(path = "images", collection(typed))]
     folder_typed: Vec<Handle<Image>>,
     // A folder loaded as map (not supported on the web)
     #[asset(path = "images", collection(mapped))]
-    mapped_folder_untyped: HashMap<String, HandleUntyped>,
+    mapped_folder_untyped: HashMap<String, UntypedHandle>,
     // A folder loaded to typed asset handles mapped with their file names (not supported on the web)
     #[asset(path = "images", collection(typed, mapped))]
     mapped_folder_typed: HashMap<String, Handle<Image>>,
     // A collection of asset files
     #[asset(paths("images/player.png", "images/tree.png"), collection)]
-    files_untyped: Vec<HandleUntyped>,
+    files_untyped: Vec<UntypedHandle>,
     // A collection of asset files loaded to typed asset handles
     #[asset(paths("images/player.png", "images/tree.png"), collection(typed))]
     files_typed: Vec<Handle<Image>>,
     // A mapped collection of asset files
     #[asset(paths("images/player.png", "images/tree.png"), collection(mapped))]
-    mapped_files_untyped: HashMap<String, HandleUntyped>,
+    mapped_files_untyped: HashMap<String, UntypedHandle>,
     // A mapped collection of asset files loaded to typed asset handles
     #[asset(
         paths("images/player.png", "images/tree.png"),
@@ -82,27 +80,27 @@ fn expectations(
     info!("Done loading the collection. Checking expectations...");
 
     assert_eq!(
-        asset_server.get_load_state(assets.single_file.clone()),
-        LoadState::Loaded
+        asset_server.get_recursive_dependency_load_state(assets.single_file.clone()),
+        Some(RecursiveDependencyLoadState::Loaded)
     );
     let material = standard_materials
         .get(&assets.standard_material)
         .expect("Standard material should be added to its assets resource.");
     assert_eq!(
-        asset_server.get_load_state(
+        asset_server.get_recursive_dependency_load_state(
             material
                 .base_color_texture
                 .clone()
                 .expect("Material should have image as base color texture")
         ),
-        LoadState::Loaded
+        Some(RecursiveDependencyLoadState::Loaded)
     );
     let atlas = texture_atlases
         .get(&assets.texture_atlas)
         .expect("Texture atlas should be added to its assets resource.");
     assert_eq!(
-        asset_server.get_load_state(atlas.texture.clone()),
-        LoadState::Loaded
+        asset_server.get_recursive_dependency_load_state(atlas.texture.clone()),
+        Some(RecursiveDependencyLoadState::Loaded)
     );
     let material = standard_materials
         .get(&assets.from_world.handle)
@@ -112,94 +110,73 @@ fn expectations(
     let image = images
         .get(&assets.image_tree_nearest)
         .expect("Image should be added to its asset resource");
-    let ImageSampler::Descriptor(descriptor) = &image.sampler_descriptor else {
+    let ImageSampler::Descriptor(descriptor) = &image.sampler else {
         panic!("Descriptor was not set to non default value nearest");
     };
-    assert_eq!(descriptor, &ImageSampler::nearest_descriptor());
+    assert_eq!(
+        descriptor.as_wgpu(),
+        ImageSamplerDescriptor::nearest().as_wgpu()
+    );
 
     assert_eq!(assets.folder_untyped.len(), 7);
     for handle in assets.folder_untyped.iter() {
         assert_eq!(
-            asset_server.get_load_state(handle.clone()),
-            LoadState::Loaded
+            asset_server.get_recursive_dependency_load_state(handle.id()),
+            Some(RecursiveDependencyLoadState::Loaded)
         );
     }
     assert_eq!(assets.folder_typed.len(), 7);
     for handle in assets.folder_typed.iter() {
         assert_eq!(
-            asset_server.get_load_state(handle.clone()),
-            LoadState::Loaded
+            asset_server.get_recursive_dependency_load_state(handle.id()),
+            Some(RecursiveDependencyLoadState::Loaded)
         );
     }
     assert_eq!(assets.mapped_folder_untyped.len(), 7);
     for (name, handle) in assets.mapped_folder_untyped.iter() {
         assert_eq!(
-            asset_server.get_load_state(handle.clone()),
-            LoadState::Loaded
+            asset_server.get_recursive_dependency_load_state(handle.id()),
+            Some(RecursiveDependencyLoadState::Loaded)
         );
-        assert_eq!(
-            &asset_server
-                .get_handle_path(handle.clone())
-                .unwrap()
-                .path()
-                .to_slash()
-                .unwrap()
-                .to_string(),
-            name
-        );
+        assert_eq!(&handle.path().unwrap().to_string(), name);
     }
     assert_eq!(assets.mapped_folder_typed.len(), 7);
     for (name, handle) in assets.mapped_folder_typed.iter() {
         assert_eq!(
-            asset_server.get_load_state(handle.clone()),
-            LoadState::Loaded
+            asset_server.get_recursive_dependency_load_state(handle.id()),
+            Some(RecursiveDependencyLoadState::Loaded)
         );
-        assert_eq!(
-            &asset_server
-                .get_handle_path(handle.clone())
-                .unwrap()
-                .path()
-                .to_slash()
-                .unwrap()
-                .to_string(),
-            name
-        );
+        assert_eq!(&handle.path().unwrap().to_string(), name);
     }
     assert_eq!(assets.files_untyped.len(), 2);
     for handle in assets.files_untyped.iter() {
         assert_eq!(
-            asset_server.get_load_state(handle.clone()),
-            LoadState::Loaded
+            asset_server.get_recursive_dependency_load_state(handle.id()),
+            Some(RecursiveDependencyLoadState::Loaded)
         );
     }
     assert_eq!(assets.files_typed.len(), 2);
     for handle in assets.files_typed.iter() {
         assert_eq!(
-            asset_server.get_load_state(handle.clone()),
-            LoadState::Loaded
+            asset_server.get_recursive_dependency_load_state(handle.id()),
+            Some(RecursiveDependencyLoadState::Loaded)
         );
     }
     assert_eq!(assets.mapped_files_untyped.len(), 2);
     for (name, handle) in assets.mapped_files_untyped.iter() {
         assert_eq!(
-            asset_server.get_load_state(handle.clone()),
-            LoadState::Loaded
+            asset_server.get_recursive_dependency_load_state(handle.id()),
+            Some(RecursiveDependencyLoadState::Loaded)
         );
-        assert_eq!(
-            Path::new(name),
-            asset_server.get_handle_path(handle.clone()).unwrap().path()
-        );
+        assert_eq!(&handle.path().unwrap().to_string(), name);
     }
     assert_eq!(assets.mapped_files_typed.len(), 2);
     for (name, handle) in assets.mapped_files_typed.iter() {
         assert_eq!(
-            asset_server.get_load_state(handle.clone()),
-            LoadState::Loaded
+            asset_server.get_recursive_dependency_load_state(handle.id()),
+            Some(RecursiveDependencyLoadState::Loaded)
         );
-        assert_eq!(
-            Path::new(name),
-            asset_server.get_handle_path(handle.clone()).unwrap().path()
-        );
+        assert_eq!(&handle.path().unwrap().to_string(), name);
     }
 
     info!("Everything looks good!");

@@ -13,7 +13,6 @@ fn main() {
         )
         .add_collection_to_loading_state::<_, ImageAssets>(MyStates::AssetLoading)
         .add_collection_to_loading_state::<_, AudioAssets>(MyStates::AssetLoading)
-        .insert_resource(Msaa::Off)
         .add_systems(
             OnEnter(MyStates::Next),
             (spawn_player_and_tree, play_background_audio),
@@ -35,7 +34,7 @@ struct ImageAssets {
     #[asset(path = "images/tree.png")]
     tree: Handle<Image>,
     #[asset(path = "images", collection)]
-    _images: Vec<HandleUntyped>,
+    _images: Vec<UntypedHandle>,
 }
 
 #[derive(Component)]

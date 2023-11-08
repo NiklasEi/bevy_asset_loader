@@ -12,7 +12,6 @@ fn main() {
             LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
         )
         .add_collection_to_loading_state::<_, MyAssets>(MyStates::AssetLoading)
-        .insert_resource(Msaa::Off)
         .insert_resource(AmbientLight {
             color: Color::WHITE,
             brightness: 0.2,

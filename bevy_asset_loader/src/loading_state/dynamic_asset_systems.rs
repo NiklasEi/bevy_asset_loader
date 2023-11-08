@@ -26,7 +26,7 @@ pub(crate) fn load_dynamic_asset_collections<S: States, C: DynamicAssetCollectio
         for file in files {
             loading_collections
                 .handles
-                .push(asset_server.load_untyped(file));
+                .push(asset_server.load::<C>(file).untyped());
         }
     }
     if let Some(config) = asset_loader_config
@@ -64,14 +64,18 @@ pub(crate) fn check_dynamic_asset_collections<S: States, C: DynamicAssetCollecti
             return;
         }
         let loading_collections = loading_collections.as_mut().unwrap();
-        let collections_load_state = asset_server
-            .get_group_load_state(loading_collections.handles.iter().map(|handle| handle.id()));
-        if collections_load_state != LoadState::Loaded {
-            return;
+        for handle in &loading_collections.handles {
+            if let Some(load_state) = asset_server.get_load_state(handle.id()) {
+                if load_state != LoadState::Loaded {
+                    return;
+                }
+            } else {
+                return;
+            }
         }
         for collection in loading_collections.handles.drain(..) {
             let collection = dynamic_asset_collections
-                .get(&collection.typed_weak::<C>())
+                .get(collection.typed::<C>())
                 .unwrap();
             collection.register(&mut asset_keys);
         }

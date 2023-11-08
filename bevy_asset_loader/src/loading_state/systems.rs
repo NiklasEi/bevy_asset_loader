@@ -83,14 +83,12 @@ fn count_loaded_handles<S: States, Assets: AssetCollection>(cell: WorldCell) -> 
     let failure = loading_asset_handles
         .handles
         .iter()
-        .map(|handle| handle.id())
-        .any(|handle_id| asset_server.get_load_state(handle_id) == LoadState::Failed);
+        .any(|handle| asset_server.get_load_state(handle.id()) == Some(LoadState::Failed));
     let done = loading_asset_handles
         .handles
         .iter()
-        .map(|handle| handle.id())
-        .map(|handle_id| asset_server.get_load_state(handle_id))
-        .filter(|state| state == &LoadState::Loaded)
+        .map(|handle| asset_server.get_load_state(handle.id()))
+        .filter(|state| state == &Some(LoadState::Loaded))
         .count();
     if done < total && !failure {
         return Some((done as u32, total as u32));
@@ -208,7 +206,7 @@ pub fn apply_internal_state_transition<S: States>(world: &mut World) {
         );
         if world
             .resource::<Schedules>()
-            .contains(&OnEnterInternalLoadingState(
+            .contains(OnEnterInternalLoadingState(
                 state.clone(),
                 entered_state.clone(),
             ))

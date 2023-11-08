@@ -18,7 +18,9 @@ use crate::assets::*;
 use proc_macro2::Ident;
 use quote::{quote, quote_spanned, ToTokens, TokenStreamExt};
 use syn::punctuated::Punctuated;
-use syn::{Data, Expr, ExprLit, ExprPath, Field, Fields, Index, Lit, LitStr, Meta, Token};
+#[cfg(any(feature = "2d", feature = "3d"))]
+use syn::ExprPath;
+use syn::{Data, Expr, ExprLit, Field, Fields, Index, Lit, LitStr, Meta, Token};
 
 /// Derive macro for [`AssetCollection`]
 ///
@@ -37,9 +39,9 @@ pub(crate) const PATH_ATTRIBUTE: &str = "path";
 pub(crate) const KEY_ATTRIBUTE: &str = "key";
 pub(crate) const OPTIONAL_ATTRIBUTE: &str = "optional";
 
-pub(crate) const TEXTURE_ATLAS_ATTRIBUTE: &str = "texture_atlas";
 pub(crate) struct TextureAtlasAttribute;
 impl TextureAtlasAttribute {
+    pub const ATTRIBUTE_NAME: &'static str = "texture_atlas";
     pub const TILE_SIZE_X: &'static str = "tile_size_x";
     pub const TILE_SIZE_Y: &'static str = "tile_size_y";
     pub const COLUMNS: &'static str = "columns";
@@ -54,9 +56,10 @@ impl TextureAtlasAttribute {
     pub const OFFSET_Y: &'static str = "offset_y";
 }
 
-pub(crate) const IMAGE_ATTRIBUTE: &str = "image";
 pub(crate) struct ImageAttribute;
 impl ImageAttribute {
+    pub const ATTRIBUTE_NAME: &'static str = "image";
+    #[allow(dead_code)]
     pub const SAMPLER: &'static str = "sampler";
 }
 
@@ -173,7 +176,7 @@ fn impl_asset_collection(
         asset.attach_token_stream_for_loading(token_stream)
     });
     let load_function = quote! {
-            fn load(world: &mut ::bevy::ecs::world::World) -> Vec<::bevy::prelude::HandleUntyped> {
+            fn load(world: &mut ::bevy::ecs::world::World) -> Vec<::bevy::prelude::UntypedHandle> {
                 let cell = world.cell();
                 let asset_server = cell.get_resource::<::bevy::prelude::AssetServer>().expect("Cannot get AssetServer");
                 let asset_keys = cell.get_resource::<bevy_asset_loader::prelude::DynamicAssets>().expect("Cannot get bevy_asset_loader::prelude::DynamicAssets");
@@ -183,14 +186,13 @@ fn impl_asset_collection(
             }
     };
 
-    let mut prepare_from_world = quote! {};
-    prepare_from_world.append_all(from_world_fields.iter().fold(
+    let prepare_from_world = from_world_fields.iter().fold(
         quote!(),
         |es, ident| quote_spanned! {ident.span() => #es ::bevy::ecs::world::FromWorld::from_world(world),},
-    ));
+    );
 
     let mut asset_creation = assets.iter().fold(quote!(), |token_stream, asset| {
-        asset.attach_token_stream_for_creation(token_stream)
+        asset.attach_token_stream_for_creation(token_stream, name.to_string())
     });
     let mut index = 0;
     asset_creation.append_all(from_world_fields.iter().fold(quote!(), |es, ident| {
@@ -256,139 +258,146 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
 
         for attribute in asset_meta_list.unwrap() {
             match attribute {
-                Meta::List(meta_list) if meta_list.path.is_ident(TEXTURE_ATLAS_ATTRIBUTE) => {
-                    let texture_atlas_meta_list =
-                        meta_list.parse_args_with(Punctuated::<Meta, Token![,]>::parse_terminated);
+                Meta::List(meta_list)
+                    if meta_list
+                        .path
+                        .is_ident(TextureAtlasAttribute::ATTRIBUTE_NAME) =>
+                {
                     #[cfg(not(feature = "2d"))]
                     errors.push(ParseFieldError::Missing2dFeature(
                         meta_list.into_token_stream(),
                     ));
                     #[cfg(feature = "2d")]
-                    for attribute in texture_atlas_meta_list.unwrap() {
-                        match attribute {
-                            Meta::NameValue(named_value) => {
-                                let path = named_value.path.get_ident().unwrap().clone();
-                                if path == TextureAtlasAttribute::TILE_SIZE_X {
-                                    if let Expr::Lit(ExprLit {
-                                        lit: Lit::Float(width),
-                                        ..
-                                    }) = &named_value.value
-                                    {
-                                        builder.tile_size_x =
-                                            Some(width.base10_parse::<f32>().unwrap());
+                    {
+                        let texture_atlas_meta_list = meta_list
+                            .parse_args_with(Punctuated::<Meta, Token![,]>::parse_terminated);
+                        for attribute in texture_atlas_meta_list.unwrap() {
+                            match attribute {
+                                Meta::NameValue(named_value) => {
+                                    let path = named_value.path.get_ident().unwrap().clone();
+                                    if path == TextureAtlasAttribute::TILE_SIZE_X {
+                                        if let Expr::Lit(ExprLit {
+                                            lit: Lit::Float(width),
+                                            ..
+                                        }) = &named_value.value
+                                        {
+                                            builder.tile_size_x =
+                                                Some(width.base10_parse::<f32>().unwrap());
+                                        } else {
+                                            errors.push(ParseFieldError::WrongAttributeType(
+                                                named_value.into_token_stream(),
+                                                "float",
+                                            ));
+                                        }
+                                    } else if path == TextureAtlasAttribute::TILE_SIZE_Y {
+                                        if let Expr::Lit(ExprLit {
+                                            lit: Lit::Float(height),
+                                            ..
+                                        }) = &named_value.value
+                                        {
+                                            builder.tile_size_y =
+                                                Some(height.base10_parse::<f32>().unwrap());
+                                        } else {
+                                            errors.push(ParseFieldError::WrongAttributeType(
+                                                named_value.into_token_stream(),
+                                                "float",
+                                            ));
+                                        }
+                                    } else if path == TextureAtlasAttribute::COLUMNS {
+                                        if let Expr::Lit(ExprLit {
+                                            lit: Lit::Int(columns),
+                                            ..
+                                        }) = &named_value.value
+                                        {
+                                            builder.columns =
+                                                Some(columns.base10_parse::<usize>().unwrap());
+                                        } else {
+                                            errors.push(ParseFieldError::WrongAttributeType(
+                                                named_value.into_token_stream(),
+                                                "integer",
+                                            ));
+                                        }
+                                    } else if path == TextureAtlasAttribute::ROWS {
+                                        if let Expr::Lit(ExprLit {
+                                            lit: Lit::Int(rows),
+                                            ..
+                                        }) = &named_value.value
+                                        {
+                                            builder.rows =
+                                                Some(rows.base10_parse::<usize>().unwrap());
+                                        } else {
+                                            errors.push(ParseFieldError::WrongAttributeType(
+                                                named_value.into_token_stream(),
+                                                "integer",
+                                            ));
+                                        }
+                                    } else if path == TextureAtlasAttribute::PADDING_X {
+                                        if let Expr::Lit(ExprLit {
+                                            lit: Lit::Float(padding_x),
+                                            ..
+                                        }) = &named_value.value
+                                        {
+                                            builder.padding_x =
+                                                Some(padding_x.base10_parse::<f32>().unwrap());
+                                        } else {
+                                            errors.push(ParseFieldError::WrongAttributeType(
+                                                named_value.into_token_stream(),
+                                                "float",
+                                            ));
+                                        }
+                                    } else if path == TextureAtlasAttribute::PADDING_Y {
+                                        if let Expr::Lit(ExprLit {
+                                            lit: Lit::Float(padding_y),
+                                            ..
+                                        }) = &named_value.value
+                                        {
+                                            builder.padding_y =
+                                                Some(padding_y.base10_parse::<f32>().unwrap());
+                                        } else {
+                                            errors.push(ParseFieldError::WrongAttributeType(
+                                                named_value.into_token_stream(),
+                                                "float",
+                                            ));
+                                        }
+                                    } else if path == TextureAtlasAttribute::OFFSET_X {
+                                        if let Expr::Lit(ExprLit {
+                                            lit: Lit::Float(offset_x),
+                                            ..
+                                        }) = &named_value.value
+                                        {
+                                            builder.offset_x =
+                                                Some(offset_x.base10_parse::<f32>().unwrap());
+                                        } else {
+                                            errors.push(ParseFieldError::WrongAttributeType(
+                                                named_value.into_token_stream(),
+                                                "float",
+                                            ));
+                                        }
+                                    } else if path == TextureAtlasAttribute::OFFSET_Y {
+                                        if let Expr::Lit(ExprLit {
+                                            lit: Lit::Float(offset_y),
+                                            ..
+                                        }) = &named_value.value
+                                        {
+                                            builder.offset_y =
+                                                Some(offset_y.base10_parse::<f32>().unwrap());
+                                        } else {
+                                            errors.push(ParseFieldError::WrongAttributeType(
+                                                named_value.into_token_stream(),
+                                                "float",
+                                            ));
+                                        }
                                     } else {
-                                        errors.push(ParseFieldError::WrongAttributeType(
+                                        errors.push(ParseFieldError::UnknownAttribute(
                                             named_value.into_token_stream(),
-                                            "float",
                                         ));
                                     }
-                                } else if path == TextureAtlasAttribute::TILE_SIZE_Y {
-                                    if let Expr::Lit(ExprLit {
-                                        lit: Lit::Float(height),
-                                        ..
-                                    }) = &named_value.value
-                                    {
-                                        builder.tile_size_y =
-                                            Some(height.base10_parse::<f32>().unwrap());
-                                    } else {
-                                        errors.push(ParseFieldError::WrongAttributeType(
-                                            named_value.into_token_stream(),
-                                            "float",
-                                        ));
-                                    }
-                                } else if path == TextureAtlasAttribute::COLUMNS {
-                                    if let Expr::Lit(ExprLit {
-                                        lit: Lit::Int(columns),
-                                        ..
-                                    }) = &named_value.value
-                                    {
-                                        builder.columns =
-                                            Some(columns.base10_parse::<usize>().unwrap());
-                                    } else {
-                                        errors.push(ParseFieldError::WrongAttributeType(
-                                            named_value.into_token_stream(),
-                                            "integer",
-                                        ));
-                                    }
-                                } else if path == TextureAtlasAttribute::ROWS {
-                                    if let Expr::Lit(ExprLit {
-                                        lit: Lit::Int(rows),
-                                        ..
-                                    }) = &named_value.value
-                                    {
-                                        builder.rows = Some(rows.base10_parse::<usize>().unwrap());
-                                    } else {
-                                        errors.push(ParseFieldError::WrongAttributeType(
-                                            named_value.into_token_stream(),
-                                            "integer",
-                                        ));
-                                    }
-                                } else if path == TextureAtlasAttribute::PADDING_X {
-                                    if let Expr::Lit(ExprLit {
-                                        lit: Lit::Float(padding_x),
-                                        ..
-                                    }) = &named_value.value
-                                    {
-                                        builder.padding_x =
-                                            Some(padding_x.base10_parse::<f32>().unwrap());
-                                    } else {
-                                        errors.push(ParseFieldError::WrongAttributeType(
-                                            named_value.into_token_stream(),
-                                            "float",
-                                        ));
-                                    }
-                                } else if path == TextureAtlasAttribute::PADDING_Y {
-                                    if let Expr::Lit(ExprLit {
-                                        lit: Lit::Float(padding_y),
-                                        ..
-                                    }) = &named_value.value
-                                    {
-                                        builder.padding_y =
-                                            Some(padding_y.base10_parse::<f32>().unwrap());
-                                    } else {
-                                        errors.push(ParseFieldError::WrongAttributeType(
-                                            named_value.into_token_stream(),
-                                            "float",
-                                        ));
-                                    }
-                                } else if path == TextureAtlasAttribute::OFFSET_X {
-                                    if let Expr::Lit(ExprLit {
-                                        lit: Lit::Float(offset_x),
-                                        ..
-                                    }) = &named_value.value
-                                    {
-                                        builder.offset_x =
-                                            Some(offset_x.base10_parse::<f32>().unwrap());
-                                    } else {
-                                        errors.push(ParseFieldError::WrongAttributeType(
-                                            named_value.into_token_stream(),
-                                            "float",
-                                        ));
-                                    }
-                                } else if path == TextureAtlasAttribute::OFFSET_Y {
-                                    if let Expr::Lit(ExprLit {
-                                        lit: Lit::Float(offset_y),
-                                        ..
-                                    }) = &named_value.value
-                                    {
-                                        builder.offset_y =
-                                            Some(offset_y.base10_parse::<f32>().unwrap());
-                                    } else {
-                                        errors.push(ParseFieldError::WrongAttributeType(
-                                            named_value.into_token_stream(),
-                                            "float",
-                                        ));
-                                    }
-                                } else {
-                                    errors.push(ParseFieldError::UnknownAttribute(
-                                        named_value.into_token_stream(),
+                                }
+                                _ => {
+                                    errors.push(ParseFieldError::UnknownAttributeType(
+                                        attribute.into_token_stream(),
                                     ));
                                 }
-                            }
-                            _ => {
-                                errors.push(ParseFieldError::UnknownAttributeType(
-                                    attribute.into_token_stream(),
-                                ));
                             }
                         }
                     }
@@ -430,7 +439,9 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                     }
                     builder.asset_paths = Some(paths);
                 }
-                Meta::List(meta_list) if meta_list.path.is_ident(IMAGE_ATTRIBUTE) => {
+                Meta::List(meta_list)
+                    if meta_list.path.is_ident(ImageAttribute::ATTRIBUTE_NAME) =>
+                {
                     #[cfg(all(not(feature = "2d"), not(feature = "3d")))]
                     errors.push(ParseFieldError::Missing2dOr3dFeature(
                         meta_list.into_token_stream(),

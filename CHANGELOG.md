@@ -1,5 +1,7 @@
 # Changelog
 
+## v0.18.0 - 08.11.2023
+- update to Bevy 0.12
 - Make `loading_state::LoadingStateSet` public for explicit system ordering
 - Support configuring an image sampler through a derive attribute ([#156](https://github.com/NiklasEi/bevy_asset_loader/pull/156))
   - See [the new example](bevy_asset_loader/examples/image_asset.rs)

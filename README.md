@@ -9,7 +9,7 @@ This [Bevy][bevy] plugin reduces boilerplate for handling game assets. The crate
 
 In most cases you will want to load your asset collections during loading states (think loading screens). During such a state, all assets are loaded and their loading process is observed. Only when asset collections can be build with fully loaded asset handles, the collections are inserted as resources. If you do not want to use a loading state, asset collections can still result in cleaner code and improved maintainability (see the ["usage without a loading state"](#usage-without-a-loading-state) section).
 
-_The `main` branch and the latest release support Bevy version `0.11` (see [version table](#compatible-bevy-versions))_
+_The `main` branch and the latest release support Bevy version `0.12` (see [version table](#compatible-bevy-versions))_
 
 ## Loading states
 
@@ -169,7 +169,7 @@ use bevy_asset_loader::asset_collection::AssetCollection;
 #[derive(AssetCollection, Resource)]
 struct MyAssets {
     #[asset(path = "images", collection)]
-    folder: Vec<HandleUntyped>,
+    folder: Vec<UntypedHandle>,
 }
 ```
 
@@ -227,7 +227,7 @@ use bevy_asset_loader::asset_collection::AssetCollection;
 #[derive(AssetCollection, Resource)]
 struct MyAssets {
     #[asset(paths("images/player.png", "sound/background.ogg"), collection)]
-    files_untyped: Vec<HandleUntyped>,
+    files_untyped: Vec<UntypedHandle>,
 }
 ```
 
@@ -239,7 +239,7 @@ use bevy_asset_loader::asset_collection::AssetCollection;
 #[derive(AssetCollection, Resource)]
 struct MyAssets {
     #[asset(key = "files_untyped", collection)]
-    files_untyped: Vec<HandleUntyped>,
+    files_untyped: Vec<UntypedHandle>,
     #[asset(key = "files_typed", collection(typed))]
     files_typed: Vec<Handle<Image>>,
 }
@@ -269,11 +269,11 @@ use bevy_asset_loader::asset_collection::AssetCollection;
 #[derive(AssetCollection, Resource)]
 struct MyAssets {
     #[asset(path = "images", collection(mapped))]
-    folder: HashMap<String, HandleUntyped>,
+    folder: HashMap<String, UntypedHandle>,
     #[asset(paths("images/player.png", "images/tree.png"), collection(typed, mapped))]
     files_typed: HashMap<String, Handle<Image>>,
     #[asset(key = "files_untyped", collection(mapped))]
-    dynamic_files_untyped: HashMap<String, HandleUntyped>,
+    dynamic_files_untyped: HashMap<String, UntypedHandle>,
     #[asset(key = "files_typed", collection(typed, mapped))]
     dynamic_files_typed: HashMap<String, Handle<Image>>,
 }
@@ -411,7 +411,9 @@ In most cases this happens, an asset file is missing or a certain file ending do
 
 ## Usage without a loading state
 
-Although the pattern of a loading state is quite nice, you might have reasons not to use it. In this case `bevy_asset_loader` can still be helpful. Deriving `AssetCollection` on a resource can significantly reduce the boilerplate for managing assets.
+Although the pattern of a loading state is quite nice (imo), you might have reasons not to use it. In this case `bevy_asset_loader` can still be helpful. Deriving `AssetCollection` on a resource can significantly reduce the boilerplate for managing assets.
+
+Asset collections loaded without a loading state do not support folders or dynamic assets, since these cannot instantly create handles that will eventually point to the loaded assets.
 
 You can directly initialise asset collections on the bevy `App` or `World`. See [no_loading_state.rs](bevy_asset_loader/examples/no_loading_state.rs) for a complete example.
 
@@ -445,6 +447,7 @@ The main branch is compatible with the latest Bevy release, while the branch `be
 Compatibility of `bevy_asset_loader` versions:
 | `bevy_asset_loader` | `bevy` |
 | :--                 | :--    |
+| `0.18`              | `0.12` |
 | `0.17`              | `0.11` |
 | `0.15` - `0.16`     | `0.10` |
 | `0.14`              | `0.9`  |
@@ -452,7 +455,7 @@ Compatibility of `bevy_asset_loader` versions:
 | `0.10` - `0.11`     | `0.7`  |
 | `0.8` - `0.9`       | `0.6`  |
 | `0.1` - `0.7`       | `0.5`  |
-| branch `main`       | `0.11` |
+| branch `main`       | `0.12` |
 | branch `bevy_main`  | `main` |
 
 ## License

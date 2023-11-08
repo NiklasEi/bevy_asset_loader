@@ -12,7 +12,6 @@ fn main() {
             LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
         )
         .add_collection_to_loading_state::<_, MyAssets>(MyStates::AssetLoading)
-        .insert_resource(Msaa::Off)
         .add_systems(OnEnter(MyStates::Next), draw_atlas)
         .add_systems(
             Update,

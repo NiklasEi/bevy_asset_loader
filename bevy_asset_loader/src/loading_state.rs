@@ -2,11 +2,11 @@ mod dynamic_asset_systems;
 mod systems;
 
 use bevy::app::{App, Plugin};
-use bevy::asset::{Asset, HandleUntyped};
+use bevy::asset::{Asset, UntypedHandle};
 use bevy::ecs::{
     schedule::{
-        common_conditions::in_state, BoxedScheduleLabel, IntoSystemConfigs, IntoSystemSetConfig,
-        NextState, OnEnter, ScheduleLabel, State, States, SystemSet,
+        common_conditions::in_state, InternedScheduleLabel, IntoSystemConfigs,
+        IntoSystemSetConfigs, NextState, OnEnter, ScheduleLabel, State, States, SystemSet,
     },
     system::Resource,
     world::FromWorld,
@@ -14,7 +14,6 @@ use bevy::ecs::{
 use bevy::prelude::{StateTransition, Update};
 use bevy::utils::{default, HashMap, HashSet};
 use std::any::TypeId;
-use std::array::IntoIter;
 use std::marker::PhantomData;
 
 use crate::asset_collection::AssetCollection;
@@ -386,30 +385,30 @@ where
                 OnEnter(self.loading_state.clone()),
                 reset_loading_state::<S>,
             )
-            .configure_set(Update, LoadingStateSet(self.loading_state.clone()));
+            .configure_sets(Update, LoadingStateSet(self.loading_state.clone()));
             let mut loading_state_schedule = app.get_schedule_mut(loading_state_schedule).unwrap();
             loading_state_schedule
-                .configure_set(
+                .configure_sets(
                     InternalLoadingStateSet::Initialize
                         .run_if(in_state(InternalLoadingState::<S>::Initialize)),
                 )
-                .configure_set(
+                .configure_sets(
                     InternalLoadingStateSet::CheckDynamicAssetCollections.run_if(in_state(
                         InternalLoadingState::<S>::LoadingDynamicAssetCollections,
                     )),
                 )
-                .configure_set(
+                .configure_sets(
                     InternalLoadingStateSet::ResumeDynamicAssetCollections
                         .after(InternalLoadingStateSet::CheckDynamicAssetCollections)
                         .run_if(in_state(
                             InternalLoadingState::<S>::LoadingDynamicAssetCollections,
                         )),
                 )
-                .configure_set(
+                .configure_sets(
                     InternalLoadingStateSet::CheckAssets
                         .run_if(in_state(InternalLoadingState::<S>::LoadingAssets)),
                 )
-                .configure_set(
+                .configure_sets(
                     InternalLoadingStateSet::Finalize
                         .run_if(in_state(InternalLoadingState::<S>::Finalize)),
                 );
@@ -462,7 +461,7 @@ pub(crate) struct OnEnterInternalLoadingState<S: States>(pub S, pub InternalLoad
 #[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash)]
 pub(crate) struct LoadingStateSchedule<S: States>(pub S);
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, States)]
 pub(crate) enum InternalLoadingState<S: States> {
     /// Starting point. Here it will be decided whether or not dynamic asset collections need to be loaded.
     #[default]
@@ -477,26 +476,11 @@ pub(crate) enum InternalLoadingState<S: States> {
     Done(PhantomData<S>),
 }
 
-impl<S: States> States for InternalLoadingState<S> {
-    type Iter = IntoIter<Self, 5>;
-
-    fn variants() -> Self::Iter {
-        [
-            Self::Initialize,
-            Self::LoadingDynamicAssetCollections,
-            Self::LoadingAssets,
-            Self::Finalize,
-            Self::Done(PhantomData),
-        ]
-        .into_iter()
-    }
-}
-
 /// This resource is used for handles from asset collections and loading dynamic asset collection files.
 /// The generic will be the [`AssetCollection`] type for the first and the [`DynamicAssetCollection`] for the second.
 #[derive(Resource)]
 pub(crate) struct LoadingAssetHandles<T> {
-    handles: Vec<HandleUntyped>,
+    handles: Vec<UntypedHandle>,
     marker: PhantomData<T>,
 }
 
@@ -546,7 +530,7 @@ impl<State: States> Default for LoadingConfiguration<State> {
 #[derive(Resource)]
 pub struct LoadingStateSchedules<State: States> {
     /// Map to store a schedule per loading state
-    pub schedules: HashMap<State, BoxedScheduleLabel>,
+    pub schedules: HashMap<State, InternedScheduleLabel>,
 }
 
 impl<State: States> Default for LoadingStateSchedules<State> {
