@@ -7,7 +7,6 @@ use bevy_common_assets::ron::RonAssetPlugin;
 
 fn main() {
     App::new()
-        .insert_resource(Msaa::Off)
         .add_plugins((
             DefaultPlugins,
             RonAssetPlugin::<CustomDynamicAssetCollection>::new(&["my-assets.ron"]),

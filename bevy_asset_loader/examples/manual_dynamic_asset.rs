@@ -21,7 +21,6 @@ fn main() {
             LoadingState::new(MyStates::MenuAssetLoading).continue_to_state(MyStates::Menu),
         )
         .add_collection_to_loading_state::<_, FontAssets>(MyStates::MenuAssetLoading)
-        .insert_resource(Msaa::Off)
         .insert_resource(ShowBackground(false))
         .add_systems(
             OnEnter(MyStates::Next),

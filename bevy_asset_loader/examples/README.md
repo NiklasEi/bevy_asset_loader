@@ -11,13 +11,13 @@ with `cargo run --example <example>`.
 | [`failure_state.rs`](failure_state.rs)                     | Sets up a failure state                                                  |
 | [`full_collection.rs`](full_collection.rs)                 | A complete asset collection with all supported non-dynamic field types   |
 | [`full_dynamic_collection.rs`](full_dynamic_collection.rs) | A complete asset collection with all supported dynamic asset field types |
+| [`image_asset.rs`](image_asset.rs)                         | How to set different samplers for image assets                           |
 | [`init_resource.rs`](init_resource.rs)                     | Inserting a `FromWorld` resource when all asset collections are loaded   |
 | [`manual_dynamic_asset.rs`](manual_dynamic_asset.rs)       | Load an image asset from a path resolved at run time                     |
 | [`no_loading_state.rs`](no_loading_state.rs)               | How to use asset collections without a loading state                     |
 | [`progress_tracking.rs`](progress_tracking.rs)             | How to set up progress tracking using `iyes_progress`                    |
 | [`standard_material.rs`](standard_material.rs)             | Loading a standard material from a png file                              |
 | [`two_collections.rs`](two_collections.rs)                 | Load multiple asset collections                                          |
-| [`image_asset.rs`](image_asset.rs)                         | How to set different samplers for image assets                           |
 
 ## Credits
 

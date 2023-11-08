@@ -14,7 +14,6 @@ use bevy_asset_loader::prelude::*;
 /// `AudioAssets` are initialised on the world based on user input (mouse click).
 fn main() {
     App::new()
-        .insert_resource(Msaa::Off)
         .add_plugins(DefaultPlugins)
         // Initialising the asset collection on the App:
         // The assets will start loading as soon as your application fires up.
