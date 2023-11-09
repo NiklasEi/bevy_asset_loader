@@ -271,7 +271,7 @@ impl<K: Into<String> + Sync + Send + 'static> Command for RegisterStandardDynami
 /// The asset defining a mapping from asset keys to dynamic assets
 ///
 /// These assets are loaded at the beginning of a loading state
-/// and combined in [`DynamicAssets`](DynamicAssets).
+/// and combined in [`DynamicAssets`].
 #[derive(serde::Deserialize, Asset, TypePath)]
 pub struct StandardDynamicAssetCollection(pub HashMap<String, StandardDynamicAsset>);
 
