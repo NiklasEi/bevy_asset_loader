@@ -13,7 +13,7 @@ fn main() {
             LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
         )
         .configure_loading_state(
-            LoadingStateConfig::new(MyStates::AssetLoading).with_collection::<MyAssets>(),
+            LoadingStateConfig::new(MyStates::AssetLoading).add_collection::<MyAssets>(),
         )
         .add_systems(OnEnter(MyStates::Next), draw_atlas)
         .add_systems(

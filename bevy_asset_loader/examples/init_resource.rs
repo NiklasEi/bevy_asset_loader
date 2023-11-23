@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_asset_loader::loading_state::LoadingStateConfig;
 use bevy_asset_loader::prelude::*;
 
 /// This example demonstrates how you can use [`App::init_resource_after_loading_state`] to initialize
@@ -13,8 +14,11 @@ fn main() {
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
         )
-        .add_collection_to_loading_state::<_, ImageAssets>(MyStates::AssetLoading)
-        .init_resource_after_loading_state::<_, CombinedImage>(MyStates::AssetLoading)
+        .configure_loading_state(
+            LoadingStateConfig::new(MyStates::AssetLoading)
+                .add_collection::<ImageAssets>()
+                .init_resource::<CombinedImage>(),
+        )
         .add_systems(OnEnter(MyStates::Next), draw)
         .run();
 }

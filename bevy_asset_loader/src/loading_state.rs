@@ -587,6 +587,10 @@ pub trait LoadingStateAppExt {
     /// #     pub tree: Handle<Image>,
     /// # }
     /// ```
+    #[deprecated(
+        since = "0.19.0",
+        note = "Use configure_loading_state and [`LoadingStateConfig::add_collection`] instead."
+    )]
     fn add_collection_to_loading_state<S: States, A: AssetCollection>(
         &mut self,
         loading_state: S,
@@ -660,6 +664,10 @@ pub trait LoadingStateAppExt {
     /// #     pub array: Handle<Image>,
     /// # }
     /// ```
+    #[deprecated(
+        since = "0.19.0",
+        note = "Use configure_loading_state and [`LoadingStateConfig::init_resource`] instead."
+    )]
     fn init_resource_after_loading_state<S: States, A: Resource + FromWorld>(
         &mut self,
         loading_state: S,
@@ -673,23 +681,25 @@ pub trait LoadingStateAppExt {
 
 pub struct LoadingStateConfig<S: States> {
     state: S,
-    start_loading: Vec<SystemConfigs>,
-    check_loading: Vec<SystemConfigs>,
+    on_enter_loading_assets: Vec<SystemConfigs>,
+    on_update: Vec<SystemConfigs>,
+    on_enter_finalize: Vec<SystemConfigs>,
 }
 
 impl<S: States> LoadingStateConfig<S> {
     pub fn new(state: S) -> Self {
         Self {
             state,
-            start_loading: vec![],
-            check_loading: vec![],
+            on_enter_loading_assets: vec![],
+            on_update: vec![],
+            on_enter_finalize: vec![],
         }
     }
 
-    pub fn with_collection<A: AssetCollection>(mut self) -> Self {
-        self.start_loading
+    pub fn add_collection<A: AssetCollection>(mut self) -> Self {
+        self.on_enter_loading_assets
             .push(start_loading_collection::<S, A>.into_configs());
-        self.check_loading.push(
+        self.on_update.push(
             check_loading_collection::<S, A>
                 .in_set(InternalLoadingStateSet::CheckAssets)
                 .into_configs(),
@@ -698,8 +708,17 @@ impl<S: States> LoadingStateConfig<S> {
         self
     }
 
+    /// The resource will be initialized at the end of the loading state using its [`FromWorld`] implementation.
+    /// All asset collections will be available at that point and fully loaded.
+    pub fn init_resource<R: Resource + FromWorld>(mut self) -> Self {
+        self.on_enter_finalize
+            .push(init_resource::<R>.into_configs());
+
+        self
+    }
+
     fn build(self, app: &mut App) {
-        for config in self.start_loading {
+        for config in self.on_enter_loading_assets {
             app.add_systems(
                 OnEnterInternalLoadingState(
                     self.state.clone(),
@@ -708,8 +727,14 @@ impl<S: States> LoadingStateConfig<S> {
                 config,
             );
         }
-        for config in self.check_loading {
+        for config in self.on_update {
             app.add_systems(LoadingStateSchedule(self.state.clone()), config);
+        }
+        for config in self.on_enter_finalize {
+            app.add_systems(
+                OnEnterInternalLoadingState(self.state.clone(), InternalLoadingState::Finalize),
+                config,
+            );
         }
     }
 }
