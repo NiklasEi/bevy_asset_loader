@@ -27,9 +27,9 @@ pub trait AssetCollection: Resource {
     fn load(world: &mut World) -> Vec<UntypedHandle>;
 }
 
-/// Extension trait for [`App`](::bevy::app::App) enabling initialisation of [asset collections](crate::asset_collection::AssetCollection)
+/// Extension trait for [`App`] enabling initialisation of [asset collections](crate::asset_collection::AssetCollection)
 pub trait AssetCollectionApp {
-    /// Initialise an [`AssetCollection`](crate::asset_collection::AssetCollection)
+    /// Initialise an [`AssetCollection`]
     ///
     /// This function does not give any guaranties about the loading status of the asset handles.
     /// If you want to use a loading state, you do not need this function! Instead use an [`LoadingState`](crate::loading_state::LoadingState)
@@ -56,7 +56,7 @@ impl AssetCollectionApp for App {
     }
 }
 
-/// Extension trait for [`World`](::bevy::ecs::world::World) enabling initialisation of [asset collections](AssetCollection)
+/// Extension trait for [`World`] enabling initialisation of [asset collections](AssetCollection)
 pub trait AssetCollectionWorld {
     /// Initialise an [`AssetCollection`]
     ///

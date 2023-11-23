@@ -159,7 +159,7 @@ where
         }
     }
 
-    /// The [`LoadingState`] will set this Bevy [`State`](State) after all asset collections
+    /// The [`LoadingState`] will set this Bevy [`State`] after all asset collections
     /// are loaded and inserted as resources.
     /// ```edition2021
     /// # use bevy_asset_loader::prelude::*;
@@ -205,7 +205,7 @@ where
         self
     }
 
-    /// The [`LoadingState`] will set this Bevy [`State`](State) if an asset fails to load.
+    /// The [`LoadingState`] will set this Bevy [`State`] if an asset fails to load.
     /// ```edition2021
     /// # use bevy_asset_loader::prelude::*;
     /// # use bevy::prelude::*;
@@ -444,7 +444,7 @@ where
     }
 }
 
-///  Systems in this set check the loading state of assets and will change the [`InternalLoadingState`] accordingly.
+///  Systems in this set check the loading state of assets.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]
 pub struct LoadingStateSet<S: States>(pub S);
 

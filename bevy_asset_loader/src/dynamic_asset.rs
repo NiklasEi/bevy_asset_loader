@@ -29,8 +29,8 @@ pub trait DynamicAsset: Debug + Send + Sync {
 
 /// Resource to dynamically resolve keys to assets.
 ///
-/// This resource is set by a [`LoadingState`](crate::loading_state::LoadingState) and is read when entering the corresponding Bevy [`State`](State).
-/// If you want to manage your dynamic assets manually, they should be configured in a previous [`State`](State).
+/// This resource is set by a [`LoadingState`](crate::loading_state::LoadingState) and is read when entering the corresponding Bevy [`State`](::bevy::ecs::schedule::State).
+/// If you want to manage your dynamic assets manually, they should be configured in a previous [`State`](::bevy::ecs::schedule::State).
 ///
 /// See the `manual_dynamic_asset` example.
 #[derive(Resource, Default)]
