@@ -3,6 +3,7 @@ mod systems;
 
 use bevy::app::{App, Plugin};
 use bevy::asset::{Asset, UntypedHandle};
+use bevy::ecs::schedule::SystemConfigs;
 use bevy::ecs::{
     schedule::{
         common_conditions::in_state, InternedScheduleLabel, IntoSystemConfigs,
@@ -663,6 +664,54 @@ pub trait LoadingStateAppExt {
         &mut self,
         loading_state: S,
     ) -> &mut Self;
+
+    fn configure_loading_state<S: States>(
+        &mut self,
+        configuration: LoadingStateConfig<S>,
+    ) -> &mut Self;
+}
+
+pub struct LoadingStateConfig<S: States> {
+    state: S,
+    start_loading: Vec<SystemConfigs>,
+    check_loading: Vec<SystemConfigs>,
+}
+
+impl<S: States> LoadingStateConfig<S> {
+    pub fn new(state: S) -> Self {
+        Self {
+            state,
+            start_loading: vec![],
+            check_loading: vec![],
+        }
+    }
+
+    pub fn with_collection<A: AssetCollection>(mut self) -> Self {
+        self.start_loading
+            .push(start_loading_collection::<S, A>.into_configs());
+        self.check_loading.push(
+            check_loading_collection::<S, A>
+                .in_set(InternalLoadingStateSet::CheckAssets)
+                .into_configs(),
+        );
+
+        self
+    }
+
+    fn build(self, app: &mut App) {
+        for config in self.start_loading {
+            app.add_systems(
+                OnEnterInternalLoadingState(
+                    self.state.clone(),
+                    InternalLoadingState::LoadingAssets,
+                ),
+                config,
+            );
+        }
+        for config in self.check_loading {
+            app.add_systems(LoadingStateSchedule(self.state.clone()), config);
+        }
+    }
 }
 
 impl LoadingStateAppExt for App {
@@ -726,6 +775,15 @@ impl LoadingStateAppExt for App {
             OnEnterInternalLoadingState(loading_state, InternalLoadingState::Finalize),
             init_resource::<A>,
         )
+    }
+
+    fn configure_loading_state<S: States>(
+        &mut self,
+        configuration: LoadingStateConfig<S>,
+    ) -> &mut Self {
+        configuration.build(self);
+
+        self
     }
 }
 
