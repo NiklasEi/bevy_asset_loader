@@ -92,7 +92,7 @@ use crate::loading_state::systems::{apply_internal_state_transition, run_loading
 ///     pub tree: Handle<Image>,
 /// }
 /// ```
-pub struct LoadingState<State> {
+pub struct LoadingState<State: States> {
     next_state: Option<State>,
     failure_state: Option<State>,
     loading_state: State,
@@ -100,6 +100,7 @@ pub struct LoadingState<State> {
 
     #[cfg(feature = "standard_dynamic_assets")]
     standard_dynamic_asset_collection_file_endings: Vec<&'static str>,
+    config: LoadingStateConfig<State>,
 }
 
 impl<S> LoadingState<S>
@@ -152,10 +153,11 @@ where
         Self {
             next_state: None,
             failure_state: None,
-            loading_state: load,
+            loading_state: load.clone(),
             dynamic_assets: HashMap::default(),
             #[cfg(feature = "standard_dynamic_assets")]
             standard_dynamic_asset_collection_file_endings: vec!["assets.ron"],
+            config: LoadingStateConfig::new(load),
         }
     }
 
@@ -441,6 +443,34 @@ where
         for (key, asset) in self.dynamic_assets {
             dynamic_assets.register_asset(key, asset);
         }
+        self.config.build(app);
+    }
+}
+
+impl<S: States> ConfigureLoadingState for LoadingState<S> {
+    fn add_collection<A: AssetCollection>(mut self) -> Self {
+        self.config = self.config.add_collection::<A>();
+
+        self
+    }
+
+    fn init_resource<R: Resource + FromWorld>(mut self) -> Self {
+        self.config = self.config.init_resource::<R>();
+
+        self
+    }
+
+    fn register_dynamic_asset_collection<C: DynamicAssetCollection + Asset>(mut self) -> Self {
+        self.config = self.config.register_dynamic_asset_collection::<C>();
+
+        self
+    }
+
+    fn with_dynamic_assets<C: DynamicAssetCollection + Asset>(mut self, file: &str) -> Self {
+        self.config
+            .with_dynamic_assets_type_id(file, TypeId::of::<C>());
+
+        self
     }
 }
 
@@ -547,6 +577,12 @@ pub trait LoadingStateAppExt {
     /// Add a loading state to your app
     fn add_loading_state<S: States>(&mut self, loading_state: LoadingState<S>) -> &mut Self;
 
+    /// Configure an existing loading state with, for example, additional asset collections.
+    fn configure_loading_state<S: States>(
+        &mut self,
+        configuration: LoadingStateConfig<S>,
+    ) -> &mut Self;
+
     /// Add an [`AssetCollection`] to the [`LoadingState`]
     ///
     /// The added collection will be loaded and inserted into your Bevy app as a resource.
@@ -600,6 +636,10 @@ pub trait LoadingStateAppExt {
     ///
     /// You do not need to call this for [`StandardDynamicAssetCollection`], only if you want to use
     /// your own dynamic asset collection types.
+    #[deprecated(
+        since = "0.19.0",
+        note = "Use configure_loading_state and [`LoadingStateConfig::register_dynamic_asset_collection`] instead."
+    )]
     fn register_dynamic_asset_collection<S: States, C: DynamicAssetCollection + Asset>(
         &mut self,
         loading_state: S,
@@ -613,6 +653,10 @@ pub trait LoadingStateAppExt {
     ///
     /// You need to register a loader for your asset type yourself.
     /// If you want to see some code, take a look at the `custom_dynamic_assets` example.
+    #[deprecated(
+        since = "0.19.0",
+        note = "Use configure_loading_state and [`LoadingStateConfig::with_dynamic_assets`] instead."
+    )]
     fn add_dynamic_collection_to_loading_state<S: States, C: DynamicAssetCollection + Asset>(
         &mut self,
         loading_state: S,
@@ -672,18 +716,115 @@ pub trait LoadingStateAppExt {
         &mut self,
         loading_state: S,
     ) -> &mut Self;
-
-    fn configure_loading_state<S: States>(
-        &mut self,
-        configuration: LoadingStateConfig<S>,
-    ) -> &mut Self;
 }
 
+/// Can be used to add new asset collections or similar configuration to an existing loading state.
+/// ```edition2021
+/// # use bevy_asset_loader::prelude::*;
+/// # use bevy::prelude::*;
+/// # use bevy::asset::AssetPlugin;
+/// # fn main() {
+///     App::new()
+/// # /*
+///         .add_plugins(DefaultPlugins)
+/// # */
+/// #       .add_plugins((MinimalPlugins, AssetPlugin::default()))
+///         .add_state::<GameState>()
+/// #       .init_resource::<iyes_progress::ProgressCounter>()
+///         .add_loading_state(
+///           LoadingState::new(GameState::Loading)
+///             .continue_to_state(GameState::Menu)
+///         )
+///         .configure_loading_state(LoadingStateConfig::new(GameState::Loading).add_collection::<AudioAssets>())
+/// #       .set_runner(|mut app| app.update())
+///         .run();
+/// # }
+///
+/// # #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
+/// # enum GameState {
+/// #     #[default]
+/// #     Loading,
+/// #     Menu
+/// # }
+/// # #[derive(AssetCollection, Resource)]
+/// # struct AudioAssets {
+/// #     #[asset(path = "audio/background.ogg")]
+/// #     background: Handle<AudioSource>,
+/// #     #[asset(path = "audio/plop.ogg")]
+/// #     plop: Handle<AudioSource>
+/// # }
+/// ```
 pub struct LoadingStateConfig<S: States> {
     state: S,
+
     on_enter_loading_assets: Vec<SystemConfigs>,
+    on_enter_loading_dynamic_asset_collections: Vec<SystemConfigs>,
     on_update: Vec<SystemConfigs>,
     on_enter_finalize: Vec<SystemConfigs>,
+
+    dynamic_assets: HashMap<TypeId, Vec<String>>,
+}
+
+pub trait ConfigureLoadingState {
+    fn add_collection<A: AssetCollection>(self) -> Self;
+
+    /// The resource will be initialized at the end of the loading state using its [`FromWorld`] implementation.
+    /// All asset collections will be available at that point and fully loaded.
+    /// ```edition2021
+    /// # use bevy_asset_loader::prelude::*;
+    /// # use bevy::prelude::*;
+    /// # use bevy::asset::AssetPlugin;
+    /// # fn main() {
+    ///     App::new()
+    /// # /*
+    ///         .add_plugins(DefaultPlugins)
+    /// # */
+    /// #       .add_plugins((MinimalPlugins, AssetPlugin::default()))
+    ///         .add_state::<GameState>()
+    /// #       .init_resource::<iyes_progress::ProgressCounter>()
+    ///         .add_loading_state(
+    ///           LoadingState::new(GameState::Loading)
+    ///             .continue_to_state(GameState::Menu)
+    ///         )
+    ///         .configure_loading_state(
+    ///           LoadingStateConfig::new(GameState::Loading)
+    ///             .add_collection::<TextureForAtlas>()
+    ///             .init_resource::<TextureAtlasFromWorld>(),
+    ///         )
+    /// #       .set_runner(|mut app| app.update())
+    /// #       .run();
+    /// # }
+    /// # #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
+    /// # enum GameState {
+    /// #     #[default]
+    /// #     Loading,
+    /// #     Menu
+    /// # }
+    /// # #[derive(Resource)]
+    /// # struct TextureAtlasFromWorld {
+    /// #     atlas: Handle<TextureAtlas>
+    /// # }
+    /// # impl FromWorld for TextureAtlasFromWorld {
+    /// #     fn from_world(world: &mut World) -> Self {
+    /// #         let cell = world.cell();
+    /// #         let assets = cell.get_resource::<TextureForAtlas>().expect("TextureForAtlas not loaded");
+    /// #         let mut atlases = cell.get_resource_mut::<Assets<TextureAtlas>>().expect("TextureAtlases missing");
+    /// #         TextureAtlasFromWorld {
+    /// #             atlas: atlases.add(TextureAtlas::from_grid(assets.array.clone(), Vec2::new(250., 250.), 1, 4, None, None))
+    /// #         }
+    /// #     }
+    /// # }
+    /// # #[derive(AssetCollection, Resource)]
+    /// # pub struct TextureForAtlas {
+    /// #     #[asset(path = "images/female_adventurer.ogg")]
+    /// #     pub array: Handle<Image>,
+    /// # }
+    /// ```
+    fn init_resource<R: Resource + FromWorld>(self) -> Self;
+
+    fn register_dynamic_asset_collection<C: DynamicAssetCollection + Asset>(self) -> Self;
+
+    fn with_dynamic_assets<C: DynamicAssetCollection + Asset>(self, file: &str) -> Self;
 }
 
 impl<S: States> LoadingStateConfig<S> {
@@ -691,30 +832,17 @@ impl<S: States> LoadingStateConfig<S> {
         Self {
             state,
             on_enter_loading_assets: vec![],
+            on_enter_loading_dynamic_asset_collections: vec![],
             on_update: vec![],
             on_enter_finalize: vec![],
+            dynamic_assets: default(),
         }
     }
 
-    pub fn add_collection<A: AssetCollection>(mut self) -> Self {
-        self.on_enter_loading_assets
-            .push(start_loading_collection::<S, A>.into_configs());
-        self.on_update.push(
-            check_loading_collection::<S, A>
-                .in_set(InternalLoadingStateSet::CheckAssets)
-                .into_configs(),
-        );
-
-        self
-    }
-
-    /// The resource will be initialized at the end of the loading state using its [`FromWorld`] implementation.
-    /// All asset collections will be available at that point and fully loaded.
-    pub fn init_resource<R: Resource + FromWorld>(mut self) -> Self {
-        self.on_enter_finalize
-            .push(init_resource::<R>.into_configs());
-
-        self
+    fn with_dynamic_assets_type_id(&mut self, file: &str, type_id: TypeId) {
+        let mut dynamic_files = self.dynamic_assets.remove(&type_id).unwrap_or_default();
+        dynamic_files.push(file.to_owned());
+        self.dynamic_assets.insert(type_id, dynamic_files);
     }
 
     fn build(self, app: &mut App) {
@@ -736,6 +864,53 @@ impl<S: States> LoadingStateConfig<S> {
                 config,
             );
         }
+        for config in self.on_enter_loading_dynamic_asset_collections {
+            app.add_systems(
+                OnEnterInternalLoadingState(
+                    self.state.clone(),
+                    InternalLoadingState::LoadingDynamicAssetCollections,
+                ),
+                config,
+            );
+        }
+    }
+}
+
+impl<S: States> ConfigureLoadingState for LoadingStateConfig<S> {
+    fn add_collection<A: AssetCollection>(mut self) -> Self {
+        self.on_enter_loading_assets
+            .push(start_loading_collection::<S, A>.into_configs());
+        self.on_update.push(
+            check_loading_collection::<S, A>
+                .in_set(InternalLoadingStateSet::CheckAssets)
+                .into_configs(),
+        );
+
+        self
+    }
+
+    fn init_resource<R: Resource + FromWorld>(mut self) -> Self {
+        self.on_enter_finalize
+            .push(init_resource::<R>.into_configs());
+
+        self
+    }
+
+    fn register_dynamic_asset_collection<C: DynamicAssetCollection + Asset>(mut self) -> Self {
+        self.on_enter_loading_dynamic_asset_collections
+            .push(load_dynamic_asset_collections::<S, C>.into_configs());
+        self.on_update.push(
+            check_dynamic_asset_collections::<S, C>
+                .in_set(InternalLoadingStateSet::CheckDynamicAssetCollections),
+        );
+
+        self
+    }
+
+    fn with_dynamic_assets<C: DynamicAssetCollection + Asset>(mut self, file: &str) -> Self {
+        self.with_dynamic_assets_type_id(file, TypeId::of::<C>());
+
+        self
     }
 }
 

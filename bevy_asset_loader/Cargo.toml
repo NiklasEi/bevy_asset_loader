@@ -102,3 +102,8 @@ path = "examples/custom_dynamic_assets.rs"
 name = "image_asset"
 path = "examples/image_asset.rs"
 required-features = ["2d"]
+
+[[example]]
+name = "configure_loading_state"
+path = "examples/configure_loading_state.rs"
+required-features = ["2d"]
