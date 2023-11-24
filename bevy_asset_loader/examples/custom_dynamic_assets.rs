@@ -14,16 +14,12 @@ fn main() {
         // We need to make sure that our dynamic asset collections can be loaded from the asset file
         .add_state::<MyStates>()
         .add_loading_state(
-            LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
+            LoadingState::new(MyStates::AssetLoading)
+                .continue_to_state(MyStates::Next)
+                .load_collection::<MyAssets>()
+                .register_dynamic_asset_collection::<CustomDynamicAssetCollection>()
+                .with_dynamic_assets_file::<CustomDynamicAssetCollection>("custom.my-assets.ron"),
         )
-        .register_dynamic_asset_collection::<_, CustomDynamicAssetCollection>(
-            MyStates::AssetLoading,
-        )
-        .add_dynamic_collection_to_loading_state::<_, CustomDynamicAssetCollection>(
-            MyStates::AssetLoading,
-            "custom.my-assets.ron",
-        )
-        .add_collection_to_loading_state::<_, MyAssets>(MyStates::AssetLoading)
         .add_systems(OnEnter(MyStates::Next), render_stuff)
         .run();
 }

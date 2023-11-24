@@ -85,7 +85,29 @@ impl<State: States> DynamicAssetCollections<State> {
         self.register_file_by_type_id(loading_state, file, TypeId::of::<C>());
     }
 
-    fn register_file_by_type_id(&mut self, loading_state: State, file: &str, type_id: TypeId) {
+    pub(crate) fn register_files_by_type_id(
+        &mut self,
+        loading_state: State,
+        mut files: Vec<String>,
+        type_id: TypeId,
+    ) {
+        let mut dynamic_collections_for_state =
+            self.files.remove(&loading_state).unwrap_or_default();
+        let mut dynamic_files = dynamic_collections_for_state
+            .remove(&type_id)
+            .unwrap_or_default();
+        dynamic_files.append(&mut files);
+        dynamic_collections_for_state.insert(type_id, dynamic_files);
+        self.files
+            .insert(loading_state, dynamic_collections_for_state);
+    }
+
+    pub(crate) fn register_file_by_type_id(
+        &mut self,
+        loading_state: State,
+        file: &str,
+        type_id: TypeId,
+    ) {
         let mut dynamic_collections_for_state =
             self.files.remove(&loading_state).unwrap_or_default();
         let mut dynamic_files = dynamic_collections_for_state

@@ -16,7 +16,7 @@ fn main() {
         )
         .configure_loading_state(
             LoadingStateConfig::new(MyStates::AssetLoading)
-                .add_collection::<ImageAssets>()
+                .load_collection::<ImageAssets>()
                 .init_resource::<CombinedImage>(),
         )
         .add_systems(OnEnter(MyStates::Next), draw)

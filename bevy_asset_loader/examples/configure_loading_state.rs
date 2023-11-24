@@ -31,8 +31,8 @@ impl Plugin for PlayerAndMusicPlugin {
             // We can add all kinds of things to the loading state here. This method can be called from any plugin any number of times.
             .configure_loading_state(
                 LoadingStateConfig::new(MyStates::AssetLoading)
-                    .add_collection::<AudioAssets>()
-                    .add_collection::<ImageAssets>()
+                    .load_collection::<AudioAssets>()
+                    .load_collection::<ImageAssets>()
                     .init_resource::<ExampleResource>(),
             );
     }
