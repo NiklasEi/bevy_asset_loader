@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use bevy_asset_loader::loading_state::LoadingStateConfig;
 use bevy_asset_loader::prelude::*;
 
 /// This example demonstrates how to load a texture atlas from a sprite sheet
@@ -10,10 +9,9 @@ fn main() {
         .add_state::<MyStates>()
         .add_plugins(DefaultPlugins)
         .add_loading_state(
-            LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
-        )
-        .configure_loading_state(
-            LoadingStateConfig::new(MyStates::AssetLoading).load_collection::<MyAssets>(),
+            LoadingState::new(MyStates::AssetLoading)
+                .continue_to_state(MyStates::Next)
+                .load_collection::<MyAssets>(),
         )
         .add_systems(OnEnter(MyStates::Next), draw_atlas)
         .add_systems(

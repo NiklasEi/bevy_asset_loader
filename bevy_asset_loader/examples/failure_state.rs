@@ -9,9 +9,9 @@ fn main() {
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading)
                 .continue_to_state(MyStates::Next)
-                .on_failure_continue_to_state(MyStates::ErrorScreen),
+                .on_failure_continue_to_state(MyStates::ErrorScreen)
+                .load_collection::<MyAssets>(),
         )
-        .add_collection_to_loading_state::<_, MyAssets>(MyStates::AssetLoading)
         .add_systems(Update, timeout.run_if(in_state(MyStates::AssetLoading)))
         .add_systems(OnEnter(MyStates::Next), fail)
         .add_systems(OnEnter(MyStates::ErrorScreen), ok)

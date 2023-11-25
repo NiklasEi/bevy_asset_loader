@@ -14,13 +14,13 @@ fn main() {
         .add_state::<MyStates>()
         .add_plugins(DefaultPlugins)
         .add_loading_state(
-            LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
+            LoadingState::new(MyStates::AssetLoading)
+                .continue_to_state(MyStates::Next)
+                .with_dynamic_assets_file::<StandardDynamicAssetCollection>(
+                    "full_dynamic_collection.assets.ron",
+                )
+                .load_collection::<MyAssets>(),
         )
-        .add_dynamic_collection_to_loading_state::<_, StandardDynamicAssetCollection>(
-            MyStates::AssetLoading,
-            "full_dynamic_collection.assets.ron",
-        )
-        .add_collection_to_loading_state::<_, MyAssets>(MyStates::AssetLoading)
         .add_systems(Update, expectations.run_if(in_state(MyStates::Next)))
         .run();
 }

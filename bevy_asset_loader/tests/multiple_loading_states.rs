@@ -3,8 +3,7 @@
 use bevy::app::AppExit;
 use bevy::audio::AudioPlugin;
 use bevy::prelude::*;
-use bevy_asset_loader::asset_collection::AssetCollection;
-use bevy_asset_loader::loading_state::{LoadingState, LoadingStateAppExt};
+use bevy_asset_loader::prelude::*;
 
 #[cfg(all(
     not(feature = "2d"),
@@ -20,11 +19,17 @@ fn multiple_loading_states() {
             AssetPlugin::default(),
             AudioPlugin::default(),
         ))
-        .add_loading_state(LoadingState::new(MyStates::Splash).continue_to_state(MyStates::Load))
-        .add_collection_to_loading_state::<_, SplashAssets>(MyStates::Splash)
-        .add_loading_state(LoadingState::new(MyStates::Load).continue_to_state(MyStates::Play))
-        .add_collection_to_loading_state::<_, MyAssets>(MyStates::Load)
-        .add_collection_to_loading_state::<_, MyOtherAssets>(MyStates::Load)
+        .add_loading_state(
+            LoadingState::new(MyStates::Splash)
+                .continue_to_state(MyStates::Load)
+                .load_collection::<SplashAssets>(),
+        )
+        .add_loading_state(
+            LoadingState::new(MyStates::Load)
+                .continue_to_state(MyStates::Play)
+                .load_collection::<MyAssets>()
+                .load_collection::<MyOtherAssets>(),
+        )
         .add_systems(Update, (quit.run_if(in_state(MyStates::Play)), timeout))
         .add_systems(OnEnter(MyStates::Load), use_splash_assets)
         .add_systems(OnEnter(MyStates::Play), use_loading_assets)

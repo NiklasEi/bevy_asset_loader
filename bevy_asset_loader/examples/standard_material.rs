@@ -9,9 +9,10 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_state::<MyStates>()
         .add_loading_state(
-            LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
+            LoadingState::new(MyStates::AssetLoading)
+                .continue_to_state(MyStates::Next)
+                .load_collection::<MyAssets>(),
         )
-        .add_collection_to_loading_state::<_, MyAssets>(MyStates::AssetLoading)
         .insert_resource(AmbientLight {
             color: Color::WHITE,
             brightness: 0.2,

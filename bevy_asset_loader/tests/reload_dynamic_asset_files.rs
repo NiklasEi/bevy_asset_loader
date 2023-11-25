@@ -22,21 +22,21 @@ fn main() {
         ))
         .insert_resource(SplashTimer(Timer::from_seconds(1.0, TimerMode::Once)))
         .add_loading_state(
-            LoadingState::new(MyStates::SplashAssetLoading).continue_to_state(MyStates::Splash),
-        )
-        .add_dynamic_collection_to_loading_state::<_, StandardDynamicAssetCollection>(
-            MyStates::SplashAssetLoading,
-            "full_dynamic_collection.assets.ron",
+            LoadingState::new(MyStates::SplashAssetLoading)
+                .continue_to_state(MyStates::Splash)
+                .with_dynamic_assets_file::<StandardDynamicAssetCollection>(
+                    "full_dynamic_collection.assets.ron",
+                ),
         )
         .add_systems(Update, splash_countdown.run_if(in_state(MyStates::Splash)))
         .add_loading_state(
-            LoadingState::new(MyStates::MainMenuAssetLoading).continue_to_state(MyStates::MainMenu),
+            LoadingState::new(MyStates::MainMenuAssetLoading)
+                .continue_to_state(MyStates::MainMenu)
+                .with_dynamic_assets_file::<StandardDynamicAssetCollection>(
+                    "full_dynamic_collection.assets.ron",
+                )
+                .load_collection::<MainMenuAssets>(),
         )
-        .add_dynamic_collection_to_loading_state::<_, StandardDynamicAssetCollection>(
-            MyStates::MainMenuAssetLoading,
-            "full_dynamic_collection.assets.ron",
-        )
-        .add_collection_to_loading_state::<_, MainMenuAssets>(MyStates::MainMenuAssetLoading)
         .add_systems(Update, (timeout, quit.run_if(in_state(MyStates::MainMenu))))
         .run();
 }

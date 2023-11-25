@@ -3,7 +3,7 @@
 use bevy::app::AppExit;
 use bevy::asset::AssetPlugin;
 use bevy::prelude::*;
-use bevy_asset_loader::loading_state::{LoadingState, LoadingStateAppExt};
+use bevy_asset_loader::prelude::*;
 
 #[cfg(all(
     not(feature = "2d"),

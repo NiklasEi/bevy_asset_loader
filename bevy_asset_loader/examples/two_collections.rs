@@ -9,10 +9,11 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_state::<MyStates>()
         .add_loading_state(
-            LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
+            LoadingState::new(MyStates::AssetLoading)
+                .continue_to_state(MyStates::Next)
+                .load_collection::<ImageAssets>()
+                .load_collection::<AudioAssets>(),
         )
-        .add_collection_to_loading_state::<_, ImageAssets>(MyStates::AssetLoading)
-        .add_collection_to_loading_state::<_, AudioAssets>(MyStates::AssetLoading)
         .add_systems(
             OnEnter(MyStates::Next),
             (spawn_player_and_tree, play_background_audio),

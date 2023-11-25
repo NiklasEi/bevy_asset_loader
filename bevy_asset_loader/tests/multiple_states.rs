@@ -3,7 +3,7 @@
 use bevy::app::AppExit;
 use bevy::audio::AudioPlugin;
 use bevy::prelude::*;
-use bevy_asset_loader::prelude::{AssetCollection, LoadingState, LoadingStateAppExt};
+use bevy_asset_loader::prelude::*;
 
 #[cfg(all(
     not(feature = "2d"),
@@ -20,10 +20,16 @@ fn main() {
         ))
         .add_state::<Loading>()
         .add_state::<Game>()
-        .add_loading_state(LoadingState::new(Game::Booting).continue_to_state(Game::Loading))
-        .add_collection_to_loading_state::<_, GameStateCollection>(Game::Booting)
-        .add_loading_state(LoadingState::new(Loading::Loading).continue_to_state(Loading::Finalize))
-        .add_collection_to_loading_state::<_, LoadingStateCollection>(Loading::Loading)
+        .add_loading_state(
+            LoadingState::new(Game::Booting)
+                .continue_to_state(Game::Loading)
+                .load_collection::<GameStateCollection>(),
+        )
+        .add_loading_state(
+            LoadingState::new(Loading::Loading)
+                .continue_to_state(Loading::Finalize)
+                .load_collection::<LoadingStateCollection>(),
+        )
         .add_systems(Update, (quit.run_if(in_state(Game::Play)), timeout))
         .add_systems(
             OnEnter(Game::Loading),
