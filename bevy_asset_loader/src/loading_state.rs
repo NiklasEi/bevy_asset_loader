@@ -846,7 +846,7 @@ impl<S: States> LoadingStateConfig<S> {
             .world
             .get_resource_mut::<DynamicAssetCollections<S>>()
             .unwrap_or_else(|| {
-                panic!("Failed to get the DynamicAssetCollections resource for the loading state.")
+                panic!("Failed to get the DynamicAssetCollections resource for the loading state. Are you trying to configure a loading state before it was added to the bevy App?")
             });
         for (id, files) in self.dynamic_assets.drain() {
             dynamic_assets.register_files_by_type_id(self.state.clone(), files, id);
