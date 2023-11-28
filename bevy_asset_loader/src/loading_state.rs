@@ -417,9 +417,11 @@ where
                 );
 
             #[cfg(feature = "standard_dynamic_assets")]
-            app.register_dynamic_asset_collection::<_, StandardDynamicAssetCollection>(
-                self.loading_state.clone(),
-            );
+            {
+                self.config = self
+                    .config
+                    .register_dynamic_asset_collection::<StandardDynamicAssetCollection>();
+            }
 
             #[cfg(feature = "progress_tracking")]
             app.add_systems(
@@ -598,9 +600,9 @@ pub trait LoadingStateAppExt {
     ///         .add_loading_state(
     ///           LoadingState::new(GameState::Loading)
     ///             .continue_to_state(GameState::Menu)
+    ///             .load_collection::<AudioAssets>()
+    ///             .load_collection::<ImageAssets>()
     ///         )
-    ///         .add_collection_to_loading_state::<_, AudioAssets>(GameState::Loading)
-    ///         .add_collection_to_loading_state::<_, ImageAssets>(GameState::Loading)
     /// #       .set_runner(|mut app| app.update())
     /// #       .run();
     /// # }
@@ -625,7 +627,7 @@ pub trait LoadingStateAppExt {
     /// ```
     #[deprecated(
         since = "0.19.0",
-        note = "Use load_collection on LoadingState or LoadingStateConfig instead."
+        note = "Use `LoadingStateConfig::load_collection` or `LoadingState::load_collection` instead."
     )]
     fn add_collection_to_loading_state<S: States, A: AssetCollection>(
         &mut self,
@@ -638,7 +640,7 @@ pub trait LoadingStateAppExt {
     /// your own dynamic asset collection types.
     #[deprecated(
         since = "0.19.0",
-        note = "Use configure_loading_state and [`LoadingStateConfig::register_dynamic_asset_collection`] instead."
+        note = "Use `LoadingStateConfig::register_dynamic_asset_collection` or `LoadingState::register_dynamic_asset_collection` instead."
     )]
     fn register_dynamic_asset_collection<S: States, C: DynamicAssetCollection + Asset>(
         &mut self,
@@ -655,7 +657,7 @@ pub trait LoadingStateAppExt {
     /// If you want to see some code, take a look at the `custom_dynamic_assets` example.
     #[deprecated(
         since = "0.19.0",
-        note = "Use configure_loading_state and [`LoadingStateConfig::with_dynamic_assets`] instead."
+        note = "Use `LoadingState::with_dynamic_assets_file` or `LoadingStateConfig::with_dynamic_assets_file` instead."
     )]
     fn add_dynamic_collection_to_loading_state<S: States, C: DynamicAssetCollection + Asset>(
         &mut self,
@@ -710,7 +712,7 @@ pub trait LoadingStateAppExt {
     /// ```
     #[deprecated(
         since = "0.19.0",
-        note = "Use configure_loading_state and [`LoadingStateConfig::init_resource`] instead."
+        note = "Use `LoadingState::init_resource` or `LoadingStateConfig::init_resource` instead."
     )]
     fn init_resource_after_loading_state<S: States, A: Resource + FromWorld>(
         &mut self,
@@ -765,6 +767,7 @@ pub struct LoadingStateConfig<S: States> {
     dynamic_assets: HashMap<TypeId, Vec<String>>,
 }
 
+/// Methods to configure a loading state
 pub trait ConfigureLoadingState {
     /// Add the given collection to the loading state.
     ///
@@ -797,6 +800,7 @@ pub trait ConfigureLoadingState {
 }
 
 impl<S: States> LoadingStateConfig<S> {
+    /// Create a new configuration for the given loading state
     pub fn new(state: S) -> Self {
         Self {
             state,
