@@ -255,7 +255,7 @@ fn update_menu(
             .value = format!(
             "Background is {}",
             if show_background.0 { "On" } else { "Off" }
-        )
+        );
     }
 }
 

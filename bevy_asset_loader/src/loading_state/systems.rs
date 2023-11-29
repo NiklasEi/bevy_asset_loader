@@ -110,7 +110,7 @@ fn count_loaded_handles<S: States, Assets: AssetCollection>(cell: WorldCell) -> 
             config.loading_collections -= 1;
         }
     } else {
-        warn!("Failed to read loading state configuration in count_loaded_handles")
+        warn!("Failed to read loading state configuration in count_loaded_handles");
     }
 
     Some((done as u32, total as u32))
@@ -134,7 +134,7 @@ pub(crate) fn resume_to_finalize<S: States>(
             next_user_state.set(failure);
         }
     } else {
-        warn!("Failed to read loading state configuration in resume_to_finalize")
+        warn!("Failed to read loading state configuration in resume_to_finalize");
     }
 }
 

@@ -1,6 +1,15 @@
 [workspace]
+rust-version = "1.74.0"
 resolver = "2"
 members = [
     "bevy_asset_loader",
     "bevy_asset_loader_derive"
 ]
+
+[workspace.lints.clippy]
+doc_markdown = "warn"
+redundant_else = "warn"
+match_same_arms = "warn"
+semicolon_if_nothing_returned = "warn"
+map_flatten = "warn"
+manual_let_else = "warn"

@@ -42,6 +42,9 @@ trybuild = { version = "1.0" }
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
+[lints]
+workspace = true
+
 [[example]]
 name = "two_collections"
 path = "examples/two_collections.rs"
