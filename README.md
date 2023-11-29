@@ -5,9 +5,11 @@
 [![license](https://img.shields.io/crates/l/bevy_asset_loader)](https://github.com/NiklasEi/bevy_asset_loader#license)
 [![crates.io](https://img.shields.io/crates/d/bevy_asset_loader.svg)](https://crates.io/crates/bevy_asset_loader)
 
+_Loading states with minimal boilerplate_
+
 This [Bevy][bevy] plugin reduces boilerplate for handling game assets. The crate offers the derivable `AssetCollection` trait and can automatically load structs that implement it. Asset collections contain handles to your game assets and are available to your systems as resources after loading.
 
-In most cases you will want to load your asset collections during loading states (think loading screens). During such a state, all assets are loaded and their loading process is observed. Only when asset collections can be build with fully loaded asset handles, the collections are inserted as resources. If you do not want to use a loading state, asset collections can still result in cleaner code and improved maintainability (see the ["usage without a loading state"](#usage-without-a-loading-state) section).
+In most cases you will want to load your asset collections during loading states (think loading screens). During such a state, all assets are loaded and their loading progress is observed. Only when asset collections can be built with fully loaded asset handles, the collections are inserted to Bevy's ECS as resources. If you do not want to use a loading state, asset collections can still result in cleaner code and improved maintainability (see the ["usage without a loading state"](#usage-without-a-loading-state) section).
 
 _The `main` branch and the latest release support Bevy version `0.12` (see [version table](#compatible-bevy-versions))_
 
@@ -15,21 +17,78 @@ _The `main` branch and the latest release support Bevy version `0.12` (see [vers
 
 A loading state is responsible for managing the loading process during a configurable Bevy state (see [the cheatbook on states][cheatbook-states]).
 
-If your `LoadingState` is set up, you can start your game logic from the next state and use the asset collections as resources in your systems. The loading state guarantees that all handles in your collections are fully loaded by the time the next state starts.
+If your `LoadingState` is set up, you can start your game logic from the configured "next state" and use the asset collections as resources in your systems. The loading state guarantees that all handles in your collections are fully loaded by the time the next state starts.
 
-```rust ignore
-app
-    .add_state::<GameState>()
-    .add_loading_state(
-        LoadingState::new(GameState::Loading)
-            .continue_to_state(GameState::Next)
-    )
-    .add_collection_to_loading_state::<_, MyAssets>(GameState::Loading)
+```rust no_run
+use bevy::prelude::*;
+use bevy_asset_loader::prelude::*;
+
+fn main() {
+    App::new()
+        .add_plugins(DefaultPlugins)
+        .add_state::<MyStates>()
+        .add_loading_state(
+            LoadingState::new(MyStates::AssetLoading)
+                .continue_to_state(MyStates::Next)
+                .load_collection::<AudioAssets>(),
+        )
+        .add_systems(OnEnter(MyStates::Next), start_background_audio)
+        .run();
+}
+
+#[derive(AssetCollection, Resource)]
+struct AudioAssets {
+    #[asset(path = "audio/background.ogg")]
+    background: Handle<AudioSource>,
+}
+
+/// This system runs in MyStates::Next. Thus, AudioAssets is available as a resource
+/// and the contained handle is done loading.
+fn start_background_audio(mut commands: Commands, audio_assets: Res<AudioAssets>) {
+    commands.spawn(AudioBundle {
+        source: audio_assets.background.clone(),
+        settings: PlaybackSettings::LOOP,
+    });
+}
+
+#[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
+enum MyStates {
+    #[default]
+    AssetLoading,
+    Next,
+}
 ```
 
-Your Bevy state needs to be added to the application before you can add a loading state.
+If we want to add additional asset collections to the just added loading state, we can do so using `configure_loading_state` at any point in our application. We could, for example, add a `PlayerPlugin` to the `App` after adding the loading state. The `PlayerPlugin` will contain all things "player" including its sprite.
+```rust
+use bevy::prelude::*;
+use bevy_asset_loader::prelude::*;
 
-You can add collections to a loading state in multiple places (e.g. in different plugins). All collections added anywhere in your application will be loaded. Important is, that the loading state itself is added to the application before you try to add any collections to it.
+struct PlayerPlugin;
+
+impl Plugin for PlayerPlugin {
+    fn build(&self, app: &mut App) {
+        app
+            .configure_loading_state(
+                LoadingStateConfig::new(MyStates::AssetLoading)
+                    .load_collection::<PlayerAssets>(),
+            );
+    }
+}
+
+#[derive(AssetCollection, Resource)]
+struct PlayerAssets {
+    #[asset(path = "images/player.png")]
+    sprite: Handle<Image>,
+}
+
+#[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
+enum MyStates {
+    #[default]
+    AssetLoading,
+    Next,
+}
+```
 
 ## Compile time vs. Run time (dynamic) assets
 
@@ -37,43 +96,9 @@ Asset configurations, like their file path or dimensions of sprite sheets, can b
 
 The derive macro for `AssetCollection` supports multiple attributes. They configure how the asset is loaded.
 
-The following code sets up a loading state with a collection that has all it's configuration in derive macro attributes:
-```rust no_run
-use bevy::prelude::*;
-use bevy_asset_loader::prelude::*;
+### Compile time assets
 
-fn main() {
-    App::new()
-        .add_state::<GameState>()
-        .add_plugins(DefaultPlugins)
-        .add_loading_state(
-            LoadingState::new(GameState::AssetLoading)
-                .continue_to_state(GameState::Next)
-        )
-        .add_collection_to_loading_state::<_, MyAssets>(GameState::AssetLoading)
-        .add_systems(OnEnter(GameState::Next), use_my_assets)
-        .run();
-}
-
-#[derive(AssetCollection, Resource)]
-struct MyAssets {
-    #[asset(path = "images/player.png")]
-    player: Handle<Image>,
-    #[asset(path = "walking.ogg")]
-    walking: Handle<AudioSource>,
-}
-
-fn use_my_assets(_my_assets: Res<MyAssets>) {
-    // do something using the asset handles from the resource
-}
-
-#[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
-enum GameState {
-    #[default]
-    AssetLoading,
-    Next,
-}
-```
+The two earlier code examples show a loading state with collections that have all their configuration in derive macro attributes. The path of the player sprite is hardcoded to be "images/player.png". Changing it will require recompiling your application.
 
 The [full_collection](/bevy_asset_loader/examples/full_collection.rs) example showcases all the different kinds of fields that an asset collection can contain using only derive macro attributes.
 
@@ -94,7 +119,7 @@ struct ImageAssets {
 ```
 
 The keys `player` and `tree` in the example above should either be set manually in the `DynamicAssets` resource prior to the loading state 
-(see the [manual_dynamic_asset](/bevy_asset_loader/examples/manual_dynamic_asset.rs) example), or be part of a dynamic assets file (see [dynamic_asset](/bevy_asset_loader/examples/dynamic_asset.rs)). 
+(see the [manual_dynamic_asset](/bevy_asset_loader/examples/manual_dynamic_asset.rs) example), or be part of a dynamic assets file (see [dynamic_asset.rs](/bevy_asset_loader/examples/dynamic_asset.rs)). 
 A dynamic assets file for the collection above might look like this:
 ```ron
 ({
@@ -111,8 +136,6 @@ Using dynamic assets like `File` and loading ron files requires the `standard_dy
 
 The file ending is `.assets.ron` by default, but can be configured via `LoadingState::set_standard_dynamic_asset_collection_file_endings`.
 
-Dynamic assets can be optional. This requires the derive attribute `optional` on the field and the type to be an `Option`. The value of the field will be `None` in case the given key cannot be resolved at run time.
-
 The example [full_dynamic_collection](/bevy_asset_loader/examples/full_dynamic_collection.rs) shows all supported field types for dynamic assets. Note that adding a dynamic asset file to a loading state requires the `AssetServer` resource to be available. In most cases that means that you should add the `DefaultPlugins` before configuring your loading state.
 
 ### Custom dynamic assets
@@ -121,9 +144,9 @@ You can define your own types to load as dynamic assets. Take a look at the [cus
 
 ## Supported asset fields
 
-The simplest field is of the type `Handle<T>` and is loaded from a single file without any special processing. One example might be audio sources, but any asset type that has an asset loader registered with Bevy can be used like this.
+The simplest field is of the type `Handle<T>` and is loaded from a single file. One example might be audio sources, but any asset type that has an asset loader registered with Bevy can be used like this.
 
-The field should only have the `path` attribute set. The path is relative to your `assets` directory.
+The field should only have the `path` attribute set.
 ```rust
 use bevy::prelude::*;
 use bevy_asset_loader::asset_collection::AssetCollection;
@@ -156,6 +179,114 @@ struct MyAssets {
 
 
 The following sections describe more types of asset fields that you can load through asset collections.
+
+### Texture atlases
+
+You can directly load texture atlases from sprite sheets if you enable the feature `2d`. For a complete example please take a look at [atlas_from_grid.rs](/bevy_asset_loader/examples/atlas_from_grid.rs).
+
+```rust
+use bevy::prelude::*;
+use bevy_asset_loader::asset_collection::AssetCollection;
+
+#[derive(AssetCollection, Resource)]
+struct MyAssets {
+    #[asset(texture_atlas(tile_size_x = 64., tile_size_y = 64., columns = 8, rows = 1, padding_x = 12., padding_y = 12., offset_x = 6., offset_y = 6.))]
+    #[asset(path = "images/sprite_sheet.png")]
+    sprite: Handle<TextureAtlas>,
+}
+```
+
+As a dynamic asset this example becomes:
+```rust ignore
+#[derive(AssetCollection, Resource)]
+struct MyAssets {
+    #[asset(key = "image.player")]
+    sprite: Handle<TextureAtlas>,
+}
+```
+```ron
+({
+    "image.player": TextureAtlas (
+        path: "images/sprite_sheet.png",
+        tile_size_x: 100.,
+        tile_size_y: 64.,
+        columns: 8,
+        rows: 1,
+        padding_x: 12.,
+        padding_y: 12.,
+        offset_x: 6.,
+        offset_y: 6.,
+    ),
+})
+```
+
+The four padding & offset fields/attributes are optional, and default to `0.`.
+
+### Images with sampler configuration
+
+Asset collections support configuring the sampler of an image asset through a derive attribute:
+
+```rust
+use bevy::prelude::*;
+use bevy_asset_loader::asset_collection::AssetCollection;
+
+#[derive(AssetCollection, Resource)]
+struct ImageAssets {
+    #[asset(path = "images/pixel_tree.png")]
+    #[asset(image(sampler = linear))]
+    tree_linear: Handle<Image>,
+
+    #[asset(path = "images/pixel_tree.png")]
+    #[asset(image(sampler = nearest))]
+    tree_nearest: Handle<Image>,
+}
+```
+
+The corresponding dynamic asset would be
+```ron
+({
+    "tree_nearest": Image (
+        path: "images/tree.png",
+        sampler: Nearest
+    ),
+    "tree_linear": Image (
+        path: "images/tree.png",
+        sampler: Linear
+    ),
+})
+```
+
+### Standard materials
+
+You can directly load standard materials if you enable the feature `3d`. For a complete example please take a look at [standard_material.rs](/bevy_asset_loader/examples/standard_material.rs).
+
+```rust
+use bevy::prelude::*;
+use bevy_asset_loader::asset_collection::AssetCollection;
+
+#[derive(AssetCollection, Resource)]
+struct MyAssets {
+    #[asset(standard_material)]
+    #[asset(path = "images/player.png")]
+    player: Handle<StandardMaterial>,
+}
+```
+
+This is also supported as a dynamic asset:
+```rust ignore
+#[derive(AssetCollection, Resource)]
+struct MyAssets {
+    #[asset(key = "image.player")]
+    player: Handle<StandardMaterial>,
+}
+```
+```ron
+({
+    "image.player": StandardMaterial (
+        path: "images/player.png",
+    ),
+})
+```
 
 ### Collections
 
@@ -259,9 +390,9 @@ The corresponding assets file differs from the folder example:
 })
 ```
 
-#### Collections as maps
+### Collections as maps
 
-Collections can be loaded as maps using their file paths as the keys. This is only a change in derive attributes and asset field type. Some examples from the sections above would look like this:
+Collections can be loaded as maps using their file paths as the keys. This is only a change in derive attributes and asset field type. The examples from the sections above would look like this:
 
 ```rust
 use bevy::prelude::*;
@@ -281,119 +412,15 @@ struct MyAssets {
 }
 ```
 
-### Images
-
-Asset collections support configuring the sampler of an image asset through a derive attribute. You can configure either the sampler like so:
-
-```rust
-use bevy::prelude::*;
-use bevy_asset_loader::asset_collection::AssetCollection;
-
-#[derive(AssetCollection, Resource)]
-struct ImageAssets {
-    #[asset(path = "images/pixel_tree.png")]
-    #[asset(image(sampler = linear))]
-    tree_linear: Handle<Image>,
-
-    #[asset(path = "images/pixel_tree.png")]
-    #[asset(image(sampler = nearest))]
-    tree_nearest: Handle<Image>,
-}
-```
-
-The corresponding dynamic asset would be
-```ron
-({
-    "pixel_tree": Image (
-        path: "images/tree.png",
-        sampler: Nearest
-    ),
-})
-```
-
-### Standard materials
-
-You can directly load standard materials if you enable the feature `3d`. For a complete example please take a look at [standard_material.rs](/bevy_asset_loader/examples/standard_material.rs).
-
-```rust
-use bevy::prelude::*;
-use bevy_asset_loader::asset_collection::AssetCollection;
-
-#[derive(AssetCollection, Resource)]
-struct MyAssets {
-    #[asset(standard_material)]
-    #[asset(path = "images/player.png")]
-    player: Handle<StandardMaterial>,
-}
-```
-
-This is also supported as a dynamic asset:
-```rust ignore
-#[derive(AssetCollection, Resource)]
-struct MyAssets {
-    #[asset(key = "image.player")]
-    player: Handle<StandardMaterial>,
-}
-```
-```ron
-({
-    "image.player": StandardMaterial (
-        path: "images/player.png",
-    ),
-})
-```
-
-### Texture atlases
-
-You can directly load texture atlases from sprite sheets if you enable the feature `2d`. For a complete example please take a look at [atlas_from_grid.rs](/bevy_asset_loader/examples/atlas_from_grid.rs).
-
-```rust
-use bevy::prelude::*;
-use bevy_asset_loader::asset_collection::AssetCollection;
-
-#[derive(AssetCollection, Resource)]
-struct MyAssets {
-    #[asset(texture_atlas(tile_size_x = 64., tile_size_y = 64., columns = 8, rows = 1, padding_x = 12., padding_y = 12., offset_x = 6., offset_y = 6.))]
-    #[asset(path = "images/sprite_sheet.png")]
-    sprite: Handle<TextureAtlas>,
-}
-```
-
-As a dynamic asset this example becomes:
-```rust ignore
-#[derive(AssetCollection, Resource)]
-struct MyAssets {
-    #[asset(key = "image.player")]
-    sprite: Handle<TextureAtlas>,
-}
-```
-```ron
-({
-    "image.player": TextureAtlas (
-        path: "images/sprite_sheet.png",
-        tile_size_x: 100.,
-        tile_size_y: 64.,
-        columns: 8,
-        rows: 1,
-        padding_x: 12.,
-        padding_y: 12.,
-        offset_x: 6.,
-        offset_y: 6.,
-    ),
-})
-```
-
-The four padding & offset fields/attributes are optional, and default to `0.`.
-
 ### Types implementing FromWorld
 
 Any field in an asset collection without any attribute is required to implement the `FromWorld` trait. When the asset collection is build, the `FromWorld` implementation is called to get the value for the field.
 
 ## Initializing FromWorld resources
 
-In situations where you would like to prepare other resources based on your loaded asset collections you can use `App::init_resource_after_loading_state` to initialize `FromWorld` resources. See [init_resource.rs](/bevy_asset_loader/examples/init_resource.rs) for an example that loads two images and then combines their pixel data into a third image.
+In situations where you would like to prepare other resources based on your loaded asset collections you can use `LoadingState::init_resource` or `LoadingStateConfig::init_resource` to initialize `FromWorld` resources. See [init_resource.rs](/bevy_asset_loader/examples/init_resource.rs) for an example that loads two images and then combines their pixel data into a third image.
 
-`App::init_resource_after_loading_state` does the same as Bevy's `App::init_resource`, but at a different point in time. While Bevy inserts your resources at the very beginning, `bevy_asset_loader` will initialize them only after your loaded asset collections are inserted. That means you can use your asset collections in the `FromWorld` implementation.
+Both `init_resource` methods from `bevy_asset_loader` do the same as Bevy's `App::init_resource`, but at a different point in time. While Bevy inserts your resources at application startup, `bevy_asset_loader` will initialize them only after your asset collections are available. That means you can use your asset collections in the `FromWorld` implementation of the resource.
 
 ## Progress tracking
 
@@ -403,17 +430,17 @@ See [`progress_tracking`](/bevy_asset_loader/examples/progress_tracking.rs) for 
 
 ### A note on system ordering
 
-The loading state is organized in a private schedule that runs in a single system during the `Update` schedule. If you want to explicitly order against the system running the loading state, you can do so with the system set `LoadingStateSet`.
+The loading state is organized in a private schedule that runs in a single system during the `Update` schedule. If you want to explicitly order against the system running the loading state, you can do so with the exported system set `LoadingStateSet`.
 
 ## Failure state
 
-You can configure a failure state in case some asset in a collection fails to load by calling `on_failure_continue_to` with a state (see [`failure_state`](/bevy_asset_loader/examples/failure_state.rs) example). If no failure state is configured and some asset fails to load, your application will be stuck in the loading state.
+You can configure a failure state in case some asset in a collection fails to load by calling `on_failure_continue_to` with a state (see the [`failure_state.rs`](/bevy_asset_loader/examples/failure_state.rs) example). If no failure state is configured and some asset fails to load, your application will be stuck in the loading state.
 
-In most cases this happens, an asset file is missing or a certain file ending does not have a corresponding asset loader. In both of these cases the application log should help since Bevy prints warnings about those issues.
+In most cases of failed loading states, an asset file is missing or a certain asset does not have an asset loader registered. In both of these cases, the application log should help since Bevy prints warnings about those issues.
 
 ## Usage without a loading state
 
-Although the pattern of a loading state is quite nice (imo), you might have reasons not to use it. In this case `bevy_asset_loader` can still be helpful. Deriving `AssetCollection` on a resource can significantly reduce the boilerplate for managing assets.
+Although the pattern of a loading state is quite nice (imo), you might have reasons not to use it. In this case, `bevy_asset_loader` can still be helpful. Deriving `AssetCollection` on a resource can significantly reduce the boilerplate for managing assets.
 
 Asset collections loaded without a loading state do not support folders or dynamic assets, since these cannot instantly create handles that will eventually point to the loaded assets.
 
