@@ -3,8 +3,7 @@
 use bevy::app::AppExit;
 use bevy::asset::AssetPlugin;
 use bevy::prelude::*;
-use bevy_asset_loader::asset_collection::AssetCollection;
-use bevy_asset_loader::loading_state::{LoadingState, LoadingStateAppExt};
+use bevy_asset_loader::prelude::*;
 
 #[cfg(all(
     not(feature = "2d"),
@@ -19,9 +18,9 @@ fn continues_to_failure_state() {
         .add_loading_state(
             LoadingState::new(MyStates::Load)
                 .continue_to_state(MyStates::Next)
-                .on_failure_continue_to_state(MyStates::Error),
+                .on_failure_continue_to_state(MyStates::Error)
+                .load_collection::<Audio>(),
         )
-        .add_collection_to_loading_state::<_, Audio>(MyStates::Load)
         .add_systems(Update, timeout.run_if(in_state(MyStates::Load)))
         .add_systems(OnEnter(MyStates::Next), fail)
         .add_systems(OnEnter(MyStates::Error), exit)

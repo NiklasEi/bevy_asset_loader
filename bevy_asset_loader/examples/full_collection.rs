@@ -10,9 +10,10 @@ fn main() {
         .add_state::<MyStates>()
         .add_plugins(DefaultPlugins)
         .add_loading_state(
-            LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
+            LoadingState::new(MyStates::AssetLoading)
+                .continue_to_state(MyStates::Next)
+                .load_collection::<MyAssets>(),
         )
-        .add_collection_to_loading_state::<_, MyAssets>(MyStates::AssetLoading)
         .add_systems(OnEnter(MyStates::Next), expectations)
         .run();
 }

@@ -1,8 +1,9 @@
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 
-/// This example demonstrates how you can use [`App::init_resource_after_loading_state`] to initialize
+/// This example demonstrates how you can use [`LoadingState::init_resource`] to initialize
 /// assets implementing [`FromWorld`] after your collections are inserted into the ECS.
+/// The same is possible with [`LoadingStateConfig::init_resource`] from anywhere in your Bevy application
 ///
 /// In this showcase we load two images in an [`AssetCollection`] and then combine
 /// them by adding up their pixel data.
@@ -11,10 +12,11 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_state::<MyStates>()
         .add_loading_state(
-            LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
+            LoadingState::new(MyStates::AssetLoading)
+                .continue_to_state(MyStates::Next)
+                .load_collection::<ImageAssets>()
+                .init_resource::<CombinedImage>(),
         )
-        .add_collection_to_loading_state::<_, ImageAssets>(MyStates::AssetLoading)
-        .init_resource_after_loading_state::<_, CombinedImage>(MyStates::AssetLoading)
         .add_systems(OnEnter(MyStates::Next), draw)
         .run();
 }

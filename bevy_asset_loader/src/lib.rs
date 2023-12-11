@@ -20,9 +20,9 @@
 //!         .add_loading_state(
 //!             LoadingState::new(GameState::Loading)
 //!                 .continue_to_state(GameState::Next)
+//!                 .load_collection::<AudioAssets>()
+//!                 .load_collection::<ImageAssets>()
 //!         )
-//!         .add_collection_to_loading_state::<_, AudioAssets>(GameState::Loading)
-//!         .add_collection_to_loading_state::<_, ImageAssets>(GameState::Loading)
 //!         .add_systems(Update, use_asset_handles.run_if(in_state(GameState::Next)))
 //! #       .set_runner(|mut app| app.update())
 //!         .run();
@@ -80,6 +80,8 @@ pub mod standard_dynamic_asset;
 
 /// Most commonly used types
 pub mod prelude {
+    #[doc(hidden)]
+    pub use crate::loading_state::config::{ConfigureLoadingState, LoadingStateConfig};
     #[doc(hidden)]
     #[cfg(feature = "standard_dynamic_assets")]
     pub use crate::standard_dynamic_asset::{

@@ -86,7 +86,7 @@ fn impl_asset_collection(
                         for error in errors {
                             match error {
                                 ParseFieldError::NoAttributes => {
-                                    from_world_fields.push(field.clone().ident.unwrap())
+                                    from_world_fields.push(field.clone().ident.unwrap());
                                 }
                                 ParseFieldError::KeyAttributeStandsAlone => {
                                     compile_errors.push(syn::Error::new_spanned(
@@ -418,7 +418,7 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                                 } else {
                                     errors.push(ParseFieldError::UnknownAttribute(
                                         meta_path.into_token_stream(),
-                                    ))
+                                    ));
                                 }
                             }
                             _ => {

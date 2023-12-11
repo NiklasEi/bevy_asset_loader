@@ -4,8 +4,7 @@ use bevy::app::AppExit;
 use bevy::asset::AssetPlugin;
 use bevy::audio::AudioPlugin;
 use bevy::prelude::*;
-use bevy_asset_loader::asset_collection::AssetCollection;
-use bevy_asset_loader::loading_state::{LoadingState, LoadingStateAppExt};
+use bevy_asset_loader::prelude::*;
 
 #[cfg(all(
     not(feature = "2d"),
@@ -21,9 +20,12 @@ fn multiple_asset_collections() {
             AssetPlugin::default(),
             AudioPlugin::default(),
         ))
-        .add_loading_state(LoadingState::new(MyStates::Load).continue_to_state(MyStates::Next))
-        .add_collection_to_loading_state::<_, PlopAudio>(MyStates::Load)
-        .add_collection_to_loading_state::<_, BackgroundAudio>(MyStates::Load)
+        .add_loading_state(
+            LoadingState::new(MyStates::Load)
+                .continue_to_state(MyStates::Next)
+                .load_collection::<PlopAudio>()
+                .load_collection::<BackgroundAudio>(),
+        )
         .add_systems(Update, timeout.run_if(in_state(MyStates::Load)))
         .add_systems(OnEnter(MyStates::Next), expect)
         .run();

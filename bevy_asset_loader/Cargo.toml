@@ -42,6 +42,9 @@ trybuild = { version = "1.0" }
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
+[lints]
+workspace = true
+
 [[example]]
 name = "two_collections"
 path = "examples/two_collections.rs"
@@ -101,4 +104,9 @@ path = "examples/custom_dynamic_assets.rs"
 [[example]]
 name = "image_asset"
 path = "examples/image_asset.rs"
+required-features = ["2d"]
+
+[[example]]
+name = "configure_loading_state"
+path = "examples/configure_loading_state.rs"
 required-features = ["2d"]

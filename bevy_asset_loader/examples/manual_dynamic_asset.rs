@@ -10,17 +10,19 @@ fn main() {
         .add_state::<MyStates>()
         .add_plugins(DefaultPlugins)
         .add_loading_state(
-            LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
+            LoadingState::new(MyStates::AssetLoading)
+                .continue_to_state(MyStates::Next)
+                // This collection has a dynamic asset where the file path is resolved at run time
+                // and one optional image asset for the background.
+                // => see the ImageAssets definition below
+                .load_collection::<ImageAssets>()
+                .load_collection::<AudioAssets>(),
         )
-        // This collection has a dynamic asset where the file path is resolved at run time
-        // and one optional image asset for the background.
-        // => see the ImageAssets definition below
-        .add_collection_to_loading_state::<_, ImageAssets>(MyStates::AssetLoading)
-        .add_collection_to_loading_state::<_, AudioAssets>(MyStates::AssetLoading)
         .add_loading_state(
-            LoadingState::new(MyStates::MenuAssetLoading).continue_to_state(MyStates::Menu),
+            LoadingState::new(MyStates::MenuAssetLoading)
+                .continue_to_state(MyStates::Menu)
+                .load_collection::<FontAssets>(),
         )
-        .add_collection_to_loading_state::<_, FontAssets>(MyStates::MenuAssetLoading)
         .insert_resource(ShowBackground(false))
         .add_systems(
             OnEnter(MyStates::Next),
@@ -253,7 +255,7 @@ fn update_menu(
             .value = format!(
             "Background is {}",
             if show_background.0 { "On" } else { "Off" }
-        )
+        );
     }
 }
 

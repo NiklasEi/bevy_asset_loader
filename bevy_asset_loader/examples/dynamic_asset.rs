@@ -9,14 +9,14 @@ fn main() {
         .add_state::<MyStates>()
         .add_plugins(DefaultPlugins)
         .add_loading_state(
-            LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
+            LoadingState::new(MyStates::AssetLoading)
+                .continue_to_state(MyStates::Next)
+                .with_dynamic_assets_file::<StandardDynamicAssetCollection>(
+                    "dynamic_asset.assets.ron",
+                )
+                .load_collection::<ImageAssets>()
+                .load_collection::<AudioAssets>(),
         )
-        .add_dynamic_collection_to_loading_state::<_, StandardDynamicAssetCollection>(
-            MyStates::AssetLoading,
-            "dynamic_asset.assets.ron",
-        )
-        .add_collection_to_loading_state::<_, ImageAssets>(MyStates::AssetLoading)
-        .add_collection_to_loading_state::<_, AudioAssets>(MyStates::AssetLoading)
         .add_systems(
             OnEnter(MyStates::Next),
             (spawn_player_and_tree, play_background_audio),

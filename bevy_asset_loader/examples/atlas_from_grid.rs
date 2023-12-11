@@ -9,9 +9,10 @@ fn main() {
         .add_state::<MyStates>()
         .add_plugins(DefaultPlugins)
         .add_loading_state(
-            LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
+            LoadingState::new(MyStates::AssetLoading)
+                .continue_to_state(MyStates::Next)
+                .load_collection::<MyAssets>(),
         )
-        .add_collection_to_loading_state::<_, MyAssets>(MyStates::AssetLoading)
         .add_systems(OnEnter(MyStates::Next), draw_atlas)
         .add_systems(
             Update,
@@ -66,9 +67,9 @@ struct AnimationTimer(Timer);
 
 fn animate_sprite_system(
     time: Res<Time>,
-    mut query: Query<(&mut AnimationTimer, &mut TextureAtlasSprite)>,
+    mut sprites_to_animate: Query<(&mut AnimationTimer, &mut TextureAtlasSprite)>,
 ) {
-    for (mut timer, mut sprite) in &mut query {
+    for (mut timer, mut sprite) in &mut sprites_to_animate {
         timer.0.tick(time.delta());
         if timer.0.finished() {
             sprite.index = (sprite.index + 1) % 8;

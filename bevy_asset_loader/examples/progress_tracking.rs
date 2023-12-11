@@ -20,9 +20,11 @@ fn main() {
             FrameTimeDiagnosticsPlugin,
         ))
         .add_state::<MyStates>()
-        .add_loading_state(LoadingState::new(MyStates::AssetLoading))
-        .add_collection_to_loading_state::<_, TextureAssets>(MyStates::AssetLoading)
-        .add_collection_to_loading_state::<_, AudioAssets>(MyStates::AssetLoading)
+        .add_loading_state(
+            LoadingState::new(MyStates::AssetLoading)
+                .load_collection::<TextureAssets>()
+                .load_collection::<AudioAssets>(),
+        )
         // gracefully quit the app when `MyStates::Next` is reached
         .add_systems(OnEnter(MyStates::Next), expect)
         .add_systems(
