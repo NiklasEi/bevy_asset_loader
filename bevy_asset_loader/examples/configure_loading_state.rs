@@ -13,6 +13,9 @@ struct MainPlugin;
 impl Plugin for MainPlugin {
     fn build(&self, app: &mut App) {
         app.add_state::<MyStates>()
+            // General loading state setup goes here, but if you like, you can already add all
+            // the configuration at this point, too. In this example we will configure the loading state
+            // later in PlayerAndMusicPlugin.
             .add_loading_state(
                 LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
             )
@@ -28,7 +31,8 @@ struct PlayerAndMusicPlugin;
 impl Plugin for PlayerAndMusicPlugin {
     fn build(&self, app: &mut App) {
         app
-            // We can add all kinds of things to the loading state here. This method can be called from any plugin any number of times.
+            // We can add all kinds of things to the loading state here. This method can be called
+            // from any plugin any number of times.
             .configure_loading_state(
                 LoadingStateConfig::new(MyStates::AssetLoading)
                     .load_collection::<AudioAssets>()

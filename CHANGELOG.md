@@ -1,5 +1,10 @@
 # Changelog
 
+- New API to add and configure loading states
+  - Less API surface on Bevy's App type and fewer generics
+    - Only two methods on the App: `add_loading_state` and `configure_loading_state`
+  - The old API is still supported, but deprecated for easier migration 
+
 ## v0.18.0 - 08.11.2023
 - update to Bevy 0.12
 - Make `loading_state::LoadingStateSet` public for explicit system ordering
