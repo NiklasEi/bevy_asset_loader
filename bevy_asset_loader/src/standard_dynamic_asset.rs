@@ -22,6 +22,7 @@ use serde::Deserializer;
 /// These asset variants can be loaded from configuration files. They will then replace
 /// a dynamic asset based on their keys.
 #[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub enum StandardDynamicAsset {
     /// A dynamic asset directly loaded from a single file
     File {
