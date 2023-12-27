@@ -1,6 +1,6 @@
 use crate::dynamic_asset::{DynamicAsset, DynamicAssetType};
 use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssets};
-use bevy::asset::{Asset, AssetServer, Assets, LoadedFolder, UntypedHandle};
+use bevy::asset::{Asset, AssetServer, Assets, Handle, LoadedFolder, UntypedHandle};
 use bevy::ecs::system::Command;
 use bevy::ecs::world::World;
 use bevy::reflect::TypePath;
@@ -63,6 +63,9 @@ pub enum StandardDynamicAsset {
     TextureAtlas {
         /// Asset file path
         path: String,
+        /// Sampler
+        #[serde(deserialize_with = "deserialize_some", default)]
+        sampler: Option<ImageSamplerType>,
         /// The image width in pixels
         tile_size_x: f32,
         /// The image height in pixels
@@ -167,24 +170,7 @@ impl DynamicAsset for StandardDynamicAsset {
                     let mut images = cell
                         .get_resource_mut::<Assets<Image>>()
                         .expect("Cannot get resource Assets<Image>");
-                    let image = images.get_mut(&handle).unwrap();
-
-                    let is_different_sampler = if let ImageSampler::Descriptor(descriptor) =
-                        &image.sampler
-                    {
-                        let configured_descriptor: ImageSamplerDescriptor = sampler.clone().into();
-                        !descriptor.as_wgpu().eq(&configured_descriptor.as_wgpu())
-                    } else {
-                        false
-                    };
-
-                    if is_different_sampler {
-                        let mut cloned_image = image.clone();
-                        cloned_image.sampler = sampler.clone().into();
-                        handle = images.add(cloned_image);
-                    } else {
-                        image.sampler = sampler.clone().into();
-                    }
+                    Self::update_image_sampler(&mut handle, &mut images, sampler);
                 }
 
                 Ok(DynamicAssetType::Single(handle.untyped()))
@@ -204,6 +190,7 @@ impl DynamicAsset for StandardDynamicAsset {
             StandardDynamicAsset::TextureAtlas {
                 path,
                 tile_size_x,
+                sampler,
                 tile_size_y,
                 columns,
                 rows,
@@ -215,9 +202,16 @@ impl DynamicAsset for StandardDynamicAsset {
                 let mut atlases = cell
                     .get_resource_mut::<Assets<TextureAtlas>>()
                     .expect("Cannot get resource Assets<TextureAtlas>");
-                let handle = atlases
+                let mut handle = asset_server.get_handle(path).unwrap();
+                if let Some(sampler_type) = sampler {
+                    let mut images = cell
+                        .get_resource_mut::<Assets<Image>>()
+                        .expect("Cannot get resource Assets<Image>");
+                    Self::update_image_sampler(&mut handle, &mut images, sampler_type);
+                }
+                let texture_atlas_handle = atlases
                     .add(TextureAtlas::from_grid(
-                        asset_server.get_handle(path).unwrap(),
+                        handle,
                         Vec2::new(*tile_size_x, *tile_size_y),
                         *columns,
                         *rows,
@@ -226,7 +220,7 @@ impl DynamicAsset for StandardDynamicAsset {
                     ))
                     .untyped();
 
-                Ok(DynamicAssetType::Single(handle))
+                Ok(DynamicAssetType::Single(texture_atlas_handle))
             }
             StandardDynamicAsset::Folder { path } => {
                 let folders = cell
@@ -250,6 +244,30 @@ impl DynamicAsset for StandardDynamicAsset {
                     })
                     .collect(),
             )),
+        }
+    }
+}
+
+impl StandardDynamicAsset {
+    fn update_image_sampler(
+        handle: &mut Handle<Image>,
+        images: &mut Assets<Image>,
+        sampler_type: &ImageSamplerType,
+    ) {
+        let image = images.get_mut(&*handle).unwrap();
+        let is_different_sampler = if let ImageSampler::Descriptor(descriptor) = &image.sampler {
+            let configured_descriptor: ImageSamplerDescriptor = sampler_type.clone().into();
+            !descriptor.as_wgpu().eq(&configured_descriptor.as_wgpu())
+        } else {
+            false
+        };
+
+        if is_different_sampler {
+            let mut cloned_image = image.clone();
+            cloned_image.sampler = sampler_type.clone().into();
+            *handle = images.add(cloned_image);
+        } else {
+            image.sampler = sampler_type.clone().into();
         }
     }
 }

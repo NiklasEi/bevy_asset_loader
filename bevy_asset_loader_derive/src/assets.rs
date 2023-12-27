@@ -6,6 +6,7 @@ use quote::quote;
 pub(crate) struct TextureAtlasAssetField {
     pub field_ident: Ident,
     pub asset_path: String,
+    pub sampler: Option<SamplerType>,
     pub tile_size_x: f32,
     pub tile_size_y: f32,
     pub columns: usize,
@@ -251,6 +252,34 @@ impl AssetField {
                 let padding_y = texture_atlas.padding_y;
                 let offset_x = texture_atlas.offset_x;
                 let offset_y = texture_atlas.offset_y;
+                let sampler_handling = texture_atlas.sampler.map(|sampler_type| {
+                    let sampler = match sampler_type {
+                        SamplerType::Linear => quote!(::bevy::render::texture::ImageSampler::linear()),
+                        SamplerType::Nearest => quote!(::bevy::render::texture::ImageSampler::nearest()),
+                    };
+                    let descriptor = match sampler_type {
+                        SamplerType::Linear => quote!(::bevy::render::texture::ImageSamplerDescriptor::linear()),
+                        SamplerType::Nearest => quote!(::bevy::render::texture::ImageSamplerDescriptor::nearest()),
+                    };
+
+                    quote!(
+                        let mut images = cell.get_resource_mut::<Assets<Image>>().expect("Cannot get resource Assets<Image>");
+                        let mut image = images.get_mut(&handle).expect("Only asset collection fields holding an `Image` handle can be annotated with `image`");
+                        let is_different_sampler = if let ::bevy::render::texture::ImageSampler::Descriptor(descriptor) = &image.sampler {
+                            !descriptor.as_wgpu().eq(&#descriptor.as_wgpu())
+                        } else {
+                            false
+                        };
+
+                        if is_different_sampler {
+                            let mut cloned_image = image.clone();
+                            cloned_image.sampler = #sampler;
+                            handle = images.add(cloned_image);
+                        } else {
+                            image.sampler = #sampler;
+                        }
+                    )
+                }).unwrap_or(quote!());
                 quote!(#token_stream #field_ident : {
                     let cell = world.cell();
                     let asset_server = cell
@@ -259,8 +288,12 @@ impl AssetField {
                     let mut atlases = cell
                         .get_resource_mut::<::bevy::asset::Assets<TextureAtlas>>()
                         .expect("Cannot get resource Assets<TextureAtlas>");
+                    let mut handle = asset_server.load(#asset_path);
+
+                    #sampler_handling
+
                     atlases.add(TextureAtlas::from_grid(
-                        asset_server.load(#asset_path),
+                        handle,
                         Vec2::new(#tile_size_x, #tile_size_y),
                         #columns,
                         #rows,
@@ -629,6 +662,7 @@ impl AssetBuilder {
             return Ok(AssetField::TextureAtlas(TextureAtlasAssetField {
                 field_ident: self.field_ident.unwrap(),
                 asset_path: self.asset_path.unwrap(),
+                sampler: self.sampler,
                 tile_size_x: self.tile_size_x.unwrap(),
                 tile_size_y: self.tile_size_y.unwrap(),
                 columns: self.columns.unwrap(),
@@ -872,6 +906,7 @@ mod test {
             AssetField::TextureAtlas(TextureAtlasAssetField {
                 field_ident: Ident::new("test", Span::call_site()),
                 asset_path: "some/folder".to_owned(),
+                sampler: None,
                 tile_size_x: 100.0,
                 tile_size_y: 50.0,
                 columns: 10,

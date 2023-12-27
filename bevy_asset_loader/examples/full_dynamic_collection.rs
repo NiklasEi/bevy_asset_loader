@@ -138,6 +138,17 @@ fn expectations(
         asset_server.get_recursive_dependency_load_state(atlas.texture.clone()),
         Some(RecursiveDependencyLoadState::Loaded)
     );
+    let image = images
+        .get(&atlas.texture)
+        .expect("Image for TextureAtlas should be added to its asset resource");
+    let ImageSampler::Descriptor(descriptor) = &image.sampler else {
+        panic!("Descriptor was not set to non default value nearest");
+    };
+    assert_eq!(
+        descriptor.as_wgpu(),
+        ImageSamplerDescriptor::nearest().as_wgpu()
+    );
+
     assert_eq!(assets.optional_file, None);
     let image = images
         .get(&assets.image_tree_nearest)

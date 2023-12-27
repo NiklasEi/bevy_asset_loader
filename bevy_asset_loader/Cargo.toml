@@ -10,6 +10,7 @@ homepage = "https://github.com/NiklasEi/bevy_asset_loader"
 documentation = "https://docs.rs/bevy_asset_loader"
 keywords = ["bevy", "gamedev", "asset", "assets"]
 categories = ["game-development"]
+rust-version = "1.74.0"
 readme = "README.md"
 
 [features]
