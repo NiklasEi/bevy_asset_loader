@@ -476,7 +476,7 @@ The main branch is compatible with the latest Bevy release, while the branch `be
 Compatibility of `bevy_asset_loader` versions:
 | `bevy_asset_loader` | `bevy` |
 | :--                 | :--    |
-| `0.18`              | `0.12` |
+| `0.18` - `0.19`     | `0.12` |
 | `0.17`              | `0.11` |
 | `0.15` - `0.16`     | `0.10` |
 | `0.14`              | `0.9`  |
