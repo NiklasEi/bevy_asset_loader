@@ -26,8 +26,9 @@ struct MyAssets {
     // Any file that can be loaded and turned into a standard material
     #[asset(path = "images/player.png", standard_material)]
     standard_material: Handle<StandardMaterial>,
-    // Any file that can be loaded and turned into a texture atlas
+    // Any image file that can be loaded and turned into a texture atlas
     #[asset(texture_atlas(tile_size_x = 96., tile_size_y = 99., columns = 8, rows = 1))]
+    #[asset(image(sampler = nearest))]
     #[asset(path = "images/female_adventurer_sheet.png")]
     texture_atlas: Handle<TextureAtlas>,
     // Example field with type that implements `FromWorld`
@@ -103,6 +104,17 @@ fn expectations(
         asset_server.get_recursive_dependency_load_state(atlas.texture.clone()),
         Some(RecursiveDependencyLoadState::Loaded)
     );
+    let image = images
+        .get(&atlas.texture)
+        .expect("Image for TextureAtlas should be added to its asset resource");
+    let ImageSampler::Descriptor(descriptor) = &image.sampler else {
+        panic!("Descriptor was not set to non default value nearest");
+    };
+    assert_eq!(
+        descriptor.as_wgpu(),
+        ImageSamplerDescriptor::nearest().as_wgpu()
+    );
+
     let material = standard_materials
         .get(&assets.from_world.handle)
         .expect("Standard material should be added to its assets resource.");
