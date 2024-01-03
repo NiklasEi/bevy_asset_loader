@@ -1,6 +1,6 @@
 use crate::dynamic_asset::{DynamicAsset, DynamicAssetType};
 use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssets};
-use bevy::asset::{Asset, AssetServer, Assets, Handle, LoadedFolder, UntypedHandle};
+use bevy::asset::{Asset, AssetServer, Assets, LoadedFolder, UntypedHandle};
 use bevy::ecs::system::Command;
 use bevy::ecs::world::World;
 use bevy::reflect::TypePath;
@@ -248,9 +248,10 @@ impl DynamicAsset for StandardDynamicAsset {
     }
 }
 
+#[cfg(any(feature = "3d", feature = "2d"))]
 impl StandardDynamicAsset {
     fn update_image_sampler(
-        handle: &mut Handle<Image>,
+        handle: &mut bevy::asset::Handle<Image>,
         images: &mut Assets<Image>,
         sampler_type: &ImageSamplerType,
     ) {
