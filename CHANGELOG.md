@@ -1,6 +1,9 @@
 # Changelog
 
-## v0.19.0 - 27.12.2023
+### v0.19.1 - 03.01.2024
+- Fix: `standard_dynamic_assets` feature fails compilation without `2d` or `3d` feature (resolves [#175](https://github.com/NiklasEi/bevy_asset_loader/issues/175))
+
+## v0.19.0 - 27.12.2023 - yanked
 - New API to add and configure loading states
   - Less API surface on Bevy's App type and fewer generics
     - Only two methods on the App: `add_loading_state` and `configure_loading_state`
