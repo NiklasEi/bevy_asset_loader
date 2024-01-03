@@ -102,7 +102,12 @@ jobs:
           components: rustfmt, clippy
       - name: Install alsa and udev
         run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-hack
       - name: Run clippy
         run: cargo clippy --workspace --all-targets --all-features -- -W clippy::doc_markdown
+      - name: Check all feature combinations
+        run: cargo hack check --feature-powerset
       - name: Check format
         run: cargo fmt --all -- --check
