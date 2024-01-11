@@ -5,7 +5,7 @@ use bevy::ecs::system::Command;
 use bevy::ecs::world::World;
 use bevy::reflect::TypePath;
 use bevy::utils::HashMap;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "2d")]
 use bevy::math::Vec2;
@@ -21,7 +21,7 @@ use serde::Deserializer;
 
 /// These asset variants can be loaded from configuration files. They will then replace
 /// a dynamic asset based on their keys.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub enum StandardDynamicAsset {
     /// A dynamic asset directly loaded from a single file
@@ -101,7 +101,7 @@ where
 
 /// Define the image sampler to configure for an image asset
 #[cfg(any(feature = "3d", feature = "2d"))]
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum ImageSamplerType {
     /// See [`ImageSampler::nearest`]
@@ -292,7 +292,7 @@ impl<K: Into<String> + Sync + Send + 'static> Command for RegisterStandardDynami
 ///
 /// These assets are loaded at the beginning of a loading state
 /// and combined in [`DynamicAssets`].
-#[derive(serde::Deserialize, Asset, TypePath)]
+#[derive(Deserialize, Serialize, Asset, TypePath)]
 pub struct StandardDynamicAssetCollection(pub HashMap<String, StandardDynamicAsset>);
 
 impl DynamicAssetCollection for StandardDynamicAssetCollection {
