@@ -465,6 +465,27 @@ impl AssetField {
                 }
                 folder_map
             },
+            ::bevy_asset_loader::prelude::DynamicAssetType::Map(data) => {
+                let asset_server = world.get_resource::<::bevy::asset::AssetServer>().expect("Cannot get AssetServer");
+                let mut asset_map = ::bevy::utils::HashMap::default();
+                for (key, handle) in data {
+                    // match handle {
+                    //     ::bevy_asset_loader::prelude::DynamicAssetType::Single(handle) => {
+                    //         asset_map.insert(key, #handle);
+                    //     }
+                    //     ::bevy_asset_loader::prelude::DynamicAssetType::Collection(handles) => {
+                    //         asset_map.insert(key, #handles);
+                    //     }
+                    //     ::bevy_asset_loader::prelude::DynamicAssetType::Map(handle) => {
+                    //         asset_map.insret(key, #handle);
+                    //     }
+                    // }
+                    if let ::bevy_asset_loader::prelude::DynamicAssetType::Single(handle) = handle {
+                        asset_map.insert(key, #handle);
+                    }
+                }
+                asset_map
+            },
             result => panic!("The dynamic asset '{}' cannot be created. The asset collection {} expected it to resolve to `Collection(handle)`, but {asset:?} resolves to {result:?}", #asset_key, #name),
         )
     }
