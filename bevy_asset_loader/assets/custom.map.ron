@@ -1,0 +1,23 @@
+({
+    "materials": ({
+        "tree": StandardMaterial (
+            base_color: (0.1, 10., 0.3, 0.0),
+            base_color_texture: "images/tree.png"
+        ),
+        "player": StandardMaterial (
+            base_color: (0.0, 1.0, 0.0, 0.0),
+            base_color_texture: "images/player.png"
+        ),
+    }),
+    "images": ({    
+        "combined_image": CombinedImage (
+            bottom_layer: "images/tree.png",
+            top_layer: "images/player.png",
+        ),
+    }),
+    "meshes": ({        
+        "cube": Cube (
+            size: 1.3,
+        ),
+    }),
+})
