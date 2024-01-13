@@ -1,5 +1,7 @@
 # Changelog
 
+- derive Serialize on StandardDynamicAssets (resolves [#177](https://github.com/NiklasEi/bevy_asset_loader/issues/177))
+
 ### v0.19.1 - 03.01.2024
 - Fix: `standard_dynamic_assets` feature fails compilation without `2d` or `3d` feature (resolves [#175](https://github.com/NiklasEi/bevy_asset_loader/issues/175))
 
