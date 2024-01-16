@@ -6,7 +6,7 @@ pub trait MapKey {
     fn from_path(path: &Path) -> Self;
 }
 
-/// Implements extras trait and methods for the key types.
+/// Implements extra traits and methods for the key types.
 macro_rules! impl_map_key_extras {
     ($Key:ty) => {
         impl AsRef<str> for $Key {
