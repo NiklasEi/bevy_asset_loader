@@ -188,8 +188,8 @@ impl AssetField {
                                     let handle = asset_server.get_handle(#asset_path).unwrap_or_else(|| panic!("Folders are only supported when using a loading state. Consider using 'paths' for {}.{}.", #name, #field));
                                     let folder = &folders.get(handle).unwrap().handles;
                                     for handle in folder {
-                                        let path = handle.path().unwrap().path();
-                                        let key = ::bevy_asset_loader::mapped::MapKey::from_path(path);
+                                        let path = handle.path().unwrap();
+                                        let key = ::bevy_asset_loader::mapped::MapKey::from_asset_path(path);
                                         folder_map.insert(key, handle.clone().typed());
                                     }
                                     folder_map
@@ -215,8 +215,8 @@ impl AssetField {
                                     let handle = asset_server.get_handle(#asset_path).unwrap_or_else(|| panic!("Folders are only supported when using a loading state. Consider using 'paths' for {}.{}.", #name, #field));
                                     let folder = &folders.get(handle).unwrap().handles;
                                     for handle in folder {
-                                        let path = handle.path().unwrap().path();
-                                        let key = ::bevy_asset_loader::mapped::MapKey::from_path(path);
+                                        let path = handle.path().unwrap();
+                                        let key = ::bevy_asset_loader::mapped::MapKey::from_asset_path(path);
                                         folder_map.insert(key, handle.clone());
                                     }
                                     folder_map
@@ -453,8 +453,8 @@ impl AssetField {
                 let asset_server = world.get_resource::<::bevy::asset::AssetServer>().expect("Cannot get AssetServer");
                 let mut folder_map = ::bevy::utils::HashMap::default();
                 for handle in handles {
-                    let path = handle.path().unwrap().path();
-                    let key = ::bevy_asset_loader::mapped::MapKey::from_path(path);
+                    let path = handle.path().unwrap();
+                    let key = ::bevy_asset_loader::mapped::MapKey::from_asset_path(path);
                     folder_map.insert(key, #handle);
                 }
                 folder_map

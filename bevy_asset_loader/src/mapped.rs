@@ -1,10 +1,11 @@
 use std::borrow::Borrow;
-use std::path::Path;
+
+use bevy::asset::AssetPath;
 
 /// A type that can be used as key for mapped asset collection.
 pub trait MapKey {
     /// Creates the key from the path of the asset.
-    fn from_path(path: &Path) -> Self;
+    fn from_asset_path(path: &AssetPath) -> Self;
 }
 
 /// Implements extra traits and methods for the key types.
@@ -51,9 +52,10 @@ impl_map_key_extras!(FileName);
 
 impl MapKey for FileName {
     #[inline]
-    fn from_path(path: &Path) -> Self {
+    fn from_asset_path(path: &AssetPath) -> Self {
         Self(
-            path.file_name()
+            path.path()
+                .file_name()
                 .unwrap()
                 .to_str()
                 .expect("Path should be valid UTF-8")
@@ -72,9 +74,10 @@ impl_map_key_extras!(FileStem);
 
 impl MapKey for FileStem {
     #[inline]
-    fn from_path(path: &Path) -> Self {
+    fn from_asset_path(path: &AssetPath) -> Self {
         Self(
-            path.file_stem()
+            path.path()
+                .file_stem()
                 .unwrap()
                 .to_str()
                 .expect("Path should be valid UTF-8")
@@ -85,8 +88,8 @@ impl MapKey for FileStem {
 
 impl MapKey for String {
     #[inline]
-    fn from_path(path: &Path) -> Self {
-        path_slash::PathExt::to_slash(path)
+    fn from_asset_path(path: &AssetPath) -> Self {
+        path_slash::PathExt::to_slash(path.path())
             .expect("Path should be valid UTF-8")
             .into()
     }
@@ -94,8 +97,8 @@ impl MapKey for String {
 
 impl MapKey for Box<str> {
     #[inline]
-    fn from_path(path: &Path) -> Self {
-        path_slash::PathExt::to_slash(path)
+    fn from_asset_path(path: &AssetPath) -> Self {
+        path_slash::PathExt::to_slash(path.path())
             .expect("Path should be valid UTF-8")
             .into()
     }
