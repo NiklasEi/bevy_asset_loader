@@ -60,6 +60,7 @@ enum MyStates {
 ```
 
 If we want to add additional asset collections to the just added loading state, we can do so using `configure_loading_state` at any point in our application. We could, for example, add a `PlayerPlugin` to the `App` after adding the loading state. The `PlayerPlugin` will contain all things "player" including its sprite.
+
 ```rust
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
@@ -105,6 +106,7 @@ The [full_collection](/bevy_asset_loader/examples/full_collection.rs) example sh
 ### Dynamic assets
 
 Dynamic assets are configured through the derive macro attribute `key` and are not allowed to have a `path` or `paths` attribute:
+
 ```rust
 use bevy::prelude::*;
 use bevy_asset_loader::asset_collection::AssetCollection;
@@ -118,9 +120,10 @@ struct ImageAssets {
 }
 ```
 
-The keys `player` and `tree` in the example above should either be set manually in the `DynamicAssets` resource prior to the loading state 
-(see the [manual_dynamic_asset](/bevy_asset_loader/examples/manual_dynamic_asset.rs) example), or be part of a dynamic assets file (see [dynamic_asset.rs](/bevy_asset_loader/examples/dynamic_asset.rs)). 
+The keys `player` and `tree` in the example above should either be set manually in the `DynamicAssets` resource prior to the loading state
+(see the [manual_dynamic_asset](/bevy_asset_loader/examples/manual_dynamic_asset.rs) example), or be part of a dynamic assets file (see [dynamic_asset.rs](/bevy_asset_loader/examples/dynamic_asset.rs)).
 A dynamic assets file for the collection above might look like this:
+
 ```ron
 ({
     "player": File (
@@ -147,6 +150,7 @@ You can define your own types to load as dynamic assets. Take a look at the [cus
 The simplest field is of the type `Handle<T>` and is loaded from a single file. One example might be audio sources, but any asset type that has an asset loader registered with Bevy can be used like this.
 
 The field should only have the `path` attribute set.
+
 ```rust
 use bevy::prelude::*;
 use bevy_asset_loader::asset_collection::AssetCollection;
@@ -159,6 +163,7 @@ struct MyAssets {
 ```
 
 The dynamic version of the same collection looks like this:
+
 ```rust
 use bevy::prelude::*;
 use bevy_asset_loader::asset_collection::AssetCollection;
@@ -169,6 +174,7 @@ struct MyAssets {
     background: Handle<AudioSource>,
 }
 ```
+
 ```ron
 ({
     "background": File (
@@ -176,7 +182,6 @@ struct MyAssets {
     ),
 })
 ```
-
 
 The following sections describe more types of asset fields that you can load through asset collections.
 
@@ -197,6 +202,7 @@ struct MyAssets {
 ```
 
 As a dynamic asset this example becomes:
+
 ```rust ignore
 #[derive(AssetCollection, Resource)]
 struct MyAssets {
@@ -204,6 +210,7 @@ struct MyAssets {
     sprite: Handle<TextureAtlas>,
 }
 ```
+
 ```ron
 ({
     "image.player": TextureAtlas (
@@ -243,6 +250,7 @@ struct ImageAssets {
 ```
 
 The corresponding dynamic asset would be
+
 ```ron
 ({
     "tree_nearest": Image (
@@ -273,6 +281,7 @@ struct MyAssets {
 ```
 
 This is also supported as a dynamic asset:
+
 ```rust ignore
 #[derive(AssetCollection, Resource)]
 struct MyAssets {
@@ -280,6 +289,7 @@ struct MyAssets {
     player: Handle<StandardMaterial>,
 }
 ```
+
 ```ron
 ({
     "image.player": StandardMaterial (
@@ -292,9 +302,10 @@ struct MyAssets {
 
 #### Folders
 
-*This asset field type is not supported in web builds. See [Files](#list-of-paths) for a web compatible way of loading a collection of files.*
+_This asset field type is not supported in web builds. See [Files](#list-of-paths) for a web compatible way of loading a collection of files._
 
 You can load all files in a folder as a vector of untyped handles. This field requires the additional derive macro attribute `collection`:
+
 ```rust
 use bevy::prelude::*;
 use bevy_asset_loader::asset_collection::AssetCollection;
@@ -309,6 +320,7 @@ struct MyAssets {
 Just like Bevy's `load_folder`, this will also recursively load sub folders.
 
 If all assets in the folder have the same (known) type, you can load the folder as `Vec<Handle<T>>` by setting `typed` in the `collection` attribute. Don't forget to adapt the type of the struct field:
+
 ```rust
 use bevy::prelude::*;
 use bevy_asset_loader::asset_collection::AssetCollection;
@@ -321,6 +333,7 @@ struct MyAssets {
 ```
 
 Folders are also supported as a dynamic asset. The path attribute is replaced by the `key` attribute:
+
 ```rust ignore
 #[derive(AssetCollection, Resource)]
 struct MyAssets {
@@ -328,6 +341,7 @@ struct MyAssets {
     images: Vec<Handle<Image>>,
 }
 ```
+
 ```ron
 ({
     "my.images": Folder (
@@ -341,6 +355,7 @@ Loading folders is not supported for web builds. If you want to be compatible wi
 #### List of paths
 
 If you want to load a list of asset files with the same type into a vector of `Handle<T>`, you can list their paths in an attribute:
+
 ```rust
 use bevy::prelude::*;
 use bevy_asset_loader::asset_collection::AssetCollection;
@@ -353,6 +368,7 @@ struct MyAssets {
 ```
 
 In case you do not know their types, or they might have different types, the handles can also be untyped:
+
 ```rust
 use bevy::prelude::*;
 use bevy_asset_loader::asset_collection::AssetCollection;
@@ -365,6 +381,7 @@ struct MyAssets {
 ```
 
 As dynamic assets, these two fields replace their `paths` attribute with `key`. This is the same as for folders.
+
 ```rust
 use bevy::prelude::*;
 use bevy_asset_loader::asset_collection::AssetCollection;
@@ -379,6 +396,7 @@ struct MyAssets {
 ```
 
 The corresponding assets file differs from the folder example:
+
 ```ron
 ({
     "files_untyped": Files (
@@ -392,7 +410,8 @@ The corresponding assets file differs from the folder example:
 
 ### Collections as maps
 
-Collections can be loaded as maps using their file paths as the keys. This is only a change in derive attributes and asset field type. The examples from the sections above would look like this:
+Collections can be loaded as maps using any type that implements [`MapKey`](https://docs.rs/bevy_asset_loader/latest/bevy_asset_loader/mapped/trait.MapKey.html) as the keys (see documentation for more details).
+This is only a change in derive attributes and asset field type. The examples from the sections above would look like this:
 
 ```rust
 use bevy::prelude::*;
@@ -503,8 +522,6 @@ Assets in the examples might be distributed under different terms. See the [read
 Unless you explicitly state otherwise, any contribution intentionally submitted
 for inclusion in the work by you, as defined in the Apache-2.0 license, shall be dual licensed as above, without any
 additional terms or conditions.
-
-
 
 [bevy]: https://bevyengine.org/
 [cheatbook-states]: https://bevy-cheatbook.github.io/programming/states.html

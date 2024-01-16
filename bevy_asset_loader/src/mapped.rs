@@ -3,6 +3,11 @@ use std::borrow::Borrow;
 use bevy::asset::AssetPath;
 
 /// A type that can be used as key for mapped asset collection.
+///
+/// # `String` and `Box<str>`
+///
+/// Both [`String`] and [`Box<str>`] implements [`MapKey`] by using
+/// the path of the asset as the key.
 pub trait MapKey {
     /// Creates the key from the path of the asset.
     fn from_asset_path(path: &AssetPath) -> Self;
