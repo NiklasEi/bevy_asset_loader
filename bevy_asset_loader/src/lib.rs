@@ -101,10 +101,6 @@ pub mod prelude {
     };
 }
 
-// re-export for usage in macros
-#[doc(hidden)]
-pub use ::path_slash;
-
 #[cfg(all(feature = "2d", feature = "3d"))]
 #[doc = include_str!("../../README.md")]
 #[cfg(doctest)]
