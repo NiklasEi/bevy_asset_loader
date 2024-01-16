@@ -26,12 +26,14 @@ macro_rules! impl_map_key_extras {
         }
 
         impl From<$Key> for Box<str> {
+            #[inline]
             fn from(key: $Key) -> Self {
                 key.0
             }
         }
 
         impl From<$Key> for String {
+            #[inline]
             fn from(key: $Key) -> Self {
                 key.0.into()
             }
