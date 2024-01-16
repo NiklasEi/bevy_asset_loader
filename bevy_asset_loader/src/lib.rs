@@ -73,6 +73,8 @@ pub mod asset_collection;
 pub mod dynamic_asset;
 /// A game state responsible for loading assets
 pub mod loading_state;
+/// Trait definition for mapped assets
+pub mod map;
 /// Dynamic assets for common Bevy asset types
 #[cfg_attr(docsrs, doc(cfg(feature = "standard_dynamic_assets")))]
 #[cfg(feature = "standard_dynamic_assets")]
@@ -95,6 +97,7 @@ pub mod prelude {
             DynamicAssets,
         },
         loading_state::{LoadingState, LoadingStateAppExt, LoadingStateSet},
+        map::{FileName, FileStem, MapKey},
     };
 }
 
