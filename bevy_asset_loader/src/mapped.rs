@@ -1,4 +1,5 @@
-use std::{borrow::Borrow, path::Path};
+use std::borrow::Borrow;
+use std::path::Path;
 
 /// A type that can be used as key for mapped asset collection.
 pub trait MapKey {
