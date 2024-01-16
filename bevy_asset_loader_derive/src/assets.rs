@@ -189,7 +189,7 @@ impl AssetField {
                                     let folder = &folders.get(handle).unwrap().handles;
                                     for handle in folder {
                                         let path = handle.path().unwrap().path();
-                                        let key = ::bevy_asset_loader::map::MapKey::from_path(path);
+                                        let key = ::bevy_asset_loader::mapped::MapKey::from_path(path);
                                         folder_map.insert(key, handle.clone().typed());
                                     }
                                     folder_map
@@ -216,7 +216,7 @@ impl AssetField {
                                     let folder = &folders.get(handle).unwrap().handles;
                                     for handle in folder {
                                         let path = handle.path().unwrap().path();
-                                        let key = ::bevy_asset_loader::map::MapKey::from_path(path);
+                                        let key = ::bevy_asset_loader::mapped::MapKey::from_path(path);
                                         folder_map.insert(key, handle.clone());
                                     }
                                     folder_map
@@ -454,7 +454,7 @@ impl AssetField {
                 let mut folder_map = ::bevy::utils::HashMap::default();
                 for handle in handles {
                     let path = handle.path().unwrap().path();
-                    let key = ::bevy_asset_loader::map::MapKey::from_path(path);
+                    let key = ::bevy_asset_loader::mapped::MapKey::from_path(path);
                     folder_map.insert(key, #handle);
                 }
                 folder_map
