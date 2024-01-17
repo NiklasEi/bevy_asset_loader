@@ -106,7 +106,7 @@ jobs:
         with:
           tool: cargo-hack
       - name: Run clippy
-        run: cargo clippy --workspace --all-targets --all-features -- -W clippy::doc_markdown
+        run: cargo clippy --workspace --all-targets --all-features -- -W clippy::doc_markdown -Dwarnings
       - name: Check all feature combinations
         run: cargo hack check --feature-powerset
       - name: Check format
