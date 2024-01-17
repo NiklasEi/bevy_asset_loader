@@ -839,7 +839,7 @@ mod test {
 
         let asset = builder.build().expect_err("Should be pasing error");
         assert!(variant_eq(
-            asset.get(0).unwrap(),
+            asset.first().unwrap(),
             &ParseFieldError::PathAndPathsAreExclusive
         ));
     }

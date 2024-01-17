@@ -18,7 +18,7 @@ fn main() {
             AssetPlugin::default(),
             AudioPlugin::default(),
         ))
-        .add_state::<Loading>()
+        .add_state::<Prepare>()
         .add_state::<Game>()
         .add_loading_state(
             LoadingState::new(Game::Booting)
@@ -26,8 +26,8 @@ fn main() {
                 .load_collection::<GameStateCollection>(),
         )
         .add_loading_state(
-            LoadingState::new(Loading::Loading)
-                .continue_to_state(Loading::Finalize)
+            LoadingState::new(Prepare::Loading)
+                .continue_to_state(Prepare::Finalize)
                 .load_collection::<LoadingStateCollection>(),
         )
         .add_systems(Update, (quit.run_if(in_state(Game::Play)), timeout))
@@ -35,7 +35,7 @@ fn main() {
             OnEnter(Game::Loading),
             (go_to_loading_loading, probe_game_state),
         )
-        .add_systems(OnEnter(Loading::Finalize), go_to_game_play_loading_done)
+        .add_systems(OnEnter(Prepare::Finalize), go_to_game_play_loading_done)
         .add_systems(OnEnter(Game::Play), probe_loading_state)
         .run();
 }
@@ -49,7 +49,7 @@ enum Game {
 }
 
 #[derive(Clone, Copy, Debug, States, Default, PartialEq, Eq, Hash)]
-enum Loading {
+enum Prepare {
     #[default]
     Done,
     Loading,
@@ -72,16 +72,16 @@ pub struct LoadingStateCollection {
 
 fn probe_loading_state(_res: Res<LoadingStateCollection>) {}
 
-fn go_to_loading_loading(mut state: ResMut<NextState<Loading>>) {
-    state.set(Loading::Loading);
+fn go_to_loading_loading(mut state: ResMut<NextState<Prepare>>) {
+    state.set(Prepare::Loading);
 }
 
 fn go_to_game_play_loading_done(
     mut game_state: ResMut<NextState<Game>>,
-    mut loading_state: ResMut<NextState<Loading>>,
+    mut loading_state: ResMut<NextState<Prepare>>,
 ) {
     game_state.set(Game::Play);
-    loading_state.set(Loading::Done);
+    loading_state.set(Prepare::Done);
 }
 
 fn timeout(time: Res<Time>) {
