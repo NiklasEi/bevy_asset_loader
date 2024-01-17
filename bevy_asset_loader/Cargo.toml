@@ -27,7 +27,7 @@ bevy_asset_loader_derive = { version = "=0.19.0", path = "../bevy_asset_loader_d
 anyhow = "1"
 path-slash = "0.2"
 
-bevy_common_assets = { version = "0.8.0", features = ["ron"], optional = true }
+bevy_common_assets = { version = "0.9.0", features = ["ron"], optional = true }
 serde = { version = "1", optional = true }
 iyes_progress = { version = "0.10", optional = true }
 
@@ -35,7 +35,7 @@ iyes_progress = { version = "0.10", optional = true }
 bevy = { version = "0.12", features = ["vorbis"] }
 anyhow = "1"
 iyes_progress = { version = "0.10" }
-bevy_common_assets = { version = "0.8.0", features = ["ron"] }
+bevy_common_assets = { version = "0.9.0", features = ["ron"] }
 serde = { version = "1" }
 trybuild = { version = "1.0" }
 
