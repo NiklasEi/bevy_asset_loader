@@ -8,6 +8,11 @@ use bevy::asset::AssetPath;
 ///
 /// Both [`String`] and [`Box<str>`] implements [`MapKey`] by using
 /// the path of the asset as the key.
+///
+/// # Key clashing
+///
+/// Following the implementation of the [`MapKey`] trait, key collisions may happen.
+/// This is up to the user to ensure that there are no collisions.
 pub trait MapKey {
     /// Creates the key from the path of the asset.
     fn from_asset_path(path: &AssetPath) -> Self;
@@ -49,6 +54,21 @@ macro_rules! impl_map_key_extras {
 
 /// A [`MapKey`] that uses the [`file_name`] of the asset's path as key.
 ///
+/// # Key clashing
+///
+/// Since [`FileName`] uses a subset of the asset path, two different assets may have the same key.
+/// It’s up to you to ensure there is no collision.
+///
+/// Here's an example that will result in a key clash.
+///
+/// ```plain
+/// folder
+///     subfolder_a
+///         file.png
+///     subfolder_b
+///         file.png
+/// ```
+///
 /// [`file_name`]: std::path::Path::file_name
 #[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct FileName(Box<str>);
@@ -70,6 +90,19 @@ impl MapKey for FileName {
 }
 
 /// A [`MapKey`] that uses the [`file_stem`] of the asset's path as key.
+///
+/// # Key clashing
+///
+/// Since [`FileStem`] uses a subset of the asset path, two different assets may have the same key.
+/// It’s up to you to ensure there is no collision.
+///
+/// Here's an example that will result in a key clash.
+///
+/// ```plain
+/// folder
+///     file.png
+///     file.jpg
+/// ```
 ///
 /// [`file_stem`]: std::path::Path::file_stem
 #[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
