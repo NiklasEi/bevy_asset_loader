@@ -9,9 +9,10 @@ use bevy::asset::AssetPath;
 /// Both [`String`] and [`Box<str>`] implements [`MapKey`] by using
 /// the path of the asset as the key.
 ///
-/// # Key clashing
+/// # Key collision
 ///
-/// Following the implementation of the [`MapKey`] trait, key collisions may happen.
+/// Following the implementation of the [`MapKey`] trait, key collisions may happen,
+/// resulting in some assets not being loaded.
 /// This is up to the user to ensure that there are no collisions.
 pub trait MapKey {
     /// Creates the key from the path of the asset.
@@ -54,7 +55,7 @@ macro_rules! impl_map_key_extras {
 
 /// A [`MapKey`] that uses the [`file_name`] of the asset's path as key.
 ///
-/// # Key clashing
+/// # Key collision
 ///
 /// Since [`FileName`] uses a subset of the asset path, two different assets may have the same key.
 /// It’s up to you to ensure there is no collision.
@@ -91,7 +92,7 @@ impl MapKey for FileName {
 
 /// A [`MapKey`] that uses the [`file_stem`] of the asset's path as key.
 ///
-/// # Key clashing
+/// # Key collision
 ///
 /// Since [`FileStem`] uses a subset of the asset path, two different assets may have the same key.
 /// It’s up to you to ensure there is no collision.
