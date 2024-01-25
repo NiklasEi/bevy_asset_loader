@@ -350,12 +350,11 @@ mod tests {
     fn serialize_and_deserialize(dynamic_asset_file: &'static str) {
         let before: StandardDynamicAssetCollection = ron::from_str(dynamic_asset_file).unwrap();
 
-        let serialized_dynamic_asset_file =
-            ron::ser::to_string_pretty(&before, ron::ser::PrettyConfig::default()).unwrap();
+        let serialized_dynamic_asset_file = ron::ser::to_string_pretty(
+            &before,
+            ron::ser::PrettyConfig::default().new_line("\n".to_string()),
+        )
+        .unwrap();
         assert_eq!(dynamic_asset_file, &serialized_dynamic_asset_file);
-
-        let after: StandardDynamicAssetCollection =
-            ron::from_str(&serialized_dynamic_asset_file).unwrap();
-        assert_eq!(before, after);
     }
 }
