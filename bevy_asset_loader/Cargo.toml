@@ -37,6 +37,7 @@ anyhow = "1"
 iyes_progress = { version = "0.10" }
 bevy_common_assets = { version = "0.9.0", features = ["ron"] }
 serde = { version = "1" }
+ron = "0.8.1"
 trybuild = { version = "1.0" }
 
 [package.metadata.docs.rs]
