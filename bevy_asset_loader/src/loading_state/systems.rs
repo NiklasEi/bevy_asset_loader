@@ -197,9 +197,7 @@ pub fn apply_internal_state_transition<S: States>(world: &mut World) {
             .take()
             .unwrap();
 
-        let exited_state = world
-            .remove_resource::<State<InternalLoadingState<S>>>()
-            .unwrap_or_default();
+        let exited_state = world.remove_resource::<State<InternalLoadingState<S>>>();
         world.insert_resource(State::new(entered_state.clone()));
         trace!(
             "Switching internal state of loading state from {exited_state:?} to {entered_state:?}"

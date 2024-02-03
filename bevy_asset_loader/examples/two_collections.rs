@@ -7,7 +7,7 @@ const PLAYER_SPEED: f32 = 5.;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_state::<MyStates>()
+        .init_state::<MyStates>()
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading)
                 .continue_to_state(MyStates::Next)

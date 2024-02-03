@@ -15,7 +15,7 @@ use bevy_asset_loader::prelude::*;
 #[test]
 fn mapped_path_use_slash() {
     App::new()
-        .add_state::<MyStates>()
+        .init_state::<MyStates>()
         .add_plugins((
             MinimalPlugins,
             AssetPlugin::default(),

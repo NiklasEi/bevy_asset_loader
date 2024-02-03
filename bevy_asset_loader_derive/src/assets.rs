@@ -282,8 +282,8 @@ impl AssetField {
                         .get_resource::<::bevy::asset::AssetServer>()
                         .expect("Cannot get AssetServer");
                     let mut atlases = cell
-                        .get_resource_mut::<::bevy::asset::Assets<TextureAtlas>>()
-                        .expect("Cannot get resource Assets<TextureAtlas>");
+                        .get_resource_mut::<::bevy::asset::Assets<TextureAtlasLayout>>()
+                        .expect("Cannot get resource Assets<TextureAtlasLayout>");
                     let mut handle = asset_server.load(#asset_path);
 
                     #sampler_handling

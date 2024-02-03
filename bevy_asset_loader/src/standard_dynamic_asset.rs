@@ -12,7 +12,7 @@ use bevy::math::Vec2;
 #[cfg(feature = "3d")]
 use bevy::pbr::StandardMaterial;
 #[cfg(feature = "2d")]
-use bevy::sprite::TextureAtlas;
+use bevy::sprite::TextureAtlasLayout;
 
 #[cfg(any(feature = "3d", feature = "2d"))]
 use bevy::render::texture::{Image, ImageSampler, ImageSamplerDescriptor};
@@ -59,11 +59,6 @@ pub enum StandardDynamicAsset {
     /// A dynamic texture atlas asset loaded from a sprite sheet
     #[cfg(feature = "2d")]
     TextureAtlas {
-        /// Asset file path
-        path: String,
-        /// Sampler
-        #[serde(with = "optional", skip_serializing_if = "Option::is_none", default)]
-        sampler: Option<ImageSamplerType>,
         /// The image width in pixels
         tile_size_x: f32,
         /// The image height in pixels
@@ -160,8 +155,8 @@ impl DynamicAsset for StandardDynamicAsset {
                 vec![asset_server.load::<Image>(path).untyped()]
             }
             #[cfg(feature = "2d")]
-            StandardDynamicAsset::TextureAtlas { path, .. } => {
-                vec![asset_server.load::<Image>(path).untyped()]
+            StandardDynamicAsset::TextureAtlas { .. } => {
+                vec![]
             }
         }
     }
@@ -200,9 +195,7 @@ impl DynamicAsset for StandardDynamicAsset {
             }
             #[cfg(feature = "2d")]
             StandardDynamicAsset::TextureAtlas {
-                path,
                 tile_size_x,
-                sampler,
                 tile_size_y,
                 columns,
                 rows,
@@ -212,18 +205,10 @@ impl DynamicAsset for StandardDynamicAsset {
                 offset_y,
             } => {
                 let mut atlases = cell
-                    .get_resource_mut::<Assets<TextureAtlas>>()
-                    .expect("Cannot get resource Assets<TextureAtlas>");
-                let mut handle = asset_server.get_handle(path).unwrap();
-                if let Some(sampler_type) = sampler {
-                    let mut images = cell
-                        .get_resource_mut::<Assets<Image>>()
-                        .expect("Cannot get resource Assets<Image>");
-                    Self::update_image_sampler(&mut handle, &mut images, sampler_type);
-                }
+                    .get_resource_mut::<Assets<TextureAtlasLayout>>()
+                    .expect("Cannot get resource Assets<TextureAtlasLayout>");
                 let texture_atlas_handle = atlases
-                    .add(TextureAtlas::from_grid(
-                        handle,
+                    .add(TextureAtlasLayout::from_grid(
                         Vec2::new(*tile_size_x, *tile_size_y),
                         *columns,
                         *rows,

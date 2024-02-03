@@ -19,7 +19,7 @@ fn main() {
             ProgressPlugin::new(MyStates::AssetLoading).continue_to(MyStates::Next),
             FrameTimeDiagnosticsPlugin,
         ))
-        .add_state::<MyStates>()
+        .init_state::<MyStates>()
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading)
                 .load_collection::<TextureAssets>()
@@ -74,7 +74,7 @@ fn expect(
     audio_assets: Res<AudioAssets>,
     texture_assets: Res<TextureAssets>,
     asset_server: Res<AssetServer>,
-    texture_atlases: Res<Assets<TextureAtlas>>,
+    texture_atlases: Res<Assets<TextureAtlasLayout>>,
     mut quit: EventWriter<AppExit>,
 ) {
     assert_eq!(

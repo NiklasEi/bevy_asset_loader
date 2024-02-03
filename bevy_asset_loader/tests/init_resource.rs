@@ -14,7 +14,7 @@ use bevy_asset_loader::prelude::*;
 #[test]
 fn init_resource() {
     App::new()
-        .add_state::<MyStates>()
+        .init_state::<MyStates>()
         .add_plugins((
             MinimalPlugins,
             AssetPlugin::default(),

@@ -6,7 +6,7 @@ use bevy_asset_loader::prelude::*;
 /// Requires the feature '2d'
 fn main() {
     App::new()
-        .add_state::<MyStates>()
+        .init_state::<MyStates>()
         .add_plugins(DefaultPlugins)
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading)
@@ -26,24 +26,18 @@ struct MyAssets {
     // if the sheet would have padding, you could set that with `padding_x` and `padding_y`.
     // if there would be space between the top left corner of the sheet and the first sprite, you could configure that with `offset_x` and `offset_y`
     #[asset(texture_atlas(tile_size_x = 96., tile_size_y = 99., columns = 8, rows = 1))]
+    female_adventurer_atlas: Handle<TextureAtlasLayout>,
     // you can configure the sampler for the sprite sheet image
     #[asset(image(sampler = nearest))]
     #[asset(path = "images/female_adventurer_sheet.png")]
-    female_adventurer: Handle<TextureAtlas>,
+    female_adventurer: Handle<Image>,
 }
 
-fn draw_atlas(
-    mut commands: Commands,
-    my_assets: Res<MyAssets>,
-    texture_atlases: Res<Assets<TextureAtlas>>,
-) {
+fn draw_atlas(mut commands: Commands, my_assets: Res<MyAssets>) {
     commands.spawn(Camera2dBundle::default());
-    // draw the original image (whole atlas)
-    let atlas = texture_atlases
-        .get(&my_assets.female_adventurer)
-        .expect("Failed to find our atlas");
+    // draw the original image (whole sprite sheet)
     commands.spawn(SpriteBundle {
-        texture: atlas.texture.clone(),
+        texture: my_assets.female_adventurer.clone(),
         transform: Transform::from_xyz(0., -150., 0.),
         ..Default::default()
     });
@@ -54,8 +48,11 @@ fn draw_atlas(
                 translation: Vec3::new(0., 150., 0.),
                 ..Default::default()
             },
-            sprite: TextureAtlasSprite::new(0),
-            texture_atlas: my_assets.female_adventurer.clone(),
+            texture: my_assets.female_adventurer.clone(),
+            atlas: TextureAtlas {
+                layout: my_assets.female_adventurer_atlas.clone(),
+                index: 1,
+            },
             ..Default::default()
         })
         .insert(AnimationTimer(Timer::from_seconds(
@@ -69,12 +66,12 @@ struct AnimationTimer(Timer);
 
 fn animate_sprite_system(
     time: Res<Time>,
-    mut sprites_to_animate: Query<(&mut AnimationTimer, &mut TextureAtlasSprite)>,
+    mut sprites_to_animate: Query<(&mut AnimationTimer, &mut TextureAtlas)>,
 ) {
     for (mut timer, mut sprite) in &mut sprites_to_animate {
         timer.0.tick(time.delta());
         if timer.0.finished() {
-            sprite.index = (sprite.index + 1) % 8;
+            sprite.index = (sprite.index % 8) + 1;
         }
     }
 }

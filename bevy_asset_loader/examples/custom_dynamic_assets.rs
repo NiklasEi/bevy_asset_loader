@@ -12,7 +12,7 @@ fn main() {
             RonAssetPlugin::<CustomDynamicAssetCollection>::new(&["my-assets.ron"]),
         ))
         // We need to make sure that our dynamic asset collections can be loaded from the asset file
-        .add_state::<MyStates>()
+        .init_state::<MyStates>()
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading)
                 .continue_to_state(MyStates::Next)

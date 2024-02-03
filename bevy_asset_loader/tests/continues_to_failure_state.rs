@@ -13,7 +13,7 @@ use bevy_asset_loader::prelude::*;
 #[test]
 fn continues_to_failure_state() {
     App::new()
-        .add_state::<MyStates>()
+        .init_state::<MyStates>()
         .add_plugins((MinimalPlugins, AssetPlugin::default()))
         .add_loading_state(
             LoadingState::new(MyStates::Load)

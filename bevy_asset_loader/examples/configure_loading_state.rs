@@ -12,7 +12,7 @@ struct MainPlugin;
 
 impl Plugin for MainPlugin {
     fn build(&self, app: &mut App) {
-        app.add_state::<MyStates>()
+        app.init_state::<MyStates>()
             // General loading state setup goes here, but if you like, you can already add all
             // the configuration at this point, too. In this example we will configure the loading state
             // later in PlayerAndMusicPlugin.
