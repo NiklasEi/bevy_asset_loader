@@ -34,7 +34,9 @@ fn spawn_player(
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
     commands.spawn(PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Cube { size: 2.0 })),
+        mesh: meshes.add(Mesh::from(Cuboid {
+            half_size: Vec3::splat(1.0),
+        })),
         material: my_assets.player.clone(),
         ..Default::default()
     });

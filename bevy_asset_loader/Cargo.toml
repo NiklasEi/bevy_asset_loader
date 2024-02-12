@@ -29,12 +29,12 @@ path-slash = "0.2"
 
 bevy_common_assets = { git = "https://github.com/NiklasEi/bevy_common_assets", branch = "bevy_main", features = ["ron"], optional = true }
 serde = { version = "1", optional = true }
-iyes_progress = { version = "0.10", optional = true }
+iyes_progress = { git = "https://github.com/NiklasEi/iyes_progress", branch = "bevy_main", optional = true }
 
 [dev-dependencies]
 bevy = { git = "https://github.com/bevyengine/bevy", version = "0.12", features = ["vorbis"] }
 anyhow = "1"
-iyes_progress = { version = "0.10" }
+iyes_progress = { git = "https://github.com/NiklasEi/iyes_progress", branch = "bevy_main" }
 bevy_common_assets = { git = "https://github.com/NiklasEi/bevy_common_assets", branch = "bevy_main", features = ["ron"] }
 serde = { version = "1" }
 ron = "0.8.1"

@@ -56,9 +56,10 @@ struct TextureAssets {
     player: Handle<Image>,
     #[asset(path = "images/tree.png")]
     tree: Handle<Image>,
-    #[asset(texture_atlas(tile_size_x = 96., tile_size_y = 99., columns = 8, rows = 1))]
     #[asset(path = "images/female_adventurer_sheet.png")]
-    female_adventurer: Handle<TextureAtlas>,
+    female_adventurer: Handle<Image>,
+    #[asset(texture_atlas(tile_size_x = 96., tile_size_y = 99., columns = 8, rows = 1))]
+    female_adventurer_layout: Handle<TextureAtlasLayout>,
 }
 
 fn track_fake_long_task(time: Res<Time>) -> Progress {
@@ -74,7 +75,7 @@ fn expect(
     audio_assets: Res<AudioAssets>,
     texture_assets: Res<TextureAssets>,
     asset_server: Res<AssetServer>,
-    texture_atlases: Res<Assets<TextureAtlasLayout>>,
+    texture_atlas_layouts: Res<Assets<TextureAtlasLayout>>,
     mut quit: EventWriter<AppExit>,
 ) {
     assert_eq!(
@@ -85,11 +86,11 @@ fn expect(
         asset_server.get_recursive_dependency_load_state(audio_assets.plop.clone()),
         Some(RecursiveDependencyLoadState::Loaded)
     );
-    let atlas = texture_atlases
-        .get(&texture_assets.female_adventurer)
+    texture_atlas_layouts
+        .get(&texture_assets.female_adventurer_layout)
         .expect("Texture atlas should be added to its assets resource.");
     assert_eq!(
-        asset_server.get_recursive_dependency_load_state(atlas.texture.clone()),
+        asset_server.get_recursive_dependency_load_state(texture_assets.female_adventurer.clone()),
         Some(RecursiveDependencyLoadState::Loaded)
     );
     assert_eq!(
@@ -116,7 +117,7 @@ fn print_progress(
             info!(
                 "[Frame {}] Changed progress: {:?}",
                 diagnostics
-                    .get(FrameTimeDiagnosticsPlugin::FRAME_COUNT)
+                    .get(&FrameTimeDiagnosticsPlugin::FRAME_COUNT)
                     .map(|diagnostic| diagnostic.value().unwrap_or(0.))
                     .unwrap_or(0.),
                 progress

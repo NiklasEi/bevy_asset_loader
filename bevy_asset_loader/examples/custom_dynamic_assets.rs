@@ -1,6 +1,6 @@
-use bevy::core_pipeline::clear_color::ClearColorConfig;
 use bevy::prelude::*;
 use bevy::reflect::TypePath;
+use bevy::render::render_asset::RenderAssetUsages;
 use bevy::utils::HashMap;
 use bevy_asset_loader::prelude::*;
 use bevy_common_assets::ron::RonAssetPlugin;
@@ -54,10 +54,8 @@ fn render_stuff(mut commands: Commands, assets: Res<MyAssets>) {
     commands.spawn(Camera2dBundle {
         camera: Camera {
             order: 1,
-            ..default()
-        },
-        camera_2d: Camera2d {
             clear_color: ClearColorConfig::None,
+            ..default()
         },
         ..default()
     });
@@ -154,6 +152,7 @@ impl DynamicAsset for CustomDynamicAsset {
                         })
                         .collect(),
                     second.texture_descriptor.format,
+                    RenderAssetUsages::all(),
                 );
 
                 Ok(DynamicAssetType::Single(images.add(combined).untyped()))
@@ -178,7 +177,9 @@ impl DynamicAsset for CustomDynamicAsset {
                     .get_resource_mut::<Assets<Mesh>>()
                     .expect("Failed to get mesh assets");
                 let handle = meshes
-                    .add(Mesh::from(shape::Cube { size: *size }))
+                    .add(Mesh::from(Cuboid {
+                        half_size: Vec3::splat(size / 2.),
+                    }))
                     .untyped();
 
                 Ok(DynamicAssetType::Single(handle))
