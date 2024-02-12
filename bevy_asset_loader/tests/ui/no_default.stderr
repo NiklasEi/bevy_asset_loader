@@ -1,5 +1,5 @@
 error[E0277]: the trait bound `NoDefault: std::default::Default` is not satisfied
- --> tests/ui/no_default.rs:8:5
+ --> $DIR/no_default.rs:8:5
   |
 8 |     no_default: NoDefault,
   |     ^^^^^^^^^^ the trait `std::default::Default` is not implemented for `NoDefault`
@@ -12,7 +12,7 @@ error[E0277]: the trait bound `NoDefault: std::default::Default` is not satisfie
             SceneLoader
             MsaaWritebackNode
             Material2dPipeline<M>
-            Mesh2dPipeline
+            BlitPipeline
           and $N others
   = note: required for `NoDefault` to implement `FromWorld`
 help: consider annotating `NoDefault` with `#[derive(Default)]`

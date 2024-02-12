@@ -1,17 +1,17 @@
 error: Wrong attribute type. Expected 'str'
- --> $DIR/wrong_attribute_type.rs:8:13
+ --> tests/ui_with_2d_3d_features/wrong_attribute_type.rs:8:13
   |
 8 |     #[asset(path = 1)]
   |             ^^^^^^^^
 
 error: Wrong attribute type. Expected 'float'
-  --> $DIR/wrong_attribute_type.rs:14:27
+  --> tests/ui_with_2d_3d_features/wrong_attribute_type.rs:14:27
    |
 14 |     #[asset(texture_atlas(tile_size_x = 100, tile_size_y = 100., columns = 1, rows = 1))]
    |                           ^^^^^^^^^^^^^^^^^
 
 error: Wrong attribute type. Expected 'integer'
-  --> $DIR/wrong_attribute_type.rs:21:67
+  --> tests/ui_with_2d_3d_features/wrong_attribute_type.rs:20:67
    |
-21 |     #[asset(texture_atlas(tile_size_x = 100., tile_size_y = 100., columns = "5", rows = 1))]
+20 |     #[asset(texture_atlas(tile_size_x = 100., tile_size_y = 100., columns = "5", rows = 1))]
    |                                                                   ^^^^^^^^^^^^^

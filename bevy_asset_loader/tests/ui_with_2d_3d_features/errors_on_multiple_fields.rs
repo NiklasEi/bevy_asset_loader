@@ -9,9 +9,7 @@ struct Test {
     #[asset(path = "test.ogg")]
     first: Handle<AudioSource>,
     #[asset(texture_atlas(tile_size_x = 100.))]
-    #[asset(path = "test.png")]
-    second: Handle<TextureAtlas>,
+    second: Handle<TextureAtlasLayout>,
     #[asset(texture_atlas(tile_size_x = 100., tile_size_y = 100., columns = 10., rows = 1))]
-    #[asset(path = "test.png")]
-    third: Handle<TextureAtlas>,
+    third: Handle<TextureAtlasLayout>,
 }

@@ -20,14 +20,14 @@ struct StandardMaterialAndKey {
 struct AssetCollectionAndKey {
     #[asset(texture_atlas(tile_size_x = 100., tile_size_y = 100., columns = 1, rows = 1))]
     #[asset(key = "test")]
-    test: Handle<TextureAtlas>,
+    test: Handle<TextureAtlasLayout>,
 }
 
 // This combination is allowed for optional dynamic assets
 #[derive(AssetCollection, Resource)]
 struct OptionalDynamic {
     #[asset(key = "test", optional)]
-    test: Option<Handle<TextureAtlas>>,
+    test: Option<Handle<TextureAtlasLayout>>,
 }
 
 // dynamic folder

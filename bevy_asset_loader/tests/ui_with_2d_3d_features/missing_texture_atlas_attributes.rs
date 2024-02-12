@@ -3,9 +3,9 @@ use bevy::prelude::*;
 
 fn main() {}
 
+/// Todo: This should fail to compile!!
 #[derive(AssetCollection, Resource)]
 struct Test {
     #[asset(texture_atlas(columns = 2))]
-    #[asset(path = "test.png")]
-    test: Handle<TextureAtlas>
+    test: Handle<TextureAtlasLayout>
 }
