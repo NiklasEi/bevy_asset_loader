@@ -39,11 +39,10 @@ struct MyAssets {
     // Type in `assets/full_dynamic_collection.assets.ron`: `StandardMaterial`
     #[asset(key = "standard_material")]
     standard_material: Handle<StandardMaterial>,
-    // This image file will be converted to a texture atlas
-    // The configuration for that is part of the `.assets` file
-    // Type in `assets/full_dynamic_collection.assets.ron`: `TextureAtlas`
-    #[asset(key = "texture_atlas")]
-    texture_atlas: Handle<TextureAtlas>,
+    // Configuration of a texture atlas layout that is part of the `.assets` file
+    // Type in `assets/full_dynamic_collection.assets.ron`: `TextureAtlasLayout`
+    #[asset(key = "texture_atlas_layout")]
+    texture_atlas_layout: Handle<TextureAtlasLayout>,
     // Optional asset
     // The key `optional_file` is not defined in `assets/full_dynamic_collection.assets.ron`, so the value of this field
     // will be `None`
@@ -109,7 +108,7 @@ fn expectations(
     assets: Res<MyAssets>,
     asset_server: Res<AssetServer>,
     standard_materials: Res<Assets<StandardMaterial>>,
-    texture_atlases: Res<Assets<TextureAtlasLayout>>,
+    texture_atlas_layouts: Res<Assets<TextureAtlasLayout>>,
     images: Res<Assets<Image>>,
     mut quit: EventWriter<AppExit>,
 ) {
@@ -131,23 +130,9 @@ fn expectations(
         ),
         Some(RecursiveDependencyLoadState::Loaded)
     );
-    let atlas = texture_atlases
-        .get(&assets.texture_atlas)
-        .expect("Texture atlas should be added to its assets resource.");
-    assert_eq!(
-        asset_server.get_recursive_dependency_load_state(atlas.texture.clone()),
-        Some(RecursiveDependencyLoadState::Loaded)
-    );
-    let image = images
-        .get(&atlas.texture)
-        .expect("Image for TextureAtlas should be added to its asset resource");
-    let ImageSampler::Descriptor(descriptor) = &image.sampler else {
-        panic!("Descriptor was not set to non default value nearest");
-    };
-    assert_eq!(
-        descriptor.as_wgpu(),
-        ImageSamplerDescriptor::nearest().as_wgpu()
-    );
+    texture_atlas_layouts
+        .get(&assets.texture_atlas_layout)
+        .expect("Texture atlas layout should be added to its assets resource.");
 
     assert_eq!(assets.optional_file, None);
     let image = images

@@ -25,6 +25,7 @@ fn main() {
 struct MyAssets {
     // if the sheet would have padding, you could set that with `padding_x` and `padding_y`.
     // if there would be space between the top left corner of the sheet and the first sprite, you could configure that with `offset_x` and `offset_y`
+    // A texture atlas layout does not have a path as no asset file will be loaded for the layout
     #[asset(texture_atlas(tile_size_x = 96., tile_size_y = 99., columns = 8, rows = 1))]
     female_adventurer_atlas: Handle<TextureAtlasLayout>,
     // you can configure the sampler for the sprite sheet image
@@ -71,7 +72,7 @@ fn animate_sprite_system(
     for (mut timer, mut sprite) in &mut sprites_to_animate {
         timer.0.tick(time.delta());
         if timer.0.finished() {
-            sprite.index = (sprite.index % 8) + 1;
+            sprite.index = (sprite.index + 1) % 8;
         }
     }
 }

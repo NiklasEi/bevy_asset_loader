@@ -58,7 +58,7 @@ pub enum StandardDynamicAsset {
     },
     /// A dynamic texture atlas asset loaded from a sprite sheet
     #[cfg(feature = "2d")]
-    TextureAtlas {
+    TextureAtlasLayout {
         /// The image width in pixels
         tile_size_x: f32,
         /// The image height in pixels
@@ -155,7 +155,7 @@ impl DynamicAsset for StandardDynamicAsset {
                 vec![asset_server.load::<Image>(path).untyped()]
             }
             #[cfg(feature = "2d")]
-            StandardDynamicAsset::TextureAtlas { .. } => {
+            StandardDynamicAsset::TextureAtlasLayout { .. } => {
                 vec![]
             }
         }
@@ -188,13 +188,15 @@ impl DynamicAsset for StandardDynamicAsset {
                     .get_resource_mut::<Assets<StandardMaterial>>()
                     .expect("Cannot get resource Assets<StandardMaterial>");
                 let handle = materials
-                    .add(asset_server.get_handle::<Image>(path).unwrap().into())
+                    .add(StandardMaterial::from(
+                        asset_server.get_handle::<Image>(path).unwrap(),
+                    ))
                     .untyped();
 
                 Ok(DynamicAssetType::Single(handle))
             }
             #[cfg(feature = "2d")]
-            StandardDynamicAsset::TextureAtlas {
+            StandardDynamicAsset::TextureAtlasLayout {
                 tile_size_x,
                 tile_size_y,
                 columns,

@@ -3,10 +3,8 @@ use proc_macro2::{Ident, TokenStream};
 use quote::quote;
 
 #[derive(PartialEq, Debug)]
-pub(crate) struct TextureAtlasAssetField {
+pub(crate) struct TextureAtlasLayoutAssetField {
     pub field_ident: Ident,
-    pub asset_path: String,
-    pub sampler: Option<SamplerType>,
     pub tile_size_x: f32,
     pub tile_size_y: f32,
     pub columns: usize,
@@ -67,7 +65,7 @@ pub(crate) enum AssetField {
     Basic(BasicAssetField),
     Folder(BasicAssetField, Typed, Mapped),
     Files(MultipleFilesField, Typed, Mapped),
-    TextureAtlas(TextureAtlasAssetField),
+    TextureAtlasLayout(TextureAtlasLayoutAssetField),
     Image(ImageAssetField),
     StandardMaterial(BasicAssetField),
     Dynamic(DynamicAssetField),
@@ -232,14 +230,13 @@ impl AssetField {
                     let cell = world.cell();
                     let asset_server = cell.get_resource::<::bevy::asset::AssetServer>().expect("Cannot get AssetServer");
                     let mut materials = cell
-                        .get_resource_mut::<::bevy::asset::Assets<StandardMaterial>>()
+                        .get_resource_mut::<::bevy::asset::Assets<::bevy::pbr::StandardMaterial>>()
                         .expect("Cannot get resource Assets<StandardMaterial>");
-                    materials.add(asset_server.load::<::bevy::render::texture::Image>(#asset_path).into())
+                    materials.add(::bevy::pbr::StandardMaterial::from(asset_server.load::<::bevy::render::texture::Image>(#asset_path)))
                 },)
             }
-            AssetField::TextureAtlas(texture_atlas) => {
+            AssetField::TextureAtlasLayout(texture_atlas) => {
                 let field_ident = texture_atlas.field_ident.clone();
-                let asset_path = texture_atlas.asset_path.clone();
                 let tile_size_x = texture_atlas.tile_size_x;
                 let tile_size_y = texture_atlas.tile_size_y;
                 let columns = texture_atlas.columns;
@@ -248,48 +245,13 @@ impl AssetField {
                 let padding_y = texture_atlas.padding_y;
                 let offset_x = texture_atlas.offset_x;
                 let offset_y = texture_atlas.offset_y;
-                let sampler_handling = texture_atlas.sampler.map(|sampler_type| {
-                    let sampler = match sampler_type {
-                        SamplerType::Linear => quote!(::bevy::render::texture::ImageSampler::linear()),
-                        SamplerType::Nearest => quote!(::bevy::render::texture::ImageSampler::nearest()),
-                    };
-                    let descriptor = match sampler_type {
-                        SamplerType::Linear => quote!(::bevy::render::texture::ImageSamplerDescriptor::linear()),
-                        SamplerType::Nearest => quote!(::bevy::render::texture::ImageSamplerDescriptor::nearest()),
-                    };
 
-                    quote!(
-                        let mut images = cell.get_resource_mut::<Assets<Image>>().expect("Cannot get resource Assets<Image>");
-                        let mut image = images.get_mut(&handle).expect("Only asset collection fields holding an `Image` handle can be annotated with `image`");
-                        let is_different_sampler = if let ::bevy::render::texture::ImageSampler::Descriptor(descriptor) = &image.sampler {
-                            !descriptor.as_wgpu().eq(&#descriptor.as_wgpu())
-                        } else {
-                            false
-                        };
-
-                        if is_different_sampler {
-                            let mut cloned_image = image.clone();
-                            cloned_image.sampler = #sampler;
-                            handle = images.add(cloned_image);
-                        } else {
-                            image.sampler = #sampler;
-                        }
-                    )
-                }).unwrap_or(quote!());
                 quote!(#token_stream #field_ident : {
                     let cell = world.cell();
-                    let asset_server = cell
-                        .get_resource::<::bevy::asset::AssetServer>()
-                        .expect("Cannot get AssetServer");
                     let mut atlases = cell
                         .get_resource_mut::<::bevy::asset::Assets<TextureAtlasLayout>>()
                         .expect("Cannot get resource Assets<TextureAtlasLayout>");
-                    let mut handle = asset_server.load(#asset_path);
-
-                    #sampler_handling
-
-                    atlases.add(TextureAtlas::from_grid(
-                        handle,
+                    atlases.add(TextureAtlasLayout::from_grid(
                         Vec2::new(#tile_size_x, #tile_size_y),
                         #columns,
                         #rows,
@@ -502,8 +464,10 @@ impl AssetField {
                     }
                 )
             }
+            AssetField::TextureAtlasLayout(TextureAtlasLayoutAssetField { .. }) => {
+                quote!()
+            }
             AssetField::StandardMaterial(BasicAssetField { asset_path, .. })
-            | AssetField::TextureAtlas(TextureAtlasAssetField { asset_path, .. })
             | AssetField::Image(ImageAssetField { asset_path, .. }) => {
                 let asset_path = asset_path.clone();
                 quote!(#token_stream handles.push(asset_server.load::<::bevy::render::texture::Image>(#asset_path).untyped());)
@@ -567,6 +531,21 @@ impl AssetBuilder {
                 "{}/{}",
                 TextureAtlasAttribute::ATTRIBUTE_NAME,
                 TextureAtlasAttribute::ROWS
+            ));
+        }
+        if missing_fields.is_empty() {
+            return Ok(AssetField::TextureAtlasLayout(
+                TextureAtlasLayoutAssetField {
+                    field_ident: self.field_ident.unwrap(),
+                    tile_size_x: self.tile_size_x.unwrap(),
+                    tile_size_y: self.tile_size_y.unwrap(),
+                    columns: self.columns.unwrap(),
+                    rows: self.rows.unwrap(),
+                    padding_x: self.padding_x.unwrap_or_default(),
+                    padding_y: self.padding_y.unwrap_or_default(),
+                    offset_x: self.offset_x.unwrap_or_default(),
+                    offset_y: self.offset_y.unwrap_or_default(),
+                },
             ));
         }
         if self.asset_path.is_none() && self.asset_paths.is_none() && self.key.is_none() {
@@ -659,21 +638,6 @@ impl AssetBuilder {
                 return Ok(AssetField::StandardMaterial(asset));
             }
             return Ok(AssetField::Basic(asset));
-        }
-        if missing_fields.is_empty() {
-            return Ok(AssetField::TextureAtlas(TextureAtlasAssetField {
-                field_ident: self.field_ident.unwrap(),
-                asset_path: self.asset_path.unwrap(),
-                sampler: self.sampler,
-                tile_size_x: self.tile_size_x.unwrap(),
-                tile_size_y: self.tile_size_y.unwrap(),
-                columns: self.columns.unwrap(),
-                rows: self.rows.unwrap(),
-                padding_x: self.padding_x.unwrap_or_default(),
-                padding_y: self.padding_y.unwrap_or_default(),
-                offset_x: self.offset_x.unwrap_or_default(),
-                offset_y: self.offset_y.unwrap_or_default(),
-            }));
         }
         Err(vec![ParseFieldError::MissingAttributes(missing_fields)])
     }
@@ -890,7 +854,6 @@ mod test {
     fn texture_atlas() {
         let builder = AssetBuilder {
             field_ident: Some(Ident::new("test", Span::call_site())),
-            asset_path: Some("some/folder".to_owned()),
             tile_size_x: Some(100.),
             tile_size_y: Some(50.),
             columns: Some(10),
@@ -905,10 +868,8 @@ mod test {
             .expect("This should be a valid TextureAtlasAsset");
         assert_eq!(
             asset,
-            AssetField::TextureAtlas(TextureAtlasAssetField {
+            AssetField::TextureAtlasLayout(TextureAtlasLayoutAssetField {
                 field_ident: Ident::new("test", Span::call_site()),
-                asset_path: "some/folder".to_owned(),
-                sampler: None,
                 tile_size_x: 100.0,
                 tile_size_y: 50.0,
                 columns: 10,
