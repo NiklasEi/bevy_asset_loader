@@ -11,7 +11,7 @@ This [Bevy][bevy] plugin reduces boilerplate for handling game assets. The crate
 
 In most cases you will want to load your asset collections during loading states (think loading screens). During such a state, all assets are loaded and their loading progress is observed. Only when asset collections can be built with fully loaded asset handles, the collections are inserted to Bevy's ECS as resources. If you do not want to use a loading state, asset collections can still result in cleaner code and improved maintainability (see the ["usage without a loading state"](#usage-without-a-loading-state) section).
 
-_The `main` branch and the latest release support Bevy version `0.12` (see [version table](#compatible-bevy-versions))_
+_The `main` branch and the latest release support Bevy version `0.13` (see [version table](#compatible-bevy-versions))_
 
 ## Loading states
 
@@ -26,7 +26,7 @@ use bevy_asset_loader::prelude::*;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_state::<MyStates>()
+        .init_state::<MyStates>()
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading)
                 .continue_to_state(MyStates::Next)
@@ -187,7 +187,7 @@ The following sections describe more types of asset fields that you can load thr
 
 ### Texture atlases
 
-You can directly load texture atlases from sprite sheets if you enable the feature `2d`. For a complete example please take a look at [atlas_from_grid.rs](/bevy_asset_loader/examples/atlas_from_grid.rs).
+You can create texture atlas layouts as part of an `AssetCollection` if you enable the feature `2d`. For a complete example please take a look at [atlas_from_grid.rs](/bevy_asset_loader/examples/atlas_from_grid.rs).
 
 ```rust
 use bevy::prelude::*;
@@ -195,9 +195,10 @@ use bevy_asset_loader::asset_collection::AssetCollection;
 
 #[derive(AssetCollection, Resource)]
 struct MyAssets {
-    #[asset(texture_atlas(tile_size_x = 64., tile_size_y = 64., columns = 8, rows = 1, padding_x = 12., padding_y = 12., offset_x = 6., offset_y = 6.))]
+    #[asset(texture_atlas_layout(tile_size_x = 64., tile_size_y = 64., columns = 8, rows = 1, padding_x = 12., padding_y = 12., offset_x = 6., offset_y = 6.))]
+    layout: Handle<TextureAtlasLayout>,
     #[asset(path = "images/sprite_sheet.png")]
-    sprite: Handle<TextureAtlas>,
+    sprite: Handle<Image>,
 }
 ```
 
@@ -206,15 +207,19 @@ As a dynamic asset this example becomes:
 ```rust ignore
 #[derive(AssetCollection, Resource)]
 struct MyAssets {
-    #[asset(key = "image.player")]
-    sprite: Handle<TextureAtlas>,
+    #[asset(key = "player.layout")]
+    layout: Handle<TextureAtlasLayout>,
+    #[asset(key = "player.image")]
+    sprite: Handle<Image>,
 }
 ```
 
 ```ron
 ({
-    "image.player": TextureAtlas (
+    "player.image": File (
         path: "images/sprite_sheet.png",
+    ),
+    "player.layout": TextureAtlasLayout (
         tile_size_x: 100.,
         tile_size_y: 64.,
         columns: 8,
@@ -478,9 +483,10 @@ fn main() {
 
 #[derive(AssetCollection, Resource)]
 struct MyAssets {
-    #[asset(texture_atlas(tile_size_x = 100., tile_size_y = 96., columns = 8, rows = 1, padding_x = 12., padding_y = 12.))]
+    #[asset(texture_atlas_layout(tile_size_x = 64., tile_size_y = 64., columns = 8, rows = 1, padding_x = 12., padding_y = 12., offset_x = 6., offset_y = 6.))]
+    layout: Handle<TextureAtlasLayout>,
     #[asset(path = "images/sprite_sheet.png")]
-    sprite: Handle<TextureAtlas>,
+    sprite: Handle<Image>,
 }
 ```
 
@@ -493,18 +499,20 @@ Bevy unloads an asset when there are no strong asset handles left pointing to th
 The main branch is compatible with the latest Bevy release, while the branch `bevy_main` tries to track the `main` branch of Bevy (PRs updating the tracked commit are welcome).
 
 Compatibility of `bevy_asset_loader` versions:
-| `bevy_asset_loader` | `bevy` |
-| :--                 | :--    |
-| `0.18` - `0.19`     | `0.12` |
-| `0.17`              | `0.11` |
-| `0.15` - `0.16`     | `0.10` |
-| `0.14`              | `0.9`  |
-| `0.12` - `0.13`     | `0.8`  |
-| `0.10` - `0.11`     | `0.7`  |
-| `0.8` - `0.9`       | `0.6`  |
-| `0.1` - `0.7`       | `0.5`  |
-| branch `main`       | `0.12` |
-| branch `bevy_main`  | `main` |
+
+| Bevy version | `bevy_asset_loader` version |
+|:-------------|:----------------------------|
+| `0.13`       | `0.20`                      |
+| `0.12`       | `0.18` - `0.19`             |
+| `0.11`       | `0.17`                      |
+| `0.10`       | `0.15` - `0.16`             |
+| `0.9`        | `0.14`                      |
+| `0.8`        | `0.12` - `0.13`             |
+| `0.7`        | `0.10` - `0.11`             |
+| `0.6`        | `0.8` - `0.9`               |
+| `0.5`        | `0.1` - `0.7`               |
+| `0.13`       | branch `main`               |
+| `main`       | branch `bevy_main`          |
 
 ## License
 

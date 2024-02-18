@@ -3,7 +3,7 @@ use bevy_asset_loader::prelude::*;
 
 /// This example shows how to use a subset of `bevy_asset_loader` without a loading state.
 /// Asset collections can be used as a convenient method to define resources containing
-/// asset handles. They can be initialise either on the [`App`] or the [`World`].
+/// asset handles. They can be initialised either on the [`App`] or the [`World`].
 ///
 /// The big difference to using a loading state is, that the here presented approach
 /// does not give any guaranties about the loading status of the asset handles. Also, folders and
@@ -30,7 +30,7 @@ fn main() {
 }
 
 fn load_audio(world: &mut World) {
-    let mouse_input = world.get_resource::<Input<MouseButton>>().unwrap();
+    let mouse_input = world.get_resource::<ButtonInput<MouseButton>>().unwrap();
     if mouse_input.just_pressed(MouseButton::Left) {
         // Initialize the collection on the world.
         // This will start loading the assets in this moment and directly inserts
@@ -53,9 +53,10 @@ fn play_audio(audio_assets: Option<Res<AudioAssets>>, mut commands: Commands) {
 
 #[derive(AssetCollection, Resource)]
 struct ImageAssets {
-    #[asset(texture_atlas(tile_size_x = 96., tile_size_y = 99., columns = 8, rows = 1))]
     #[asset(path = "images/female_adventurer_sheet.png")]
-    female_adventurer: Handle<TextureAtlas>,
+    female_adventurer: Handle<Image>,
+    #[asset(texture_atlas_layout(tile_size_x = 96., tile_size_y = 99., columns = 8, rows = 1))]
+    female_adventurer_layout: Handle<TextureAtlasLayout>,
     #[asset(path = "images/tree.png")]
     tree: Handle<Image>,
 }
@@ -70,8 +71,8 @@ fn draw(mut commands: Commands, image_assets: Res<ImageAssets>) {
     commands.spawn(Camera2dBundle::default());
     commands
         .spawn(SpriteSheetBundle {
-            sprite: TextureAtlasSprite::new(0),
-            texture_atlas: image_assets.female_adventurer.clone(),
+            texture: image_assets.female_adventurer.clone(),
+            atlas: TextureAtlas::from(image_assets.female_adventurer_layout.clone()),
             transform: Transform::from_translation(Vec3::new(-150., 0., 1.)),
             ..Default::default()
         })
@@ -91,7 +92,7 @@ struct AnimationTimer(Timer);
 
 fn animate_sprite_system(
     time: Res<Time>,
-    mut query: Query<(&mut AnimationTimer, &mut TextureAtlasSprite)>,
+    mut query: Query<(&mut AnimationTimer, &mut TextureAtlas)>,
 ) {
     for (mut timer, mut sprite) in &mut query {
         timer.0.tick(time.delta());

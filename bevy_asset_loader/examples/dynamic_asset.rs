@@ -6,7 +6,7 @@ use bevy_asset_loader::prelude::*;
 /// The assets loaded in this example are defined in `assets/dynamic_asset.assets.ron`
 fn main() {
     App::new()
-        .add_state::<MyStates>()
+        .init_state::<MyStates>()
         .add_plugins(DefaultPlugins)
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading)
@@ -31,8 +31,10 @@ fn main() {
 // The keys used here are defined in `assets/dynamic_asset_ron.assets`
 #[derive(AssetCollection, Resource)]
 struct ImageAssets {
-    #[asset(key = "image.player")]
-    player: Handle<TextureAtlas>,
+    #[asset(key = "layout.player_sheet")]
+    player_layout: Handle<TextureAtlasLayout>,
+    #[asset(key = "image.player_sheet")]
+    player: Handle<Image>,
     #[asset(key = "image.tree")]
     tree: Handle<Image>,
 }
@@ -53,8 +55,11 @@ fn spawn_player_and_tree(mut commands: Commands, image_assets: Res<ImageAssets>)
                 translation: Vec3::new(0., 150., 0.),
                 ..Default::default()
             },
-            sprite: TextureAtlasSprite::new(0),
-            texture_atlas: image_assets.player.clone(),
+            texture: image_assets.player.clone(),
+            atlas: TextureAtlas {
+                layout: image_assets.player_layout.clone(),
+                index: 0,
+            },
             ..Default::default()
         })
         .insert(AnimationTimer(Timer::from_seconds(
@@ -91,7 +96,7 @@ struct AnimationTimer(Timer);
 
 fn animate_sprite_system(
     time: Res<Time>,
-    mut query: Query<(&mut AnimationTimer, &mut TextureAtlasSprite)>,
+    mut query: Query<(&mut AnimationTimer, &mut TextureAtlas)>,
 ) {
     for (mut timer, mut sprite) in &mut query {
         timer.0.tick(time.delta());

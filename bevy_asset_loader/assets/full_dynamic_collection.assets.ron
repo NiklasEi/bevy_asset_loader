@@ -5,9 +5,7 @@
     "standard_material": StandardMaterial (
         path: "images/tree.png",
     ),
-    "texture_atlas": TextureAtlas (
-        path: "images/female_adventurer_sheet.png",
-        sampler: Nearest,
+    "texture_atlas_layout": TextureAtlasLayout (
         tile_size_x: 96.,
         tile_size_y: 99.,
         columns: 8,

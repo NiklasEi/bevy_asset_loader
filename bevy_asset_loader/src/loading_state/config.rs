@@ -60,7 +60,7 @@ pub trait ConfigureLoadingState {
 ///         .add_plugins(DefaultPlugins)
 /// # */
 /// #       .add_plugins((MinimalPlugins, AssetPlugin::default()))
-///         .add_state::<GameState>()
+///         .init_state::<GameState>()
 /// #       .init_resource::<iyes_progress::ProgressCounter>()
 ///         .add_loading_state(
 ///           LoadingState::new(GameState::Loading)

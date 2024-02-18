@@ -7,7 +7,7 @@ use bevy_asset_loader::prelude::*;
 
 fn main() {
     App::new()
-        .add_state::<MyStates>()
+        .init_state::<MyStates>()
         .add_plugins(DefaultPlugins)
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading)
@@ -26,11 +26,9 @@ struct MyAssets {
     // Any file that can be loaded and turned into a standard material
     #[asset(path = "images/player.png", standard_material)]
     standard_material: Handle<StandardMaterial>,
-    // Any image file that can be loaded and turned into a texture atlas
-    #[asset(texture_atlas(tile_size_x = 96., tile_size_y = 99., columns = 8, rows = 1))]
-    #[asset(image(sampler = nearest))]
-    #[asset(path = "images/female_adventurer_sheet.png")]
-    texture_atlas: Handle<TextureAtlas>,
+    // Create a texture atlas layout
+    #[asset(texture_atlas_layout(tile_size_x = 96., tile_size_y = 99., columns = 8, rows = 1))]
+    texture_atlas_layout: Handle<TextureAtlasLayout>,
     // Example field with type that implements `FromWorld`
     // If no derive attributes are set, `from_world` will be used to set the value.
     from_world: ColorStandardMaterial<{ u8::MAX }, 0, 0, { u8::MAX }>,
@@ -75,7 +73,7 @@ fn expectations(
     assets: Res<MyAssets>,
     asset_server: Res<AssetServer>,
     standard_materials: Res<Assets<StandardMaterial>>,
-    texture_atlases: Res<Assets<TextureAtlas>>,
+    texture_atlas_layouts: Res<Assets<TextureAtlasLayout>>,
     images: Res<Assets<Image>>,
     mut quit: EventWriter<AppExit>,
 ) {
@@ -97,23 +95,9 @@ fn expectations(
         ),
         Some(RecursiveDependencyLoadState::Loaded)
     );
-    let atlas = texture_atlases
-        .get(&assets.texture_atlas)
-        .expect("Texture atlas should be added to its assets resource.");
-    assert_eq!(
-        asset_server.get_recursive_dependency_load_state(atlas.texture.clone()),
-        Some(RecursiveDependencyLoadState::Loaded)
-    );
-    let image = images
-        .get(&atlas.texture)
-        .expect("Image for TextureAtlas should be added to its asset resource");
-    let ImageSampler::Descriptor(descriptor) = &image.sampler else {
-        panic!("Descriptor was not set to non default value nearest");
-    };
-    assert_eq!(
-        descriptor.as_wgpu(),
-        ImageSamplerDescriptor::nearest().as_wgpu()
-    );
+    texture_atlas_layouts
+        .get(&assets.texture_atlas_layout)
+        .expect("Texture atlas layout should be added to its assets resource.");
 
     let material = standard_materials
         .get(&assets.from_world.handle)

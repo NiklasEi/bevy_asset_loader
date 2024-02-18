@@ -1,11 +1,11 @@
 error: This attribute requires the '2d' feature
- --> $DIR/missing_feature.rs:8:13
+ --> tests/ui/missing_feature.rs:8:13
   |
-8 |     #[asset(texture_atlas(tile_size_x = 100., tile_size_y = 100., columns = 1, rows = 1))]
-  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+8 |     #[asset(texture_atlas_layout(tile_size_x = 100., tile_size_y = 100., columns = 1, rows = 1))]
+  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: This attribute requires the '3d' feature
-  --> $DIR/missing_feature.rs:10:13
+  --> tests/ui/missing_feature.rs:10:13
    |
 10 |     #[asset(standard_material)]
    |             ^^^^^^^^^^^^^^^^^

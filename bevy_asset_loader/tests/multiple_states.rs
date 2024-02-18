@@ -18,8 +18,8 @@ fn main() {
             AssetPlugin::default(),
             AudioPlugin::default(),
         ))
-        .add_state::<Prepare>()
-        .add_state::<Game>()
+        .init_state::<Prepare>()
+        .init_state::<Game>()
         .add_loading_state(
             LoadingState::new(Game::Booting)
                 .continue_to_state(Game::Loading)

@@ -41,7 +41,8 @@ pub(crate) const OPTIONAL_ATTRIBUTE: &str = "optional";
 
 pub(crate) struct TextureAtlasAttribute;
 impl TextureAtlasAttribute {
-    pub const ATTRIBUTE_NAME: &'static str = "texture_atlas";
+    pub const ATTRIBUTE_NAME_DEPRECATED: &'static str = "texture_atlas";
+    pub const ATTRIBUTE_NAME: &'static str = "texture_atlas_layout";
     pub const TILE_SIZE_X: &'static str = "tile_size_x";
     pub const TILE_SIZE_Y: &'static str = "tile_size_y";
     pub const COLUMNS: &'static str = "columns";
@@ -261,7 +262,10 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                 Meta::List(meta_list)
                     if meta_list
                         .path
-                        .is_ident(TextureAtlasAttribute::ATTRIBUTE_NAME) =>
+                        .is_ident(TextureAtlasAttribute::ATTRIBUTE_NAME)
+                        || meta_list
+                            .path
+                            .is_ident(TextureAtlasAttribute::ATTRIBUTE_NAME_DEPRECATED) =>
                 {
                     #[cfg(not(feature = "2d"))]
                     errors.push(ParseFieldError::Missing2dFeature(

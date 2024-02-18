@@ -18,7 +18,6 @@ struct Test2 {
 
 #[derive(AssetCollection, Resource)]
 struct Test3 {
-    #[asset(texture_atlas(what_is_this = 2))]
-    #[asset(path = "test.png")]
-    test: Handle<TextureAtlas>
+    #[asset(texture_atlas_layout(what_is_this = 2))]
+    test: Handle<TextureAtlasLayout>
 }

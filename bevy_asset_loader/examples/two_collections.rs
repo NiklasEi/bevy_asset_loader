@@ -7,7 +7,7 @@ const PLAYER_SPEED: f32 = 5.;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_state::<MyStates>()
+        .init_state::<MyStates>()
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading)
                 .continue_to_state(MyStates::Next)
@@ -64,18 +64,18 @@ fn play_background_audio(mut commands: Commands, audio_assets: Res<AudioAssets>)
     });
 }
 
-fn move_player(input: Res<Input<KeyCode>>, mut player: Query<&mut Transform, With<Player>>) {
+fn move_player(input: Res<ButtonInput<KeyCode>>, mut player: Query<&mut Transform, With<Player>>) {
     let mut movement = Vec3::new(0., 0., 0.);
-    if input.pressed(KeyCode::W) {
+    if input.pressed(KeyCode::KeyW) {
         movement.y += 1.;
     }
-    if input.pressed(KeyCode::S) {
+    if input.pressed(KeyCode::KeyS) {
         movement.y -= 1.;
     }
-    if input.pressed(KeyCode::A) {
+    if input.pressed(KeyCode::KeyA) {
         movement.x -= 1.;
     }
-    if input.pressed(KeyCode::D) {
+    if input.pressed(KeyCode::KeyD) {
         movement.x += 1.;
     }
     if movement == Vec3::ZERO {

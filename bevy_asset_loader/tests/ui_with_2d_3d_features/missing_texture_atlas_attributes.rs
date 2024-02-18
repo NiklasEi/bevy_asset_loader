@@ -5,7 +5,6 @@ fn main() {}
 
 #[derive(AssetCollection, Resource)]
 struct Test {
-    #[asset(texture_atlas(columns = 2))]
-    #[asset(path = "test.png")]
-    test: Handle<TextureAtlas>
+    #[asset(texture_atlas_layout(columns = 2))]
+    test: Handle<TextureAtlasLayout>
 }

@@ -4,10 +4,10 @@ use bevy_asset_loader::prelude::*;
 const PLAYER_SPEED: f32 = 5.;
 
 /// This example shows how to manually register dynamic assets. Most of the time you will want to
-/// load them from a file instead ().
+/// load them from a file instead.
 fn main() {
     App::new()
-        .add_state::<MyStates>()
+        .init_state::<MyStates>()
         .add_plugins(DefaultPlugins)
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading)
@@ -65,8 +65,8 @@ fn character_setup(
     mut state: ResMut<NextState<MyStates>>,
     mut dynamic_assets: ResMut<DynamicAssets>,
     mut show_background: ResMut<ShowBackground>,
-    mouse_input: Res<Input<MouseButton>>,
-    keyboard_input: Res<Input<KeyCode>>,
+    mouse_input: Res<ButtonInput<MouseButton>>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
 ) {
     if mouse_input.just_pressed(MouseButton::Left) {
         // Manually register the asset
@@ -86,7 +86,7 @@ fn character_setup(
                 path: "images/zombie.png".to_owned(),
             },
         });
-    } else if keyboard_input.just_pressed(KeyCode::B) {
+    } else if keyboard_input.just_pressed(KeyCode::KeyB) {
         show_background.0 = !show_background.0;
         return;
     } else {
@@ -154,18 +154,18 @@ fn play_background_audio(mut commands: Commands, audio_assets: Res<AudioAssets>)
     });
 }
 
-fn move_player(input: Res<Input<KeyCode>>, mut player: Query<&mut Transform, With<Player>>) {
+fn move_player(input: Res<ButtonInput<KeyCode>>, mut player: Query<&mut Transform, With<Player>>) {
     let mut movement = Vec3::new(0., 0., 0.);
-    if input.pressed(KeyCode::W) {
+    if input.pressed(KeyCode::KeyW) {
         movement.y += 1.;
     }
-    if input.pressed(KeyCode::S) {
+    if input.pressed(KeyCode::KeyS) {
         movement.y -= 1.;
     }
-    if input.pressed(KeyCode::A) {
+    if input.pressed(KeyCode::KeyA) {
         movement.x -= 1.;
     }
-    if input.pressed(KeyCode::D) {
+    if input.pressed(KeyCode::KeyD) {
         movement.x += 1.;
     }
     if movement == Vec3::ZERO {
@@ -219,7 +219,7 @@ fn menu(mut commands: Commands, font_assets: Res<FontAssets>) {
                             color: Color::rgb(1., 1., 1.),
                         },
                     }],
-                    alignment: TextAlignment::Center,
+                    justify: JustifyText::Center,
                     ..Default::default()
                 },
                 ..Default::default()
@@ -234,7 +234,7 @@ fn menu(mut commands: Commands, font_assets: Res<FontAssets>) {
                             color: Color::rgb(1., 1., 1.),
                         },
                     }],
-                    alignment: TextAlignment::Center,
+                    justify: JustifyText::Center,
                     ..Default::default()
                 },
                 ..Default::default()

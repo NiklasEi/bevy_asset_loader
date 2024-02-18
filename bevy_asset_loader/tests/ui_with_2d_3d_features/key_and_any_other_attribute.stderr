@@ -1,12 +1,12 @@
 error: The 'key' attribute cannot be combined with any other asset defining attributes
- --> $DIR/key_and_any_other_attribute.rs:8:5
+ --> tests/ui_with_2d_3d_features/key_and_any_other_attribute.rs:8:5
   |
 8 | /     #[asset(path = "test.ogg", key = "test")]
 9 | |     test: Handle<AudioSource>,
   | |_____________________________^
 
 error: The 'key' attribute cannot be combined with any other asset defining attributes
-  --> $DIR/key_and_any_other_attribute.rs:14:5
+  --> tests/ui_with_2d_3d_features/key_and_any_other_attribute.rs:14:5
    |
 14 | /     #[asset(standard_material)]
 15 | |     #[asset(key = "test")]
@@ -14,9 +14,9 @@ error: The 'key' attribute cannot be combined with any other asset defining attr
    | |__________________________________^
 
 error: The 'key' attribute cannot be combined with any other asset defining attributes
-  --> $DIR/key_and_any_other_attribute.rs:21:5
+  --> tests/ui_with_2d_3d_features/key_and_any_other_attribute.rs:21:5
    |
-21 | /     #[asset(texture_atlas(tile_size_x = 100., tile_size_y = 100., columns = 1, rows = 1))]
+21 | /     #[asset(texture_atlas_layout(tile_size_x = 100., tile_size_y = 100., columns = 1, rows = 1))]
 22 | |     #[asset(key = "test")]
-23 | |     test: Handle<TextureAtlas>,
-   | |______________________________^
+23 | |     test: Handle<TextureAtlasLayout>,
+   | |____________________________________^

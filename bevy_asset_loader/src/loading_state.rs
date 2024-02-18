@@ -53,7 +53,7 @@ use crate::loading_state::systems::{apply_internal_state_transition, run_loading
 ///
 /// fn main() {
 ///     App::new()
-///         .add_state::<GameState>()
+///         .init_state::<GameState>()
 ///         .add_plugins((MinimalPlugins, AssetPlugin::default()))
 /// #       .init_resource::<iyes_progress::ProgressCounter>()
 ///         .add_loading_state(LoadingState::new(GameState::Loading)
@@ -119,7 +119,7 @@ where
     /// # use bevy::asset::AssetPlugin;
     /// # fn main() {
     ///     App::new()
-    /// #       .add_state::<GameState>()
+    /// #       .init_state::<GameState>()
     /// #       .add_plugins((MinimalPlugins, AssetPlugin::default()))
     /// #       .init_resource::<iyes_progress::ProgressCounter>()
     ///         .add_loading_state(
@@ -171,7 +171,7 @@ where
     /// # use bevy::asset::AssetPlugin;
     /// # fn main() {
     ///     App::new()
-    /// #       .add_state::<GameState>()
+    /// #       .init_state::<GameState>()
     /// #       .add_plugins((MinimalPlugins, AssetPlugin::default()))
     /// #       .init_resource::<iyes_progress::ProgressCounter>()
     ///         .add_loading_state(
@@ -216,7 +216,7 @@ where
     /// # use bevy::asset::AssetPlugin;
     /// # fn main() {
     ///     App::new()
-    /// #       .add_state::<GameState>()
+    /// #       .init_state::<GameState>()
     /// #       .add_plugins((MinimalPlugins, AssetPlugin::default()))
     /// #       .init_resource::<iyes_progress::ProgressCounter>()
     ///         .add_loading_state(
@@ -289,7 +289,7 @@ where
     /// # use bevy::asset::AssetPlugin;
     /// # fn main() {
     ///     App::new()
-    /// #       .add_state::<GameState>()
+    /// #       .init_state::<GameState>()
     /// #       .add_plugins((MinimalPlugins, AssetPlugin::default()))
     /// #       .init_resource::<iyes_progress::ProgressCounter>()
     ///         .add_loading_state(
@@ -596,7 +596,7 @@ pub trait LoadingStateAppExt {
     /// # use bevy::asset::AssetPlugin;
     /// # fn main() {
     ///     App::new()
-    /// #       .add_state::<GameState>()
+    /// #       .init_state::<GameState>()
     /// #       .add_plugins((MinimalPlugins, AssetPlugin::default()))
     /// #       .init_resource::<iyes_progress::ProgressCounter>()
     ///         .add_loading_state(
@@ -675,13 +675,13 @@ pub trait LoadingStateAppExt {
     /// # fn main() {
     ///     App::new()
     /// #       .add_plugins((MinimalPlugins, AssetPlugin::default()))
-    /// #       .add_state::<GameState>()
+    /// #       .init_state::<GameState>()
     /// #       .init_resource::<iyes_progress::ProgressCounter>()
     ///         .add_loading_state(
     ///           LoadingState::new(GameState::Loading)
     ///             .continue_to_state(GameState::Menu)
     ///             .load_collection::<TextureForAtlas>()
-    ///             .init_resource::<TextureAtlasFromWorld>()
+    ///             .init_resource::<TextureAtlasLayoutFromWorld>()
     ///         )
     /// #       .set_runner(|mut app| app.update())
     /// #       .run();
@@ -693,16 +693,15 @@ pub trait LoadingStateAppExt {
     /// #     Menu
     /// # }
     /// # #[derive(Resource)]
-    /// # struct TextureAtlasFromWorld {
-    /// #     atlas: Handle<TextureAtlas>
+    /// # struct TextureAtlasLayoutFromWorld {
+    /// #     atlas_layout: Handle<TextureAtlasLayout>
     /// # }
-    /// # impl FromWorld for TextureAtlasFromWorld {
+    /// # impl FromWorld for TextureAtlasLayoutFromWorld {
     /// #     fn from_world(world: &mut World) -> Self {
     /// #         let cell = world.cell();
-    /// #         let assets = cell.get_resource::<TextureForAtlas>().expect("TextureForAtlas not loaded");
-    /// #         let mut atlases = cell.get_resource_mut::<Assets<TextureAtlas>>().expect("TextureAtlases missing");
-    /// #         TextureAtlasFromWorld {
-    /// #             atlas: atlases.add(TextureAtlas::from_grid(assets.array.clone(), Vec2::new(250., 250.), 1, 4, None, None))
+    /// #         let mut layouts = cell.get_resource_mut::<Assets<TextureAtlasLayout>>().expect("TextureAtlasLayouts missing");
+    /// #         TextureAtlasLayoutFromWorld {
+    /// #             atlas_layout: layouts.add(TextureAtlasLayout::from_grid(Vec2::new(250., 250.), 1, 4, None, None))
     /// #         }
     /// #     }
     /// # }

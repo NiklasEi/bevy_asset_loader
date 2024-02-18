@@ -1,5 +1,7 @@
 # Changelog
 
+## v0.20.0 - 18.02.2024
+- update to Bevy 0.13
 - support any type implementing the new trait `MapKey` as keys for mapped assets (resolves [#153](https://github.com/NiklasEi/bevy_asset_loader/issues/153))
 - derive Serialize on StandardDynamicAssets (resolves [#177](https://github.com/NiklasEi/bevy_asset_loader/issues/177))
 

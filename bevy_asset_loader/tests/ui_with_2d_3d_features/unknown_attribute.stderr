@@ -1,17 +1,17 @@
 error: Unknown attribute
- --> $DIR/unknown_attribute.rs:8:13
+ --> tests/ui_with_2d_3d_features/unknown_attribute.rs:8:13
   |
 8 |     #[asset(what_is_this = "I don't know this")]
   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: Unknown attribute
-  --> $DIR/unknown_attribute.rs:15:13
+  --> tests/ui_with_2d_3d_features/unknown_attribute.rs:15:13
    |
 15 |     #[asset(paths = "test.ogg")]
    |             ^^^^^^^^^^^^^^^^^^
 
 error: Unknown attribute
-  --> $DIR/unknown_attribute.rs:21:27
+  --> tests/ui_with_2d_3d_features/unknown_attribute.rs:21:34
    |
-21 |     #[asset(texture_atlas(what_is_this = 2))]
-   |                           ^^^^^^^^^^^^^^^^
+21 |     #[asset(texture_atlas_layout(what_is_this = 2))]
+   |                                  ^^^^^^^^^^^^^^^^
