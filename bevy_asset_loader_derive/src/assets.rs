@@ -533,23 +533,22 @@ impl AssetBuilder {
                 TextureAtlasAttribute::ROWS
             ));
         }
-        if missing_fields.is_empty() {
-            return Ok(AssetField::TextureAtlasLayout(
-                TextureAtlasLayoutAssetField {
-                    field_ident: self.field_ident.unwrap(),
-                    tile_size_x: self.tile_size_x.unwrap(),
-                    tile_size_y: self.tile_size_y.unwrap(),
-                    columns: self.columns.unwrap(),
-                    rows: self.rows.unwrap(),
-                    padding_x: self.padding_x.unwrap_or_default(),
-                    padding_y: self.padding_y.unwrap_or_default(),
-                    offset_x: self.offset_x.unwrap_or_default(),
-                    offset_y: self.offset_y.unwrap_or_default(),
-                },
-            ));
-        }
         if self.asset_path.is_none() && self.asset_paths.is_none() && self.key.is_none() {
-            if missing_fields.len() < 4 {
+            if missing_fields.is_empty() {
+                return Ok(AssetField::TextureAtlasLayout(
+                    TextureAtlasLayoutAssetField {
+                        field_ident: self.field_ident.unwrap(),
+                        tile_size_x: self.tile_size_x.unwrap(),
+                        tile_size_y: self.tile_size_y.unwrap(),
+                        columns: self.columns.unwrap(),
+                        rows: self.rows.unwrap(),
+                        padding_x: self.padding_x.unwrap_or_default(),
+                        padding_y: self.padding_y.unwrap_or_default(),
+                        offset_x: self.offset_x.unwrap_or_default(),
+                        offset_y: self.offset_y.unwrap_or_default(),
+                    },
+                ));
+            } else if missing_fields.len() < 4 {
                 return Err(vec![ParseFieldError::MissingAttributes(missing_fields)]);
             }
             return Err(vec![ParseFieldError::NoAttributes]);

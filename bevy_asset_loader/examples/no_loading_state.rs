@@ -72,10 +72,7 @@ fn draw(mut commands: Commands, image_assets: Res<ImageAssets>) {
     commands
         .spawn(SpriteSheetBundle {
             texture: image_assets.female_adventurer.clone(),
-            atlas: TextureAtlas {
-                layout: image_assets.female_adventurer_layout.clone(),
-                index: 0,
-            },
+            atlas: TextureAtlas::from(image_assets.female_adventurer_layout.clone()),
             transform: Transform::from_translation(Vec3::new(-150., 0., 1.)),
             ..Default::default()
         })
