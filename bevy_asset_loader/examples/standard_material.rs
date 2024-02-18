@@ -13,10 +13,6 @@ fn main() {
                 .continue_to_state(MyStates::Next)
                 .load_collection::<MyAssets>(),
         )
-        .insert_resource(AmbientLight {
-            color: Color::WHITE,
-            brightness: 0.2,
-        })
         .add_systems(OnEnter(MyStates::Next), spawn_player)
         .run();
 }
@@ -34,9 +30,9 @@ fn spawn_player(
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
     commands.spawn(PbrBundle {
-        mesh: meshes.add(Mesh::from(Cuboid {
+        mesh: meshes.add(Cuboid {
             half_size: Vec3::splat(1.0),
-        })),
+        }),
         material: my_assets.player.clone(),
         ..Default::default()
     });

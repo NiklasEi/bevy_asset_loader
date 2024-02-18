@@ -1,10 +1,6 @@
 ({
     "image.player_sheet": File (
         path: "images/female_adventurer_sheet.png",
-        tile_size_x: 96.,
-        tile_size_y: 99.,
-        columns: 8,
-        rows: 1
     ),
     "layout.player_sheet": TextureAtlasLayout (
         tile_size_x: 96.,

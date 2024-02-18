@@ -42,24 +42,19 @@ fn draw_atlas(mut commands: Commands, my_assets: Res<MyAssets>) {
         transform: Transform::from_xyz(0., -150., 0.),
         ..Default::default()
     });
-    // draw single texture from sprite sheet starting at index 0
-    commands
-        .spawn(SpriteSheetBundle {
-            transform: Transform {
-                translation: Vec3::new(0., 150., 0.),
-                ..Default::default()
-            },
+    // draw animated sprite using the texture atlas layout
+    commands.spawn((
+        SpriteBundle {
             texture: my_assets.female_adventurer.clone(),
-            atlas: TextureAtlas {
-                layout: my_assets.female_adventurer_atlas.clone(),
-                index: 1,
-            },
+            transform: Transform::from_xyz(0., 150., 0.),
             ..Default::default()
-        })
-        .insert(AnimationTimer(Timer::from_seconds(
-            0.1,
-            TimerMode::Repeating,
-        )));
+        },
+        TextureAtlas {
+            layout: my_assets.female_adventurer_atlas.clone(),
+            index: 1,
+        },
+        AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
+    ));
 }
 
 #[derive(Component)]
