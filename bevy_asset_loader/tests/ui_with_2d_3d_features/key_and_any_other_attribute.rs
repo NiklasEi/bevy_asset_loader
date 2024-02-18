@@ -18,7 +18,7 @@ struct StandardMaterialAndKey {
 
 #[derive(AssetCollection, Resource)]
 struct AssetCollectionAndKey {
-    #[asset(texture_atlas(tile_size_x = 100., tile_size_y = 100., columns = 1, rows = 1))]
+    #[asset(texture_atlas_layout(tile_size_x = 100., tile_size_y = 100., columns = 1, rows = 1))]
     #[asset(key = "test")]
     test: Handle<TextureAtlasLayout>,
 }

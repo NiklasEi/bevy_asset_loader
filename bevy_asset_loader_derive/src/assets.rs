@@ -852,7 +852,7 @@ mod test {
     }
 
     #[test]
-    fn texture_atlas() {
+    fn texture_atlas_layout() {
         let builder = AssetBuilder {
             field_ident: Some(Ident::new("test", Span::call_site())),
             tile_size_x: Some(100.),

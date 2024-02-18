@@ -58,7 +58,7 @@ struct TextureAssets {
     tree: Handle<Image>,
     #[asset(path = "images/female_adventurer_sheet.png")]
     female_adventurer: Handle<Image>,
-    #[asset(texture_atlas(tile_size_x = 96., tile_size_y = 99., columns = 8, rows = 1))]
+    #[asset(texture_atlas_layout(tile_size_x = 96., tile_size_y = 99., columns = 8, rows = 1))]
     female_adventurer_layout: Handle<TextureAtlasLayout>,
 }
 

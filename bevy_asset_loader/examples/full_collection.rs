@@ -27,7 +27,7 @@ struct MyAssets {
     #[asset(path = "images/player.png", standard_material)]
     standard_material: Handle<StandardMaterial>,
     // Any image file that can be loaded and turned into a texture atlas
-    #[asset(texture_atlas(tile_size_x = 96., tile_size_y = 99., columns = 8, rows = 1))]
+    #[asset(texture_atlas_layout(tile_size_x = 96., tile_size_y = 99., columns = 8, rows = 1))]
     texture_atlas_layout: Handle<TextureAtlasLayout>,
     // Example field with type that implements `FromWorld`
     // If no derive attributes are set, `from_world` will be used to set the value.

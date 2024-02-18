@@ -187,7 +187,7 @@ The following sections describe more types of asset fields that you can load thr
 
 ### Texture atlases
 
-You can directly load texture atlases from sprite sheets if you enable the feature `2d`. For a complete example please take a look at [atlas_from_grid.rs](/bevy_asset_loader/examples/atlas_from_grid.rs).
+You can create texture atlas layouts as part of an `AssetCollection` if you enable the feature `2d`. For a complete example please take a look at [atlas_from_grid.rs](/bevy_asset_loader/examples/atlas_from_grid.rs).
 
 ```rust
 use bevy::prelude::*;
@@ -195,9 +195,10 @@ use bevy_asset_loader::asset_collection::AssetCollection;
 
 #[derive(AssetCollection, Resource)]
 struct MyAssets {
-    #[asset(texture_atlas(tile_size_x = 64., tile_size_y = 64., columns = 8, rows = 1, padding_x = 12., padding_y = 12., offset_x = 6., offset_y = 6.))]
+    #[asset(texture_atlas_layout(tile_size_x = 64., tile_size_y = 64., columns = 8, rows = 1, padding_x = 12., padding_y = 12., offset_x = 6., offset_y = 6.))]
+    layout: Handle<TextureAtlasLayout>,
     #[asset(path = "images/sprite_sheet.png")]
-    sprite: Handle<TextureAtlas>,
+    sprite: Handle<Image>,
 }
 ```
 
@@ -206,15 +207,19 @@ As a dynamic asset this example becomes:
 ```rust ignore
 #[derive(AssetCollection, Resource)]
 struct MyAssets {
-    #[asset(key = "image.player")]
-    sprite: Handle<TextureAtlas>,
+    #[asset(key = "player.layout")]
+    layout: Handle<TextureAtlasLayout>,
+    #[asset(key = "player.image")]
+    sprite: Handle<Image>,
 }
 ```
 
 ```ron
 ({
-    "image.player": TextureAtlas (
+    "player.image": File (
         path: "images/sprite_sheet.png",
+    ),
+    "player.layout": TextureAtlasLayout (
         tile_size_x: 100.,
         tile_size_y: 64.,
         columns: 8,
@@ -478,9 +483,10 @@ fn main() {
 
 #[derive(AssetCollection, Resource)]
 struct MyAssets {
-    #[asset(texture_atlas(tile_size_x = 100., tile_size_y = 96., columns = 8, rows = 1, padding_x = 12., padding_y = 12.))]
+    #[asset(texture_atlas_layout(tile_size_x = 64., tile_size_y = 64., columns = 8, rows = 1, padding_x = 12., padding_y = 12., offset_x = 6., offset_y = 6.))]
+    layout: Handle<TextureAtlasLayout>,
     #[asset(path = "images/sprite_sheet.png")]
-    sprite: Handle<TextureAtlas>,
+    sprite: Handle<Image>,
 }
 ```
 

@@ -27,7 +27,7 @@ jobs:
       - name: Install alsa and udev
         run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
         if: runner.os == 'linux'
-      - name: Build & run tests for 2d, 3d, standard
+      - name: Build & run tests
         run: cargo test -p bevy_asset_loader
       - name: Build & run tests for derive package
         run: cargo test -p bevy_asset_loader_derive

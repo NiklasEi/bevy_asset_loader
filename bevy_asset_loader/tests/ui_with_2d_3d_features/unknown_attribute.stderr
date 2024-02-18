@@ -11,7 +11,7 @@ error: Unknown attribute
    |             ^^^^^^^^^^^^^^^^^^
 
 error: Unknown attribute
-  --> tests/ui_with_2d_3d_features/unknown_attribute.rs:21:27
+  --> tests/ui_with_2d_3d_features/unknown_attribute.rs:21:34
    |
-21 |     #[asset(texture_atlas(what_is_this = 2))]
-   |                           ^^^^^^^^^^^^^^^^
+21 |     #[asset(texture_atlas_layout(what_is_this = 2))]
+   |                                  ^^^^^^^^^^^^^^^^

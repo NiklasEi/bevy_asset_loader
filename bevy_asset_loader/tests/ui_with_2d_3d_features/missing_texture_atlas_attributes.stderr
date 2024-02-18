@@ -1,6 +1,6 @@
-error: Field is missing asset attributes: texture_atlas/tile_size_x, texture_atlas/tile_size_y, texture_atlas/rows
+error: Field is missing asset attributes: texture_atlas_layout/tile_size_x, texture_atlas_layout/tile_size_y, texture_atlas_layout/rows
  --> tests/ui_with_2d_3d_features/missing_texture_atlas_attributes.rs:8:5
   |
-8 | /     #[asset(texture_atlas(columns = 2))]
+8 | /     #[asset(texture_atlas_layout(columns = 2))]
 9 | |     test: Handle<TextureAtlasLayout>
   | |____________________________________^

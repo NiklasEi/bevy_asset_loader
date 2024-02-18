@@ -1,5 +1,5 @@
 error[E0277]: the trait bound `NoDefault: std::default::Default` is not satisfied
- --> $DIR/no_default.rs:8:5
+ --> tests/ui/no_default.rs:8:5
   |
 8 |     no_default: NoDefault,
   |     ^^^^^^^^^^ the trait `std::default::Default` is not implemented for `NoDefault`
