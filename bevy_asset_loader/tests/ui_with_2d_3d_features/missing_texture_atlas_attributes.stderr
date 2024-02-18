@@ -1,29 +1,6 @@
 error: Field is missing asset attributes: texture_atlas/tile_size_x, texture_atlas/tile_size_y, texture_atlas/rows
-  --> tests/ui_with_2d_3d_features/missing_texture_atlas_attributes.rs:8:5
-   |
-8  | /     #[asset(texture_atlas(columns = 2))]
-9  | |     #[asset(path = "test.png")]
-10 | |     test: Handle<TextureAtlas>
-   | |______________________________^
-
-error[E0277]: the trait bound `bevy::prelude::TextureAtlas: Asset` is not satisfied
-   --> tests/ui_with_2d_3d_features/missing_texture_atlas_attributes.rs:10:11
-    |
-10  |     test: Handle<TextureAtlas>
-    |           ^^^^^^^^^^^^^^^^^^^^ the trait `Asset` is not implemented for `bevy::prelude::TextureAtlas`
-    |
-    = help: the following other types implement trait `Asset`:
-              Font
-              AnimationClip
-              DynamicScene
-              Scene
-              AudioSource
-              Pitch
-              bevy::gltf::Gltf
-              GltfNode
-            and $N others
-note: required by a bound in `bevy::prelude::Handle`
-   --> /home/niklas/.cargo/git/checkouts/bevy-f7ffde730c324c74/7b5a4ec/crates/bevy_asset/src/handle.rs:125:20
-    |
-125 | pub enum Handle<A: Asset> {
-    |                    ^^^^^ required by this bound in `Handle`
+ --> tests/ui_with_2d_3d_features/missing_texture_atlas_attributes.rs:8:5
+  |
+8 | /     #[asset(texture_atlas(columns = 2))]
+9 | |     test: Handle<TextureAtlasLayout>
+  | |____________________________________^

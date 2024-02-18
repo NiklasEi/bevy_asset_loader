@@ -310,9 +310,7 @@ mod tests {
     #[test]
     fn serialize_and_deserialize_atlas() {
         let dynamic_asset_file = r#"({
-    "texture_atlas": TextureAtlas(
-        path: "images/female_adventurer_sheet.png",
-        sampler: Nearest,
+    "texture_atlas": TextureAtlasLayout(
         tile_size_x: 96.0,
         tile_size_y: 99.0,
         columns: 8,

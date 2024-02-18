@@ -681,7 +681,7 @@ pub trait LoadingStateAppExt {
     ///           LoadingState::new(GameState::Loading)
     ///             .continue_to_state(GameState::Menu)
     ///             .load_collection::<TextureForAtlas>()
-    ///             .init_resource::<TextureAtlasFromWorld>()
+    ///             .init_resource::<TextureAtlasLayoutFromWorld>()
     ///         )
     /// #       .set_runner(|mut app| app.update())
     /// #       .run();
@@ -693,16 +693,15 @@ pub trait LoadingStateAppExt {
     /// #     Menu
     /// # }
     /// # #[derive(Resource)]
-    /// # struct TextureAtlasFromWorld {
-    /// #     atlas: Handle<TextureAtlas>
+    /// # struct TextureAtlasLayoutFromWorld {
+    /// #     atlas_layout: Handle<TextureAtlasLayout>
     /// # }
-    /// # impl FromWorld for TextureAtlasFromWorld {
+    /// # impl FromWorld for TextureAtlasLayoutFromWorld {
     /// #     fn from_world(world: &mut World) -> Self {
     /// #         let cell = world.cell();
-    /// #         let assets = cell.get_resource::<TextureForAtlas>().expect("TextureForAtlas not loaded");
-    /// #         let mut atlases = cell.get_resource_mut::<Assets<TextureAtlasLayout>>().expect("TextureAtlases missing");
-    /// #         TextureAtlasFromWorld {
-    /// #             atlas: atlases.add(TextureAtlasLayout::from_grid(assets.array.clone(), Vec2::new(250., 250.), 1, 4, None, None))
+    /// #         let mut layouts = cell.get_resource_mut::<Assets<TextureAtlasLayout>>().expect("TextureAtlasLayouts missing");
+    /// #         TextureAtlasLayoutFromWorld {
+    /// #             atlas_layout: layouts.add(TextureAtlasLayout::from_grid(Vec2::new(250., 250.), 1, 4, None, None))
     /// #         }
     /// #     }
     /// # }

@@ -549,6 +549,9 @@ impl AssetBuilder {
             ));
         }
         if self.asset_path.is_none() && self.asset_paths.is_none() && self.key.is_none() {
+            if missing_fields.len() < 4 {
+                return Err(vec![ParseFieldError::MissingAttributes(missing_fields)]);
+            }
             return Err(vec![ParseFieldError::NoAttributes]);
         }
         if self.key.is_some()
@@ -569,26 +572,10 @@ impl AssetBuilder {
         if self.asset_path.is_some() && self.asset_paths.is_some() {
             return Err(vec![ParseFieldError::PathAndPathsAreExclusive]);
         }
-        if missing_fields.len() == 4 {
-            if self.key.is_some() {
-                return if self.is_optional {
-                    if self.is_collection {
-                        Ok(AssetField::OptionalDynamicFileCollection(
-                            DynamicAssetField {
-                                field_ident: self.field_ident.unwrap(),
-                                key: self.key.unwrap(),
-                            },
-                            self.is_typed.into(),
-                            self.is_mapped.into(),
-                        ))
-                    } else {
-                        Ok(AssetField::OptionalDynamic(DynamicAssetField {
-                            field_ident: self.field_ident.unwrap(),
-                            key: self.key.unwrap(),
-                        }))
-                    }
-                } else if self.is_collection {
-                    Ok(AssetField::DynamicFileCollection(
+        if self.key.is_some() {
+            return if self.is_optional {
+                if self.is_collection {
+                    Ok(AssetField::OptionalDynamicFileCollection(
                         DynamicAssetField {
                             field_ident: self.field_ident.unwrap(),
                             key: self.key.unwrap(),
@@ -597,49 +584,62 @@ impl AssetBuilder {
                         self.is_mapped.into(),
                     ))
                 } else {
-                    Ok(AssetField::Dynamic(DynamicAssetField {
+                    Ok(AssetField::OptionalDynamic(DynamicAssetField {
                         field_ident: self.field_ident.unwrap(),
                         key: self.key.unwrap(),
                     }))
-                };
-            }
-            if self.asset_paths.is_some() {
-                return Ok(AssetField::Files(
-                    MultipleFilesField {
+                }
+            } else if self.is_collection {
+                Ok(AssetField::DynamicFileCollection(
+                    DynamicAssetField {
                         field_ident: self.field_ident.unwrap(),
-                        asset_paths: self.asset_paths.unwrap(),
+                        key: self.key.unwrap(),
                     },
                     self.is_typed.into(),
                     self.is_mapped.into(),
-                ));
-            }
-            if self.is_collection {
-                return Ok(AssetField::Folder(
-                    BasicAssetField {
-                        field_ident: self.field_ident.unwrap(),
-                        asset_path: self.asset_path.unwrap(),
-                    },
-                    self.is_typed.into(),
-                    self.is_mapped.into(),
-                ));
-            }
-            if self.sampler.is_some() {
-                return Ok(AssetField::Image(ImageAssetField {
+                ))
+            } else {
+                Ok(AssetField::Dynamic(DynamicAssetField {
+                    field_ident: self.field_ident.unwrap(),
+                    key: self.key.unwrap(),
+                }))
+            };
+        }
+        if self.asset_paths.is_some() {
+            return Ok(AssetField::Files(
+                MultipleFilesField {
+                    field_ident: self.field_ident.unwrap(),
+                    asset_paths: self.asset_paths.unwrap(),
+                },
+                self.is_typed.into(),
+                self.is_mapped.into(),
+            ));
+        }
+        if self.is_collection {
+            return Ok(AssetField::Folder(
+                BasicAssetField {
                     field_ident: self.field_ident.unwrap(),
                     asset_path: self.asset_path.unwrap(),
-                    sampler: self.sampler.unwrap(),
-                }));
-            }
-            let asset = BasicAssetField {
+                },
+                self.is_typed.into(),
+                self.is_mapped.into(),
+            ));
+        }
+        if self.sampler.is_some() {
+            return Ok(AssetField::Image(ImageAssetField {
                 field_ident: self.field_ident.unwrap(),
                 asset_path: self.asset_path.unwrap(),
-            };
-            if self.is_standard_material {
-                return Ok(AssetField::StandardMaterial(asset));
-            }
-            return Ok(AssetField::Basic(asset));
+                sampler: self.sampler.unwrap(),
+            }));
         }
-        Err(vec![ParseFieldError::MissingAttributes(missing_fields)])
+        let asset = BasicAssetField {
+            field_ident: self.field_ident.unwrap(),
+            asset_path: self.asset_path.unwrap(),
+        };
+        if self.is_standard_material {
+            return Ok(AssetField::StandardMaterial(asset));
+        }
+        return Ok(AssetField::Basic(asset));
     }
 }
 
