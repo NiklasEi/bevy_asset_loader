@@ -639,7 +639,8 @@ impl AssetBuilder {
         if self.is_standard_material {
             return Ok(AssetField::StandardMaterial(asset));
         }
-        return Ok(AssetField::Basic(asset));
+
+        Ok(AssetField::Basic(asset))
     }
 }
 
