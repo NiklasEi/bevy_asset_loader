@@ -81,6 +81,28 @@ jobs:
         if: runner.os == 'linux'
       - name: Build & run tests progress tracking
         run: cargo test --features "progress_tracking" -p bevy_asset_loader
+  full-test:
+    strategy:
+      matrix:
+        os: [ windows-latest, ubuntu-latest, macos-latest ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-full-test-${{ hashFiles('**/Cargo.toml') }}
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+      - name: Install alsa and udev
+        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
+        if: runner.os == 'linux'
       - name: Build & run tests progress tracking and 2d,3d,dynamic
         run: cargo test --features "2d, 3d, standard_dynamic_assets, progress_tracking" -p bevy_asset_loader
   lint:
