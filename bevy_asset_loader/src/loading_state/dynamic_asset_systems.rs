@@ -5,8 +5,8 @@ use bevy::ecs::change_detection::ResMut;
 use bevy::ecs::schedule::{NextState, State, States};
 use bevy::ecs::system::{Res, SystemState};
 use bevy::ecs::world::World;
-use bevy::log::debug;
-use std::any::TypeId;
+use bevy::log::{debug, warn};
+use std::any::{type_name, TypeId};
 
 #[allow(clippy::type_complexity)]
 pub(crate) fn load_dynamic_asset_collections<S: States, C: DynamicAssetCollection + Asset>(
@@ -33,7 +33,9 @@ pub(crate) fn load_dynamic_asset_collections<S: States, C: DynamicAssetCollectio
         .state_configurations
         .get_mut(state.get())
     {
-        config.loading_dynamic_collections.insert(TypeId::of::<C>());
+        if !config.loading_dynamic_collections.insert(TypeId::of::<C>()) {
+            warn!("The dynamic asset collection {} was registered multiple times on the loading state {:?}", type_name::<C>(), state.get());
+        }
     }
     world.insert_resource(loading_collections);
 }
