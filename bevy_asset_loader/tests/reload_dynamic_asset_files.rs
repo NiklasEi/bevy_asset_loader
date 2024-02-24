@@ -1,8 +1,11 @@
+#![allow(dead_code, unused_imports)]
+
 use bevy::app::AppExit;
 use bevy::audio::AudioPlugin;
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 
+#[cfg(feature = "standard_dynamic_assets")]
 #[test]
 fn main() {
     let mut app = App::new();
