@@ -41,7 +41,13 @@ pub(crate) fn start_loading_collection<S: States, Assets: AssetCollection>(
                 &state
             )
         });
-    config.loading_collections += 1;
+    if !config.loading_collections.insert(TypeId::of::<Assets>()) {
+        warn!(
+            "The asset collection '{}' was added multiple times to the loading state '{:?}'",
+            type_name::<Assets>(),
+            state.get()
+        );
+    }
     let handles = LoadingAssetHandles {
         handles: Assets::load(world),
         marker: PhantomData::<Assets>,
@@ -107,7 +113,7 @@ fn count_loaded_handles<S: States, Assets: AssetCollection>(cell: WorldCell) -> 
         if failure {
             config.loading_failed = true;
         } else {
-            config.loading_collections -= 1;
+            config.loading_collections.remove(&TypeId::of::<Assets>());
         }
     } else {
         warn!("Failed to read loading state configuration in count_loaded_handles");
@@ -126,7 +132,7 @@ pub(crate) fn resume_to_finalize<S: States>(
         .state_configurations
         .get(user_state.get())
     {
-        if configuration.loading_collections == 0 {
+        if configuration.loading_collections.is_empty() {
             internal_state.set(InternalLoadingState::Finalize);
         }
         if configuration.loading_failed && configuration.failure.is_some() {

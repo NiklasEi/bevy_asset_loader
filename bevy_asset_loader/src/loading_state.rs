@@ -498,7 +498,7 @@ pub(crate) struct LoadingStateSchedule<S: States>(pub S);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, States)]
 pub(crate) enum InternalLoadingState<S: States> {
-    /// Starting point. Here it will be decided whether or not dynamic asset collections need to be loaded.
+    /// Starting point. Here it will be decided whether dynamic asset collections need to be loaded.
     #[default]
     Initialize,
     /// Load dynamic asset collections and configure their key <-> asset mapping
@@ -545,7 +545,7 @@ struct LoadingConfiguration<State: States> {
     next: Option<State>,
     failure: Option<State>,
     loading_failed: bool,
-    loading_collections: usize,
+    loading_collections: HashSet<TypeId>,
     loading_dynamic_collections: HashSet<TypeId>,
 }
 
@@ -555,7 +555,7 @@ impl<State: States> Default for LoadingConfiguration<State> {
             next: None,
             failure: None,
             loading_failed: false,
-            loading_collections: 0,
+            loading_collections: default(),
             loading_dynamic_collections: default(),
         }
     }
