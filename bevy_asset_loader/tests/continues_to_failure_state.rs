@@ -1,20 +1,16 @@
-#![allow(dead_code, unused_imports)]
-
 use bevy::app::AppExit;
 use bevy::asset::AssetPlugin;
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 
-#[cfg(all(
-    not(feature = "2d"),
-    not(feature = "3d"),
-    not(feature = "progress_tracking")
-))]
 #[test]
 fn continues_to_failure_state() {
-    App::new()
-        .init_state::<MyStates>()
-        .add_plugins((MinimalPlugins, AssetPlugin::default()))
+    let mut app = App::new();
+    app.init_state::<MyStates>();
+
+    #[cfg(feature = "progress_tracking")]
+    app.add_plugins(iyes_progress::ProgressPlugin::new(MyStates::Load));
+    app.add_plugins((MinimalPlugins, AssetPlugin::default()))
         .add_loading_state(
             LoadingState::new(MyStates::Load)
                 .continue_to_state(MyStates::Next)
@@ -44,7 +40,7 @@ fn timeout(time: Res<Time>) {
 #[derive(AssetCollection, Resource)]
 struct Audio {
     #[asset(path = "audio/plop.ogg")]
-    no_loader_for_ogg_files: Handle<AudioSource>,
+    _no_loader_for_ogg_files: Handle<AudioSource>,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]

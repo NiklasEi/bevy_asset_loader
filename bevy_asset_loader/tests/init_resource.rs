@@ -1,34 +1,30 @@
-#![allow(dead_code, unused_imports)]
-
 use bevy::app::AppExit;
 use bevy::asset::AssetPlugin;
 use bevy::audio::AudioPlugin;
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 
-#[cfg(all(
-    not(feature = "2d"),
-    not(feature = "3d"),
-    not(feature = "progress_tracking")
-))]
 #[test]
 fn init_resource() {
-    App::new()
-        .init_state::<MyStates>()
-        .add_plugins((
-            MinimalPlugins,
-            AssetPlugin::default(),
-            AudioPlugin::default(),
-        ))
-        .add_loading_state(
-            LoadingState::new(MyStates::Load)
-                .continue_to_state(MyStates::Next)
-                .load_collection::<MyAssets>()
-                .init_resource::<PostProcessed>(),
-        )
-        .add_systems(Update, timeout.run_if(in_state(MyStates::Load)))
-        .add_systems(OnEnter(MyStates::Next), expect)
-        .run();
+    let mut app = App::new();
+    app.init_state::<MyStates>();
+
+    #[cfg(feature = "progress_tracking")]
+    app.add_plugins(iyes_progress::ProgressPlugin::new(MyStates::Load));
+    app.add_plugins((
+        MinimalPlugins,
+        AssetPlugin::default(),
+        AudioPlugin::default(),
+    ))
+    .add_loading_state(
+        LoadingState::new(MyStates::Load)
+            .continue_to_state(MyStates::Next)
+            .load_collection::<MyAssets>()
+            .init_resource::<PostProcessed>(),
+    )
+    .add_systems(Update, timeout.run_if(in_state(MyStates::Load)))
+    .add_systems(OnEnter(MyStates::Next), expect)
+    .run();
 }
 
 fn timeout(time: Res<Time>) {

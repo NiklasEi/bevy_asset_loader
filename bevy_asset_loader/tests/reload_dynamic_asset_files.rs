@@ -1,56 +1,54 @@
-#![allow(dead_code, unused_imports)]
-
 use bevy::app::AppExit;
 use bevy::audio::AudioPlugin;
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 
-#[cfg(all(
-    feature = "2d",
-    feature = "3d",
-    feature = "standard_dynamic_assets",
-    not(feature = "progress_tracking"),
-))]
 #[test]
 fn main() {
-    App::new()
-        .init_state::<MyStates>()
-        .add_plugins((
-            MinimalPlugins,
-            AssetPlugin::default(),
-            AudioPlugin::default(),
-        ))
-        .insert_resource(SplashTimer(Timer::from_seconds(1.0, TimerMode::Once)))
-        .add_loading_state(
-            LoadingState::new(MyStates::SplashAssetLoading)
-                .continue_to_state(MyStates::Splash)
-                .with_dynamic_assets_file::<StandardDynamicAssetCollection>(
-                    "full_dynamic_collection.assets.ron",
-                ),
-        )
-        .add_systems(Update, splash_countdown.run_if(in_state(MyStates::Splash)))
-        .add_loading_state(
-            LoadingState::new(MyStates::MainMenuAssetLoading)
-                .continue_to_state(MyStates::MainMenu)
-                .with_dynamic_assets_file::<StandardDynamicAssetCollection>(
-                    "full_dynamic_collection.assets.ron",
-                )
-                .load_collection::<MainMenuAssets>(),
-        )
-        .add_systems(Update, (timeout, quit.run_if(in_state(MyStates::MainMenu))))
-        .run();
+    let mut app = App::new();
+    app.init_state::<MyStates>();
+
+    #[cfg(feature = "progress_tracking")]
+    app.add_plugins((
+        iyes_progress::ProgressPlugin::new(MyStates::SplashAssetLoading),
+        iyes_progress::ProgressPlugin::new(MyStates::MainMenuAssetLoading),
+    ));
+    app.add_plugins((
+        MinimalPlugins,
+        AssetPlugin::default(),
+        AudioPlugin::default(),
+    ))
+    .insert_resource(SplashTimer(Timer::from_seconds(1.0, TimerMode::Once)))
+    .add_loading_state(
+        LoadingState::new(MyStates::SplashAssetLoading)
+            .continue_to_state(MyStates::Splash)
+            .with_dynamic_assets_file::<StandardDynamicAssetCollection>(
+                "full_dynamic_collection.assets.ron",
+            ),
+    )
+    .add_systems(Update, splash_countdown.run_if(in_state(MyStates::Splash)))
+    .add_loading_state(
+        LoadingState::new(MyStates::MainMenuAssetLoading)
+            .continue_to_state(MyStates::MainMenu)
+            .with_dynamic_assets_file::<StandardDynamicAssetCollection>(
+                "full_dynamic_collection.assets.ron",
+            )
+            .load_collection::<MainMenuAssets>(),
+    )
+    .add_systems(Update, (timeout, quit.run_if(in_state(MyStates::MainMenu))))
+    .run();
 }
 
 #[derive(AssetCollection, Resource)]
 struct SplashAssets {
     #[asset(key = "single_file")]
-    another_file: Handle<AudioSource>,
+    _another_file: Handle<AudioSource>,
 }
 
 #[derive(AssetCollection, Resource)]
 struct MainMenuAssets {
     #[asset(key = "single_file")]
-    single_file: Handle<AudioSource>,
+    _single_file: Handle<AudioSource>,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
