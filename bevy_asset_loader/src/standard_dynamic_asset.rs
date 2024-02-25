@@ -302,10 +302,106 @@ impl DynamicAssetCollection for StandardDynamicAssetCollection {
     }
 }
 
+impl DynamicAsset for Vec<StandardDynamicAsset> {
+    fn load(&self, asset_server: &AssetServer) -> Vec<UntypedHandle> {
+        self.iter()
+            .flat_map(|asset| asset.load(asset_server))
+            .collect()
+    }
+
+    fn build(&self, world: &mut World) -> Result<DynamicAssetType, anyhow::Error> {
+        let mut all_handles = vec![];
+
+        for asset in self {
+            match asset.build(world)? {
+                DynamicAssetType::Single(handle) => all_handles.push(handle),
+                DynamicAssetType::Collection(handles) => all_handles.extend(handles),
+            }
+        }
+
+        Ok(DynamicAssetType::Collection(all_handles))
+    }
+}
+
+/// The asset defining a mapping from asset keys to an array of dynamic assets.
+///
+/// These assets are loaded at the beginning of a loading state
+/// and combined in [`DynamicAssets`].
+///
+/// Example:
+/// ```ron
+/// ({
+///     "layouts": [
+///         TextureAtlasLayout(
+///             tile_size_x: 32.,
+///             tile_size_y: 32.,
+///             columns: 12,
+///             rows: 12,
+///         ),
+///         TextureAtlasLayout(
+///             tile_size_x: 32.,
+///             tile_size_y: 64.,
+///             columns: 12,
+///             rows: 6,
+///         ),
+///         TextureAtlasLayout(
+///             tile_size_x: 64.,
+///             tile_size_y: 32.,
+///             columns: 6,
+///             rows: 12,
+///         ),
+///         TextureAtlasLayout(
+///             tile_size_x: 64.,
+///             tile_size_y: 64.,
+///             columns: 6,
+///             rows: 6,
+///         ),
+///     ],
+///     "mixed": [
+///         StandardMaterial(
+///             path: "images/tree.png",
+///         ),
+///         Image(
+///             path: "ryot_mascot.png",
+///             sampler: Nearest,
+///         ),
+///         Image(
+///             path: "ryot_mascot.png",
+///             sampler: Nearest,
+///         ),
+///     ],
+/// })
+/// ```
+///
+/// ```rust
+/// # use bevy::prelude::*;
+/// # use bevy_asset_loader::prelude::*;
+///
+/// #[derive(AssetCollection, Resource)]
+/// struct MyAssets {
+///     #[asset(key = "layouts", collection(typed))]
+///     atlas_layout: Vec<Handle<TextureAtlasLayout>>,
+///
+///     #[asset(key = "mixed", collection)]
+///     mixed_handlers: Vec<UntypedHandle>,
+/// }
+/// ```
+#[derive(Deserialize, Serialize, Asset, TypePath, PartialEq, Debug)]
+pub struct StandardDynamicAssetArrayCollection(HashMap<String, Vec<StandardDynamicAsset>>);
+
+impl DynamicAssetCollection for StandardDynamicAssetArrayCollection {
+    fn register(&self, dynamic_assets: &mut DynamicAssets) {
+        for (key, asset) in self.0.iter() {
+            dynamic_assets.register_asset(key, Box::new(asset.clone()));
+        }
+    }
+}
+
 #[cfg(test)]
 #[cfg(feature = "2d")]
 mod tests {
     use crate::prelude::StandardDynamicAssetCollection;
+    use crate::standard_dynamic_asset::StandardDynamicAssetArrayCollection;
 
     #[test]
     fn serialize_and_deserialize_atlas() {
@@ -330,6 +426,65 @@ mod tests {
     ),
 })"#;
         serialize_and_deserialize(dynamic_asset_file);
+    }
+
+    #[test]
+    fn serialize_and_deserialize_array() {
+        let dynamic_asset_file = r#"({
+    "layouts": [
+        TextureAtlasLayout(
+            tile_size_x: 32.0,
+            tile_size_y: 32.0,
+            columns: 12,
+            rows: 12,
+        ),
+        TextureAtlasLayout(
+            tile_size_x: 32.0,
+            tile_size_y: 64.0,
+            columns: 12,
+            rows: 6,
+        ),
+        TextureAtlasLayout(
+            tile_size_x: 64.0,
+            tile_size_y: 32.0,
+            columns: 6,
+            rows: 12,
+        ),
+        TextureAtlasLayout(
+            tile_size_x: 64.0,
+            tile_size_y: 64.0,
+            columns: 6,
+            rows: 6,
+        ),
+    ],
+    "mixed": [
+        StandardMaterial(
+            path: "images/tree.png",
+        ),
+        Image(
+            path: "ryot_mascot.png",
+            sampler: Nearest,
+        ),
+        Image(
+            path: "ryot_mascot.png",
+            sampler: Nearest,
+        ),
+    ],
+})"#;
+
+        let before: StandardDynamicAssetArrayCollection =
+            ron::from_str(dynamic_asset_file).unwrap();
+
+        let serialized_dynamic_asset_file = ron::ser::to_string_pretty(
+            &before,
+            ron::ser::PrettyConfig::default().new_line("\n".to_string()),
+        )
+        .unwrap();
+
+        let after: StandardDynamicAssetArrayCollection =
+            ron::from_str(&serialized_dynamic_asset_file).unwrap();
+
+        assert_eq!(before, after);
     }
 
     fn serialize_and_deserialize(dynamic_asset_file: &'static str) {
