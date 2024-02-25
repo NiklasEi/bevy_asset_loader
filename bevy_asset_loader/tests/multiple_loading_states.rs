@@ -68,8 +68,8 @@ struct MyAssets {
 #[derive(AssetCollection, Resource)]
 #[allow(dead_code)]
 struct MyOtherAssets {
-    #[asset(path = "audio/yipee.ogg")]
-    yipee: Handle<AudioSource>,
+    #[asset(path = "audio/yippee.ogg")]
+    yippee: Handle<AudioSource>,
 }
 
 #[derive(AssetCollection, Resource)]
