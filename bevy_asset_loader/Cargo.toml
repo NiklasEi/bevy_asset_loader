@@ -112,3 +112,7 @@ required-features = ["2d"]
 name = "configure_loading_state"
 path = "examples/configure_loading_state.rs"
 required-features = ["2d"]
+
+[[example]]
+name = "asset_maps"
+path = "examples/asset_maps.rs"

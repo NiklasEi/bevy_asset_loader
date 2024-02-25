@@ -40,7 +40,7 @@ fn expect(collection: Option<Res<AudioCollection>>, mut exit: EventWriter<AppExi
         // make sure the asset paths use slash on all OS
         assert_eq!(
             &collection.single_file.clone().path().unwrap().to_string(),
-            "audio/yipee.ogg"
+            "audio/yippee.ogg"
         );
         let files = &collection.files;
         assert!(
@@ -56,7 +56,7 @@ fn expect(collection: Option<Res<AudioCollection>>, mut exit: EventWriter<AppExi
 struct AudioCollection {
     #[asset(path = "audio", collection(typed, mapped))]
     files: HashMap<String, Handle<AudioSource>>,
-    #[asset(path = "audio/yipee.ogg")]
+    #[asset(path = "audio/yippee.ogg")]
     single_file: Handle<AudioSource>,
 }
 

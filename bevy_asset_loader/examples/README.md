@@ -18,6 +18,7 @@ with `cargo run --example <example>`.
 | [`progress_tracking.rs`](progress_tracking.rs)             | How to set up progress tracking using `iyes_progress`                    |
 | [`standard_material.rs`](standard_material.rs)             | Loading a standard material from a png file                              |
 | [`two_collections.rs`](two_collections.rs)                 | Load multiple asset collections                                          |
+| [`asset_maps.rs`](asset_maps.rs)                           | Shows how to use different types as keys in asset maps                   |
 
 ## Credits
 

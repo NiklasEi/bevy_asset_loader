@@ -64,8 +64,8 @@ fn probe_game_state(_res: Res<GameStateCollection>) {}
 
 #[derive(Resource, AssetCollection)]
 pub struct LoadingStateCollection {
-    #[asset(path = "audio/yipee.ogg")]
-    _yipee: Handle<AudioSource>,
+    #[asset(path = "audio/yippee.ogg")]
+    _yippee: Handle<AudioSource>,
 }
 
 fn probe_loading_state(_res: Res<LoadingStateCollection>) {}
