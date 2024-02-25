@@ -125,6 +125,27 @@ impl MapKey for FileStem {
     }
 }
 
+/// A [`MapKey`] that uses the [`label`] of the asset's path as key.
+///
+/// # Panics
+///
+/// This type requires every asset in the collection to be loaded with a label.
+/// If an asset path does not have a label, it will panic.
+///
+/// [`label`]: AssetPath::label
+#[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct AssetLabel(Box<str>);
+
+impl_map_key_extras!(AssetLabel);
+
+impl MapKey for AssetLabel {
+    #[inline]
+    fn from_asset_path(path: &AssetPath) -> Self {
+        println!("{:?}", path);
+        Self(path.label().expect("Asset does not have a label").into())
+    }
+}
+
 impl MapKey for String {
     #[inline]
     fn from_asset_path(path: &AssetPath) -> Self {

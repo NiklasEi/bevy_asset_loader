@@ -1,5 +1,7 @@
 # Changelog
 
+- new map key type `AssetLabel` that creates an asset map using the label as the key
+
 ## v0.20.0 - 18.02.2024
 - update to Bevy 0.13
 - support any type implementing the new trait `MapKey` as keys for mapped assets (resolves [#153](https://github.com/NiklasEi/bevy_asset_loader/issues/153))
