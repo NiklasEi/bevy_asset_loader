@@ -57,7 +57,7 @@ macro_rules! impl_map_key_extras {
 ///
 /// # Key collision
 ///
-/// Since [`FileName`] uses a subset of the asset path, two different assets may have the same key.
+/// Since [`AssetFileName`] uses a subset of the asset path, two different assets may have the same key.
 /// It’s up to you to ensure there is no collision.
 ///
 /// Here's an example that will result in a key clash.
@@ -72,11 +72,11 @@ macro_rules! impl_map_key_extras {
 ///
 /// [`file_name`]: std::path::Path::file_name
 #[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct FileName(Box<str>);
+pub struct AssetFileName(Box<str>);
 
-impl_map_key_extras!(FileName);
+impl_map_key_extras!(AssetFileName);
 
-impl MapKey for FileName {
+impl MapKey for AssetFileName {
     #[inline]
     fn from_asset_path(path: &AssetPath) -> Self {
         Self(
@@ -94,7 +94,7 @@ impl MapKey for FileName {
 ///
 /// # Key collision
 ///
-/// Since [`FileStem`] uses a subset of the asset path, two different assets may have the same key.
+/// Since [`AssetFileStem`] uses a subset of the asset path, two different assets may have the same key.
 /// It’s up to you to ensure there is no collision.
 ///
 /// Here's an example that will result in a key clash.
@@ -107,11 +107,11 @@ impl MapKey for FileName {
 ///
 /// [`file_stem`]: std::path::Path::file_stem
 #[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct FileStem(Box<str>);
+pub struct AssetFileStem(Box<str>);
 
-impl_map_key_extras!(FileStem);
+impl_map_key_extras!(AssetFileStem);
 
-impl MapKey for FileStem {
+impl MapKey for AssetFileStem {
     #[inline]
     fn from_asset_path(path: &AssetPath) -> Self {
         Self(
@@ -122,6 +122,26 @@ impl MapKey for FileStem {
                 .expect("Path should be valid UTF-8")
                 .into(),
         )
+    }
+}
+
+/// A [`MapKey`] that uses the [`label`] of the asset's path as key.
+///
+/// # Panics
+///
+/// This type requires every asset in the collection to be loaded with a label.
+/// If an asset path does not have a label, it will panic.
+///
+/// [`label`]: AssetPath::label
+#[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct AssetLabel(Box<str>);
+
+impl_map_key_extras!(AssetLabel);
+
+impl MapKey for AssetLabel {
+    #[inline]
+    fn from_asset_path(path: &AssetPath) -> Self {
+        Self(path.label().expect("Asset does not have a label").into())
     }
 }
 

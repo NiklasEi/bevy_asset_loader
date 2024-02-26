@@ -23,10 +23,21 @@ struct AudioAssets {
     full_path: HashMap<String, Handle<AudioSource>>,
     // `FileName` as the key will use the file name (strip away any directories in the path)
     #[asset(path = "audio", collection(mapped, typed))]
-    file_name: HashMap<FileName, Handle<AudioSource>>,
+    file_name: HashMap<AssetFileName, Handle<AudioSource>>,
     // `FileStem` as the key will use the file name without the extension
     #[asset(path = "audio", collection(mapped, typed))]
-    file_stem: HashMap<FileStem, Handle<AudioSource>>,
+    file_stem: HashMap<AssetFileStem, Handle<AudioSource>>,
+    // `AssetLabel` as the key uses the label (part after the `#` here)
+    // This will panic if an asset in the collection has no label!
+    #[asset(
+        paths(
+            "animated/Fox.glb#Animation0",
+            "animated/Fox.glb#Animation1",
+            "animated/Fox.glb#Animation2"
+        ),
+        collection(mapped, typed)
+    )]
+    fox_animations: HashMap<AssetLabel, Handle<AnimationClip>>,
 
     // You can implement your own map key types
     #[asset(path = "audio", collection(mapped, typed))]
@@ -46,6 +57,10 @@ fn use_audio_assets(audio_assets: Res<AudioAssets>) {
         .file_stem
         .get("plop")
         .expect("Can access audio asset with file stem");
+    audio_assets
+        .fox_animations
+        .get("Animation0")
+        .expect("Can access animation via its label");
 
     // custom key
     audio_assets
