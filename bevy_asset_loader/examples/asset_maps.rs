@@ -1,4 +1,4 @@
-use bevy::asset::{AssetPath, LoadedUntypedAsset};
+use bevy::asset::AssetPath;
 use bevy::prelude::*;
 use bevy::utils::HashMap;
 use bevy_asset_loader::prelude::*;
@@ -27,18 +27,24 @@ struct AudioAssets {
     // `FileStem` as the key will use the file name without the extension
     #[asset(path = "audio", collection(mapped, typed))]
     file_stem: HashMap<FileStem, Handle<AudioSource>>,
-    // `FileStem` as the key will use the file name without the extension
-    // #[asset(paths("animated/Fox.glb#Animation0"), collection(mapped, typed))]
-    // labels: HashMap<AssetLabel, Handle<AnimationClip>>,
-    #[asset(path = "animated/Fox.glb#Animation0")]
-    anim: Handle<AnimationClip>,
+    // `AssetLabel` as the key uses the label (part after the `#` here)
+    // This will panic if an asset in the collection has no label!
+    #[asset(
+        paths(
+            "animated/Fox.glb#Animation0",
+            "animated/Fox.glb#Animation1",
+            "animated/Fox.glb#Animation2"
+        ),
+        collection(mapped, typed)
+    )]
+    fox_animations: HashMap<AssetLabel, Handle<AnimationClip>>,
 
     // You can implement your own map key types
     #[asset(path = "audio", collection(mapped, typed))]
     custom: HashMap<MyAudio, Handle<AudioSource>>,
 }
 
-fn use_audio_assets(audio_assets: Res<AudioAssets>, asset_server: Res<AssetServer>) {
+fn use_audio_assets(audio_assets: Res<AudioAssets>) {
     audio_assets
         .full_path
         .get("audio/plop.ogg")
@@ -51,10 +57,10 @@ fn use_audio_assets(audio_assets: Res<AudioAssets>, asset_server: Res<AssetServe
         .file_stem
         .get("plop")
         .expect("Can access audio asset with file stem");
-    // audio_assets.labels.get("Animation0").expect("");
-
-    // let anim: Handle<LoadedUntypedAsset> = asset_server.load_untyped("animated/Fox.glb#Animation0");
-    let path = audio_assets.anim.path().unwrap().label().unwrap();
+    audio_assets
+        .fox_animations
+        .get("Animation0")
+        .expect("Can access animation via its label");
 
     // custom key
     audio_assets

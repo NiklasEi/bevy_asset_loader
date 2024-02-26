@@ -141,7 +141,6 @@ impl_map_key_extras!(AssetLabel);
 impl MapKey for AssetLabel {
     #[inline]
     fn from_asset_path(path: &AssetPath) -> Self {
-        println!("{:?}", path);
         Self(path.label().expect("Asset does not have a label").into())
     }
 }
