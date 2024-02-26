@@ -23,10 +23,10 @@ struct AudioAssets {
     full_path: HashMap<String, Handle<AudioSource>>,
     // `FileName` as the key will use the file name (strip away any directories in the path)
     #[asset(path = "audio", collection(mapped, typed))]
-    file_name: HashMap<FileName, Handle<AudioSource>>,
+    file_name: HashMap<AssetFileName, Handle<AudioSource>>,
     // `FileStem` as the key will use the file name without the extension
     #[asset(path = "audio", collection(mapped, typed))]
-    file_stem: HashMap<FileStem, Handle<AudioSource>>,
+    file_stem: HashMap<AssetFileStem, Handle<AudioSource>>,
     // `AssetLabel` as the key uses the label (part after the `#` here)
     // This will panic if an asset in the collection has no label!
     #[asset(

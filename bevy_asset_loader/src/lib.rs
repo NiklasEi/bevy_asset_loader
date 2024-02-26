@@ -97,7 +97,7 @@ pub mod prelude {
             DynamicAssets,
         },
         loading_state::{LoadingState, LoadingStateAppExt, LoadingStateSet},
-        mapped::{AssetLabel, FileName, FileStem, MapKey},
+        mapped::{AssetLabel, AssetFileName, AssetFileStem, MapKey},
     };
 }
 
