@@ -65,9 +65,17 @@ pub(crate) fn check_dynamic_asset_collections<S: States, C: DynamicAssetCollecti
         if loading_collections.is_none() {
             return;
         }
+        let config = asset_loader_config
+            .state_configurations
+            .get_mut(state.get())
+            .expect("No asset loader configuration for current state");
         let loading_collections = loading_collections.as_mut().unwrap();
         for handle in &loading_collections.handles {
             if let Some(load_state) = asset_server.get_load_state(handle.id()) {
+                if load_state == LoadState::Failed {
+                    config.loading_failed = true;
+                    continue;
+                }
                 if load_state != LoadState::Loaded {
                     return;
                 }
@@ -76,15 +84,10 @@ pub(crate) fn check_dynamic_asset_collections<S: States, C: DynamicAssetCollecti
             }
         }
         for collection in loading_collections.handles.drain(..) {
-            let collection = dynamic_asset_collections
-                .get(collection.typed::<C>())
-                .unwrap();
-            collection.register(&mut asset_keys);
+            if let Some(collection) = dynamic_asset_collections.get(collection.typed::<C>()) {
+                collection.register(&mut asset_keys);
+            }
         }
-        let config = asset_loader_config
-            .state_configurations
-            .get_mut(state.get())
-            .expect("No asset loader configuration for current state");
         config
             .loading_dynamic_collections
             .remove(&TypeId::of::<C>());
