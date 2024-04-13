@@ -55,11 +55,15 @@ struct ImageAssets {
 }
 
 #[derive(Resource)]
-struct ExampleResource(&'static str);
+struct ExampleResource {
+    _resource: &'static str,
+}
 
 impl FromWorld for ExampleResource {
     fn from_world(_world: &mut World) -> Self {
-        ExampleResource("You could use the ECS World here!")
+        ExampleResource {
+            _resource: "You could use the ECS World here!",
+        }
     }
 }
 
