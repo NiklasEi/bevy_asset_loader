@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 
-/// This example shows how to load an asset collection with dynamic assets defined in a `.ron` file.
+/// This example shows how to load an asset collection with arrays of dynamic assets `ron` file.
 ///
 /// The assets loaded in this example are defined in `assets/dynamic_asset_arrays.asset_arrays.ron`
 fn main() {

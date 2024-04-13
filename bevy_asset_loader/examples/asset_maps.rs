@@ -1,3 +1,4 @@
+use bevy::app::AppExit;
 use bevy::asset::AssetPath;
 use bevy::prelude::*;
 use bevy::utils::HashMap;
@@ -44,7 +45,7 @@ struct AudioAssets {
     custom: HashMap<MyAudio, Handle<AudioSource>>,
 }
 
-fn use_audio_assets(audio_assets: Res<AudioAssets>) {
+fn use_audio_assets(audio_assets: Res<AudioAssets>, mut quit: EventWriter<AppExit>) {
     audio_assets
         .full_path
         .get("audio/plop.ogg")
@@ -67,6 +68,10 @@ fn use_audio_assets(audio_assets: Res<AudioAssets>) {
         .custom
         .get(&MyAudio::Plop)
         .expect("Can access audio asset with custom key");
+
+    info!("Everything looks good!");
+    info!("Quitting the application...");
+    quit.send(AppExit);
 }
 
 #[derive(PartialEq, Eq, Hash)]

@@ -64,7 +64,7 @@ struct TextureAssets {
 
 fn track_fake_long_task(time: Res<Time>) -> Progress {
     if time.elapsed_seconds_f64() > DURATION_LONG_TASK_IN_SECS {
-        info!("Long task is completed");
+        info!("Long fake task is completed");
         true.into()
     } else {
         false.into()
