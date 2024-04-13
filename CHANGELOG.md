@@ -1,9 +1,11 @@
 # Changelog
 
+## v0.20.1 - 13.04.2024
 - new map key type `AssetLabel` that creates an asset map using the label as the key
-
-## v0.20.1 - 08.04.2024
-- introduces the ability to load and build collections of dynamic assets (resolves [#186](https://github.com/NiklasEi/bevy_asset_loader/issues/186))
+- New Dynamic asset collection `StandardDynamicAssetArrayCollection`
+  - Define dynamic assets as arrays (resolves [#186](https://github.com/NiklasEi/bevy_asset_loader/issues/186))
+  - A final solution extending the existing `StandardDynamicAssetCollection` is blocked on the next `ron` version (see [#151](https://github.com/NiklasEi/bevy_asset_loader/pull/151))
+  - New example: [`dynamic_asset_arrays.rs`](bevy_asset_loader/examples/dynamic_asset_arrays.rs)
 
 ## v0.20.0 - 18.02.2024
 - update to Bevy 0.13

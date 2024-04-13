@@ -1,0 +1,41 @@
+({
+    "layouts": [
+        TextureAtlasLayout(
+            tile_size_x: 96.,
+            tile_size_y: 99.,
+            columns: 8,
+            rows: 1,
+        ),
+        TextureAtlasLayout(
+            tile_size_x: 32.,
+            tile_size_y: 64.,
+            columns: 12,
+            rows: 6,
+        ),
+        TextureAtlasLayout(
+            tile_size_x: 64.,
+            tile_size_y: 32.,
+            columns: 6,
+            rows: 12,
+        ),
+        TextureAtlasLayout(
+            tile_size_x: 64.,
+            tile_size_y: 64.,
+            columns: 6,
+            rows: 6,
+        ),
+    ],
+    "mixed": [
+        StandardMaterial(
+            path: "images/tree.png",
+        ),
+        Image(
+            path: "images/female_adventurer_sheet.png",
+            sampler: Nearest,
+        ),
+        Image(
+            path: "images/female_adventurer_sheet.png",
+            sampler: Linear,
+        ),
+    ],
+})

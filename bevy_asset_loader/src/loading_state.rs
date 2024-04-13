@@ -36,7 +36,9 @@ use systems::{
 use bevy_common_assets::ron::RonAssetPlugin;
 
 #[cfg(feature = "standard_dynamic_assets")]
-use crate::standard_dynamic_asset::{StandardDynamicAsset, StandardDynamicAssetCollection};
+use crate::standard_dynamic_asset::{
+    StandardDynamicAsset, StandardDynamicAssetArrayCollection, StandardDynamicAssetCollection,
+};
 
 #[cfg(feature = "progress_tracking")]
 use iyes_progress::TrackedProgressSet;
@@ -352,6 +354,12 @@ where
                 &self.standard_dynamic_asset_collection_file_endings,
             ));
         }
+        #[cfg(feature = "standard_dynamic_assets")]
+        if !app.is_plugin_added::<RonAssetPlugin<StandardDynamicAssetArrayCollection>>() {
+            app.add_plugins(RonAssetPlugin::<StandardDynamicAssetArrayCollection>::new(
+                &[],
+            ));
+        }
 
         if !app.is_plugin_added::<InternalAssetLoaderPlugin<S>>() {
             app.add_plugins(InternalAssetLoaderPlugin::<S>::new());
@@ -423,6 +431,9 @@ where
                 self.config = self
                     .config
                     .register_dynamic_asset_collection::<StandardDynamicAssetCollection>();
+                self.config = self
+                    .config
+                    .register_dynamic_asset_collection::<StandardDynamicAssetArrayCollection>();
             }
 
             #[cfg(feature = "progress_tracking")]
