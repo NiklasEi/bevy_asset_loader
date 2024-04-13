@@ -36,14 +36,15 @@ use systems::{
 use bevy_common_assets::ron::RonAssetPlugin;
 
 #[cfg(feature = "standard_dynamic_assets")]
-use crate::standard_dynamic_asset::{StandardDynamicAsset, StandardDynamicAssetCollection};
+use crate::standard_dynamic_asset::{
+    StandardDynamicAsset, StandardDynamicAssetArrayCollection, StandardDynamicAssetCollection,
+};
 
 #[cfg(feature = "progress_tracking")]
 use iyes_progress::TrackedProgressSet;
 
 use crate::dynamic_asset::{DynamicAsset, DynamicAssets};
 use crate::loading_state::systems::{apply_internal_state_transition, run_loading_state};
-use crate::prelude::StandardDynamicAssetArrayCollection;
 
 /// A Bevy plugin to configure automatic asset loading
 ///
