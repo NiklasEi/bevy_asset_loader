@@ -43,6 +43,7 @@ use iyes_progress::TrackedProgressSet;
 
 use crate::dynamic_asset::{DynamicAsset, DynamicAssets};
 use crate::loading_state::systems::{apply_internal_state_transition, run_loading_state};
+use crate::prelude::StandardDynamicAssetArrayCollection;
 
 /// A Bevy plugin to configure automatic asset loading
 ///
@@ -352,6 +353,12 @@ where
                 &self.standard_dynamic_asset_collection_file_endings,
             ));
         }
+        #[cfg(feature = "standard_dynamic_assets")]
+        if !app.is_plugin_added::<RonAssetPlugin<StandardDynamicAssetArrayCollection>>() {
+            app.add_plugins(RonAssetPlugin::<StandardDynamicAssetArrayCollection>::new(
+                &[],
+            ));
+        }
 
         if !app.is_plugin_added::<InternalAssetLoaderPlugin<S>>() {
             app.add_plugins(InternalAssetLoaderPlugin::<S>::new());
@@ -423,6 +430,9 @@ where
                 self.config = self
                     .config
                     .register_dynamic_asset_collection::<StandardDynamicAssetCollection>();
+                self.config = self
+                    .config
+                    .register_dynamic_asset_collection::<StandardDynamicAssetArrayCollection>();
             }
 
             #[cfg(feature = "progress_tracking")]
