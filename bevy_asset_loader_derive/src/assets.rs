@@ -465,7 +465,7 @@ impl AssetField {
                 )
             }
             AssetField::TextureAtlasLayout(TextureAtlasLayoutAssetField { .. }) => {
-                quote!()
+                quote!(#token_stream)
             }
             AssetField::StandardMaterial(BasicAssetField { asset_path, .. })
             | AssetField::Image(ImageAssetField { asset_path, .. }) => {
