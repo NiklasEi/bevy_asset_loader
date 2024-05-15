@@ -516,7 +516,7 @@ pub(crate) enum InternalLoadingState<S: States> {
     LoadingDynamicAssetCollections,
     /// Load the actual asset collections and check their status every frame.
     LoadingAssets,
-    /// All collections are loaded and inserted. Time to e.g. run custom [insert_resource](bevy_asset_loader::AssetLoader::insert_resource).
+    /// All collections are loaded and inserted. Time to e.g. run custom [`insert_resource`](bevy_asset_loader::AssetLoader::insert_resource).
     Finalize,
     /// A 'parking' state in case no next state is defined
     Done(PhantomData<S>),
