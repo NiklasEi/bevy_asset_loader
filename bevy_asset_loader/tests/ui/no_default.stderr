@@ -1,4 +1,4 @@
-error[E0277]: the trait bound `NoDefault: std::default::Default` is not satisfied
+error[E0277]: the trait bound `NoDefault: FromWorld` is not satisfied
  --> tests/ui/no_default.rs:8:5
   |
 8 |     no_default: NoDefault,
