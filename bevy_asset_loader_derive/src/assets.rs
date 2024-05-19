@@ -262,6 +262,13 @@ impl From<bool> for Mapped {
     }
 }
 
+fn expand_to_tokens<T : ToTokens>(input: &Option<T>) -> TokenStream {
+    match input {
+        Some(value) => quote!(core::option::Option::Some(#value)),
+        None => quote!(core::option::Option::None)
+    }
+}
+
 impl AssetField {
     pub(crate) fn attach_token_stream_for_creation(
         &self,
@@ -289,12 +296,12 @@ impl AssetField {
                 let image_mipmap_filter = image.mipmap_filter;
                 let image_lod_min_clamp = image.lod_min_clamp;
                 let image_lod_max_clamp = image.lod_max_clamp;
-                let image_compare = image.compare;
+                let image_compare = expand_to_tokens(&image.compare);
                 let image_anisotropy_clamp = image.anisotropy_clamp;
-                let image_border_color = image.border_color;
+                let image_border_color = expand_to_tokens(&image.border_color);
                 
                 let settings = quote!(
-                   move |s: &mut ImageLoaderSettings| {
+                    move |s: &mut ImageLoaderSettings| {
                         let mut descriptor = ImageSamplerDescriptor::default();
                         descriptor.address_mode_u = #image_address_mode_u;
                         descriptor.address_mode_v = #image_address_mode_v;
@@ -308,17 +315,17 @@ impl AssetField {
                         descriptor.anisotropy_clamp = #image_anisotropy_clamp;
                         descriptor.border_color = #image_border_color;
                         s.sampler = ImageSampler::Descriptor(descriptor);
-                    };
+                    }
                 );
-
+                
                 quote!(#token_stream #field_ident : {
                     use bevy::render::texture::{
                         ImageSampler, ImageSamplerDescriptor, ImageLoaderSettings, ImageAddressMode,
                         ImageFilterMode, ImageCompareFunction, ImageSamplerBorderColor,
                     };
                     let cell = world.cell();
-                    let asset_server = cell.get_resource::<AssetServer>().expect("Cannot get AssetServer");
-
+                    let asset_server = cell.get_resource::<::bevy::asset::AssetServer>().expect("Cannot get AssetServer");
+                
                     asset_server.load_with_settings(#asset_path, #settings)
                 },)
             }
@@ -675,9 +682,9 @@ pub(crate) struct AssetBuilder {
     pub mipmap_filter: Option<ImageFilterModeType>,
     pub lod_min_clamp: Option<f32>,
     pub lod_max_clamp: Option<f32>,
-    pub compare: Option<Option<ImageCompareFunctionType>>,
+    pub compare: Option<ImageCompareFunctionType>,
     pub anisotropy_clamp: Option<u16>,
-    pub border_color: Option<Option<ImageSamplerBorderColorType>>,
+    pub border_color: Option<ImageSamplerBorderColorType>,
 }
 
 impl AssetBuilder {
@@ -845,9 +852,9 @@ impl AssetBuilder {
                 mipmap_filter,
                 lod_min_clamp: self.lod_min_clamp.unwrap_or(0.),
                 lod_max_clamp: self.lod_max_clamp.unwrap_or(32.),
-                compare: self.compare.unwrap_or_default(),
+                compare: self.compare,
                 anisotropy_clamp: self.anisotropy_clamp.unwrap_or(1),
-                border_color: self.border_color.unwrap_or_default(),
+                border_color: self.border_color,
             }));
         }
         let asset = BasicAssetField {

@@ -483,18 +483,35 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                                 Meta::NameValue(named_value) => {
                                     let path = named_value.path.get_ident().unwrap().clone();
                                     if path == ImageAttribute::SAMPLER {
-                                        if let Expr::Path(ExprPath { path, .. }) =
-                                            &named_value.value
-                                        {
+                                        if let Expr::Path(ExprPath { path, .. }) = &named_value.value {
                                             let sampler_result = SamplerType::try_from(
                                                 path.get_ident().unwrap().to_string(),
                                             );
-
+                                            
                                             if let Ok(sampler) = sampler_result {
                                                 builder.sampler = Some(sampler);
                                             } else {
                                                 errors.push(ParseFieldError::UnknownAttribute(
                                                     named_value.value.into_token_stream(),
+                                                ));
+                                            }
+                                        } else {
+                                            errors.push(ParseFieldError::WrongAttributeType(
+                                                named_value.into_token_stream(),
+                                                "path",
+                                            ));
+                                        }
+                                    } else if path == ImageAttribute::ADDRESS_MODE_U {
+                                        if let Expr::Path(ExprPath { path, .. }) = &named_value.value {
+                                            let result = ImageAddressModeType::try_from(
+                                                path.get_ident().unwrap().to_string()
+                                            );
+                                            
+                                            if let Ok(address_mode_u) = result {
+                                                builder.address_mode_u = Some(address_mode_u);
+                                            } else {
+                                                errors.push(ParseFieldError::UnknownAttribute(
+                                                    named_value.value.into_token_stream()
                                                 ));
                                             }
                                         } else {
@@ -536,9 +553,8 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                                                 ));
                                             }
                                         } else {
-                                            errors.push(ParseFieldError::WrongAttributeType(
-                                                named_value.into_token_stream(),
-                                                "path",
+                                            errors.push(ParseFieldError::UnknownAttribute(
+                                                named_value.value.into_token_stream()
                                             ));
                                         }
                                     } else if path == ImageAttribute::MAG_FILTER {
@@ -623,7 +639,7 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                                             );
                                             
                                             if let Ok(compare) = result {
-                                                builder.compare = Some(Some(compare));
+                                                builder.compare = Some(compare);
                                             } else {
                                                 errors.push(ParseFieldError::UnknownAttribute(
                                                     named_value.value.into_token_stream()
@@ -651,7 +667,7 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                                             );
                                             
                                             if let Ok(border_color) = result {
-                                                builder.border_color = Some(Some(border_color));
+                                                builder.border_color = Some(border_color);
                                             } else {
                                                 errors.push(ParseFieldError::UnknownAttribute(
                                                     named_value.value.into_token_stream()
