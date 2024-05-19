@@ -1,6 +1,6 @@
 use crate::{ParseFieldError, TextureAtlasAttribute};
-use proc_macro2::{Ident, TokenStream};
-use quote::quote;
+use proc_macro2::{Ident, Spacing, Span, TokenStream, Punct};
+use quote::{quote, ToTokens, TokenStreamExt};
 
 #[derive(PartialEq, Debug)]
 pub(crate) struct TextureAtlasLayoutAssetField {
@@ -32,11 +32,169 @@ impl TryFrom<String> for SamplerType {
     }
 }
 
+#[derive(Debug, PartialEq, Clone, Copy, Default)]
+pub(crate) enum ImageAddressModeType {
+    #[default]
+    ClampToEdge,
+    Repeat,
+    MirrorRepeat,
+    ClampToBorder,
+}
+
+impl TryFrom<String> for ImageAddressModeType {
+    type Error = &'static str;
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        match value.to_lowercase().as_str() {
+            "clamptoedge" => Ok(Self::ClampToEdge),
+            "repeat" => Ok(Self::Repeat),
+            "mirrorrepeat" => Ok(Self::MirrorRepeat),
+            "clamptoborder" => Ok(Self::ClampToBorder),
+            _ => Err("Value must be valid ImageAddressMode"),
+        }
+    }
+}
+
+impl ToTokens for ImageAddressModeType {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        tokens.append(Ident::new("ImageAddressMode", Span::call_site()));
+        tokens.append(Punct::new(':', Spacing::Joint));
+        tokens.append(Punct::new(':', Spacing::Alone));
+        match *self {
+            ImageAddressModeType::ClampToEdge => tokens.append(Ident::new("ClampToEdge", Span::call_site())),
+            ImageAddressModeType::Repeat => tokens.append(Ident::new("Repeat", Span::call_site())),
+            ImageAddressModeType::MirrorRepeat => tokens.append(Ident::new("MirrorRepeat", Span::call_site())),
+            ImageAddressModeType::ClampToBorder => tokens.append(Ident::new("ClampToBorder", Span::call_site())),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Copy, Default)]
+pub(crate) enum ImageFilterModeType {
+    #[default]
+    Nearest,
+    Linear,
+}
+
+impl TryFrom<String> for ImageFilterModeType {
+    type Error = &'static str;
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        match value.to_lowercase().as_str() {
+            "linear" => Ok(Self::Linear),
+            "nearest" => Ok(Self::Nearest),
+            _ => Err("Value must be valid ImageFilterMode"),
+        }
+    }
+}
+
+impl ToTokens for ImageFilterModeType {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        tokens.append(Ident::new("ImageFilterMode", Span::call_site()));
+        tokens.append(Punct::new(':', Spacing::Joint));
+        tokens.append(Punct::new(':', Spacing::Alone));
+        match *self {
+            ImageFilterModeType::Linear => tokens.append(Ident::new("Linear", Span::call_site())),
+            ImageFilterModeType::Nearest => tokens.append(Ident::new("Nearest", Span::call_site())),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub(crate) enum ImageCompareFunctionType {
+    Never,
+    Less,
+    Equal,
+    LessEqual,
+    Greater,
+    NotEqual,
+    GreaterEqual,
+    Always,
+}
+
+impl TryFrom<String> for ImageCompareFunctionType {
+    type Error = &'static str;
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        match value.to_lowercase().as_str() {
+            "never" => Ok(Self::Never),
+            "less" => Ok(Self::Less),
+            "equal" => Ok(Self::Equal),
+            "lessequal" => Ok(Self::LessEqual),
+            "greater" => Ok(Self::Greater),
+            "notequal" => Ok(Self::NotEqual),
+            "greaterequal" => Ok(Self::GreaterEqual),
+            "always" => Ok(Self::Always),
+            _ => Err("Value must be valid ImageCompareFunction"),
+        }
+    }
+}
+
+impl ToTokens for ImageCompareFunctionType {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        tokens.append(Ident::new("ImageCompareFunction", Span::call_site()));
+        tokens.append(Punct::new(':', Spacing::Joint));
+        tokens.append(Punct::new(':', Spacing::Alone));
+        match *self {
+            ImageCompareFunctionType::Never => tokens.append(Ident::new("Never", Span::call_site())),
+            ImageCompareFunctionType::Less => tokens.append(Ident::new("Less", Span::call_site())),
+            ImageCompareFunctionType::Equal => tokens.append(Ident::new("Equal", Span::call_site())),
+            ImageCompareFunctionType::LessEqual => tokens.append(Ident::new("LessEqual", Span::call_site())),
+            ImageCompareFunctionType::Greater => tokens.append(Ident::new("Greater", Span::call_site())),
+            ImageCompareFunctionType::NotEqual => tokens.append(Ident::new("NotEqual", Span::call_site())),
+            ImageCompareFunctionType::GreaterEqual => tokens.append(Ident::new("GreaterEqual", Span::call_site())),
+            ImageCompareFunctionType::Always => tokens.append(Ident::new("Always", Span::call_site())),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub(crate) enum ImageSamplerBorderColorType {
+    TransparentBlack,
+    OpaqueBlack,
+    OpaqueWhite,
+    Zero,
+}
+
+impl TryFrom<String> for ImageSamplerBorderColorType {
+    type Error = &'static str;
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        match value.to_lowercase().as_str() {
+            "transparentblack" => Ok(Self::TransparentBlack),
+            "opaqueblack" => Ok(Self::OpaqueBlack),
+            "opaquewhite" => Ok(Self::OpaqueWhite),
+            "zero" => Ok(Self::Zero),
+            _ => Err("Value must be valid ImageSamplerBorderColor")
+        }
+    }
+}
+
+impl ToTokens for ImageSamplerBorderColorType {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        tokens.append(Ident::new("ImageSamplerBorderColor", Span::call_site()));
+        tokens.append(Punct::new(':', Spacing::Joint));
+        tokens.append(Punct::new(':', Spacing::Alone));
+        match *self {
+            ImageSamplerBorderColorType::TransparentBlack => tokens.append(Ident::new("TransparentBlack", Span::call_site())),
+            ImageSamplerBorderColorType::OpaqueBlack => tokens.append(Ident::new("OpaqueBlack", Span::call_site())),
+            ImageSamplerBorderColorType::OpaqueWhite => tokens.append(Ident::new("OpaqueWhite", Span::call_site())),
+            ImageSamplerBorderColorType::Zero => tokens.append(Ident::new("Zero", Span::call_site())),
+        }
+    }
+}
+
 #[derive(PartialEq, Debug)]
 pub(crate) struct ImageAssetField {
     pub field_ident: Ident,
     pub asset_path: String,
-    pub sampler: SamplerType,
+    pub address_mode_u: ImageAddressModeType,
+    pub address_mode_v: ImageAddressModeType,
+    pub address_mode_w: ImageAddressModeType,
+    pub mag_filter: ImageFilterModeType,
+    pub min_filter: ImageFilterModeType,
+    pub mipmap_filter: ImageFilterModeType,
+    pub lod_min_clamp: f32,
+    pub lod_max_clamp: f32,
+    pub compare: Option<ImageCompareFunctionType>,
+    pub anisotropy_clamp: u16,
+    pub border_color: Option<ImageSamplerBorderColorType>,
 }
 
 #[derive(PartialEq, Debug)]
@@ -104,6 +262,13 @@ impl From<bool> for Mapped {
     }
 }
 
+fn expand_to_tokens<T : ToTokens>(input: &Option<T>) -> TokenStream {
+    match input {
+        Some(value) => quote!(core::option::Option::Some(#value)),
+        None => quote!(core::option::Option::None)
+    }
+}
+
 impl AssetField {
     pub(crate) fn attach_token_stream_for_creation(
         &self,
@@ -122,36 +287,56 @@ impl AssetField {
             AssetField::Image(image) => {
                 let field_ident = image.field_ident.clone();
                 let asset_path = image.asset_path.clone();
-                let sampler = match image.sampler {
-                    SamplerType::Linear => quote!(ImageSampler::linear()),
-                    SamplerType::Nearest => quote!(ImageSampler::nearest()),
-                };
-                let descriptor = match image.sampler {
-                    SamplerType::Linear => quote!(ImageSamplerDescriptor::linear()),
-                    SamplerType::Nearest => quote!(ImageSamplerDescriptor::nearest()),
-                };
-
+                
+                let image_address_mode_u = image.address_mode_u;
+                let image_address_mode_v = image.address_mode_v;
+                let image_address_mode_w = image.address_mode_w;
+                let image_mag_filter = image.mag_filter;
+                let image_min_filter = image.min_filter;
+                let image_mipmap_filter = image.mipmap_filter;
+                let image_lod_min_clamp = image.lod_min_clamp;
+                let image_lod_max_clamp = image.lod_max_clamp;
+                let image_compare = expand_to_tokens(&image.compare);
+                let image_anisotropy_clamp = image.anisotropy_clamp;
+                let image_border_color = expand_to_tokens(&image.border_color);
+                
                 quote!(#token_stream #field_ident : {
-                    use bevy::render::texture::{ImageSampler, ImageSamplerDescriptor};
+                    use bevy::render::texture::{
+                        ImageSampler, ImageSamplerDescriptor, ImageLoaderSettings, ImageAddressMode,
+                        ImageFilterMode, ImageCompareFunction, ImageSamplerBorderColor, Image,
+                    };
                     let cell = world.cell();
-                    let asset_server = cell.get_resource::<AssetServer>().expect("Cannot get AssetServer");
-                    let mut images = cell.get_resource_mut::<Assets<Image>>().expect("Cannot get resource Assets<Image>");
-
+                    let asset_server = cell.get_resource::<::bevy::asset::AssetServer>().expect("Cannot get AssetServer");
+                    let mut images = cell.get_resource_mut::<::bevy::asset::Assets<Image>>().expect("Cannot get resource Assets<Image>");
+                    
                     let mut handle = asset_server.load(#asset_path);
                     let mut image = images.get_mut(&handle).expect("Only asset collection fields holding an `Image` handle can be annotated with `image`");
-
-                    let is_different_sampler = if let ImageSampler::Descriptor(descriptor) = &image.sampler {
-                        !descriptor.as_wgpu().eq(&#descriptor.as_wgpu())
+                
+                    let mut descriptor = ImageSamplerDescriptor::default();
+                    descriptor.address_mode_u = #image_address_mode_u;
+                    descriptor.address_mode_v = #image_address_mode_v;
+                    descriptor.address_mode_w = #image_address_mode_w;
+                    descriptor.mag_filter = #image_mag_filter;
+                    descriptor.min_filter = #image_min_filter;
+                    descriptor.mipmap_filter = #image_mipmap_filter;
+                    descriptor.lod_min_clamp = #image_lod_min_clamp;
+                    descriptor.lod_max_clamp = #image_lod_max_clamp;
+                    descriptor.compare = #image_compare;
+                    descriptor.anisotropy_clamp = #image_anisotropy_clamp;
+                    descriptor.border_color = #image_border_color;
+                    
+                    let is_different_sampler = if let ImageSampler::Descriptor(original_descriptor) = &image.sampler {
+                        !original_descriptor.as_wgpu().eq(&descriptor.as_wgpu())
                     } else {
                         false
                     };
 
                     if is_different_sampler {
                         let mut cloned_image = image.clone();
-                        cloned_image.sampler = #sampler;
+                        cloned_image.sampler = ImageSampler::Descriptor(descriptor);
                         handle = images.add(cloned_image);
                     } else {
-                        image.sampler = #sampler;
+                        image.sampler = ImageSampler::Descriptor(descriptor);
                     }
 
                     handle
@@ -469,7 +654,6 @@ impl AssetField {
             }
             AssetField::StandardMaterial(BasicAssetField { asset_path, .. })
             | AssetField::Image(ImageAssetField { asset_path, .. }) => {
-                let asset_path = asset_path.clone();
                 quote!(#token_stream handles.push(asset_server.load::<::bevy::render::texture::Image>(#asset_path).untyped());)
             }
             AssetField::Files(assets, _, _) => {
@@ -491,6 +675,7 @@ pub(crate) struct AssetBuilder {
     pub is_typed: bool,
     pub is_mapped: bool,
     pub key: Option<String>,
+    
     pub tile_size_x: Option<f32>,
     pub tile_size_y: Option<f32>,
     pub columns: Option<usize>,
@@ -499,7 +684,19 @@ pub(crate) struct AssetBuilder {
     pub padding_y: Option<f32>,
     pub offset_x: Option<f32>,
     pub offset_y: Option<f32>,
+    
     pub sampler: Option<SamplerType>,
+    pub address_mode_u: Option<ImageAddressModeType>,
+    pub address_mode_v: Option<ImageAddressModeType>,
+    pub address_mode_w: Option<ImageAddressModeType>,
+    pub mag_filter: Option<ImageFilterModeType>,
+    pub min_filter: Option<ImageFilterModeType>,
+    pub mipmap_filter: Option<ImageFilterModeType>,
+    pub lod_min_clamp: Option<f32>,
+    pub lod_max_clamp: Option<f32>,
+    pub compare: Option<ImageCompareFunctionType>,
+    pub anisotropy_clamp: Option<u16>,
+    pub border_color: Option<ImageSamplerBorderColorType>,
 }
 
 impl AssetBuilder {
@@ -624,11 +821,52 @@ impl AssetBuilder {
                 self.is_mapped.into(),
             ));
         }
-        if self.sampler.is_some() {
+        if self.sampler.is_some()
+            || self.address_mode_u.is_some()
+            || self.address_mode_v.is_some()
+            || self.address_mode_w.is_some()
+            || self.mag_filter.is_some()
+            || self.min_filter.is_some()
+            || self.mipmap_filter.is_some()
+            || self.lod_min_clamp.is_some()
+            || self.lod_max_clamp.is_some()
+            || self.compare.is_some()
+            || self.anisotropy_clamp.is_some()
+            || self.border_color.is_some()
+        {
+            let mut mag_filter = self.mag_filter.unwrap_or_default();
+            let mut min_filter = self.min_filter.unwrap_or_default();
+            let mut mipmap_filter = self.mipmap_filter.unwrap_or_default();
+            
+            if let Some(sampler) = self.sampler {
+                match sampler {
+                    SamplerType::Linear => {
+                        mag_filter = ImageFilterModeType::Linear;
+                        min_filter = ImageFilterModeType::Linear;
+                        mipmap_filter = ImageFilterModeType::Linear;
+                    }
+                    SamplerType::Nearest => {
+                        mag_filter = ImageFilterModeType::Nearest;
+                        min_filter = ImageFilterModeType::Nearest;
+                        mipmap_filter = ImageFilterModeType::Nearest;
+                    }
+                }
+            }
+            
             return Ok(AssetField::Image(ImageAssetField {
                 field_ident: self.field_ident.unwrap(),
                 asset_path: self.asset_path.unwrap(),
-                sampler: self.sampler.unwrap(),
+                address_mode_u: self.address_mode_u.unwrap_or_default(),
+                address_mode_v: self.address_mode_v.unwrap_or_default(),
+                address_mode_w: self.address_mode_w.unwrap_or_default(),
+                mag_filter,
+                min_filter,
+                mipmap_filter,
+                lod_min_clamp: self.lod_min_clamp.unwrap_or(0.),
+                lod_max_clamp: self.lod_max_clamp.unwrap_or(32.),
+                compare: self.compare,
+                anisotropy_clamp: self.anisotropy_clamp.unwrap_or(1),
+                border_color: self.border_color,
             }));
         }
         let asset = BasicAssetField {
@@ -910,7 +1148,17 @@ mod test {
             AssetField::Image(ImageAssetField {
                 field_ident: Ident::new("test", Span::call_site()),
                 asset_path: "some/image.png".to_owned(),
-                sampler: SamplerType::Linear
+                address_mode_u: Default::default(),
+                address_mode_v: Default::default(),
+                address_mode_w: Default::default(),
+                mag_filter: ImageFilterModeType::Linear,
+                min_filter: ImageFilterModeType::Linear,
+                mipmap_filter: ImageFilterModeType::Linear,
+                lod_min_clamp: 0.0,
+                lod_max_clamp: 32.0,
+                compare: None,
+                anisotropy_clamp: 1,
+                border_color: None,
             })
         );
         assert_eq!(
@@ -918,7 +1166,17 @@ mod test {
             AssetField::Image(ImageAssetField {
                 field_ident: Ident::new("test", Span::call_site()),
                 asset_path: "some/image.png".to_owned(),
-                sampler: SamplerType::Nearest
+                address_mode_u: Default::default(),
+                address_mode_v: Default::default(),
+                address_mode_w: Default::default(),
+                mag_filter: ImageFilterModeType::Nearest,
+                min_filter: ImageFilterModeType::Nearest,
+                mipmap_filter: ImageFilterModeType::Nearest,
+                lod_min_clamp: 0.0,
+                lod_max_clamp: 32.0,
+                compare: None,
+                anisotropy_clamp: 1,
+                border_color: None,
             })
         );
     }

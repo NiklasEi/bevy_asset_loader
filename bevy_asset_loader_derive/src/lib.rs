@@ -62,6 +62,30 @@ impl ImageAttribute {
     pub const ATTRIBUTE_NAME: &'static str = "image";
     #[allow(dead_code)]
     pub const SAMPLER: &'static str = "sampler";
+    #[allow(dead_code)]
+    pub const ADDRESS_MODE_U: &'static str = "address_mode_u";
+    #[allow(dead_code)]
+    pub const ADDRESS_MODE_V: &'static str = "address_mode_v";
+    #[allow(dead_code)]
+    pub const ADDRESS_MODE_W: &'static str = "address_mode_w";
+    #[allow(dead_code)]
+    pub const MAG_FILTER: &'static str = "mag_filter";
+    #[allow(dead_code)]
+    pub const MIN_FILTER: &'static str = "min_filter";
+    #[allow(dead_code)]
+    pub const MIPMAP_FILTER: &'static str = "mipmap_filter";
+    #[allow(dead_code)]
+    pub const LOD_MIN_CLAMP: &'static str = "lod_min_clamp";
+    #[allow(dead_code)]
+    pub const LOD_MAX_CLAMP: &'static str = "lod_max_clamp";
+    #[allow(dead_code)]
+    pub const COMPARE: &'static str = "compare";
+    #[allow(dead_code)]
+    pub const ANISOTROPY_CLAMP: &'static str = "anisotropy_clamp";
+    #[allow(dead_code)]
+    pub const BORDER_COLOR: &'static str = "border_color";
+    #[allow(dead_code)]
+    pub const LABEL: &'static str = "label";
 }
 
 pub(crate) const COLLECTION_ATTRIBUTE: &str = "collection";
@@ -459,18 +483,194 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                                 Meta::NameValue(named_value) => {
                                     let path = named_value.path.get_ident().unwrap().clone();
                                     if path == ImageAttribute::SAMPLER {
-                                        if let Expr::Path(ExprPath { path, .. }) =
-                                            &named_value.value
-                                        {
+                                        if let Expr::Path(ExprPath { path, .. }) = &named_value.value {
                                             let sampler_result = SamplerType::try_from(
                                                 path.get_ident().unwrap().to_string(),
                                             );
-
+                                            
                                             if let Ok(sampler) = sampler_result {
                                                 builder.sampler = Some(sampler);
                                             } else {
                                                 errors.push(ParseFieldError::UnknownAttribute(
                                                     named_value.value.into_token_stream(),
+                                                ));
+                                            }
+                                        } else {
+                                            errors.push(ParseFieldError::WrongAttributeType(
+                                                named_value.into_token_stream(),
+                                                "path",
+                                            ));
+                                        }
+                                    } else if path == ImageAttribute::ADDRESS_MODE_U {
+                                        if let Expr::Path(ExprPath { path, .. }) = &named_value.value {
+                                            let result = ImageAddressModeType::try_from(
+                                                path.get_ident().unwrap().to_string()
+                                            );
+                                            
+                                            if let Ok(address_mode_u) = result {
+                                                builder.address_mode_u = Some(address_mode_u);
+                                            } else {
+                                                errors.push(ParseFieldError::UnknownAttribute(
+                                                    named_value.value.into_token_stream()
+                                                ));
+                                            }
+                                        } else {
+                                            errors.push(ParseFieldError::WrongAttributeType(
+                                                named_value.into_token_stream(),
+                                                "path",
+                                            ));
+                                        }
+                                    } else if path == ImageAttribute::ADDRESS_MODE_V {
+                                        if let Expr::Path(ExprPath { path, .. }) = &named_value.value {
+                                            let result = ImageAddressModeType::try_from(
+                                                path.get_ident().unwrap().to_string()
+                                            );
+                                            
+                                            if let Ok(address_mode_v) = result {
+                                                builder.address_mode_v = Some(address_mode_v);
+                                            } else {
+                                                errors.push(ParseFieldError::UnknownAttribute(
+                                                    named_value.value.into_token_stream()
+                                                ));
+                                            }
+                                        } else {
+                                            errors.push(ParseFieldError::WrongAttributeType(
+                                                named_value.into_token_stream(),
+                                                "path",
+                                            ));
+                                        }
+                                    } else if path == ImageAttribute::ADDRESS_MODE_W {
+                                        if let Expr::Path(ExprPath { path, .. }) = &named_value.value {
+                                            let result = ImageAddressModeType::try_from(
+                                                path.get_ident().unwrap().to_string()
+                                            );
+                                            
+                                            if let Ok(address_mode_w) = result {
+                                                builder.address_mode_w = Some(address_mode_w);
+                                            } else {
+                                                errors.push(ParseFieldError::UnknownAttribute(
+                                                    named_value.value.into_token_stream()
+                                                ));
+                                            }
+                                        } else {
+                                            errors.push(ParseFieldError::UnknownAttribute(
+                                                named_value.value.into_token_stream()
+                                            ));
+                                        }
+                                    } else if path == ImageAttribute::MAG_FILTER {
+                                        if let Expr::Path(ExprPath { path, .. }) = &named_value.value {
+                                            let result = ImageFilterModeType::try_from(
+                                                path.get_ident().unwrap().to_string()
+                                            );
+                                            
+                                            if let Ok(mag_filter) = result {
+                                                builder.mag_filter = Some(mag_filter);
+                                            } else {
+                                                errors.push(ParseFieldError::UnknownAttribute(
+                                                    named_value.value.into_token_stream()
+                                                ));
+                                            }
+                                        } else {
+                                            errors.push(ParseFieldError::WrongAttributeType(
+                                                named_value.into_token_stream(),
+                                                "path",
+                                            ));
+                                        }
+                                    } else if path == ImageAttribute::MIN_FILTER {
+                                        if let Expr::Path(ExprPath { path, .. }) = &named_value.value {
+                                            let result = ImageFilterModeType::try_from(
+                                                path.get_ident().unwrap().to_string()
+                                            );
+                                            
+                                            if let Ok(min_filter) = result {
+                                                builder.min_filter = Some(min_filter);
+                                            } else {
+                                                errors.push(ParseFieldError::UnknownAttribute(
+                                                    named_value.value.into_token_stream()
+                                                ));
+                                            }
+                                        } else {
+                                            errors.push(ParseFieldError::WrongAttributeType(
+                                                named_value.into_token_stream(),
+                                                "path",
+                                            ));
+                                        }
+                                    } else if path == ImageAttribute::MIPMAP_FILTER {
+                                        if let Expr::Path(ExprPath { path, .. }) = &named_value.value {
+                                            let result = ImageFilterModeType::try_from(
+                                                path.get_ident().unwrap().to_string()
+                                            );
+                                            
+                                            if let Ok(mipmap_filter) = result {
+                                                builder.mipmap_filter = Some(mipmap_filter);
+                                            } else {
+                                                errors.push(ParseFieldError::UnknownAttribute(
+                                                    named_value.value.into_token_stream()
+                                                ));
+                                            }
+                                        } else {
+                                            errors.push(ParseFieldError::WrongAttributeType(
+                                                named_value.into_token_stream(),
+                                                "path",
+                                            ));
+                                        }
+                                    } else if path == ImageAttribute::LOD_MIN_CLAMP {
+                                        if let Expr::Lit(ExprLit { lit: Lit::Float(lod_min_clamp), .. }) = &named_value.value {
+                                            builder.lod_min_clamp = Some(lod_min_clamp.base10_parse::<f32>().unwrap());
+                                        } else {
+                                            errors.push(ParseFieldError::WrongAttributeType(
+                                                named_value.into_token_stream(),
+                                                "float"
+                                            ));
+                                        }
+                                    } else if path == ImageAttribute::LOD_MAX_CLAMP {
+                                        if let Expr::Lit(ExprLit { lit: Lit::Float(lod_max_clamp), .. }) = &named_value.value {
+                                            builder.lod_max_clamp = Some(lod_max_clamp.base10_parse::<f32>().unwrap());
+                                        } else {
+                                            errors.push(ParseFieldError::WrongAttributeType(
+                                                named_value.into_token_stream(),
+                                                "float"
+                                            ));
+                                        }
+                                    } else if path == ImageAttribute::COMPARE {
+                                        if let Expr::Path(ExprPath { path, .. }) = &named_value.value {
+                                            let result = ImageCompareFunctionType::try_from(
+                                                path.get_ident().unwrap().to_string()
+                                            );
+                                            
+                                            if let Ok(compare) = result {
+                                                builder.compare = Some(compare);
+                                            } else {
+                                                errors.push(ParseFieldError::UnknownAttribute(
+                                                    named_value.value.into_token_stream()
+                                                ));
+                                            }
+                                        } else {
+                                            errors.push(ParseFieldError::WrongAttributeType(
+                                                named_value.into_token_stream(),
+                                                "path",
+                                            ));
+                                        }
+                                    } else if path == ImageAttribute::ANISOTROPY_CLAMP {
+                                        if let Expr::Lit(ExprLit { lit: Lit::Int(anisotropy_clamp), .. }) = &named_value.value {
+                                            builder.anisotropy_clamp = Some(anisotropy_clamp.base10_parse::<u16>().unwrap());
+                                        } else {
+                                            errors.push(ParseFieldError::WrongAttributeType(
+                                                named_value.into_token_stream(),
+                                                "integer"
+                                            ));
+                                        }
+                                    } else if path == ImageAttribute::BORDER_COLOR {
+                                        if let Expr::Path(ExprPath { path, .. }) = &named_value.value {
+                                            let result = ImageSamplerBorderColorType::try_from(
+                                                path.get_ident().unwrap().to_string()
+                                            );
+                                            
+                                            if let Ok(border_color) = result {
+                                                builder.border_color = Some(border_color);
+                                            } else {
+                                                errors.push(ParseFieldError::UnknownAttribute(
+                                                    named_value.value.into_token_stream()
                                                 ));
                                             }
                                         } else {

@@ -16,6 +16,7 @@ use bevy::sprite::TextureAtlasLayout;
 
 #[cfg(any(feature = "3d", feature = "2d"))]
 use bevy::render::texture::{Image, ImageSampler, ImageSamplerDescriptor};
+use bevy::render::texture::{ImageAddressMode, ImageCompareFunction, ImageFilterMode, ImageSamplerBorderColor};
 
 /// These asset variants can be loaded from configuration files. They will then replace
 /// a dynamic asset based on their keys.
@@ -49,6 +50,39 @@ pub enum StandardDynamicAsset {
         /// Sampler
         #[serde(with = "optional", skip_serializing_if = "Option::is_none", default)]
         sampler: Option<ImageSamplerType>,
+        /// ImageAddressMode
+        #[serde(with = "optional", skip_serializing_if = "Option::is_none", default)]
+	    address_mode_u: Option<ImageAddressModeType>,
+        /// ImageAddressMode
+	    #[serde(with = "optional", skip_serializing_if = "Option::is_none", default)]
+	    address_mode_v: Option<ImageAddressModeType>,
+        /// ImageAddressMode
+        #[serde(with = "optional", skip_serializing_if = "Option::is_none", default)]
+	    address_mode_w: Option<ImageAddressModeType>,
+        /// ImageFilterMode
+        #[serde(with = "optional", skip_serializing_if = "Option::is_none", default)]
+	    mag_filter: Option<ImageFilterModeType>,
+        /// ImageFilterMode
+        #[serde(with = "optional", skip_serializing_if = "Option::is_none", default)]
+	    min_filter: Option<ImageFilterModeType>,
+        /// ImageFilterMode
+        #[serde(with = "optional", skip_serializing_if = "Option::is_none", default)]
+	    mipmap_filter: Option<ImageFilterModeType>,
+        /// f32
+	    #[serde(with = "optional", skip_serializing_if = "Option::is_none", default)]
+	    lod_min_clamp: Option<f32>,
+        /// f32
+        #[serde(with = "optional", skip_serializing_if = "Option::is_none", default)]
+	    lod_max_clamp: Option<f32>,
+        /// ImageCompareFunction
+        #[serde(with = "optional", skip_serializing_if = "Option::is_none", default)]
+	    compare: Option<ImageCompareFunctionType>,
+        /// u16
+        #[serde(with = "optional", skip_serializing_if = "Option::is_none", default)]
+	    anisotropy_clamp: Option<u16>,
+        /// ImageSamplerBorderColor
+        #[serde(with = "optional", skip_serializing_if = "Option::is_none", default)]
+	    border_color: Option<ImageSamplerBorderColorType>,
     },
     /// A dynamic standard material asset directly loaded from an image file
     #[cfg(feature = "3d")]
@@ -137,6 +171,122 @@ impl From<ImageSamplerType> for ImageSampler {
     }
 }
 
+/// Defines the ImageAddressMode
+#[allow(dead_code)]
+#[cfg(any(feature = "3d", feature = "2d"))]
+#[derive(Debug, PartialEq, Clone, Copy, Default, Deserialize, Serialize)]
+pub enum ImageAddressModeType {
+    #[default]
+    /// See [`ImageAddressMode::ClampToEdge`]
+    ClampToEdge,
+    /// See [`ImageAddressMode::Repeat`]
+    Repeat,
+    /// See [`ImageAddressMode::MirrorRepeat`]
+    MirrorRepeat,
+    /// See [`ImageAddressMode::ClampToBorder`]
+    ClampToBorder,
+}
+
+#[cfg(any(feature = "3d", feature = "2d"))]
+impl Into<ImageAddressMode> for ImageAddressModeType {
+    fn into(self) -> ImageAddressMode {
+        match self {
+            ImageAddressModeType::ClampToEdge => ImageAddressMode::ClampToEdge,
+            ImageAddressModeType::Repeat => ImageAddressMode::Repeat,
+            ImageAddressModeType::MirrorRepeat => ImageAddressMode::MirrorRepeat,
+            ImageAddressModeType::ClampToBorder => ImageAddressMode::ClampToBorder,
+        }
+    }
+}
+
+/// Defines the ImageFilterMode
+#[allow(dead_code)]
+#[cfg(any(feature = "3d", feature = "2d"))]
+#[derive(Debug, PartialEq, Clone, Copy, Default, Deserialize, Serialize)]
+pub enum ImageFilterModeType {
+    #[default]
+    /// See [`ImageFilterMode::Nearest`]
+    Nearest,
+    /// See [`ImageFilterMode::Linear`]
+    Linear,
+}
+
+#[cfg(any(feature = "3d", feature = "2d"))]
+impl Into<ImageFilterMode> for ImageFilterModeType {
+    fn into(self) -> ImageFilterMode {
+        match self {
+            ImageFilterModeType::Nearest => ImageFilterMode::Nearest,
+            ImageFilterModeType::Linear => ImageFilterMode::Linear,
+        }
+    }
+}
+
+/// Defines the ImageCompareFunction
+#[allow(dead_code)]
+#[cfg(any(feature = "3d", feature = "2d"))]
+#[derive(Debug, PartialEq, Clone, Copy, Deserialize, Serialize)]
+pub enum ImageCompareFunctionType {
+    /// See [`ImageCompareFunction::Never`]
+    Never,
+    /// See [`ImageCompareFunction::Less`]
+    Less,
+    /// See [`ImageCompareFunction::Equal`]
+    Equal,
+    /// See [`ImageCompareFunction::LessEqual`]
+    LessEqual,
+    /// See [`ImageCompareFunction::Greater`]
+    Greater,
+    /// See [`ImageCompareFunction::NotEqual`]
+    NotEqual,
+    /// See [`ImageCompareFunction::GreaterEqual`]
+    GreaterEqual,
+    /// See [`ImageCompareFunction::Always`]
+    Always,
+}
+
+#[cfg(any(feature = "3d", feature = "2d"))]
+impl Into<ImageCompareFunction> for ImageCompareFunctionType {
+    fn into(self) -> ImageCompareFunction {
+        match self {
+            ImageCompareFunctionType::Never => ImageCompareFunction::Never,
+            ImageCompareFunctionType::Less => ImageCompareFunction::Less,
+            ImageCompareFunctionType::Equal => ImageCompareFunction::Equal,
+            ImageCompareFunctionType::LessEqual => ImageCompareFunction::LessEqual,
+            ImageCompareFunctionType::Greater => ImageCompareFunction::Greater,
+            ImageCompareFunctionType::NotEqual => ImageCompareFunction::NotEqual,
+            ImageCompareFunctionType::GreaterEqual => ImageCompareFunction::GreaterEqual,
+            ImageCompareFunctionType::Always => ImageCompareFunction::Always,
+        }
+    }
+}
+
+/// Defines the ImageSamplerBorderColor
+#[allow(dead_code)]
+#[cfg(any(feature = "3d", feature = "2d"))]
+#[derive(Debug, PartialEq, Clone, Copy, Deserialize, Serialize)]
+pub enum ImageSamplerBorderColorType {
+    /// See [`ImageSamplerBorderColor::TransparentBlack`]
+    TransparentBlack,
+    /// See [`ImageSamplerBorderColor::OpaqueBlack`]
+    OpaqueBlack,
+    /// See [`ImageSamplerBorderColor::OpaqueWhite`]
+    OpaqueWhite,
+    /// See [`ImageSamplerBorderColor::Zero`]
+    Zero,
+}
+
+#[cfg(any(feature = "3d", feature = "2d"))]
+impl Into<ImageSamplerBorderColor> for ImageSamplerBorderColorType {
+    fn into(self) -> ImageSamplerBorderColor {
+        match self {
+            ImageSamplerBorderColorType::TransparentBlack => ImageSamplerBorderColor::TransparentBlack,
+            ImageSamplerBorderColorType::OpaqueBlack => ImageSamplerBorderColor::OpaqueBlack,
+            ImageSamplerBorderColorType::OpaqueWhite => ImageSamplerBorderColor::OpaqueWhite,
+            ImageSamplerBorderColorType::Zero => ImageSamplerBorderColor::Zero,
+        }
+    }
+}
+
 impl DynamicAsset for StandardDynamicAsset {
     fn load(&self, asset_server: &AssetServer) -> Vec<UntypedHandle> {
         match self {
@@ -171,13 +321,53 @@ impl DynamicAsset for StandardDynamicAsset {
                 asset_server.get_handle_untyped(path).unwrap(),
             )),
             #[cfg(any(feature = "3d", feature = "2d"))]
-            StandardDynamicAsset::Image { path, sampler } => {
+            StandardDynamicAsset::Image {
+                path,
+                sampler,
+                address_mode_u,
+                address_mode_v,
+                address_mode_w,
+                mag_filter,
+                min_filter,
+                mipmap_filter,
+                lod_min_clamp,
+                lod_max_clamp,
+                compare,
+                anisotropy_clamp,
+                border_color,
+            } => {
                 let mut handle = asset_server.load(path);
-                if let Some(sampler) = sampler {
+                if sampler.is_some()
+                    || address_mode_u.is_some()
+                    || address_mode_v.is_some()
+                    || address_mode_w.is_some()
+                    || mag_filter.is_some()
+                    || min_filter.is_some()
+                    || mipmap_filter.is_some()
+                    || lod_min_clamp.is_some()
+                    || lod_max_clamp.is_some()
+                    || compare.is_some()
+                    || anisotropy_clamp.is_some()
+                    || border_color.is_some()
+                {
                     let mut images = cell
                         .get_resource_mut::<Assets<Image>>()
                         .expect("Cannot get resource Assets<Image>");
-                    Self::update_image_sampler(&mut handle, &mut images, sampler);
+                    Self::update_image_sampler(
+                        &mut handle, &mut images,
+                        sampler,
+                        address_mode_u,
+                        address_mode_v,
+                        address_mode_w,
+                        mag_filter,
+                        min_filter,
+                        mipmap_filter,
+                        lod_min_clamp,
+                        lod_max_clamp,
+                        compare,
+                        anisotropy_clamp,
+                        border_color,
+                    );
                 }
 
                 Ok(DynamicAssetType::Single(handle.untyped()))
@@ -252,22 +442,61 @@ impl StandardDynamicAsset {
     fn update_image_sampler(
         handle: &mut bevy::asset::Handle<Image>,
         images: &mut Assets<Image>,
-        sampler_type: &ImageSamplerType,
+        sampler_type: &Option<ImageSamplerType>,
+        address_mode_u: &Option<ImageAddressModeType>,
+        address_mode_v: &Option<ImageAddressModeType>,
+        address_mode_w: &Option<ImageAddressModeType>,
+        mag_filter: &Option<ImageFilterModeType>,
+        min_filter: &Option<ImageFilterModeType>,
+        mipmap_filter: &Option<ImageFilterModeType>,
+        lod_min_clamp: &Option<f32>,
+        lod_max_clamp: &Option<f32>,
+        compare: &Option<ImageCompareFunctionType>,
+        anisotropy_clamp: &Option<u16>,
+        border_color: &Option<ImageSamplerBorderColorType>,
     ) {
         let image = images.get_mut(&*handle).unwrap();
-        let is_different_sampler = if let ImageSampler::Descriptor(descriptor) = &image.sampler {
-            let configured_descriptor: ImageSamplerDescriptor = sampler_type.clone().into();
-            !descriptor.as_wgpu().eq(&configured_descriptor.as_wgpu())
+        
+        let mut descriptor = ImageSamplerDescriptor::default();
+        descriptor.address_mode_u = address_mode_u.unwrap_or_default().into();
+        descriptor.address_mode_v = address_mode_v.unwrap_or_default().into();
+        descriptor.address_mode_w = address_mode_w.unwrap_or_default().into();
+        if let Some(sampler) = sampler_type {
+            match sampler {
+                ImageSamplerType::Linear => {
+                    descriptor.mag_filter = ImageFilterModeType::Linear.into();
+                    descriptor.min_filter = ImageFilterModeType::Linear.into();
+                    descriptor.mipmap_filter = ImageFilterModeType::Linear.into();
+                }
+                ImageSamplerType::Nearest => {
+                    descriptor.mag_filter = ImageFilterModeType::Nearest.into();
+                    descriptor.min_filter = ImageFilterModeType::Nearest.into();
+                    descriptor.mipmap_filter = ImageFilterModeType::Nearest.into();
+                }
+            }
+        } else {
+            descriptor.mag_filter = mag_filter.unwrap_or_default().into();
+            descriptor.min_filter = min_filter.unwrap_or_default().into();
+            descriptor.mipmap_filter = mipmap_filter.unwrap_or_default().into();
+        }
+        descriptor.lod_min_clamp = lod_min_clamp.unwrap_or_default().into();
+        descriptor.lod_max_clamp = lod_max_clamp.unwrap_or_default().into();
+        descriptor.compare = if let Some(compare) = compare { Some(compare.clone().into()) } else { None };
+        descriptor.anisotropy_clamp = anisotropy_clamp.unwrap_or_default().into();
+        descriptor.border_color = if let Some(border_color) = border_color { Some(border_color.clone().into()) } else { None };
+        
+        let is_different_sampler = if let ImageSampler::Descriptor(original_descriptor) = &image.sampler {
+            !original_descriptor.as_wgpu().eq(&descriptor.as_wgpu())
         } else {
             false
         };
-
+        
         if is_different_sampler {
             let mut cloned_image = image.clone();
-            cloned_image.sampler = sampler_type.clone().into();
+            cloned_image.sampler = ImageSampler::Descriptor(descriptor);
             *handle = images.add(cloned_image);
         } else {
-            image.sampler = sampler_type.clone().into();
+            image.sampler = ImageSampler::Descriptor(descriptor);
         }
     }
 }
@@ -423,6 +652,8 @@ mod tests {
     "image": Image(
         path: "images/player.png",
         sampler: Linear,
+        address_mode_u: Repeat,
+        compare: Less,
     ),
 })"#;
         serialize_and_deserialize(dynamic_asset_file);
