@@ -184,7 +184,6 @@ impl ToTokens for ImageSamplerBorderColorType {
 pub(crate) struct ImageAssetField {
     pub field_ident: Ident,
     pub asset_path: String,
-    pub sampler: SamplerType,
     pub address_mode_u: ImageAddressModeType,
     pub address_mode_v: ImageAddressModeType,
     pub address_mode_w: ImageAddressModeType,
@@ -282,11 +281,6 @@ impl AssetField {
                 let field_ident = image.field_ident.clone();
                 let asset_path = image.asset_path.clone();
                 
-                let descriptor = match image.sampler {
-                    SamplerType::Linear => quote!(ImageSamplerDescriptor::linear()),
-                    SamplerType::Nearest => quote!(ImageSamplerDescriptor::nearest()),
-                };
-                
                 let image_address_mode_u = image.address_mode_u;
                 let image_address_mode_v = image.address_mode_v;
                 let image_address_mode_w = image.address_mode_w;
@@ -301,7 +295,7 @@ impl AssetField {
                 
                 let settings = quote!(
                    move |s: &mut ImageLoaderSettings| {
-                        let mut descriptor = #descriptor;
+                        let mut descriptor = ImageSamplerDescriptor::default();
                         descriptor.address_mode_u = #image_address_mode_u;
                         descriptor.address_mode_v = #image_address_mode_v;
                         descriptor.address_mode_w = #image_address_mode_w;
@@ -808,17 +802,47 @@ impl AssetBuilder {
                 self.is_mapped.into(),
             ));
         }
-        if self.sampler.is_some() {
+        if self.sampler.is_some()
+            || self.address_mode_u.is_some()
+            || self.address_mode_v.is_some()
+            || self.address_mode_w.is_some()
+            || self.mag_filter.is_some()
+            || self.min_filter.is_some()
+            || self.mipmap_filter.is_some()
+            || self.lod_min_clamp.is_some()
+            || self.lod_max_clamp.is_some()
+            || self.compare.is_some()
+            || self.anisotropy_clamp.is_some()
+            || self.border_color.is_some()
+        {
+            let mut mag_filter = self.mag_filter.unwrap_or_default();
+            let mut min_filter = self.min_filter.unwrap_or_default();
+            let mut mipmap_filter = self.mipmap_filter.unwrap_or_default();
+            
+            if let Some(sampler) = self.sampler {
+                match sampler {
+                    SamplerType::Linear => {
+                        mag_filter = ImageFilterModeType::Linear;
+                        min_filter = ImageFilterModeType::Linear;
+                        mipmap_filter = ImageFilterModeType::Linear;
+                    }
+                    SamplerType::Nearest => {
+                        mag_filter = ImageFilterModeType::Nearest;
+                        min_filter = ImageFilterModeType::Nearest;
+                        mipmap_filter = ImageFilterModeType::Nearest;
+                    }
+                }
+            }
+            
             return Ok(AssetField::Image(ImageAssetField {
                 field_ident: self.field_ident.unwrap(),
                 asset_path: self.asset_path.unwrap(),
-                sampler: self.sampler.unwrap(),
                 address_mode_u: self.address_mode_u.unwrap_or_default(),
                 address_mode_v: self.address_mode_v.unwrap_or_default(),
                 address_mode_w: self.address_mode_w.unwrap_or_default(),
-                mag_filter: self.mag_filter.unwrap_or_default(),
-                min_filter: self.min_filter.unwrap_or_default(),
-                mipmap_filter: self.mipmap_filter.unwrap_or_default(),
+                mag_filter,
+                min_filter,
+                mipmap_filter,
                 lod_min_clamp: self.lod_min_clamp.unwrap_or(0.),
                 lod_max_clamp: self.lod_max_clamp.unwrap_or(32.),
                 compare: self.compare.unwrap_or_default(),
@@ -1105,13 +1129,12 @@ mod test {
             AssetField::Image(ImageAssetField {
                 field_ident: Ident::new("test", Span::call_site()),
                 asset_path: "some/image.png".to_owned(),
-                sampler: SamplerType::Linear,
                 address_mode_u: Default::default(),
                 address_mode_v: Default::default(),
                 address_mode_w: Default::default(),
-                mag_filter: Default::default(),
-                min_filter: Default::default(),
-                mipmap_filter: Default::default(),
+                mag_filter: ImageFilterModeType::Linear,
+                min_filter: ImageFilterModeType::Linear,
+                mipmap_filter: ImageFilterModeType::Linear,
                 lod_min_clamp: 0.0,
                 lod_max_clamp: 32.0,
                 compare: None,
@@ -1124,13 +1147,12 @@ mod test {
             AssetField::Image(ImageAssetField {
                 field_ident: Ident::new("test", Span::call_site()),
                 asset_path: "some/image.png".to_owned(),
-                sampler: SamplerType::Nearest,
                 address_mode_u: Default::default(),
                 address_mode_v: Default::default(),
                 address_mode_w: Default::default(),
-                mag_filter: Default::default(),
-                min_filter: Default::default(),
-                mipmap_filter: Default::default(),
+                mag_filter: ImageFilterModeType::Nearest,
+                min_filter: ImageFilterModeType::Nearest,
+                mipmap_filter: ImageFilterModeType::Nearest,
                 lod_min_clamp: 0.0,
                 lod_max_clamp: 32.0,
                 compare: None,
