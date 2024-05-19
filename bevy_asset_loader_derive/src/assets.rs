@@ -1,4 +1,3 @@
-use proc_macro::TokenStream;
 use crate::{ParseFieldError, TextureAtlasAttribute};
 use proc_macro2::{Ident, Spacing, Span, TokenStream, Punct};
 use quote::{quote, ToTokens, TokenStreamExt};
@@ -270,38 +269,6 @@ fn expand_to_tokens<T : ToTokens>(input: &Option<T>) -> TokenStream {
     }
 }
 
-fn image_to_settings (image: &ImageAssetField) -> TokenStream {
-    let image_address_mode_u = image.address_mode_u;
-    let image_address_mode_v = image.address_mode_v;
-    let image_address_mode_w = image.address_mode_w;
-    let image_mag_filter = image.mag_filter;
-    let image_min_filter = image.min_filter;
-    let image_mipmap_filter = image.mipmap_filter;
-    let image_lod_min_clamp = image.lod_min_clamp;
-    let image_lod_max_clamp = image.lod_max_clamp;
-    let image_compare = expand_to_tokens(&image.compare);
-    let image_anisotropy_clamp = image.anisotropy_clamp;
-    let image_border_color = expand_to_tokens(&image.border_color);
-    
-    quote!(
-        move |s: &mut ImageLoaderSettings| {
-            let mut descriptor = ImageSamplerDescriptor::default();
-            descriptor.address_mode_u = #image_address_mode_u;
-            descriptor.address_mode_v = #image_address_mode_v;
-            descriptor.address_mode_w = #image_address_mode_w;
-            descriptor.mag_filter = #image_mag_filter;
-            descriptor.min_filter = #image_min_filter;
-            descriptor.mipmap_filter = #image_mipmap_filter;
-            descriptor.lod_min_clamp = #image_lod_min_clamp;
-            descriptor.lod_max_clamp = #image_lod_max_clamp;
-            descriptor.compare = #image_compare;
-            descriptor.anisotropy_clamp = #image_anisotropy_clamp;
-            descriptor.border_color = #image_border_color;
-            s.sampler = ImageSampler::Descriptor(descriptor);
-        }
-    )
-}
-
 impl AssetField {
     pub(crate) fn attach_token_stream_for_creation(
         &self,
@@ -321,17 +288,58 @@ impl AssetField {
                 let field_ident = image.field_ident.clone();
                 let asset_path = image.asset_path.clone();
                 
-                let settings = image_to_settings(image);
+                let image_address_mode_u = image.address_mode_u;
+                let image_address_mode_v = image.address_mode_v;
+                let image_address_mode_w = image.address_mode_w;
+                let image_mag_filter = image.mag_filter;
+                let image_min_filter = image.min_filter;
+                let image_mipmap_filter = image.mipmap_filter;
+                let image_lod_min_clamp = image.lod_min_clamp;
+                let image_lod_max_clamp = image.lod_max_clamp;
+                let image_compare = expand_to_tokens(&image.compare);
+                let image_anisotropy_clamp = image.anisotropy_clamp;
+                let image_border_color = expand_to_tokens(&image.border_color);
                 
                 quote!(#token_stream #field_ident : {
                     use bevy::render::texture::{
                         ImageSampler, ImageSamplerDescriptor, ImageLoaderSettings, ImageAddressMode,
-                        ImageFilterMode, ImageCompareFunction, ImageSamplerBorderColor,
+                        ImageFilterMode, ImageCompareFunction, ImageSamplerBorderColor, Image,
                     };
                     let cell = world.cell();
                     let asset_server = cell.get_resource::<::bevy::asset::AssetServer>().expect("Cannot get AssetServer");
+                    let mut images = cell.get_resource_mut::<::bevy::asset::Assets<Image>>().expect("Cannot get resource Assets<Image>");
+                    
+                    let mut handle = asset_server.load(#asset_path);
+                    let mut image = images.get_mut(&handle).expect("Only asset collection fields holding an `Image` handle can be annotated with `image`");
                 
-                    asset_server.load_with_settings(#asset_path, #settings)
+                    let mut descriptor = ImageSamplerDescriptor::default();
+                    descriptor.address_mode_u = #image_address_mode_u;
+                    descriptor.address_mode_v = #image_address_mode_v;
+                    descriptor.address_mode_w = #image_address_mode_w;
+                    descriptor.mag_filter = #image_mag_filter;
+                    descriptor.min_filter = #image_min_filter;
+                    descriptor.mipmap_filter = #image_mipmap_filter;
+                    descriptor.lod_min_clamp = #image_lod_min_clamp;
+                    descriptor.lod_max_clamp = #image_lod_max_clamp;
+                    descriptor.compare = #image_compare;
+                    descriptor.anisotropy_clamp = #image_anisotropy_clamp;
+                    descriptor.border_color = #image_border_color;
+                    
+                    let is_different_sampler = if let ImageSampler::Descriptor(original_descriptor) = &image.sampler {
+                        !original_descriptor.as_wgpu().eq(&descriptor.as_wgpu())
+                    } else {
+                        false
+                    };
+
+                    if is_different_sampler {
+                        let mut cloned_image = image.clone();
+                        cloned_image.sampler = ImageSampler::Descriptor(descriptor);
+                        handle = images.add(cloned_image);
+                    } else {
+                        image.sampler = ImageSampler::Descriptor(descriptor);
+                    }
+
+                    handle
                 },)
             }
             AssetField::Folder(basic, typed, mapped) => {
@@ -644,21 +652,9 @@ impl AssetField {
             AssetField::TextureAtlasLayout(TextureAtlasLayoutAssetField { .. }) => {
                 quote!(#token_stream)
             }
-            AssetField::StandardMaterial(BasicAssetField { asset_path, .. }) => {
+            AssetField::StandardMaterial(BasicAssetField { asset_path, .. })
+            | AssetField::Image(ImageAssetField { asset_path, .. }) => {
                 quote!(#token_stream handles.push(asset_server.load::<::bevy::render::texture::Image>(#asset_path).untyped());)
-            }
-            AssetField::Image(image) => {
-                let asset_path = image.asset_path.clone();
-                let settings = image_to_settings(image);
-                
-                quote!(
-                    #token_stream
-                    use bevy::render::texture::{
-                        ImageSampler, ImageSamplerDescriptor, ImageLoaderSettings, ImageAddressMode,
-                        ImageFilterMode, ImageCompareFunction, ImageSamplerBorderColor,
-                    };
-                    handles.push(asset_server.load_with_settings::<::bevy::render::texture::Image, _>(#asset_path, #settings).untyped());
-                )
             }
             AssetField::Files(assets, _, _) => {
                 let asset_paths = assets.asset_paths.clone();
