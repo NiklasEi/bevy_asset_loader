@@ -58,7 +58,7 @@ struct TextureAssets {
     tree: Handle<Image>,
     #[asset(path = "images/female_adventurer_sheet.png")]
     female_adventurer: Handle<Image>,
-    #[asset(texture_atlas_layout(tile_size_x = 96., tile_size_y = 99., columns = 8, rows = 1))]
+    #[asset(texture_atlas_layout(tile_size_x = 96, tile_size_y = 99, columns = 8, rows = 1))]
     female_adventurer_layout: Handle<TextureAtlasLayout>,
 }
 
@@ -79,31 +79,31 @@ fn expect(
     mut quit: EventWriter<AppExit>,
 ) {
     assert_eq!(
-        asset_server.get_recursive_dependency_load_state(audio_assets.background.clone()),
+        asset_server.get_recursive_dependency_load_state(&audio_assets.background.clone()),
         Some(RecursiveDependencyLoadState::Loaded)
     );
     assert_eq!(
-        asset_server.get_recursive_dependency_load_state(audio_assets.plop.clone()),
+        asset_server.get_recursive_dependency_load_state(&audio_assets.plop.clone()),
         Some(RecursiveDependencyLoadState::Loaded)
     );
     texture_atlas_layouts
         .get(&texture_assets.female_adventurer_layout)
         .expect("Texture atlas should be added to its assets resource.");
     assert_eq!(
-        asset_server.get_recursive_dependency_load_state(texture_assets.female_adventurer.clone()),
+        asset_server.get_recursive_dependency_load_state(&texture_assets.female_adventurer.clone()),
         Some(RecursiveDependencyLoadState::Loaded)
     );
     assert_eq!(
-        asset_server.get_recursive_dependency_load_state(texture_assets.player.clone()),
+        asset_server.get_recursive_dependency_load_state(&texture_assets.player.clone()),
         Some(RecursiveDependencyLoadState::Loaded)
     );
     assert_eq!(
-        asset_server.get_recursive_dependency_load_state(texture_assets.tree.clone()),
+        asset_server.get_recursive_dependency_load_state(&texture_assets.tree.clone()),
         Some(RecursiveDependencyLoadState::Loaded)
     );
     info!("Everything looks good!");
     info!("Quitting the application...");
-    quit.send(AppExit);
+    quit.send(AppExit::Success);
 }
 
 fn print_progress(

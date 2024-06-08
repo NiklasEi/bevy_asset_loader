@@ -27,7 +27,7 @@ struct MyAssets {
     #[asset(path = "images/player.png", standard_material)]
     standard_material: Handle<StandardMaterial>,
     // Create a texture atlas layout
-    #[asset(texture_atlas_layout(tile_size_x = 96., tile_size_y = 99., columns = 8, rows = 1))]
+    #[asset(texture_atlas_layout(tile_size_x = 96, tile_size_y = 99, columns = 8, rows = 1))]
     texture_atlas_layout: Handle<TextureAtlasLayout>,
     // Example field with type that implements `FromWorld`
     // If no derive attributes are set, `from_world` will be used to set the value.
@@ -80,7 +80,7 @@ fn expectations(
     info!("Done loading the collection. Checking expectations...");
 
     assert_eq!(
-        asset_server.get_recursive_dependency_load_state(assets.single_file.clone()),
+        asset_server.get_recursive_dependency_load_state(&assets.single_file.clone()),
         Some(RecursiveDependencyLoadState::Loaded)
     );
     let material = standard_materials
@@ -88,7 +88,7 @@ fn expectations(
         .expect("Standard material should be added to its assets resource.");
     assert_eq!(
         asset_server.get_recursive_dependency_load_state(
-            material
+            &material
                 .base_color_texture
                 .clone()
                 .expect("Material should have image as base color texture")
@@ -102,7 +102,7 @@ fn expectations(
     let material = standard_materials
         .get(&assets.from_world.handle)
         .expect("Standard material should be added to its assets resource.");
-    assert_eq!(material.base_color, Color::RED);
+    assert_eq!(material.base_color, Color::LinearRgba(LinearRgba::RED));
 
     let image = images
         .get(&assets.image_tree_nearest)
@@ -178,7 +178,7 @@ fn expectations(
 
     info!("Everything looks good!");
     info!("Quitting the application...");
-    quit.send(AppExit);
+    quit.send(AppExit::Success);
 }
 
 struct ColorStandardMaterial<const R: u8, const G: u8, const B: u8, const A: u8> {
@@ -193,7 +193,12 @@ impl<const R: u8, const G: u8, const B: u8, const A: u8> FromWorld
             .get_resource_mut::<Assets<StandardMaterial>>()
             .unwrap();
         ColorStandardMaterial {
-            handle: materials.add(StandardMaterial::from(Color::rgba_u8(R, G, B, A))),
+            handle: materials.add(StandardMaterial::from(Color::linear_rgba(
+                R as f32 / u8::MAX as f32,
+                G as f32 / u8::MAX as f32,
+                B as f32 / u8::MAX as f32,
+                A as f32 / u8::MAX as f32,
+            ))),
         }
     }
 }

@@ -1,6 +1,6 @@
 [package]
 name = "bevy_asset_loader"
-version = "0.20.2"
+version = "0.21.0-rc2.1"
 authors = ["Niklas Eicker <git@nikl.me>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
@@ -22,20 +22,20 @@ standard_dynamic_assets = ["dep:bevy_common_assets", "dep:serde"]
 progress_tracking = ["dep:iyes_progress"]
 
 [dependencies]
-bevy = { version = "0.13", default-features = false, features = ["bevy_asset"] }
-bevy_asset_loader_derive = { version = "=0.20.2", path = "../bevy_asset_loader_derive" }
+bevy = { version = "0.14.0-rc.2", default-features = false, features = ["bevy_asset"] }
+bevy_asset_loader_derive = { version = "=0.21.0-rc2.1", path = "../bevy_asset_loader_derive" }
 anyhow = "1"
 path-slash = "0.2"
 
-bevy_common_assets = { version = "0.10", features = ["ron"], optional = true }
+bevy_common_assets = { version = "0.11.0-rc.2.1", features = ["ron"], optional = true }
 serde = { version = "1", optional = true }
-iyes_progress = { version = "0.11", optional = true }
+iyes_progress = { git = "https://github.com/NiklasEi/iyes_progress", branch = "update_bevy_main_for_0_14_cycle", optional = true }
 
 [dev-dependencies]
-bevy = { version = "0.13", features = ["vorbis"] }
+bevy = { version = "0.14.0-rc.2", features = ["vorbis"] }
 anyhow = "1"
-iyes_progress = { version = "0.11" }
-bevy_common_assets = { version = "0.10", features = ["ron"] }
+iyes_progress = { git = "https://github.com/NiklasEi/iyes_progress", branch = "update_bevy_main_for_0_14_cycle" }
+bevy_common_assets = { version = "0.11.0-rc.2.1", features = ["ron"] }
 serde = { version = "1" }
 ron = "0.8.1"
 trybuild = { version = "1.0" }

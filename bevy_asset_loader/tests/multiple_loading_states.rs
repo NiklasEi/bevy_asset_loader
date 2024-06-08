@@ -55,7 +55,7 @@ fn use_loading_assets(
 
 fn quit(mut exit: EventWriter<AppExit>) {
     info!("Everything fine, quitting the app");
-    exit.send(AppExit);
+    exit.send(AppExit::Success);
 }
 
 #[derive(AssetCollection, Resource)]

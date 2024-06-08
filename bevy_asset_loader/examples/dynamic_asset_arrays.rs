@@ -38,18 +38,20 @@ fn spawn_player_and_tree(mut commands: Commands, image_assets: Res<ImageAssets>)
     let mut transform = Transform::from_translation(Vec3::new(0., 0., 1.));
     transform.scale = Vec3::splat(0.5);
     commands
-        .spawn(SpriteSheetBundle {
-            transform: Transform {
-                translation: Vec3::new(0., 150., 0.),
+        .spawn((
+            SpriteBundle {
+                transform: Transform {
+                    translation: Vec3::new(0., 150., 0.),
+                    ..Default::default()
+                },
+                texture: image_assets.mixed_handlers[1].clone().typed(),
                 ..Default::default()
             },
-            texture: image_assets.mixed_handlers[1].clone().typed(),
-            atlas: TextureAtlas {
+            TextureAtlas {
                 layout: image_assets.atlas_layout[0].clone(),
                 index: 0,
             },
-            ..Default::default()
-        })
+        ))
         .insert(AnimationTimer(Timer::from_seconds(
             0.1,
             TimerMode::Repeating,

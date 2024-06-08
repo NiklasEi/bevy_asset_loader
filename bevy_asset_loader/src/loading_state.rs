@@ -8,13 +8,13 @@ use bevy::app::{App, Plugin};
 use bevy::asset::{Asset, UntypedHandle};
 use bevy::ecs::{
     schedule::{
-        common_conditions::in_state, InternedScheduleLabel, IntoSystemConfigs,
-        IntoSystemSetConfigs, NextState, OnEnter, ScheduleLabel, State, States, SystemSet,
+        InternedScheduleLabel, IntoSystemConfigs, IntoSystemSetConfigs, ScheduleLabel, SystemSet,
     },
     system::Resource,
     world::FromWorld,
 };
-use bevy::prelude::{StateTransition, Update};
+use bevy::prelude::{in_state, NextState, OnEnter, State, StateTransition, States, Update};
+use bevy::state::state::FreelyMutableState;
 use bevy::utils::{default, HashMap, HashSet};
 use std::any::TypeId;
 use std::marker::PhantomData;
@@ -64,7 +64,7 @@ use crate::loading_state::systems::{apply_internal_state_transition, run_loading
 ///             .load_collection::<ImageAssets>()
 ///         )
 ///         .add_systems(OnEnter(GameState::Menu), play_audio)
-/// #       .set_runner(|mut app| app.update())
+/// #       .set_runner(|mut app| {app.update(); AppExit::Success})
 ///         .run();
 /// }
 ///
@@ -96,7 +96,7 @@ use crate::loading_state::systems::{apply_internal_state_transition, run_loading
 ///     pub tree: Handle<Image>,
 /// }
 /// ```
-pub struct LoadingState<State: States> {
+pub struct LoadingState<State: FreelyMutableState> {
     next_state: Option<State>,
     failure_state: Option<State>,
     loading_state: State,
@@ -109,7 +109,7 @@ pub struct LoadingState<State: States> {
 
 impl<S> LoadingState<S>
 where
-    S: States,
+    S: FreelyMutableState,
 {
     /// Create a new [`LoadingState`]
     ///
@@ -130,7 +130,7 @@ where
     ///             .load_collection::<AudioAssets>()
     ///             .load_collection::<ImageAssets>()
     ///         )
-    /// #       .set_runner(|mut app| app.update())
+    /// #       .set_runner(|mut app| {app.update(); AppExit::Success})
     /// #       .run();
     /// # }
     /// # #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
@@ -182,7 +182,7 @@ where
     ///             .load_collection::<AudioAssets>()
     ///             .load_collection::<ImageAssets>()
     ///         )
-    /// #       .set_runner(|mut app| app.update())
+    /// #       .set_runner(|mut app| {app.update(); AppExit::Success})
     /// #       .run();
     /// # }
     /// # #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
@@ -227,7 +227,7 @@ where
     ///             .on_failure_continue_to_state(GameState::Error)
     ///             .load_collection::<MyAssets>()
     ///         )
-    /// #       .set_runner(|mut app| app.update())
+    /// #       .set_runner(|mut app| {app.update(); AppExit::Success})
     /// #       .run();
     /// # }
     /// # #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
@@ -300,7 +300,7 @@ where
     ///             .load_collection::<AudioAssets>()
     ///             .load_collection::<ImageAssets>()
     ///         )
-    /// #       .set_runner(|mut app| app.update())
+    /// #       .set_runner(|mut app| {app.update(); AppExit::Success})
     /// #       .run();
     /// # }
     /// # #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
@@ -327,7 +327,7 @@ where
         app.init_resource::<AssetLoaderConfiguration<S>>();
         {
             let mut asset_loader_configuration = app
-                .world
+                .world_mut()
                 .get_resource_mut::<AssetLoaderConfiguration<S>>()
                 .unwrap();
             let mut loading_config = asset_loader_configuration
@@ -454,7 +454,7 @@ where
         }
 
         app.init_resource::<DynamicAssets>();
-        let mut dynamic_assets = app.world.get_resource_mut::<DynamicAssets>().unwrap();
+        let mut dynamic_assets = app.world_mut().get_resource_mut::<DynamicAssets>().unwrap();
         for (key, asset) in self.dynamic_assets {
             dynamic_assets.register_asset(key, asset);
         }
@@ -462,7 +462,7 @@ where
     }
 }
 
-impl<S: States> ConfigureLoadingState for LoadingState<S> {
+impl<S: FreelyMutableState> ConfigureLoadingState for LoadingState<S> {
     fn load_collection<A: AssetCollection>(mut self) -> Self {
         self.config = self.config.load_collection::<A>();
 
@@ -491,7 +491,7 @@ impl<S: States> ConfigureLoadingState for LoadingState<S> {
 
 ///  Systems in this set check the loading state of assets.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]
-pub struct LoadingStateSet<S: States>(pub S);
+pub struct LoadingStateSet<S: FreelyMutableState>(pub S);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]
 pub(crate) enum InternalLoadingStateSet {
@@ -503,12 +503,15 @@ pub(crate) enum InternalLoadingStateSet {
 }
 
 #[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash)]
-pub(crate) struct OnEnterInternalLoadingState<S: States>(pub S, pub InternalLoadingState<S>);
+pub(crate) struct OnEnterInternalLoadingState<S: FreelyMutableState>(
+    pub S,
+    pub InternalLoadingState<S>,
+);
 #[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash)]
-pub(crate) struct LoadingStateSchedule<S: States>(pub S);
+pub(crate) struct LoadingStateSchedule<S: FreelyMutableState>(pub S);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, States)]
-pub(crate) enum InternalLoadingState<S: States> {
+pub(crate) enum InternalLoadingState<S: FreelyMutableState> {
     /// Starting point. Here it will be decided whether dynamic asset collections need to be loaded.
     #[default]
     Initialize,
@@ -540,11 +543,11 @@ impl<T> Default for LoadingAssetHandles<T> {
 }
 
 #[derive(Resource)]
-pub(crate) struct AssetLoaderConfiguration<State: States> {
+pub(crate) struct AssetLoaderConfiguration<State: FreelyMutableState> {
     state_configurations: HashMap<State, LoadingConfiguration<State>>,
 }
 
-impl<State: States> Default for AssetLoaderConfiguration<State> {
+impl<State: FreelyMutableState> Default for AssetLoaderConfiguration<State> {
     fn default() -> Self {
         AssetLoaderConfiguration {
             state_configurations: HashMap::default(),
@@ -552,7 +555,7 @@ impl<State: States> Default for AssetLoaderConfiguration<State> {
     }
 }
 
-struct LoadingConfiguration<State: States> {
+struct LoadingConfiguration<State: FreelyMutableState> {
     next: Option<State>,
     failure: Option<State>,
     loading_failed: bool,
@@ -560,7 +563,7 @@ struct LoadingConfiguration<State: States> {
     loading_dynamic_collections: HashSet<TypeId>,
 }
 
-impl<State: States> Default for LoadingConfiguration<State> {
+impl<State: FreelyMutableState> Default for LoadingConfiguration<State> {
     fn default() -> Self {
         LoadingConfiguration {
             next: None,
@@ -574,12 +577,12 @@ impl<State: States> Default for LoadingConfiguration<State> {
 
 /// Resource to store the schedules for loading states
 #[derive(Resource)]
-pub struct LoadingStateSchedules<State: States> {
+pub struct LoadingStateSchedules<State: FreelyMutableState> {
     /// Map to store a schedule per loading state
     pub schedules: HashMap<State, InternedScheduleLabel>,
 }
 
-impl<State: States> Default for LoadingStateSchedules<State> {
+impl<State: FreelyMutableState> Default for LoadingStateSchedules<State> {
     fn default() -> Self {
         LoadingStateSchedules {
             schedules: HashMap::default(),
@@ -590,10 +593,13 @@ impl<State: States> Default for LoadingStateSchedules<State> {
 /// Extension trait for Bevy Apps to add loading states idiomatically
 pub trait LoadingStateAppExt {
     /// Add a loading state to your app
-    fn add_loading_state<S: States>(&mut self, loading_state: LoadingState<S>) -> &mut Self;
+    fn add_loading_state<S: FreelyMutableState>(
+        &mut self,
+        loading_state: LoadingState<S>,
+    ) -> &mut Self;
 
     /// Configure an existing loading state with, for example, additional asset collections.
-    fn configure_loading_state<S: States>(
+    fn configure_loading_state<S: FreelyMutableState>(
         &mut self,
         configuration: LoadingStateConfig<S>,
     ) -> &mut Self;
@@ -616,7 +622,7 @@ pub trait LoadingStateAppExt {
     ///             .load_collection::<AudioAssets>()
     ///             .load_collection::<ImageAssets>()
     ///         )
-    /// #       .set_runner(|mut app| app.update())
+    /// #       .set_runner(|mut app| {app.update(); AppExit::Success})
     /// #       .run();
     /// # }
     /// # #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
@@ -642,7 +648,7 @@ pub trait LoadingStateAppExt {
         since = "0.19.0",
         note = "Use `LoadingStateConfig::load_collection` or `LoadingState::load_collection` instead."
     )]
-    fn add_collection_to_loading_state<S: States, A: AssetCollection>(
+    fn add_collection_to_loading_state<S: FreelyMutableState, A: AssetCollection>(
         &mut self,
         loading_state: S,
     ) -> &mut Self;
@@ -655,7 +661,7 @@ pub trait LoadingStateAppExt {
         since = "0.19.0",
         note = "Use `LoadingStateConfig::register_dynamic_asset_collection` or `LoadingState::register_dynamic_asset_collection` instead."
     )]
-    fn register_dynamic_asset_collection<S: States, C: DynamicAssetCollection + Asset>(
+    fn register_dynamic_asset_collection<S: FreelyMutableState, C: DynamicAssetCollection + Asset>(
         &mut self,
         loading_state: S,
     ) -> &mut Self;
@@ -672,7 +678,10 @@ pub trait LoadingStateAppExt {
         since = "0.19.0",
         note = "Use `LoadingState::with_dynamic_assets_file` or `LoadingStateConfig::with_dynamic_assets_file` instead."
     )]
-    fn add_dynamic_collection_to_loading_state<S: States, C: DynamicAssetCollection + Asset>(
+    fn add_dynamic_collection_to_loading_state<
+        S: FreelyMutableState,
+        C: DynamicAssetCollection + Asset,
+    >(
         &mut self,
         loading_state: S,
         file: &str,
@@ -694,7 +703,7 @@ pub trait LoadingStateAppExt {
     ///             .load_collection::<TextureForAtlas>()
     ///             .init_resource::<TextureAtlasLayoutFromWorld>()
     ///         )
-    /// #       .set_runner(|mut app| app.update())
+    /// #       .set_runner(|mut app| {app.update(); AppExit::Success})
     /// #       .run();
     /// # }
     /// # #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
@@ -726,20 +735,23 @@ pub trait LoadingStateAppExt {
         since = "0.19.0",
         note = "Use `LoadingState::init_resource` or `LoadingStateConfig::init_resource` instead."
     )]
-    fn init_resource_after_loading_state<S: States, A: Resource + FromWorld>(
+    fn init_resource_after_loading_state<S: FreelyMutableState, A: Resource + FromWorld>(
         &mut self,
         loading_state: S,
     ) -> &mut Self;
 }
 
 impl LoadingStateAppExt for App {
-    fn add_loading_state<S: States>(&mut self, loading_state: LoadingState<S>) -> &mut Self {
+    fn add_loading_state<S: FreelyMutableState>(
+        &mut self,
+        loading_state: LoadingState<S>,
+    ) -> &mut Self {
         loading_state.build(self);
 
         self
     }
 
-    fn configure_loading_state<S: States>(
+    fn configure_loading_state<S: FreelyMutableState>(
         &mut self,
         configuration: LoadingStateConfig<S>,
     ) -> &mut Self {
@@ -748,7 +760,7 @@ impl LoadingStateAppExt for App {
         self
     }
 
-    fn add_collection_to_loading_state<S: States, A: AssetCollection>(
+    fn add_collection_to_loading_state<S: FreelyMutableState, A: AssetCollection>(
         &mut self,
         loading_state: S,
     ) -> &mut Self {
@@ -762,7 +774,10 @@ impl LoadingStateAppExt for App {
         )
     }
 
-    fn register_dynamic_asset_collection<S: States, C: DynamicAssetCollection + Asset>(
+    fn register_dynamic_asset_collection<
+        S: FreelyMutableState,
+        C: DynamicAssetCollection + Asset,
+    >(
         &mut self,
         loading_state: S,
     ) -> &mut Self {
@@ -780,13 +795,16 @@ impl LoadingStateAppExt for App {
         )
     }
 
-    fn add_dynamic_collection_to_loading_state<S: States, C: DynamicAssetCollection + Asset>(
+    fn add_dynamic_collection_to_loading_state<
+        S: FreelyMutableState,
+        C: DynamicAssetCollection + Asset,
+    >(
         &mut self,
         loading_state: S,
         file: &str,
     ) -> &mut Self {
         let mut dynamic_asset_collections = self
-            .world
+            .world_mut()
             .get_resource_mut::<DynamicAssetCollections<S>>()
             .unwrap();
 
@@ -794,7 +812,7 @@ impl LoadingStateAppExt for App {
         self
     }
 
-    fn init_resource_after_loading_state<S: States, A: Resource + FromWorld>(
+    fn init_resource_after_loading_state<S: FreelyMutableState, A: Resource + FromWorld>(
         &mut self,
         loading_state: S,
     ) -> &mut Self {
@@ -811,7 +829,7 @@ struct InternalAssetLoaderPlugin<S> {
 
 impl<S> InternalAssetLoaderPlugin<S>
 where
-    S: States,
+    S: FreelyMutableState,
 {
     fn new() -> Self {
         InternalAssetLoaderPlugin {
@@ -822,7 +840,7 @@ where
 
 impl<S> Plugin for InternalAssetLoaderPlugin<S>
 where
-    S: States,
+    S: FreelyMutableState,
 {
     fn build(&self, app: &mut App) {
         app.add_systems(StateTransition, apply_internal_state_transition::<S>);

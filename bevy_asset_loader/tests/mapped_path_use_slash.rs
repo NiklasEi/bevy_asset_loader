@@ -48,7 +48,7 @@ fn expect(collection: Option<Res<AudioCollection>>, mut exit: EventWriter<AppExi
             "Expected path 'audio/plop.ogg' was not in {:?}",
             files
         );
-        exit.send(AppExit);
+        exit.send(AppExit::Success);
     }
 }
 

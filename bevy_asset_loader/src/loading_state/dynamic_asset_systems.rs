@@ -2,14 +2,18 @@ use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssetCollections, Dyna
 use crate::loading_state::{AssetLoaderConfiguration, InternalLoadingState, LoadingAssetHandles};
 use bevy::asset::{Asset, AssetServer, Assets, LoadState};
 use bevy::ecs::change_detection::ResMut;
-use bevy::ecs::schedule::{NextState, State, States};
 use bevy::ecs::system::{Res, SystemState};
 use bevy::ecs::world::World;
 use bevy::log::{debug, warn};
+use bevy::prelude::NextState;
+use bevy::state::state::{FreelyMutableState, State};
 use std::any::{type_name, TypeId};
 
 #[allow(clippy::type_complexity)]
-pub(crate) fn load_dynamic_asset_collections<S: States, C: DynamicAssetCollection + Asset>(
+pub(crate) fn load_dynamic_asset_collections<
+    S: FreelyMutableState,
+    C: DynamicAssetCollection + Asset,
+>(
     world: &mut World,
     system_state: &mut SystemState<(
         Res<DynamicAssetCollections<S>>,
@@ -41,7 +45,10 @@ pub(crate) fn load_dynamic_asset_collections<S: States, C: DynamicAssetCollectio
 }
 
 #[allow(clippy::type_complexity)]
-pub(crate) fn check_dynamic_asset_collections<S: States, C: DynamicAssetCollection + Asset>(
+pub(crate) fn check_dynamic_asset_collections<
+    S: FreelyMutableState,
+    C: DynamicAssetCollection + Asset,
+>(
     world: &mut World,
     system_state: &mut SystemState<(
         Res<AssetServer>,
@@ -72,19 +79,20 @@ pub(crate) fn check_dynamic_asset_collections<S: States, C: DynamicAssetCollecti
         let loading_collections = loading_collections.as_mut().unwrap();
         for handle in &loading_collections.handles {
             if let Some(load_state) = asset_server.get_load_state(handle.id()) {
-                if load_state == LoadState::Failed {
-                    config.loading_failed = true;
-                    continue;
-                }
-                if load_state != LoadState::Loaded {
-                    return;
+                match load_state {
+                    LoadState::Loaded => {}
+                    LoadState::Failed(_) => {
+                        config.loading_failed = true;
+                        continue;
+                    }
+                    _ => return,
                 }
             } else {
                 return;
             }
         }
         for collection in loading_collections.handles.drain(..) {
-            if let Some(collection) = dynamic_asset_collections.get(collection.typed::<C>()) {
+            if let Some(collection) = dynamic_asset_collections.get(&collection.typed::<C>()) {
                 collection.register(&mut asset_keys);
             }
         }
@@ -95,7 +103,7 @@ pub(crate) fn check_dynamic_asset_collections<S: States, C: DynamicAssetCollecti
     world.remove_resource::<LoadingAssetHandles<(S, C)>>();
 }
 
-pub(crate) fn resume_to_loading_asset_collections<S: States>(
+pub(crate) fn resume_to_loading_asset_collections<S: FreelyMutableState>(
     state: Res<State<S>>,
     mut loading_state: ResMut<NextState<InternalLoadingState<S>>>,
     asset_loader_config: Res<AssetLoaderConfiguration<S>>,

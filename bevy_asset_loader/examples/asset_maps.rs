@@ -71,7 +71,7 @@ fn use_audio_assets(audio_assets: Res<AudioAssets>, mut quit: EventWriter<AppExi
 
     info!("Everything looks good!");
     info!("Quitting the application...");
-    quit.send(AppExit);
+    quit.send(AppExit::Success);
 }
 
 #[derive(PartialEq, Eq, Hash)]

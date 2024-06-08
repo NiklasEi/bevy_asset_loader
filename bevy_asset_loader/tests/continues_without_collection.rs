@@ -26,7 +26,7 @@ fn expect(mut test_state: ResMut<TestState>) {
 }
 
 fn exit(mut exit: EventWriter<AppExit>) {
-    exit.send(AppExit);
+    exit.send(AppExit::Success);
 }
 
 #[derive(Resource)]

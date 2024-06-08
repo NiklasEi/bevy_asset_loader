@@ -115,7 +115,7 @@ fn expectations(
     info!("Done loading the collection. Checking expectations...");
 
     assert_eq!(
-        asset_server.get_recursive_dependency_load_state(assets.single_file.clone()),
+        asset_server.get_recursive_dependency_load_state(&assets.single_file),
         Some(RecursiveDependencyLoadState::Loaded)
     );
     let material = standard_materials
@@ -125,7 +125,7 @@ fn expectations(
         asset_server.get_recursive_dependency_load_state(
             material
                 .base_color_texture
-                .clone()
+                .as_ref()
                 .expect("Material should have image as base color texture")
         ),
         Some(RecursiveDependencyLoadState::Loaded)
@@ -194,14 +194,14 @@ fn expectations(
     assert_eq!(assets.files_typed.len(), 2);
     for handle in assets.files_typed.iter() {
         assert_eq!(
-            asset_server.get_recursive_dependency_load_state(handle.clone()),
+            asset_server.get_recursive_dependency_load_state(handle),
             Some(RecursiveDependencyLoadState::Loaded)
         );
     }
     assert_eq!(assets.files_typed_mapped.len(), 2);
     for (name, handle) in assets.files_typed_mapped.iter() {
         assert_eq!(
-            asset_server.get_recursive_dependency_load_state(handle.clone()),
+            asset_server.get_recursive_dependency_load_state(handle),
             Some(RecursiveDependencyLoadState::Loaded)
         );
         assert_eq!(&handle.path().unwrap().to_string(), name);
@@ -279,7 +279,7 @@ fn expectations(
     assert_eq!(optional_files_typed.len(), 2);
     for handle in optional_files_typed.iter() {
         assert_eq!(
-            asset_server.get_recursive_dependency_load_state(handle.clone()),
+            asset_server.get_recursive_dependency_load_state(handle),
             Some(RecursiveDependencyLoadState::Loaded)
         );
     }
@@ -289,7 +289,7 @@ fn expectations(
     assert_eq!(optional_files_typed_mapped.len(), 2);
     for (name, handle) in optional_files_typed_mapped.iter() {
         assert_eq!(
-            asset_server.get_recursive_dependency_load_state(handle.clone()),
+            asset_server.get_recursive_dependency_load_state(handle),
             Some(RecursiveDependencyLoadState::Loaded)
         );
         assert_eq!(&handle.path().unwrap().to_string(), name);
@@ -297,7 +297,7 @@ fn expectations(
 
     info!("Everything looks good!");
     info!("Quitting the application...");
-    quit.send(AppExit);
+    quit.send(AppExit::Success);
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]

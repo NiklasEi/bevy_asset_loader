@@ -24,7 +24,7 @@
 //!                 .load_collection::<ImageAssets>()
 //!         )
 //!         .add_systems(Update, use_asset_handles.run_if(in_state(GameState::Next)))
-//! #       .set_runner(|mut app| app.update())
+//! #       .set_runner(|mut app| {app.update(); AppExit::Success})
 //!         .run();
 //! }
 //!
@@ -61,7 +61,8 @@
 //! }
 //! ```
 
-#![forbid(unsafe_code)]
+// Todo: remove usage of UnsafeWorldCell
+// #![forbid(unsafe_code)]
 #![warn(unused_imports, missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 

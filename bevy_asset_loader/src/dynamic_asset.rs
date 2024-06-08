@@ -3,9 +3,9 @@ use std::any::TypeId;
 use std::fmt::Debug;
 
 use bevy::asset::{Asset, AssetServer, UntypedHandle};
-use bevy::ecs::schedule::States;
 use bevy::ecs::system::Resource;
 use bevy::ecs::world::World;
+use bevy::state::state::FreelyMutableState;
 use std::marker::PhantomData;
 
 /// Different typed that can generate the asset field value of a dynamic asset
@@ -68,12 +68,12 @@ pub trait DynamicAssetCollection {
 
 /// Resource keeping track of dynamic asset collection files for different loading states
 #[derive(Resource, Debug)]
-pub struct DynamicAssetCollections<State: States> {
+pub struct DynamicAssetCollections<State: FreelyMutableState> {
     files: HashMap<State, HashMap<TypeId, Vec<String>>>,
     _marker: PhantomData<State>,
 }
 
-impl<State: States> DynamicAssetCollections<State> {
+impl<State: FreelyMutableState> DynamicAssetCollections<State> {
     /// Register a file containing dynamic asset definitions to be loaded and applied to the given loading state
     ///
     /// The file will be read every time the loading state is entered
@@ -129,7 +129,7 @@ impl<State: States> DynamicAssetCollections<State> {
     }
 }
 
-impl<State: States> Default for DynamicAssetCollections<State> {
+impl<State: FreelyMutableState> Default for DynamicAssetCollections<State> {
     fn default() -> Self {
         DynamicAssetCollections {
             files: HashMap::default(),

@@ -55,7 +55,7 @@ fn play_audio(audio_assets: Option<Res<AudioAssets>>, mut commands: Commands) {
 struct ImageAssets {
     #[asset(path = "images/female_adventurer_sheet.png")]
     female_adventurer: Handle<Image>,
-    #[asset(texture_atlas_layout(tile_size_x = 96., tile_size_y = 99., columns = 8, rows = 1))]
+    #[asset(texture_atlas_layout(tile_size_x = 96, tile_size_y = 99, columns = 8, rows = 1))]
     female_adventurer_layout: Handle<TextureAtlasLayout>,
     #[asset(path = "images/tree.png")]
     tree: Handle<Image>,
@@ -70,12 +70,14 @@ struct AudioAssets {
 fn draw(mut commands: Commands, image_assets: Res<ImageAssets>) {
     commands.spawn(Camera2dBundle::default());
     commands
-        .spawn(SpriteSheetBundle {
-            texture: image_assets.female_adventurer.clone(),
-            atlas: TextureAtlas::from(image_assets.female_adventurer_layout.clone()),
-            transform: Transform::from_translation(Vec3::new(-150., 0., 1.)),
-            ..Default::default()
-        })
+        .spawn((
+            SpriteBundle {
+                texture: image_assets.female_adventurer.clone(),
+                transform: Transform::from_translation(Vec3::new(-150., 0., 1.)),
+                ..Default::default()
+            },
+            TextureAtlas::from(image_assets.female_adventurer_layout.clone()),
+        ))
         .insert(AnimationTimer(Timer::from_seconds(
             0.1,
             TimerMode::Repeating,
