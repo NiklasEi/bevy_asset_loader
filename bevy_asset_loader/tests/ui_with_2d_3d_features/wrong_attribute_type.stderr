@@ -4,13 +4,25 @@ error: Wrong attribute type. Expected 'str'
 8 |     #[asset(path = 1)]
   |             ^^^^^^^^
 
-error: Wrong attribute type. Expected 'float'
-  --> tests/ui_with_2d_3d_features/wrong_attribute_type.rs:14:34
+error: Wrong attribute type. Expected 'u32'
+  --> tests/ui_with_2d_3d_features/wrong_attribute_type.rs:14:53
    |
 14 |     #[asset(texture_atlas_layout(tile_size_x = 100, tile_size_y = 100., columns = 1, rows = 1))]
-   |                                  ^^^^^^^^^^^^^^^^^
+   |                                                     ^^^^^^^^^^^^^^^^^^
 
-error: Wrong attribute type. Expected 'integer'
+error: Wrong attribute type. Expected 'u32'
+  --> tests/ui_with_2d_3d_features/wrong_attribute_type.rs:20:34
+   |
+20 |     #[asset(texture_atlas_layout(tile_size_x = 100., tile_size_y = 100., columns = "5", rows = 1))]
+   |                                  ^^^^^^^^^^^^^^^^^^
+
+error: Wrong attribute type. Expected 'u32'
+  --> tests/ui_with_2d_3d_features/wrong_attribute_type.rs:20:54
+   |
+20 |     #[asset(texture_atlas_layout(tile_size_x = 100., tile_size_y = 100., columns = "5", rows = 1))]
+   |                                                      ^^^^^^^^^^^^^^^^^^
+
+error: Wrong attribute type. Expected 'u32'
   --> tests/ui_with_2d_3d_features/wrong_attribute_type.rs:20:74
    |
 20 |     #[asset(texture_atlas_layout(tile_size_x = 100., tile_size_y = 100., columns = "5", rows = 1))]

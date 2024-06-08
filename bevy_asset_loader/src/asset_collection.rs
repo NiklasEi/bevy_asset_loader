@@ -48,8 +48,8 @@ impl AssetCollectionApp for App {
             // we need to make sure the resource exists here
             self.init_resource::<DynamicAssets>();
             // make sure the assets start to load
-            let _ = Collection::load(&mut self.world_mut());
-            let resource = Collection::create(&mut self.world_mut());
+            let _ = Collection::load(self.world_mut());
+            let resource = Collection::create(self.world_mut());
             self.insert_resource(resource);
         }
         self

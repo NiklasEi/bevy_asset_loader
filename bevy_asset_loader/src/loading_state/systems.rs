@@ -55,6 +55,7 @@ pub(crate) fn start_loading_collection<S: FreelyMutableState, Assets: AssetColle
     world.insert_resource(handles);
 }
 
+#[allow(clippy::type_complexity)]
 pub(crate) fn check_loading_collection<S: FreelyMutableState, Assets: AssetCollection>(
     world: &mut World,
     system_state: &mut SystemState<(
@@ -223,7 +224,7 @@ pub fn apply_internal_state_transition<S: FreelyMutableState>(world: &mut World)
             {
                 world.run_schedule(OnEnterInternalLoadingState(state, entered_state));
             }
-            world.insert_resource(NextState::<InternalLoadingState<S>>::Unchanged)
+            world.insert_resource(NextState::<InternalLoadingState<S>>::Unchanged);
         }
         Some(next_state) => world.insert_resource(next_state),
         _ => {}

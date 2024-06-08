@@ -61,8 +61,7 @@
 //! }
 //! ```
 
-// Todo: remove usage of UnsafeWorldCell
-// #![forbid(unsafe_code)]
+#![forbid(unsafe_code)]
 #![warn(unused_imports, missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 

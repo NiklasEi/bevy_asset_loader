@@ -718,10 +718,9 @@ pub trait LoadingStateAppExt {
     /// # }
     /// # impl FromWorld for TextureAtlasLayoutFromWorld {
     /// #     fn from_world(world: &mut World) -> Self {
-    /// #         let cell = world.cell();
-    /// #         let mut layouts = cell.get_resource_mut::<Assets<TextureAtlasLayout>>().expect("TextureAtlasLayouts missing");
+    /// #         let mut layouts = world.get_resource_mut::<Assets<TextureAtlasLayout>>().expect("TextureAtlasLayouts missing");
     /// #         TextureAtlasLayoutFromWorld {
-    /// #             atlas_layout: layouts.add(TextureAtlasLayout::from_grid(Vec2::new(250., 250.), 1, 4, None, None))
+    /// #             atlas_layout: layouts.add(TextureAtlasLayout::from_grid(UVec2::new(250, 250), 1, 4, None, None))
     /// #         }
     /// #     }
     /// # }
