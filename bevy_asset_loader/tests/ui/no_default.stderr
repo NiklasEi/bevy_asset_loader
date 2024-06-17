@@ -5,14 +5,14 @@ error[E0277]: the trait bound `NoDefault: FromWorld` is not satisfied
   |     ^^^^^^^^^^ the trait `std::default::Default` is not implemented for `NoDefault`, which is required by `NoDefault: FromWorld`
   |
   = help: the following other types implement trait `FromWorld`:
-            auto_exposure::node::AutoExposureNode
-            bevy::prelude::State<S>
-            Children
-            Parent
+            BlitPipeline
             CASNode
-            SceneLoader
-            Material2dPipeline<M>
-            GpuPreprocessNode
+            CASPipeline
+            Children
+            DeferredLightingLayout
+            DepthOfFieldGlobalBindGroupLayout
+            FallbackImage
+            FallbackImageCubemap
           and $N others
   = note: required for `NoDefault` to implement `FromWorld`
 help: consider annotating `NoDefault` with `#[derive(Default)]`
