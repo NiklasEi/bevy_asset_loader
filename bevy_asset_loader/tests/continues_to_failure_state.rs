@@ -7,9 +7,9 @@ use bevy_asset_loader::prelude::*;
 #[test]
 fn continues_to_failure_state() {
     let mut app = App::new();
-    app.init_state::<MyStates>();
 
     app.add_plugins((MinimalPlugins, AssetPlugin::default(), StatesPlugin));
+    app.init_state::<MyStates>();
     #[cfg(feature = "progress_tracking")]
     app.add_plugins(iyes_progress::ProgressPlugin::new(MyStates::Load));
     app.add_loading_state(

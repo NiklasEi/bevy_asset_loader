@@ -10,7 +10,6 @@ use bevy_asset_loader::prelude::*;
 #[test]
 fn main() {
     let mut app = App::new();
-    app.init_state::<MyStates>();
 
     app.add_plugins((
         MinimalPlugins,
@@ -18,6 +17,7 @@ fn main() {
         AudioPlugin::default(),
         StatesPlugin,
     ));
+    app.init_state::<MyStates>();
     #[cfg(feature = "progress_tracking")]
     app.add_plugins((
         iyes_progress::ProgressPlugin::new(MyStates::SplashAssetLoading),
