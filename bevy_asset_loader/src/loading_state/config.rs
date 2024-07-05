@@ -55,8 +55,8 @@ pub trait ConfigureLoadingState {
 /// # use bevy_asset_loader::prelude::*;
 /// # use bevy::prelude::*;
 /// # use bevy::asset::AssetPlugin;
+/// # use bevy::state::app::StatesPlugin;
 /// # fn main() {
-///     use bevy::state::app::StatesPlugin;
 /// App::new()
 /// # /*
 ///         .add_plugins(DefaultPlugins)
