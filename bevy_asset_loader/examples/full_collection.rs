@@ -7,8 +7,8 @@ use bevy_asset_loader::prelude::*;
 
 fn main() {
     App::new()
-        .init_state::<MyStates>()
         .add_plugins(DefaultPlugins)
+        .init_state::<MyStates>()
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading)
                 .continue_to_state(MyStates::Next)

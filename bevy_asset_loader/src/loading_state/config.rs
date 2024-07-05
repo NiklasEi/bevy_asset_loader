@@ -135,7 +135,7 @@ impl<S: FreelyMutableState> LoadingStateConfig<S> {
                 config,
             );
         }
-        for config in self.on_enter_loading_dynamic_asset_collections {
+        for config in self.on_enter_loading_dynamic_asset_collections.drain(..) {
             app.add_systems(
                 OnEnterInternalLoadingState(
                     self.state.clone(),

@@ -6,8 +6,8 @@ use bevy_asset_loader::prelude::*;
 /// The assets loaded in this example are defined in `assets/dynamic_asset_arrays.asset_arrays.ron`
 fn main() {
     App::new()
-        .init_state::<MyStates>()
         .add_plugins(DefaultPlugins)
+        .init_state::<MyStates>()
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading)
                 .continue_to_state(MyStates::Next)
