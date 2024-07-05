@@ -56,11 +56,12 @@ pub trait ConfigureLoadingState {
 /// # use bevy::prelude::*;
 /// # use bevy::asset::AssetPlugin;
 /// # fn main() {
-///     App::new()
+///     use bevy::state::app::StatesPlugin;
+/// App::new()
 /// # /*
 ///         .add_plugins(DefaultPlugins)
 /// # */
-/// #       .add_plugins((MinimalPlugins, AssetPlugin::default()))
+/// #       .add_plugins((MinimalPlugins, AssetPlugin::default(), StatesPlugin))
 ///         .init_state::<GameState>()
 /// #       .init_resource::<iyes_progress::ProgressCounter>()
 ///         .add_loading_state(

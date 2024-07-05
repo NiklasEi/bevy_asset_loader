@@ -55,8 +55,8 @@ use crate::loading_state::systems::{apply_internal_state_transition, run_loading
 ///
 /// fn main() {
 ///     App::new()
-///         .init_state::<GameState>()
 ///         .add_plugins((MinimalPlugins, AssetPlugin::default()))
+///         .init_state::<GameState>()
 /// #       .init_resource::<iyes_progress::ProgressCounter>()
 ///         .add_loading_state(LoadingState::new(GameState::Loading)
 ///             .continue_to_state(GameState::Menu)
@@ -121,8 +121,8 @@ where
     /// # use bevy::asset::AssetPlugin;
     /// # fn main() {
     ///     App::new()
-    /// #       .init_state::<GameState>()
     /// #       .add_plugins((MinimalPlugins, AssetPlugin::default()))
+    /// #       .init_state::<GameState>()
     /// #       .init_resource::<iyes_progress::ProgressCounter>()
     ///         .add_loading_state(
     ///           LoadingState::new(GameState::Loading)
@@ -173,8 +173,8 @@ where
     /// # use bevy::asset::AssetPlugin;
     /// # fn main() {
     ///     App::new()
-    /// #       .init_state::<GameState>()
     /// #       .add_plugins((MinimalPlugins, AssetPlugin::default()))
+    /// #       .init_state::<GameState>()
     /// #       .init_resource::<iyes_progress::ProgressCounter>()
     ///         .add_loading_state(
     ///           LoadingState::new(GameState::Loading)
@@ -218,8 +218,8 @@ where
     /// # use bevy::asset::AssetPlugin;
     /// # fn main() {
     ///     App::new()
-    /// #       .init_state::<GameState>()
     /// #       .add_plugins((MinimalPlugins, AssetPlugin::default()))
+    /// #       .init_state::<GameState>()
     /// #       .init_resource::<iyes_progress::ProgressCounter>()
     ///         .add_loading_state(
     ///           LoadingState::new(GameState::Loading)
@@ -291,8 +291,8 @@ where
     /// # use bevy::asset::AssetPlugin;
     /// # fn main() {
     ///     App::new()
-    /// #       .init_state::<GameState>()
     /// #       .add_plugins((MinimalPlugins, AssetPlugin::default()))
+    /// #       .init_state::<GameState>()
     /// #       .init_resource::<iyes_progress::ProgressCounter>()
     ///         .add_loading_state(
     ///           LoadingState::new(GameState::Loading)
@@ -613,8 +613,8 @@ pub trait LoadingStateAppExt {
     /// # use bevy::asset::AssetPlugin;
     /// # fn main() {
     ///     App::new()
-    /// #       .init_state::<GameState>()
     /// #       .add_plugins((MinimalPlugins, AssetPlugin::default()))
+    /// #       .init_state::<GameState>()
     /// #       .init_resource::<iyes_progress::ProgressCounter>()
     ///         .add_loading_state(
     ///           LoadingState::new(GameState::Loading)
@@ -693,8 +693,9 @@ pub trait LoadingStateAppExt {
     /// # use bevy::prelude::*;
     /// # use bevy::asset::AssetPlugin;
     /// # fn main() {
-    ///     App::new()
-    /// #       .add_plugins((MinimalPlugins, AssetPlugin::default()))
+    ///     use bevy::state::app::StatesPlugin;
+    /// App::new()
+    /// #       .add_plugins((MinimalPlugins, AssetPlugin::default(), StatesPlugin))
     /// #       .init_state::<GameState>()
     /// #       .init_resource::<iyes_progress::ProgressCounter>()
     ///         .add_loading_state(
