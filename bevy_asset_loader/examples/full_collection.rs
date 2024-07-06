@@ -122,10 +122,7 @@ fn expectations(
     let image = images
         .get(&assets.array_texture)
         .expect("Image should be added to its asset resource");
-    assert_eq!(
-        image.texture_descriptor.array_layer_count(),
-        4
-    );
+    assert_eq!(image.texture_descriptor.array_layer_count(), 4);
 
     assert_eq!(assets.folder_untyped.len(), 7);
     for handle in assets.folder_untyped.iter() {

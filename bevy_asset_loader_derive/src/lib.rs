@@ -480,9 +480,9 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                                         }
                                     } else if path == ImageAttribute::LAYERS {
                                         if let Expr::Lit(ExprLit {
-                                                             lit: Lit::Int(layers),
-                                                             ..
-                                                         }) = &named_value.value
+                                            lit: Lit::Int(layers),
+                                            ..
+                                        }) = &named_value.value
                                         {
                                             builder.array_texture_layers =
                                                 Some(layers.base10_parse::<u32>().unwrap());

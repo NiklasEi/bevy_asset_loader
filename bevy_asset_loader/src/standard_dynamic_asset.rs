@@ -176,7 +176,11 @@ impl DynamicAsset for StandardDynamicAsset {
                 ))
             }
             #[cfg(any(feature = "3d", feature = "2d"))]
-            StandardDynamicAsset::Image { path, sampler, array_texture_layers } => {
+            StandardDynamicAsset::Image {
+                path,
+                sampler,
+                array_texture_layers,
+            } => {
                 let mut system_state =
                     SystemState::<(ResMut<Assets<Image>>, Res<AssetServer>)>::new(world);
                 let (mut images, asset_server) = system_state.get_mut(world);
@@ -185,7 +189,9 @@ impl DynamicAsset for StandardDynamicAsset {
                     Self::update_image_sampler(&mut handle, &mut images, sampler);
                 }
                 if let Some(layers) = array_texture_layers {
-                    let image = images.get_mut(&handle).expect("Failed to find loaded image");
+                    let image = images
+                        .get_mut(&handle)
+                        .expect("Failed to find loaded image");
                     image.reinterpret_stacked_2d_as_array(*layers);
                 }
 

@@ -9,7 +9,7 @@ use bevy_asset_loader::prelude::*;
 /// and the `2d` and `3d` features for `TextureAtlas` and `StandardMaterial` dynamic assets.
 /// It showcases all possible configurations for dynamic assets.
 
-const FOLDER_SIZE : usize= 8;
+const FOLDER_SIZE: usize = 8;
 
 fn main() {
     App::new()
@@ -154,10 +154,7 @@ fn expectations(
     let image = images
         .get(&assets.array_texture)
         .expect("Image should be added to its asset resource");
-    assert_eq!(
-        image.texture_descriptor.array_layer_count(),
-        4
-    );
+    assert_eq!(image.texture_descriptor.array_layer_count(), 4);
 
     assert_eq!(assets.folder_untyped.len(), FOLDER_SIZE);
     for handle in assets.folder_untyped.iter() {

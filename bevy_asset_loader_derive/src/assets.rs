@@ -148,7 +148,7 @@ impl AssetField {
                     if (#layers > 0) {
                         image.reinterpret_stacked_2d_as_array(#layers);
                     }
-                    
+
                     if (#is_sampler_set) {
                         let is_different_sampler = if let ImageSampler::Descriptor(descriptor) = &image.sampler {
                             !descriptor.as_wgpu().eq(&#descriptor.as_wgpu())
@@ -670,7 +670,7 @@ impl AssetBuilder {
                 field_ident: self.field_ident.unwrap(),
                 asset_path: self.asset_path.unwrap(),
                 sampler: self.sampler,
-                array_texture_layers: self.array_texture_layers
+                array_texture_layers: self.array_texture_layers,
             }));
         }
         let asset = BasicAssetField {
@@ -940,19 +940,28 @@ mod test {
             ..Default::default()
         };
 
+        let builder_layers = AssetBuilder {
+            field_ident: Some(Ident::new("test", Span::call_site())),
+            asset_path: Some("some/image.png".to_owned()),
+            array_texture_layers: Some(42),
+            ..Default::default()
+        };
+
         let asset_linear = builder_linear
             .build()
             .expect("This should be a valid ImageAsset");
         let asset_nearest = builder_nearest
             .build()
             .expect("This should be a valid ImageAsset");
+        let asset_layers = builder_layers.build().expect("Failed to build asset");
 
         assert_eq!(
             asset_linear,
             AssetField::Image(ImageAssetField {
                 field_ident: Ident::new("test", Span::call_site()),
                 asset_path: "some/image.png".to_owned(),
-                sampler: SamplerType::Linear
+                sampler: Some(SamplerType::Linear),
+                array_texture_layers: None
             })
         );
         assert_eq!(
@@ -960,7 +969,17 @@ mod test {
             AssetField::Image(ImageAssetField {
                 field_ident: Ident::new("test", Span::call_site()),
                 asset_path: "some/image.png".to_owned(),
-                sampler: SamplerType::Nearest
+                sampler: Some(SamplerType::Nearest),
+                array_texture_layers: None
+            })
+        );
+        assert_eq!(
+            asset_layers,
+            AssetField::Image(ImageAssetField {
+                field_ident: Ident::new("test", Span::call_site()),
+                asset_path: "some/image.png".to_owned(),
+                sampler: None,
+                array_texture_layers: Some(42)
             })
         );
     }
