@@ -15,6 +15,10 @@
         path: "images/tree.png",
         sampler: Nearest
     ),
+    "array_texture": Image (
+        path: "images/array_texture.png",
+        array_texture_layers: 4
+    ),
     "folder_untyped": Folder (
         path: "images",
     ),

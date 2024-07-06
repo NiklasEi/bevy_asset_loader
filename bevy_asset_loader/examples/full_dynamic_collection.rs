@@ -9,6 +9,8 @@ use bevy_asset_loader::prelude::*;
 /// and the `2d` and `3d` features for `TextureAtlas` and `StandardMaterial` dynamic assets.
 /// It showcases all possible configurations for dynamic assets.
 
+const FOLDER_SIZE: usize = 8;
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
@@ -52,6 +54,9 @@ struct MyAssets {
     // Image asset with sampler nearest (good for crisp pixel art)
     #[asset(key = "pixel_tree")]
     image_tree_nearest: Handle<Image>,
+    // Array texture
+    #[asset(key = "array_texture")]
+    array_texture: Handle<Image>,
 
     // Collections of files
 
@@ -146,14 +151,19 @@ fn expectations(
         ImageSamplerDescriptor::nearest().as_wgpu()
     );
 
-    assert_eq!(assets.folder_untyped.len(), 7);
+    let image = images
+        .get(&assets.array_texture)
+        .expect("Image should be added to its asset resource");
+    assert_eq!(image.texture_descriptor.array_layer_count(), 4);
+
+    assert_eq!(assets.folder_untyped.len(), FOLDER_SIZE);
     for handle in assets.folder_untyped.iter() {
         assert_eq!(
             asset_server.get_recursive_dependency_load_state(handle.id()),
             Some(RecursiveDependencyLoadState::Loaded)
         );
     }
-    assert_eq!(assets.folder_untyped_mapped.len(), 7);
+    assert_eq!(assets.folder_untyped_mapped.len(), FOLDER_SIZE);
     for (name, handle) in assets.folder_untyped_mapped.iter() {
         assert_eq!(
             asset_server.get_recursive_dependency_load_state(handle.id()),
@@ -161,14 +171,14 @@ fn expectations(
         );
         assert_eq!(&handle.path().unwrap().to_string(), name);
     }
-    assert_eq!(assets.folder_typed.len(), 7);
+    assert_eq!(assets.folder_typed.len(), FOLDER_SIZE);
     for handle in assets.folder_typed.iter() {
         assert_eq!(
             asset_server.get_recursive_dependency_load_state(handle.id()),
             Some(RecursiveDependencyLoadState::Loaded)
         );
     }
-    assert_eq!(assets.folder_typed_mapped.len(), 7);
+    assert_eq!(assets.folder_typed_mapped.len(), FOLDER_SIZE);
     for (name, handle) in assets.folder_typed_mapped.iter() {
         assert_eq!(
             asset_server.get_recursive_dependency_load_state(handle.id()),
@@ -211,7 +221,7 @@ fn expectations(
     let Some(ref optional_folder_untyped) = assets.optional_folder_untyped else {
         panic!("Optional asset not loaded")
     };
-    assert_eq!(optional_folder_untyped.len(), 7);
+    assert_eq!(optional_folder_untyped.len(), FOLDER_SIZE);
     for handle in optional_folder_untyped.iter() {
         assert_eq!(
             asset_server.get_recursive_dependency_load_state(handle.id()),
@@ -221,7 +231,7 @@ fn expectations(
     let Some(ref optional_folder_untyped_mapped) = assets.optional_folder_untyped_mapped else {
         panic!("Optional asset not loaded")
     };
-    assert_eq!(optional_folder_untyped_mapped.len(), 7);
+    assert_eq!(optional_folder_untyped_mapped.len(), FOLDER_SIZE);
     for (name, handle) in optional_folder_untyped_mapped.iter() {
         assert_eq!(
             asset_server.get_recursive_dependency_load_state(handle.id()),
@@ -232,7 +242,7 @@ fn expectations(
     let Some(ref optional_folder_typed) = assets.optional_folder_typed else {
         panic!("Optional asset not loaded")
     };
-    assert_eq!(optional_folder_typed.len(), 7);
+    assert_eq!(optional_folder_typed.len(), FOLDER_SIZE);
     for handle in optional_folder_typed.iter() {
         assert_eq!(
             asset_server.get_recursive_dependency_load_state(handle.id()),
@@ -242,7 +252,7 @@ fn expectations(
     let Some(ref optional_folder_typed_mapped) = assets.optional_folder_typed_mapped else {
         panic!("Optional asset not loaded")
     };
-    assert_eq!(optional_folder_typed_mapped.len(), 7);
+    assert_eq!(optional_folder_typed_mapped.len(), FOLDER_SIZE);
     for (name, handle) in optional_folder_typed_mapped.iter() {
         assert_eq!(
             asset_server.get_recursive_dependency_load_state(handle.id()),

@@ -36,7 +36,8 @@ impl TryFrom<String> for SamplerType {
 pub(crate) struct ImageAssetField {
     pub field_ident: Ident,
     pub asset_path: String,
-    pub sampler: SamplerType,
+    pub sampler: Option<SamplerType>,
+    pub array_texture_layers: Option<u32>,
 }
 
 #[derive(PartialEq, Debug)]
@@ -122,14 +123,16 @@ impl AssetField {
             AssetField::Image(image) => {
                 let field_ident = image.field_ident.clone();
                 let asset_path = image.asset_path.clone();
+                let layers = image.array_texture_layers.unwrap_or_default();
                 let sampler = match image.sampler {
-                    SamplerType::Linear => quote!(ImageSampler::linear()),
-                    SamplerType::Nearest => quote!(ImageSampler::nearest()),
+                    Some(SamplerType::Linear) | None => quote!(ImageSampler::linear()),
+                    Some(SamplerType::Nearest) => quote!(ImageSampler::nearest()),
                 };
                 let descriptor = match image.sampler {
-                    SamplerType::Linear => quote!(ImageSamplerDescriptor::linear()),
-                    SamplerType::Nearest => quote!(ImageSamplerDescriptor::nearest()),
+                    Some(SamplerType::Linear) | None => quote!(ImageSamplerDescriptor::linear()),
+                    Some(SamplerType::Nearest) => quote!(ImageSamplerDescriptor::nearest()),
                 };
+                let is_sampler_set = image.sampler.is_some();
 
                 quote!(#token_stream #field_ident : {
                     use bevy::render::texture::{ImageSampler, ImageSamplerDescriptor};
@@ -142,18 +145,24 @@ impl AssetField {
                     let mut handle = asset_server.load(#asset_path);
                     let mut image = images.get_mut(&handle).expect("Only asset collection fields holding an `Image` handle can be annotated with `image`");
 
-                    let is_different_sampler = if let ImageSampler::Descriptor(descriptor) = &image.sampler {
-                        !descriptor.as_wgpu().eq(&#descriptor.as_wgpu())
-                    } else {
-                        false
-                    };
+                    if (#layers > 0) {
+                        image.reinterpret_stacked_2d_as_array(#layers);
+                    }
 
-                    if is_different_sampler {
-                        let mut cloned_image = image.clone();
-                        cloned_image.sampler = #sampler;
-                        handle = images.add(cloned_image);
-                    } else {
-                        image.sampler = #sampler;
+                    if (#is_sampler_set) {
+                        let is_different_sampler = if let ImageSampler::Descriptor(descriptor) = &image.sampler {
+                            !descriptor.as_wgpu().eq(&#descriptor.as_wgpu())
+                        } else {
+                            false
+                        };
+
+                        if is_different_sampler {
+                            let mut cloned_image = image.clone();
+                            cloned_image.sampler = #sampler;
+                            handle = images.add(cloned_image);
+                        } else {
+                            image.sampler = #sampler;
+                        }
                     }
 
                     handle
@@ -531,6 +540,7 @@ pub(crate) struct AssetBuilder {
     pub offset_x: Option<u32>,
     pub offset_y: Option<u32>,
     pub sampler: Option<SamplerType>,
+    pub array_texture_layers: Option<u32>,
 }
 
 impl AssetBuilder {
@@ -655,11 +665,12 @@ impl AssetBuilder {
                 self.is_mapped.into(),
             ));
         }
-        if self.sampler.is_some() {
+        if self.sampler.is_some() || self.array_texture_layers.is_some() {
             return Ok(AssetField::Image(ImageAssetField {
                 field_ident: self.field_ident.unwrap(),
                 asset_path: self.asset_path.unwrap(),
-                sampler: self.sampler.unwrap(),
+                sampler: self.sampler,
+                array_texture_layers: self.array_texture_layers,
             }));
         }
         let asset = BasicAssetField {
@@ -929,19 +940,28 @@ mod test {
             ..Default::default()
         };
 
+        let builder_layers = AssetBuilder {
+            field_ident: Some(Ident::new("test", Span::call_site())),
+            asset_path: Some("some/image.png".to_owned()),
+            array_texture_layers: Some(42),
+            ..Default::default()
+        };
+
         let asset_linear = builder_linear
             .build()
             .expect("This should be a valid ImageAsset");
         let asset_nearest = builder_nearest
             .build()
             .expect("This should be a valid ImageAsset");
+        let asset_layers = builder_layers.build().expect("Failed to build asset");
 
         assert_eq!(
             asset_linear,
             AssetField::Image(ImageAssetField {
                 field_ident: Ident::new("test", Span::call_site()),
                 asset_path: "some/image.png".to_owned(),
-                sampler: SamplerType::Linear
+                sampler: Some(SamplerType::Linear),
+                array_texture_layers: None
             })
         );
         assert_eq!(
@@ -949,7 +969,17 @@ mod test {
             AssetField::Image(ImageAssetField {
                 field_ident: Ident::new("test", Span::call_site()),
                 asset_path: "some/image.png".to_owned(),
-                sampler: SamplerType::Nearest
+                sampler: Some(SamplerType::Nearest),
+                array_texture_layers: None
+            })
+        );
+        assert_eq!(
+            asset_layers,
+            AssetField::Image(ImageAssetField {
+                field_ident: Ident::new("test", Span::call_site()),
+                asset_path: "some/image.png".to_owned(),
+                sampler: None,
+                array_texture_layers: Some(42)
             })
         );
     }

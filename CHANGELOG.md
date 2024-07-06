@@ -1,6 +1,7 @@
 # Changelog
 
 - custom `on_unimplemented` diagnostics for the `AssetCollection` trait
+- image derive attribute `array_texture_layers`
 
 ## v0.21.0 - 05.07.2024
 - support for Bevy 0.14
