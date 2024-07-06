@@ -1,0 +1,15 @@
+error[E0277]: `Test` is not an `AssetCollection`
+ --> tests/ui/missing_impl.rs:5:34
+  |
+5 |     App::new().init_collection::<Test>();
+  |                ---------------   ^^^^ invalid `AssetCollection`
+  |                |
+  |                required by a bound introduced by this call
+  |
+  = help: the trait `AssetCollection` is not implemented for `Test`
+  = note: consider annotating `Test` with `#[derive(AssetCollection)]`
+note: required by a bound in `bevy_asset_loader::asset_collection::AssetCollectionApp::init_collection`
+ --> src/asset_collection.rs
+  |
+  |     fn init_collection<A: AssetCollection>(&mut self) -> &mut Self;
+  |                           ^^^^^^^^^^^^^^^ required by this bound in `AssetCollectionApp::init_collection`

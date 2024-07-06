@@ -20,6 +20,11 @@ pub use bevy_asset_loader_derive::AssetCollection;
 ///     tree: Handle<Image>
 /// }
 /// ```
+#[diagnostic::on_unimplemented(
+    message = "`{Self}` is not an `AssetCollection`",
+    label = "invalid `AssetCollection`",
+    note = "consider annotating `{Self}` with `#[derive(AssetCollection)]`"
+)]
 pub trait AssetCollection: Resource {
     /// Create a new asset collection from the [`AssetServer`](::bevy::asset::AssetServer)
     fn create(world: &mut World) -> Self;
