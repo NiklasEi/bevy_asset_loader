@@ -50,6 +50,9 @@ pub enum StandardDynamicAsset {
         /// Sampler
         #[serde(with = "optional", skip_serializing_if = "Option::is_none", default)]
         sampler: Option<ImageSamplerType>,
+        /// array texture layers
+        #[serde(with = "optional", skip_serializing_if = "Option::is_none", default)]
+        array_texture_layers: Option<u32>,
     },
     /// A dynamic standard material asset directly loaded from an image file
     #[cfg(feature = "3d")]
@@ -173,13 +176,17 @@ impl DynamicAsset for StandardDynamicAsset {
                 ))
             }
             #[cfg(any(feature = "3d", feature = "2d"))]
-            StandardDynamicAsset::Image { path, sampler } => {
+            StandardDynamicAsset::Image { path, sampler, array_texture_layers } => {
                 let mut system_state =
                     SystemState::<(ResMut<Assets<Image>>, Res<AssetServer>)>::new(world);
                 let (mut images, asset_server) = system_state.get_mut(world);
                 let mut handle = asset_server.load(path);
                 if let Some(sampler) = sampler {
                     Self::update_image_sampler(&mut handle, &mut images, sampler);
+                }
+                if let Some(layers) = array_texture_layers {
+                    let image = images.get_mut(&handle).expect("Failed to find loaded image");
+                    image.reinterpret_stacked_2d_as_array(*layers);
                 }
 
                 Ok(DynamicAssetType::Single(handle.untyped()))

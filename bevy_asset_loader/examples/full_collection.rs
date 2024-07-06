@@ -37,6 +37,10 @@ struct MyAssets {
     #[asset(path = "images/pixel_tree.png")]
     #[asset(image(sampler = nearest))]
     image_tree_nearest: Handle<Image>,
+    // Array texture
+    #[asset(path = "images/array_texture.png")]
+    #[asset(image(array_texture_layers = 4))]
+    array_texture: Handle<Image>,
 
     // Load collections of assets
 
@@ -113,6 +117,14 @@ fn expectations(
     assert_eq!(
         descriptor.as_wgpu(),
         ImageSamplerDescriptor::nearest().as_wgpu()
+    );
+
+    let image = images
+        .get(&assets.array_texture)
+        .expect("Image should be added to its asset resource");
+    assert_eq!(
+        image.texture_descriptor.array_layer_count(),
+        4
     );
 
     assert_eq!(assets.folder_untyped.len(), 7);

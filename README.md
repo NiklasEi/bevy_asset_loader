@@ -269,6 +269,33 @@ The corresponding dynamic asset would be
 })
 ```
 
+### Array images
+
+You can let `bevy_asset_loader` configure the layers of a texture array.
+
+```rust
+use bevy::prelude::*;
+use bevy_asset_loader::asset_collection::AssetCollection;
+
+#[derive(AssetCollection, Resource)]
+struct ImageAssets {
+    #[asset(path = "images/array_texture.png")]
+    #[asset(image(array_texture_layers = 4))]
+    array_texture: Handle<Image>,
+}
+```
+
+The corresponding dynamic asset would be
+
+```ron
+({
+    "array_texture": Image (
+        path: "images/array_texture.png",
+        array_texture_layers: 4
+    ),
+})
+```
+
 ### Standard materials
 
 You can directly load standard materials if you enable the feature `3d`. For a complete example please take a look at [standard_material.rs](/bevy_asset_loader/examples/standard_material.rs).
