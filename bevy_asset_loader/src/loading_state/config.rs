@@ -13,7 +13,8 @@ use crate::loading_state::{
 use bevy::app::App;
 use bevy::asset::Asset;
 use bevy::ecs::schedule::SystemConfigs;
-use bevy::prelude::{default, FromWorld, IntoSystemConfigs, Resource, States};
+use bevy::prelude::{default, FromWorld, IntoSystemConfigs, Resource};
+use bevy::state::state::FreelyMutableState;
 use bevy::utils::HashMap;
 use std::any::TypeId;
 
@@ -54,12 +55,13 @@ pub trait ConfigureLoadingState {
 /// # use bevy_asset_loader::prelude::*;
 /// # use bevy::prelude::*;
 /// # use bevy::asset::AssetPlugin;
+/// # use bevy::state::app::StatesPlugin;
 /// # fn main() {
-///     App::new()
+/// App::new()
 /// # /*
 ///         .add_plugins(DefaultPlugins)
 /// # */
-/// #       .add_plugins((MinimalPlugins, AssetPlugin::default()))
+/// #       .add_plugins((MinimalPlugins, AssetPlugin::default(), StatesPlugin))
 ///         .init_state::<GameState>()
 /// #       .init_resource::<iyes_progress::ProgressCounter>()
 ///         .add_loading_state(
@@ -67,7 +69,7 @@ pub trait ConfigureLoadingState {
 ///             .continue_to_state(GameState::Menu)
 ///         )
 ///         .configure_loading_state(LoadingStateConfig::new(GameState::Loading).load_collection::<AudioAssets>())
-/// #       .set_runner(|mut app| app.update())
+/// #       .set_runner(|mut app| {app.update(); AppExit::Success})
 ///         .run();
 /// # }
 ///
@@ -85,7 +87,7 @@ pub trait ConfigureLoadingState {
 /// #     plop: Handle<AudioSource>
 /// # }
 /// ```
-pub struct LoadingStateConfig<S: States> {
+pub struct LoadingStateConfig<S: FreelyMutableState> {
     state: S,
 
     on_enter_loading_assets: Vec<SystemConfigs>,
@@ -96,7 +98,7 @@ pub struct LoadingStateConfig<S: States> {
     dynamic_assets: HashMap<TypeId, Vec<String>>,
 }
 
-impl<S: States> LoadingStateConfig<S> {
+impl<S: FreelyMutableState> LoadingStateConfig<S> {
     /// Create a new configuration for the given loading state
     pub fn new(state: S) -> Self {
         Self {
@@ -134,7 +136,7 @@ impl<S: States> LoadingStateConfig<S> {
                 config,
             );
         }
-        for config in self.on_enter_loading_dynamic_asset_collections {
+        for config in self.on_enter_loading_dynamic_asset_collections.drain(..) {
             app.add_systems(
                 OnEnterInternalLoadingState(
                     self.state.clone(),
@@ -144,7 +146,7 @@ impl<S: States> LoadingStateConfig<S> {
             );
         }
         let mut dynamic_assets = app
-            .world
+            .world_mut()
             .get_resource_mut::<DynamicAssetCollections<S>>()
             .unwrap_or_else(|| {
                 panic!("Failed to get the DynamicAssetCollections resource for the loading state. Are you trying to configure a loading state before it was added to the bevy App?")
@@ -155,7 +157,7 @@ impl<S: States> LoadingStateConfig<S> {
     }
 }
 
-impl<S: States> ConfigureLoadingState for LoadingStateConfig<S> {
+impl<S: FreelyMutableState> ConfigureLoadingState for LoadingStateConfig<S> {
     fn load_collection<A: AssetCollection>(mut self) -> Self {
         self.on_enter_loading_assets
             .push(start_loading_collection::<S, A>.into_configs());

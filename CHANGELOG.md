@@ -1,5 +1,8 @@
 # Changelog
 
+- all texture atlas layout parameters are now integers (u32)
+- `bevy_asset_loader` depends on the new `bevy_state` feature
+
 ## v0.20.2 - 18.05.2024
 - Fix texture atlas layout in asset collections (see [#212](https://github.com/NiklasEi/bevy_asset_loader/pull/212))
 

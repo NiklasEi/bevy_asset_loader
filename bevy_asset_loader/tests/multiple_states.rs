@@ -1,24 +1,26 @@
 use bevy::app::AppExit;
 use bevy::audio::AudioPlugin;
 use bevy::prelude::*;
+use bevy::state::app::StatesPlugin;
 use bevy_asset_loader::prelude::*;
 
 #[test]
 fn main() {
     let mut app = App::new();
-    app.init_state::<Prepare>().init_state::<Game>();
 
+    app.add_plugins((
+        MinimalPlugins,
+        AssetPlugin::default(),
+        AudioPlugin::default(),
+        StatesPlugin,
+    ));
+    app.init_state::<Prepare>().init_state::<Game>();
     #[cfg(feature = "progress_tracking")]
     app.add_plugins((
         iyes_progress::ProgressPlugin::new(Game::Booting),
         iyes_progress::ProgressPlugin::new(Prepare::Loading),
     ));
-    app.add_plugins((
-        MinimalPlugins,
-        AssetPlugin::default(),
-        AudioPlugin::default(),
-    ))
-    .add_loading_state(
+    app.add_loading_state(
         LoadingState::new(Game::Booting)
             .continue_to_state(Game::Loading)
             .load_collection::<GameStateCollection>(),
@@ -90,5 +92,5 @@ fn timeout(time: Res<Time>) {
 
 fn quit(mut exit: EventWriter<AppExit>) {
     info!("Everything fine, quitting the app");
-    exit.send(AppExit);
+    exit.send(AppExit::Success);
 }

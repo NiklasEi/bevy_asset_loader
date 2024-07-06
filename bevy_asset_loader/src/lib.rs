@@ -8,13 +8,13 @@
 //! # use bevy_asset_loader::prelude::*;
 //! # use bevy::prelude::*;
 //! # use bevy::asset::AssetPlugin;
-//!
+//! # use bevy::state::app::StatesPlugin;
 //! fn main() {
-//!     App::new()
+//! App::new()
 //! # /*
 //!         .add_plugins(DefaultPlugins)
 //! # */
-//! #       .add_plugins((MinimalPlugins, AssetPlugin::default()))
+//! #       .add_plugins((MinimalPlugins, AssetPlugin::default(), StatesPlugin))
 //! #       .init_resource::<iyes_progress::ProgressCounter>()
 //!         .init_state::<GameState>()
 //!         .add_loading_state(
@@ -24,7 +24,7 @@
 //!                 .load_collection::<ImageAssets>()
 //!         )
 //!         .add_systems(Update, use_asset_handles.run_if(in_state(GameState::Next)))
-//! #       .set_runner(|mut app| app.update())
+//! #       .set_runner(|mut app| {app.update(); AppExit::Success})
 //!         .run();
 //! }
 //!

@@ -11,7 +11,7 @@ This [Bevy][bevy] plugin reduces boilerplate for handling game assets. The crate
 
 In most cases you will want to load your asset collections during loading states (think loading screens). During such a state, all assets are loaded and their loading progress is observed. Only when asset collections can be built with fully loaded asset handles, the collections are inserted to Bevy's ECS as resources. If you do not want to use a loading state, asset collections can still result in cleaner code and improved maintainability (see the ["usage without a loading state"](#usage-without-a-loading-state) section).
 
-_The `main` branch and the latest release support Bevy version `0.13` (see [version table](#compatible-bevy-versions))_
+_The `main` branch and the latest release support Bevy version `0.14` (see [version table](#compatible-bevy-versions))_
 
 ## Loading states
 
@@ -195,7 +195,7 @@ use bevy_asset_loader::asset_collection::AssetCollection;
 
 #[derive(AssetCollection, Resource)]
 struct MyAssets {
-    #[asset(texture_atlas_layout(tile_size_x = 64., tile_size_y = 64., columns = 8, rows = 1, padding_x = 12., padding_y = 12., offset_x = 6., offset_y = 6.))]
+    #[asset(texture_atlas_layout(tile_size_x = 64, tile_size_y = 64, columns = 8, rows = 1, padding_x = 12, padding_y = 12, offset_x = 6, offset_y = 6))]
     layout: Handle<TextureAtlasLayout>,
     #[asset(path = "images/sprite_sheet.png")]
     sprite: Handle<Image>,
@@ -220,19 +220,19 @@ struct MyAssets {
         path: "images/sprite_sheet.png",
     ),
     "player.layout": TextureAtlasLayout (
-        tile_size_x: 100.,
-        tile_size_y: 64.,
+        tile_size_x: 100,
+        tile_size_y: 64,
         columns: 8,
         rows: 1,
-        padding_x: 12.,
-        padding_y: 12.,
-        offset_x: 6.,
-        offset_y: 6.,
+        padding_x: 12,
+        padding_y: 12,
+        offset_x: 6,
+        offset_y: 6,
     ),
 })
 ```
 
-The four padding & offset fields/attributes are optional, and default to `0.`.
+The four padding & offset fields/attributes are optional, and default to `0`.
 
 ### Images with sampler configuration
 
@@ -483,7 +483,7 @@ fn main() {
 
 #[derive(AssetCollection, Resource)]
 struct MyAssets {
-    #[asset(texture_atlas_layout(tile_size_x = 64., tile_size_y = 64., columns = 8, rows = 1, padding_x = 12., padding_y = 12., offset_x = 6., offset_y = 6.))]
+    #[asset(texture_atlas_layout(tile_size_x = 64, tile_size_y = 64, columns = 8, rows = 1, padding_x = 12, padding_y = 12, offset_x = 6, offset_y = 6))]
     layout: Handle<TextureAtlasLayout>,
     #[asset(path = "images/sprite_sheet.png")]
     sprite: Handle<Image>,
@@ -502,6 +502,7 @@ Compatibility of `bevy_asset_loader` versions:
 
 | Bevy version | `bevy_asset_loader` version |
 |:-------------|:----------------------------|
+| `0.14`       | `0.21`                      |
 | `0.13`       | `0.20`                      |
 | `0.12`       | `0.18` - `0.19`             |
 | `0.11`       | `0.17`                      |

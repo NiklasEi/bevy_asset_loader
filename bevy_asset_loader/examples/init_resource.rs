@@ -1,3 +1,4 @@
+use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 
@@ -36,13 +37,8 @@ struct CombinedImage {
 
 impl FromWorld for CombinedImage {
     fn from_world(world: &mut World) -> Self {
-        let cell = world.cell();
-        let mut images = cell
-            .get_resource_mut::<Assets<Image>>()
-            .expect("Failed to get Assets<Image>");
-        let image_assets = cell
-            .get_resource::<ImageAssets>()
-            .expect("Failed to get ImageAssets");
+        let mut system_state = SystemState::<(ResMut<Assets<Image>>, Res<ImageAssets>)>::new(world);
+        let (mut images, image_assets) = system_state.get_mut(world);
         let player_image = images.get(&image_assets.player).unwrap();
         let tree_image = images.get(&image_assets.tree).unwrap();
         let mut combined = player_image.clone();

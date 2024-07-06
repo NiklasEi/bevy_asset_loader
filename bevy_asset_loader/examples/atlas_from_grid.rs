@@ -6,8 +6,8 @@ use bevy_asset_loader::prelude::*;
 /// Requires the feature '2d'
 fn main() {
     App::new()
-        .init_state::<MyStates>()
         .add_plugins(DefaultPlugins)
+        .init_state::<MyStates>()
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading)
                 .continue_to_state(MyStates::Next)
@@ -26,7 +26,7 @@ struct MyAssets {
     // if the sheet would have padding, you could set that with `padding_x` and `padding_y`.
     // if there would be space between the top left corner of the sheet and the first sprite, you could configure that with `offset_x` and `offset_y`
     // A texture atlas layout does not have a path as no asset file will be loaded for the layout
-    #[asset(texture_atlas_layout(tile_size_x = 96., tile_size_y = 99., columns = 8, rows = 1))]
+    #[asset(texture_atlas_layout(tile_size_x = 96, tile_size_y = 99, columns = 8, rows = 1))]
     female_adventurer_layout: Handle<TextureAtlasLayout>,
     // you can configure the sampler for the sprite sheet image
     #[asset(image(sampler = nearest))]

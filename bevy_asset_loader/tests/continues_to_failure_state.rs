@@ -1,26 +1,27 @@
 use bevy::app::AppExit;
 use bevy::asset::AssetPlugin;
 use bevy::prelude::*;
+use bevy::state::app::StatesPlugin;
 use bevy_asset_loader::prelude::*;
 
 #[test]
 fn continues_to_failure_state() {
     let mut app = App::new();
-    app.init_state::<MyStates>();
 
+    app.add_plugins((MinimalPlugins, AssetPlugin::default(), StatesPlugin));
+    app.init_state::<MyStates>();
     #[cfg(feature = "progress_tracking")]
     app.add_plugins(iyes_progress::ProgressPlugin::new(MyStates::Load));
-    app.add_plugins((MinimalPlugins, AssetPlugin::default()))
-        .add_loading_state(
-            LoadingState::new(MyStates::Load)
-                .continue_to_state(MyStates::Next)
-                .on_failure_continue_to_state(MyStates::Error)
-                .load_collection::<Audio>(),
-        )
-        .add_systems(Update, timeout.run_if(in_state(MyStates::Load)))
-        .add_systems(OnEnter(MyStates::Next), fail)
-        .add_systems(OnEnter(MyStates::Error), exit)
-        .run();
+    app.add_loading_state(
+        LoadingState::new(MyStates::Load)
+            .continue_to_state(MyStates::Next)
+            .on_failure_continue_to_state(MyStates::Error)
+            .load_collection::<Audio>(),
+    )
+    .add_systems(Update, timeout.run_if(in_state(MyStates::Load)))
+    .add_systems(OnEnter(MyStates::Next), fail)
+    .add_systems(OnEnter(MyStates::Error), exit)
+    .run();
 }
 
 fn fail() {
@@ -28,7 +29,7 @@ fn fail() {
 }
 
 fn exit(mut exit: EventWriter<AppExit>) {
-    exit.send(AppExit);
+    exit.send(AppExit::Success);
 }
 
 fn timeout(time: Res<Time>) {

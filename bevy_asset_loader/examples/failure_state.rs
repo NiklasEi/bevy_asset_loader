@@ -4,8 +4,8 @@ use bevy_asset_loader::prelude::*;
 
 fn main() {
     App::new()
-        .init_state::<MyStates>()
         .add_plugins(DefaultPlugins)
+        .init_state::<MyStates>()
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading)
                 .continue_to_state(MyStates::Next)
@@ -35,7 +35,7 @@ fn fail() {
 fn ok(mut quit: EventWriter<AppExit>) {
     info!("As expected, bevy_asset_loader switched to the failure state");
     info!("Quitting the application...");
-    quit.send(AppExit);
+    quit.send(AppExit::Success);
 }
 
 fn timeout(time: Res<Time>) {

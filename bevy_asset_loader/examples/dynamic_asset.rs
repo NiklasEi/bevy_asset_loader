@@ -6,8 +6,8 @@ use bevy_asset_loader::prelude::*;
 /// The assets loaded in this example are defined in `assets/dynamic_asset.assets.ron`
 fn main() {
     App::new()
-        .init_state::<MyStates>()
         .add_plugins(DefaultPlugins)
+        .init_state::<MyStates>()
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading)
                 .continue_to_state(MyStates::Next)
@@ -50,18 +50,20 @@ fn spawn_player_and_tree(mut commands: Commands, image_assets: Res<ImageAssets>)
     let mut transform = Transform::from_translation(Vec3::new(0., 0., 1.));
     transform.scale = Vec3::splat(0.5);
     commands
-        .spawn(SpriteSheetBundle {
-            transform: Transform {
-                translation: Vec3::new(0., 150., 0.),
+        .spawn((
+            SpriteBundle {
+                transform: Transform {
+                    translation: Vec3::new(0., 150., 0.),
+                    ..Default::default()
+                },
+                texture: image_assets.player.clone(),
                 ..Default::default()
             },
-            texture: image_assets.player.clone(),
-            atlas: TextureAtlas {
+            TextureAtlas {
                 layout: image_assets.player_layout.clone(),
                 index: 0,
             },
-            ..Default::default()
-        })
+        ))
         .insert(AnimationTimer(Timer::from_seconds(
             0.1,
             TimerMode::Repeating,

@@ -7,12 +7,12 @@ error: Unknown attribute
 error: Field is missing asset attributes: texture_atlas_layout/tile_size_y, texture_atlas_layout/columns, texture_atlas_layout/rows
   --> tests/ui_with_2d_3d_features/errors_on_multiple_fields.rs:11:5
    |
-11 | /     #[asset(texture_atlas_layout(tile_size_x = 100.))]
+11 | /     #[asset(texture_atlas_layout(tile_size_x = 100))]
 12 | |     second: Handle<TextureAtlasLayout>,
    | |______________________________________^
 
-error: Wrong attribute type. Expected 'integer'
-  --> tests/ui_with_2d_3d_features/errors_on_multiple_fields.rs:13:74
+error: Wrong attribute type. Expected 'u32'
+  --> tests/ui_with_2d_3d_features/errors_on_multiple_fields.rs:13:72
    |
-13 |     #[asset(texture_atlas_layout(tile_size_x = 100., tile_size_y = 100., columns = 10., rows = 1))]
-   |                                                                          ^^^^^^^^^^^^^
+13 |     #[asset(texture_atlas_layout(tile_size_x = 100, tile_size_y = 100, columns = 10., rows = 1))]
+   |                                                                        ^^^^^^^^^^^^^

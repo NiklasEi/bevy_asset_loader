@@ -1,24 +1,26 @@
 use bevy::app::AppExit;
 use bevy::audio::AudioPlugin;
 use bevy::prelude::*;
+use bevy::state::app::StatesPlugin;
 use bevy_asset_loader::prelude::*;
 
 #[test]
 fn multiple_loading_states() {
     let mut app = App::new();
-    app.init_state::<MyStates>();
 
+    app.add_plugins((
+        MinimalPlugins,
+        AssetPlugin::default(),
+        AudioPlugin::default(),
+        StatesPlugin,
+    ));
+    app.init_state::<MyStates>();
     #[cfg(feature = "progress_tracking")]
     app.add_plugins((
         iyes_progress::ProgressPlugin::new(MyStates::Splash),
         iyes_progress::ProgressPlugin::new(MyStates::Load),
     ));
-    app.add_plugins((
-        MinimalPlugins,
-        AssetPlugin::default(),
-        AudioPlugin::default(),
-    ))
-    .add_loading_state(
+    app.add_loading_state(
         LoadingState::new(MyStates::Splash)
             .continue_to_state(MyStates::Load)
             .load_collection::<SplashAssets>(),
@@ -55,7 +57,7 @@ fn use_loading_assets(
 
 fn quit(mut exit: EventWriter<AppExit>) {
     info!("Everything fine, quitting the app");
-    exit.send(AppExit);
+    exit.send(AppExit::Success);
 }
 
 #[derive(AssetCollection, Resource)]

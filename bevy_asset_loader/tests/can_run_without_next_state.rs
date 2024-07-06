@@ -2,30 +2,32 @@ use bevy::app::AppExit;
 use bevy::asset::AssetPlugin;
 use bevy::audio::AudioPlugin;
 use bevy::prelude::*;
+use bevy::state::app::StatesPlugin;
 use bevy_asset_loader::prelude::*;
 
 #[test]
 fn can_run_without_next_state() {
     let mut app = App::new();
-    app.init_state::<MyStates>();
 
-    #[cfg(feature = "progress_tracking")]
-    app.add_plugins(iyes_progress::ProgressPlugin::new(MyStates::Load));
     app.add_plugins((
         MinimalPlugins,
         AssetPlugin::default(),
         AudioPlugin::default(),
-    ))
-    .add_loading_state(LoadingState::new(MyStates::Load).load_collection::<MyAssets>())
-    .init_resource::<TestState>()
-    .add_systems(
-        Update,
-        (
-            expect.run_if(in_state(MyStates::Load)),
-            timeout.run_if(in_state(MyStates::Load)),
-        ),
-    )
-    .run();
+        StatesPlugin,
+    ));
+    app.init_state::<MyStates>();
+    #[cfg(feature = "progress_tracking")]
+    app.add_plugins(iyes_progress::ProgressPlugin::new(MyStates::Load));
+    app.add_loading_state(LoadingState::new(MyStates::Load).load_collection::<MyAssets>())
+        .init_resource::<TestState>()
+        .add_systems(
+            Update,
+            (
+                expect.run_if(in_state(MyStates::Load)),
+                timeout.run_if(in_state(MyStates::Load)),
+            ),
+        )
+        .run();
 }
 
 fn timeout(time: Res<Time>) {
@@ -41,7 +43,7 @@ fn expect(
 ) {
     if collection.is_some() {
         if test_state.wait_frames_after_load == 0 {
-            exit.send(AppExit);
+            exit.send(AppExit::Success);
             return;
         }
         test_state.wait_frames_after_load -= 1;

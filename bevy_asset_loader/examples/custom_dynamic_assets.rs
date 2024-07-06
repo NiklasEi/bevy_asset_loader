@@ -1,3 +1,4 @@
+use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
 use bevy::reflect::TypePath;
 use bevy::render::render_asset::RenderAssetUsages;
@@ -117,18 +118,14 @@ impl DynamicAsset for CustomDynamicAsset {
     // This method is called when all asset handles returned from `load` are done loading.
     // The handles that you return, should also be loaded.
     fn build(&self, world: &mut World) -> Result<DynamicAssetType, anyhow::Error> {
-        let cell = world.cell();
-        let asset_server = cell
-            .get_resource::<AssetServer>()
-            .expect("Failed to get asset server");
         match self {
             CustomDynamicAsset::CombinedImage {
                 top_layer,
                 bottom_layer,
             } => {
-                let mut images = cell
-                    .get_resource_mut::<Assets<Image>>()
-                    .expect("Failed to get image assets");
+                let mut system_state =
+                    SystemState::<(ResMut<Assets<Image>>, Res<AssetServer>)>::new(world);
+                let (mut images, asset_server) = system_state.get_mut(world);
                 let first = images
                     .get(&asset_server.load(top_layer))
                     .expect("Failed to get first layer");
@@ -161,10 +158,11 @@ impl DynamicAsset for CustomDynamicAsset {
                 base_color_texture,
                 base_color,
             } => {
-                let mut materials = cell
-                    .get_resource_mut::<Assets<StandardMaterial>>()
-                    .expect("Failed to get standard material assets");
-                let color = Color::rgba(base_color[0], base_color[1], base_color[2], base_color[3]);
+                let mut system_state =
+                    SystemState::<(ResMut<Assets<StandardMaterial>>, Res<AssetServer>)>::new(world);
+                let (mut materials, asset_server) = system_state.get_mut(world);
+                let color =
+                    Color::linear_rgba(base_color[0], base_color[1], base_color[2], base_color[3]);
                 let image = asset_server.load(base_color_texture);
                 let mut material = StandardMaterial::from(color);
                 material.base_color_texture = Some(image);
@@ -173,9 +171,9 @@ impl DynamicAsset for CustomDynamicAsset {
                 Ok(DynamicAssetType::Single(materials.add(material).untyped()))
             }
             CustomDynamicAsset::Cube { size } => {
-                let mut meshes = cell
+                let mut meshes = world
                     .get_resource_mut::<Assets<Mesh>>()
-                    .expect("Failed to get mesh assets");
+                    .expect("Cannot get Assets<Mesh>");
                 let handle = meshes
                     .add(Mesh::from(Cuboid {
                         half_size: Vec3::splat(size / 2.),

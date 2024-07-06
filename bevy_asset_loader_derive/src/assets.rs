@@ -5,14 +5,14 @@ use quote::quote;
 #[derive(PartialEq, Debug)]
 pub(crate) struct TextureAtlasLayoutAssetField {
     pub field_ident: Ident,
-    pub tile_size_x: f32,
-    pub tile_size_y: f32,
-    pub columns: usize,
-    pub rows: usize,
-    pub padding_x: f32,
-    pub padding_y: f32,
-    pub offset_x: f32,
-    pub offset_y: f32,
+    pub tile_size_x: u32,
+    pub tile_size_y: u32,
+    pub columns: u32,
+    pub rows: u32,
+    pub padding_x: u32,
+    pub padding_y: u32,
+    pub offset_x: u32,
+    pub offset_y: u32,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -133,9 +133,11 @@ impl AssetField {
 
                 quote!(#token_stream #field_ident : {
                     use bevy::render::texture::{ImageSampler, ImageSamplerDescriptor};
-                    let cell = world.cell();
-                    let asset_server = cell.get_resource::<AssetServer>().expect("Cannot get AssetServer");
-                    let mut images = cell.get_resource_mut::<Assets<Image>>().expect("Cannot get resource Assets<Image>");
+                    let mut system_state = ::bevy::ecs::system::SystemState::<(
+                        ResMut<::bevy::prelude::Assets<::bevy::prelude::Image>>,
+                        Res<::bevy::prelude::AssetServer>,
+                    )>::new(world);
+                    let (mut images, asset_server) = system_state.get_mut(world);
 
                     let mut handle = asset_server.load(#asset_path);
                     let mut image = images.get_mut(&handle).expect("Only asset collection fields holding an `Image` handle can be annotated with `image`");
@@ -165,11 +167,13 @@ impl AssetField {
                     Typed::Yes => match mapped {
                         Mapped::No => {
                             quote!(#token_stream #field_ident : {
-                                    let cell = world.cell();
-                                    let asset_server = cell.get_resource::<::bevy::asset::AssetServer>().expect("Cannot get AssetServer");
-                                    let folders = cell.get_resource::<::bevy::asset::Assets<::bevy::asset::LoadedFolder>>().expect("Cannot get Assets<LoadedFolder>");
+                                    let mut system_state = ::bevy::ecs::system::SystemState::<(
+                                        Res<::bevy::asset::Assets<::bevy::asset::LoadedFolder>>,
+                                        Res<::bevy::prelude::AssetServer>,
+                                    )>::new(world);
+                                    let (folders, asset_server) = system_state.get(world);
                                     let handle = asset_server.get_handle(#asset_path).unwrap_or_else(|| panic!("Folders are only supported when using a loading state. Consider using 'paths' for {}.{}.", #name, #field));
-                                    folders.get(handle)
+                                    folders.get(&handle)
                                         .unwrap()
                                         .handles
                                         .iter()
@@ -179,12 +183,14 @@ impl AssetField {
                         }
                         Mapped::Yes => {
                             quote!(#token_stream #field_ident : {
-                                    let cell = world.cell();
-                                    let asset_server = cell.get_resource::<::bevy::asset::AssetServer>().expect("Cannot get AssetServer");
+                                    let mut system_state = ::bevy::ecs::system::SystemState::<(
+                                        Res<::bevy::asset::Assets<::bevy::asset::LoadedFolder>>,
+                                        Res<::bevy::prelude::AssetServer>,
+                                    )>::new(world);
+                                    let (folders, asset_server) = system_state.get(world);
                                     let mut folder_map = ::bevy::utils::HashMap::default();
-                                    let folders = cell.get_resource::<::bevy::asset::Assets<::bevy::asset::LoadedFolder>>().expect("Cannot get Assets<LoadedFolder>");
                                     let handle = asset_server.get_handle(#asset_path).unwrap_or_else(|| panic!("Folders are only supported when using a loading state. Consider using 'paths' for {}.{}.", #name, #field));
-                                    let folder = &folders.get(handle).unwrap().handles;
+                                    let folder = &folders.get(&handle).unwrap().handles;
                                     for handle in folder {
                                         let path = handle.path().unwrap();
                                         let key = ::bevy_asset_loader::mapped::MapKey::from_asset_path(path);
@@ -197,21 +203,25 @@ impl AssetField {
                     Typed::No => match mapped {
                         Mapped::No => {
                             quote!(#token_stream #field_ident : {
-                                    let cell = world.cell();
-                                    let asset_server = cell.get_resource::<::bevy::asset::AssetServer>().expect("Cannot get AssetServer");
-                                    let folders = cell.get_resource::<::bevy::asset::Assets<::bevy::asset::LoadedFolder>>().expect("Cannot get Assets<LoadedFolder>");
+                                    let mut system_state = ::bevy::ecs::system::SystemState::<(
+                                        Res<::bevy::asset::Assets<::bevy::asset::LoadedFolder>>,
+                                        Res<::bevy::prelude::AssetServer>,
+                                    )>::new(world);
+                                    let (folders, asset_server) = system_state.get(world);
                                     let handle = asset_server.get_handle(#asset_path).unwrap_or_else(|| panic!("Folders are only supported when using a loading state. Consider using 'paths' for {}.{}.", #name, #field));
-                                    folders.get(handle).expect("test").handles.iter().cloned().collect()
+                                    folders.get(&handle).expect("test").handles.iter().cloned().collect()
                                 },)
                         }
                         Mapped::Yes => {
                             quote!(#token_stream #field_ident : {
-                                    let cell = world.cell();
-                                    let asset_server = cell.get_resource::<::bevy::asset::AssetServer>().expect("Cannot get AssetServer");
+                                    let mut system_state = ::bevy::ecs::system::SystemState::<(
+                                        Res<::bevy::asset::Assets<::bevy::asset::LoadedFolder>>,
+                                        Res<::bevy::prelude::AssetServer>,
+                                    )>::new(world);
+                                    let (folders, asset_server) = system_state.get(world);
                                     let mut folder_map = ::bevy::utils::HashMap::default();
-                                    let folders = cell.get_resource::<::bevy::asset::Assets<::bevy::asset::LoadedFolder>>().expect("Cannot get Assets<LoadedFolder>");
                                     let handle = asset_server.get_handle(#asset_path).unwrap_or_else(|| panic!("Folders are only supported when using a loading state. Consider using 'paths' for {}.{}.", #name, #field));
-                                    let folder = &folders.get(handle).unwrap().handles;
+                                    let folder = &folders.get(&handle).unwrap().handles;
                                     for handle in folder {
                                         let path = handle.path().unwrap();
                                         let key = ::bevy_asset_loader::mapped::MapKey::from_asset_path(path);
@@ -227,11 +237,11 @@ impl AssetField {
                 let field_ident = basic.field_ident.clone();
                 let asset_path = basic.asset_path.clone();
                 quote!(#token_stream #field_ident : {
-                    let cell = world.cell();
-                    let asset_server = cell.get_resource::<::bevy::asset::AssetServer>().expect("Cannot get AssetServer");
-                    let mut materials = cell
-                        .get_resource_mut::<::bevy::asset::Assets<::bevy::pbr::StandardMaterial>>()
-                        .expect("Cannot get resource Assets<StandardMaterial>");
+                    let mut system_state = ::bevy::ecs::system::SystemState::<(
+                        ResMut<::bevy::asset::Assets<::bevy::pbr::StandardMaterial>>,
+                        Res<::bevy::prelude::AssetServer>,
+                    )>::new(world);
+                    let (mut materials, asset_server) = system_state.get_mut(world);
                     materials.add(::bevy::pbr::StandardMaterial::from(asset_server.load::<::bevy::render::texture::Image>(#asset_path)))
                 },)
             }
@@ -247,16 +257,13 @@ impl AssetField {
                 let offset_y = texture_atlas.offset_y;
 
                 quote!(#token_stream #field_ident : {
-                    let cell = world.cell();
-                    let mut atlases = cell
-                        .get_resource_mut::<::bevy::asset::Assets<TextureAtlasLayout>>()
-                        .expect("Cannot get resource Assets<TextureAtlasLayout>");
+                    let mut atlases = world.get_resource_mut::<::bevy::asset::Assets<::bevy::sprite::TextureAtlasLayout>>().expect("Cannot get Assets<TextureAtlasLayout>");
                     atlases.add(TextureAtlasLayout::from_grid(
-                        Vec2::new(#tile_size_x, #tile_size_y),
+                        ::bevy::math::UVec2::new(#tile_size_x, #tile_size_y),
                         #columns,
                         #rows,
-                        Some(Vec2::new(#padding_x, #padding_y)),
-                        Some(Vec2::new(#offset_x, #offset_y)),
+                        Some(::bevy::math::UVec2::new(#padding_x, #padding_y)),
+                        Some(::bevy::math::UVec2::new(#offset_x, #offset_y)),
                     ))
                 },)
             }
@@ -437,17 +444,29 @@ impl AssetField {
         match self {
             AssetField::Basic(asset) => {
                 let asset_path = asset.asset_path.clone();
-                quote!(#token_stream handles.push(asset_server.load_untyped(#asset_path).untyped());)
+                quote!(#token_stream {
+                    let asset_server = world.get_resource::<::bevy::prelude::AssetServer>().expect("Cannot get AssetServer");
+                    handles.push(asset_server.load_untyped(#asset_path).untyped());
+                })
             }
             AssetField::Folder(asset, _, _) => {
                 let asset_path = asset.asset_path.clone();
-                quote!(#token_stream handles.push(asset_server.load_folder(#asset_path).untyped());)
+                quote!(#token_stream {
+                    let asset_server = world.get_resource::<::bevy::prelude::AssetServer>().expect("Cannot get AssetServer");
+                    handles.push(asset_server.load_folder(#asset_path).untyped());
+                })
             }
             AssetField::OptionalDynamic(dynamic)
             | AssetField::OptionalDynamicFileCollection(dynamic, _, _) => {
                 let asset_key = dynamic.key.clone();
                 quote!(
                     #token_stream {
+                        let mut system_state = ::bevy::ecs::system::SystemState::<(
+                            Res<::bevy::prelude::AssetServer>,
+                            Res<::bevy_asset_loader::prelude::DynamicAssets>,
+                        )>::new(world);
+                        let (asset_server, asset_keys) =
+                            system_state.get(world);
                         let dynamic_asset = asset_keys.get_asset(#asset_key.into());
                         if let Some(dynamic_asset) = dynamic_asset {
                             handles.extend(dynamic_asset.load(&asset_server));
@@ -459,6 +478,12 @@ impl AssetField {
                 let asset_key = dynamic.key.clone();
                 quote!(
                     #token_stream {
+                        let mut system_state = ::bevy::ecs::system::SystemState::<(
+                            Res<::bevy::prelude::AssetServer>,
+                            Res<::bevy_asset_loader::prelude::DynamicAssets>,
+                        )>::new(world);
+                        let (asset_server, asset_keys) =
+                            system_state.get(world);
                         let dynamic_asset = asset_keys.get_asset(#asset_key.into()).unwrap_or_else(|| panic!("Failed to get asset for key '{}'", #asset_key));
                         handles.extend(dynamic_asset.load(&asset_server));
                     }
@@ -470,11 +495,17 @@ impl AssetField {
             AssetField::StandardMaterial(BasicAssetField { asset_path, .. })
             | AssetField::Image(ImageAssetField { asset_path, .. }) => {
                 let asset_path = asset_path.clone();
-                quote!(#token_stream handles.push(asset_server.load::<::bevy::render::texture::Image>(#asset_path).untyped());)
+                quote!(#token_stream {
+                    let asset_server = world.get_resource::<::bevy::prelude::AssetServer>().expect("Cannot get AssetServer");
+                    handles.push(asset_server.load::<::bevy::render::texture::Image>(#asset_path).untyped());
+                })
             }
             AssetField::Files(assets, _, _) => {
                 let asset_paths = assets.asset_paths.clone();
-                quote!(#token_stream #(handles.push(asset_server.load_untyped(#asset_paths).untyped()));*;)
+                quote!(#token_stream {
+                    let asset_server = world.get_resource::<::bevy::prelude::AssetServer>().expect("Cannot get AssetServer");
+                    #(handles.push(asset_server.load_untyped(#asset_paths).untyped()));*;
+                })
             }
         }
     }
@@ -491,14 +522,14 @@ pub(crate) struct AssetBuilder {
     pub is_typed: bool,
     pub is_mapped: bool,
     pub key: Option<String>,
-    pub tile_size_x: Option<f32>,
-    pub tile_size_y: Option<f32>,
-    pub columns: Option<usize>,
-    pub rows: Option<usize>,
-    pub padding_x: Option<f32>,
-    pub padding_y: Option<f32>,
-    pub offset_x: Option<f32>,
-    pub offset_y: Option<f32>,
+    pub tile_size_x: Option<u32>,
+    pub tile_size_y: Option<u32>,
+    pub columns: Option<u32>,
+    pub rows: Option<u32>,
+    pub padding_x: Option<u32>,
+    pub padding_y: Option<u32>,
+    pub offset_x: Option<u32>,
+    pub offset_y: Option<u32>,
     pub sampler: Option<SamplerType>,
 }
 
@@ -854,12 +885,12 @@ mod test {
     fn texture_atlas_layout() {
         let builder = AssetBuilder {
             field_ident: Some(Ident::new("test", Span::call_site())),
-            tile_size_x: Some(100.),
-            tile_size_y: Some(50.),
+            tile_size_x: Some(100),
+            tile_size_y: Some(50),
             columns: Some(10),
             rows: Some(5),
-            padding_x: Some(2.),
-            offset_y: Some(3.),
+            padding_x: Some(2),
+            offset_y: Some(3),
             ..Default::default()
         };
 
@@ -870,14 +901,14 @@ mod test {
             asset,
             AssetField::TextureAtlasLayout(TextureAtlasLayoutAssetField {
                 field_ident: Ident::new("test", Span::call_site()),
-                tile_size_x: 100.0,
-                tile_size_y: 50.0,
+                tile_size_x: 100,
+                tile_size_y: 50,
                 columns: 10,
                 rows: 5,
-                padding_x: 2.0,
-                padding_y: 0.0,
-                offset_x: 0.0,
-                offset_y: 3.0,
+                padding_x: 2,
+                padding_y: 0,
+                offset_x: 0,
+                offset_y: 3,
             })
         );
     }
@@ -940,11 +971,11 @@ mod test {
 
         // Optional texture atlas field
         let mut builder = asset_builder_dynamic();
-        builder.padding_y = Some(5.0);
+        builder.padding_y = Some(5);
         assert!(builder.build().is_err());
 
         let mut builder = asset_builder_dynamic();
-        builder.offset_x = Some(2.5);
+        builder.offset_x = Some(2);
         assert!(builder.build().is_err());
 
         let mut builder = asset_builder_dynamic();

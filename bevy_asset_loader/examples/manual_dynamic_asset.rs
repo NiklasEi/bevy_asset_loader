@@ -7,8 +7,8 @@ const PLAYER_SPEED: f32 = 5.;
 /// load them from a file instead.
 fn main() {
     App::new()
-        .init_state::<MyStates>()
         .add_plugins(DefaultPlugins)
+        .init_state::<MyStates>()
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading)
                 .continue_to_state(MyStates::Next)
@@ -199,7 +199,7 @@ fn menu(mut commands: Commands, font_assets: Res<FontAssets>) {
                 flex_direction: FlexDirection::ColumnReverse,
                 ..Default::default()
             },
-            background_color: BackgroundColor(Color::rgba(0.0,0.0,0.0,1.0)),
+            background_color: BackgroundColor(Color::linear_rgba(0.0,0.0,0.0,1.0)),
             ..Default::default()
         })
         .insert(MenuUi)
@@ -216,7 +216,7 @@ fn menu(mut commands: Commands, font_assets: Res<FontAssets>) {
                         style: TextStyle {
                             font: font_assets.fira_sans.clone(),
                             font_size: 30.0,
-                            color: Color::rgb(1., 1., 1.),
+                            color: Color::linear_rgb(1., 1., 1.),
                         },
                     }],
                     justify: JustifyText::Center,
@@ -231,7 +231,7 @@ fn menu(mut commands: Commands, font_assets: Res<FontAssets>) {
                         style: TextStyle {
                             font: font_assets.fira_sans.clone(),
                             font_size: 30.0,
-                            color: Color::rgb(1., 1., 1.),
+                            color: Color::linear_rgb(1., 1., 1.),
                         },
                     }],
                     justify: JustifyText::Center,

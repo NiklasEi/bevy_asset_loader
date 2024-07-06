@@ -3,43 +3,45 @@
 use bevy::app::AppExit;
 use bevy::audio::AudioPlugin;
 use bevy::prelude::*;
+use bevy::state::app::StatesPlugin;
 use bevy_asset_loader::prelude::*;
 
 #[cfg(feature = "standard_dynamic_assets")]
 #[test]
 fn main() {
     let mut app = App::new();
-    app.init_state::<MyStates>();
 
+    app.add_plugins((
+        MinimalPlugins,
+        AssetPlugin::default(),
+        AudioPlugin::default(),
+        StatesPlugin,
+    ));
+    app.init_state::<MyStates>();
     #[cfg(feature = "progress_tracking")]
     app.add_plugins((
         iyes_progress::ProgressPlugin::new(MyStates::SplashAssetLoading),
         iyes_progress::ProgressPlugin::new(MyStates::MainMenuAssetLoading),
     ));
-    app.add_plugins((
-        MinimalPlugins,
-        AssetPlugin::default(),
-        AudioPlugin::default(),
-    ))
-    .insert_resource(SplashTimer(Timer::from_seconds(1.0, TimerMode::Once)))
-    .add_loading_state(
-        LoadingState::new(MyStates::SplashAssetLoading)
-            .continue_to_state(MyStates::Splash)
-            .with_dynamic_assets_file::<StandardDynamicAssetCollection>(
-                "full_dynamic_collection.assets.ron",
-            ),
-    )
-    .add_systems(Update, splash_countdown.run_if(in_state(MyStates::Splash)))
-    .add_loading_state(
-        LoadingState::new(MyStates::MainMenuAssetLoading)
-            .continue_to_state(MyStates::MainMenu)
-            .with_dynamic_assets_file::<StandardDynamicAssetCollection>(
-                "full_dynamic_collection.assets.ron",
-            )
-            .load_collection::<MainMenuAssets>(),
-    )
-    .add_systems(Update, (timeout, quit.run_if(in_state(MyStates::MainMenu))))
-    .run();
+    app.insert_resource(SplashTimer(Timer::from_seconds(1.0, TimerMode::Once)))
+        .add_loading_state(
+            LoadingState::new(MyStates::SplashAssetLoading)
+                .continue_to_state(MyStates::Splash)
+                .with_dynamic_assets_file::<StandardDynamicAssetCollection>(
+                    "full_dynamic_collection.assets.ron",
+                ),
+        )
+        .add_systems(Update, splash_countdown.run_if(in_state(MyStates::Splash)))
+        .add_loading_state(
+            LoadingState::new(MyStates::MainMenuAssetLoading)
+                .continue_to_state(MyStates::MainMenu)
+                .with_dynamic_assets_file::<StandardDynamicAssetCollection>(
+                    "full_dynamic_collection.assets.ron",
+                )
+                .load_collection::<MainMenuAssets>(),
+        )
+        .add_systems(Update, (timeout, quit.run_if(in_state(MyStates::MainMenu))))
+        .run();
 }
 
 #[derive(AssetCollection, Resource)]
@@ -84,5 +86,5 @@ fn timeout(time: Res<Time>) {
 
 fn quit(mut exit: EventWriter<AppExit>) {
     info!("Everything fine, quitting the app");
-    exit.send(AppExit);
+    exit.send(AppExit::Success);
 }

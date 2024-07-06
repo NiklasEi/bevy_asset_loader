@@ -2,22 +2,24 @@ use bevy::app::AppExit;
 use bevy::asset::AssetPlugin;
 use bevy::audio::AudioPlugin;
 use bevy::prelude::*;
+use bevy::state::app::StatesPlugin;
 use bevy::utils::HashMap;
 use bevy_asset_loader::prelude::*;
 
 #[test]
 fn mapped_path_use_slash() {
     let mut app = App::new();
-    app.init_state::<MyStates>();
 
-    #[cfg(feature = "progress_tracking")]
-    app.add_plugins(iyes_progress::ProgressPlugin::new(MyStates::Load));
     app.add_plugins((
         MinimalPlugins,
         AssetPlugin::default(),
         AudioPlugin::default(),
-    ))
-    .add_loading_state(
+        StatesPlugin,
+    ));
+    app.init_state::<MyStates>();
+    #[cfg(feature = "progress_tracking")]
+    app.add_plugins(iyes_progress::ProgressPlugin::new(MyStates::Load));
+    app.add_loading_state(
         LoadingState::new(MyStates::Load)
             .continue_to_state(MyStates::Next)
             .load_collection::<AudioCollection>(),
@@ -48,7 +50,7 @@ fn expect(collection: Option<Res<AudioCollection>>, mut exit: EventWriter<AppExi
             "Expected path 'audio/plop.ogg' was not in {:?}",
             files
         );
-        exit.send(AppExit);
+        exit.send(AppExit::Success);
     }
 }
 

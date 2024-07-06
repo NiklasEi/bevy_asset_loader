@@ -42,14 +42,14 @@ impl AssetCollectionApp for App {
     where
         Collection: AssetCollection,
     {
-        if !self.world.contains_resource::<Collection>() {
+        if !self.world().contains_resource::<Collection>() {
             // This resource is required for loading a collection
             // Since bevy_asset_loader does not have a "real" Plugin,
             // we need to make sure the resource exists here
             self.init_resource::<DynamicAssets>();
             // make sure the assets start to load
-            let _ = Collection::load(&mut self.world);
-            let resource = Collection::create(&mut self.world);
+            let _ = Collection::load(self.world_mut());
+            let resource = Collection::create(self.world_mut());
             self.insert_resource(resource);
         }
         self

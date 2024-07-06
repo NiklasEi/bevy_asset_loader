@@ -1,16 +1,17 @@
 use crate::dynamic_asset::{DynamicAsset, DynamicAssetType};
 use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssets};
 use bevy::asset::{Asset, AssetServer, Assets, LoadedFolder, UntypedHandle};
-use bevy::ecs::system::Command;
-use bevy::ecs::world::World;
+use bevy::ecs::system::SystemState;
+use bevy::ecs::world::{Command, World};
 use bevy::reflect::TypePath;
 use bevy::utils::HashMap;
 use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "2d")]
-use bevy::math::Vec2;
+use bevy::math::UVec2;
 #[cfg(feature = "3d")]
 use bevy::pbr::StandardMaterial;
+use bevy::prelude::{Res, ResMut};
 #[cfg(feature = "2d")]
 use bevy::sprite::TextureAtlasLayout;
 
@@ -60,25 +61,25 @@ pub enum StandardDynamicAsset {
     #[cfg(feature = "2d")]
     TextureAtlasLayout {
         /// The image width in pixels
-        tile_size_x: f32,
+        tile_size_x: u32,
         /// The image height in pixels
-        tile_size_y: f32,
+        tile_size_y: u32,
         /// Columns on the sprite sheet
-        columns: usize,
+        columns: u32,
         /// Rows on the sprite sheet
-        rows: usize,
+        rows: u32,
         /// Padding between columns in pixels
         #[serde(with = "optional", skip_serializing_if = "Option::is_none", default)]
-        padding_x: Option<f32>,
+        padding_x: Option<u32>,
         /// Padding between rows in pixels
         #[serde(with = "optional", skip_serializing_if = "Option::is_none", default)]
-        padding_y: Option<f32>,
+        padding_y: Option<u32>,
         /// Number of pixels offset of the first tile
         #[serde(with = "optional", skip_serializing_if = "Option::is_none", default)]
-        offset_x: Option<f32>,
+        offset_x: Option<u32>,
         /// Number of pixels offset of the first tile
         #[serde(with = "optional", skip_serializing_if = "Option::is_none", default)]
-        offset_y: Option<f32>,
+        offset_y: Option<u32>,
     },
 }
 
@@ -162,21 +163,22 @@ impl DynamicAsset for StandardDynamicAsset {
     }
 
     fn build(&self, world: &mut World) -> Result<DynamicAssetType, anyhow::Error> {
-        let cell = world.cell();
-        let asset_server = cell
-            .get_resource::<AssetServer>()
-            .expect("Cannot get AssetServer");
         match self {
-            StandardDynamicAsset::File { path } => Ok(DynamicAssetType::Single(
-                asset_server.get_handle_untyped(path).unwrap(),
-            )),
+            StandardDynamicAsset::File { path } => {
+                let asset_server = world
+                    .get_resource::<AssetServer>()
+                    .expect("Cannot get AssetServer");
+                Ok(DynamicAssetType::Single(
+                    asset_server.get_handle_untyped(path).unwrap(),
+                ))
+            }
             #[cfg(any(feature = "3d", feature = "2d"))]
             StandardDynamicAsset::Image { path, sampler } => {
+                let mut system_state =
+                    SystemState::<(ResMut<Assets<Image>>, Res<AssetServer>)>::new(world);
+                let (mut images, asset_server) = system_state.get_mut(world);
                 let mut handle = asset_server.load(path);
                 if let Some(sampler) = sampler {
-                    let mut images = cell
-                        .get_resource_mut::<Assets<Image>>()
-                        .expect("Cannot get resource Assets<Image>");
                     Self::update_image_sampler(&mut handle, &mut images, sampler);
                 }
 
@@ -184,9 +186,9 @@ impl DynamicAsset for StandardDynamicAsset {
             }
             #[cfg(feature = "3d")]
             StandardDynamicAsset::StandardMaterial { path } => {
-                let mut materials = cell
-                    .get_resource_mut::<Assets<StandardMaterial>>()
-                    .expect("Cannot get resource Assets<StandardMaterial>");
+                let mut system_state =
+                    SystemState::<(ResMut<Assets<StandardMaterial>>, Res<AssetServer>)>::new(world);
+                let (mut materials, asset_server) = system_state.get_mut(world);
                 let handle = materials
                     .add(StandardMaterial::from(
                         asset_server.get_handle::<Image>(path).unwrap(),
@@ -206,43 +208,48 @@ impl DynamicAsset for StandardDynamicAsset {
                 offset_x,
                 offset_y,
             } => {
-                let mut atlases = cell
+                let mut atlases = world
                     .get_resource_mut::<Assets<TextureAtlasLayout>>()
-                    .expect("Cannot get resource Assets<TextureAtlasLayout>");
+                    .expect("Cannot get Assets<TextureAtlasLayout>");
                 let texture_atlas_handle = atlases
                     .add(TextureAtlasLayout::from_grid(
-                        Vec2::new(*tile_size_x, *tile_size_y),
+                        UVec2::new(*tile_size_x, *tile_size_y),
                         *columns,
                         *rows,
-                        Some(Vec2::new(padding_x.unwrap_or(0.), padding_y.unwrap_or(0.))),
-                        Some(Vec2::new(offset_x.unwrap_or(0.), offset_y.unwrap_or(0.))),
+                        Some(UVec2::new(padding_x.unwrap_or(0), padding_y.unwrap_or(0))),
+                        Some(UVec2::new(offset_x.unwrap_or(0), offset_y.unwrap_or(0))),
                     ))
                     .untyped();
 
                 Ok(DynamicAssetType::Single(texture_atlas_handle))
             }
             StandardDynamicAsset::Folder { path } => {
-                let folders = cell
-                    .get_resource_mut::<Assets<LoadedFolder>>()
-                    .expect("Cannot get resource Assets<LoadedFolder>");
+                let mut system_state =
+                    SystemState::<(Res<Assets<LoadedFolder>>, Res<AssetServer>)>::new(world);
+                let (folders, asset_server) = system_state.get(world);
                 Ok(DynamicAssetType::Collection(
                     folders
-                        .get(asset_server.get_handle(path).unwrap())
+                        .get(&asset_server.get_handle(path).unwrap())
                         .unwrap()
                         .handles
                         .to_vec(),
                 ))
             }
-            StandardDynamicAsset::Files { paths } => Ok(DynamicAssetType::Collection(
-                paths
-                    .iter()
-                    .map(|path| {
-                        asset_server
-                            .get_handle_untyped(path)
-                            .expect("No Handle for path")
-                    })
-                    .collect(),
-            )),
+            StandardDynamicAsset::Files { paths } => {
+                let asset_server = world
+                    .get_resource::<AssetServer>()
+                    .expect("Cannot get AssetServer");
+                Ok(DynamicAssetType::Collection(
+                    paths
+                        .iter()
+                        .map(|path| {
+                            asset_server
+                                .get_handle_untyped(path)
+                                .expect("No Handle for path")
+                        })
+                        .collect(),
+                ))
+            }
         }
     }
 }
@@ -407,11 +414,11 @@ mod tests {
     fn serialize_and_deserialize_atlas() {
         let dynamic_asset_file = r#"({
     "texture_atlas": TextureAtlasLayout(
-        tile_size_x: 96.0,
-        tile_size_y: 99.0,
+        tile_size_x: 96,
+        tile_size_y: 99,
         columns: 8,
         rows: 1,
-        padding_x: 42.42,
+        padding_x: 42,
     ),
 })"#;
         serialize_and_deserialize(dynamic_asset_file);
@@ -433,26 +440,26 @@ mod tests {
         let dynamic_asset_file = r#"({
     "layouts": [
         TextureAtlasLayout(
-            tile_size_x: 32.0,
-            tile_size_y: 32.0,
+            tile_size_x: 32,
+            tile_size_y: 32,
             columns: 12,
             rows: 12,
         ),
         TextureAtlasLayout(
-            tile_size_x: 32.0,
-            tile_size_y: 64.0,
+            tile_size_x: 32,
+            tile_size_y: 64,
             columns: 12,
             rows: 6,
         ),
         TextureAtlasLayout(
-            tile_size_x: 64.0,
-            tile_size_y: 32.0,
+            tile_size_x: 64,
+            tile_size_y: 32,
             columns: 6,
             rows: 12,
         ),
         TextureAtlasLayout(
-            tile_size_x: 64.0,
-            tile_size_y: 64.0,
+            tile_size_x: 64,
+            tile_size_y: 64,
             columns: 6,
             rows: 6,
         ),
