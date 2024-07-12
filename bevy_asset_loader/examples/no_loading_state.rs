@@ -33,8 +33,8 @@ fn load_audio(world: &mut World) {
     let mouse_input = world.get_resource::<ButtonInput<MouseButton>>().unwrap();
     if mouse_input.just_pressed(MouseButton::Left) {
         // Initialize the collection on the world.
-        // This will start loading the assets in this moment and directly inserts
-        // the collection as resource.
+        // This will start loading the assets at this moment and directly insert
+        // the collection as a resource.
         // This requires the extension trait `AssetCollectionWorld` to be in scope.
         world.init_collection::<AudioAssets>();
     }

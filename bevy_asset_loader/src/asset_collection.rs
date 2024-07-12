@@ -37,7 +37,7 @@ pub trait AssetCollectionApp {
     /// Initialise an [`AssetCollection`]
     ///
     /// This function does not give any guaranties about the loading status of the asset handles.
-    /// If you want to use a loading state, you do not need this function! Instead use an [`LoadingState`](crate::loading_state::LoadingState)
+    /// If you want to use a loading state, you do not need this function! Instead, use an [`LoadingState`](crate::loading_state::LoadingState)
     /// and add collections to it to be prepared during the loading state.
     fn init_collection<A: AssetCollection>(&mut self) -> &mut Self;
 }
