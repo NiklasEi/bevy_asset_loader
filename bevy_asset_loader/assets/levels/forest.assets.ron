@@ -1,0 +1,5 @@
+({
+    "image.background": File (
+        path: "levels/backgroundColorForest.png",
+    )
+})
