@@ -1,8 +1,8 @@
 use crate::dynamic_asset::DynamicAssets;
-use bevy::app::App;
-use bevy::asset::UntypedHandle;
-use bevy::ecs::system::Resource;
-use bevy::ecs::world::World;
+use bevy_app::App;
+use bevy_asset::UntypedHandle;
+use bevy_ecs::system::Resource;
+use bevy_ecs::world::World;
 
 pub use bevy_asset_loader_derive::AssetCollection;
 
