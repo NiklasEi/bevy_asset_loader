@@ -1,19 +1,19 @@
 use crate::dynamic_asset::{DynamicAsset, DynamicAssetType};
 use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssets};
 use bevy_asset::{Asset, AssetServer, Assets, LoadedFolder, UntypedHandle};
-use bevy_ecs::system::SystemState;
+use bevy_ecs::system::{Res, ResMut, SystemState};
 use bevy_ecs::world::{Command, World};
 use bevy_reflect::TypePath;
 use bevy_utils::HashMap;
 use serde::{Deserialize, Serialize};
 
-use bevy_ecs::system::{Res, ResMut};
 #[cfg(feature = "2d")]
 use bevy_math::UVec2;
-#[cfg(feature = "3d")]
-use bevy_pbr::StandardMaterial;
 #[cfg(feature = "2d")]
 use bevy_sprite::TextureAtlasLayout;
+
+#[cfg(feature = "3d")]
+use bevy_pbr::StandardMaterial;
 
 #[cfg(any(feature = "3d", feature = "2d"))]
 use bevy_render::texture::{Image, ImageSampler, ImageSamplerDescriptor};
