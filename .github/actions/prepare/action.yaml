@@ -1,5 +1,9 @@
 name: 'Prepare'
 description: 'Prepare action runner'
+inputs:
+  cache-key:
+    description: key for the cache
+    required: true
 runs:
   using: "composite"
   steps:
@@ -15,7 +19,7 @@ runs:
           ~/.cargo/registry/cache/
           ~/.cargo/git/db/
           target/
-        key: ${{ runner.os }}-cargo-test-${{ hashFiles('**/Cargo.toml') }}
+        key: ${{inputs.cache-key}}
     - uses: dtolnay/rust-toolchain@master
       with:
         toolchain: stable
