@@ -23,11 +23,7 @@ readme = "README.md"
 ]
 # This feature adds support for bevy's StandardMaterial assets
 3d = ["dep:bevy_pbr", "dep:bevy_render", "bevy_asset_loader_derive/3d"]
-standard_dynamic_assets = [
-    "dep:bevy_reflect",
-    "dep:bevy_common_assets",
-    "dep:serde",
-]
+standard_dynamic_assets = ["dep:bevy_common_assets", "dep:serde"]
 progress_tracking = ["dep:iyes_progress"]
 
 [dependencies]
@@ -37,7 +33,7 @@ bevy_ecs = "0.14"
 bevy_log = "0.14"
 bevy_math = { version = "0.14", optional = true }
 bevy_pbr = { version = "0.14", optional = true }
-bevy_reflect = { version = "0.14", optional = true }
+bevy_reflect = "0.14"
 bevy_render = { version = "0.14", optional = true }
 bevy_sprite = { version = "0.14", optional = true }
 bevy_state = "0.14"
