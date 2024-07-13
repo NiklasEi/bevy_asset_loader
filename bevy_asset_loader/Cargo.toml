@@ -15,10 +15,19 @@ readme = "README.md"
 
 [features]
 # This feature adds support for bevy's TextureAtlas assets
-2d = ["bevy/bevy_sprite", "bevy_asset_loader_derive/2d"]
+2d = [
+    "dep:bevy_math",
+    "dep:bevy_render",
+    "dep:bevy_sprite",
+    "bevy_asset_loader_derive/2d",
+]
 # This feature adds support for bevy's StandardMaterial assets
-3d = ["bevy/bevy_pbr", "bevy_asset_loader_derive/3d"]
-standard_dynamic_assets = ["dep:bevy_common_assets", "dep:serde"]
+3d = ["dep:bevy_pbr", "dep:bevy_render", "bevy_asset_loader_derive/3d"]
+standard_dynamic_assets = [
+    "dep:bevy_reflect",
+    "dep:bevy_common_assets",
+    "dep:serde",
+]
 progress_tracking = ["dep:iyes_progress"]
 
 [dependencies]
@@ -26,6 +35,11 @@ bevy_app = "0.14"
 bevy_asset = "0.14"
 bevy_ecs = "0.14"
 bevy_log = "0.14"
+bevy_math = { version = "0.14", optional = true }
+bevy_pbr = { version = "0.14", optional = true }
+bevy_reflect = { version = "0.14", optional = true }
+bevy_render = { version = "0.14", optional = true }
+bevy_sprite = { version = "0.14", optional = true }
 bevy_state = "0.14"
 bevy_utils = "0.14"
 bevy_asset_loader_derive = { version = "=0.21.0", path = "../bevy_asset_loader_derive" }
