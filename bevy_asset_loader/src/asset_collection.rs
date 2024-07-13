@@ -20,6 +20,11 @@ pub use bevy_asset_loader_derive::AssetCollection;
 ///     tree: Handle<Image>
 /// }
 /// ```
+#[diagnostic::on_unimplemented(
+    message = "`{Self}` is not an `AssetCollection`",
+    label = "invalid `AssetCollection`",
+    note = "consider annotating `{Self}` with `#[derive(AssetCollection)]`"
+)]
 pub trait AssetCollection: Resource {
     /// Create a new asset collection from the [`AssetServer`](::bevy::asset::AssetServer)
     fn create(world: &mut World) -> Self;
@@ -32,7 +37,7 @@ pub trait AssetCollectionApp {
     /// Initialise an [`AssetCollection`]
     ///
     /// This function does not give any guaranties about the loading status of the asset handles.
-    /// If you want to use a loading state, you do not need this function! Instead use an [`LoadingState`](crate::loading_state::LoadingState)
+    /// If you want to use a loading state, you do not need this function! Instead, use an [`LoadingState`](crate::loading_state::LoadingState)
     /// and add collections to it to be prepared during the loading state.
     fn init_collection<A: AssetCollection>(&mut self) -> &mut Self;
 }

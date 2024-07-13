@@ -62,6 +62,8 @@ impl ImageAttribute {
     pub const ATTRIBUTE_NAME: &'static str = "image";
     #[allow(dead_code)]
     pub const SAMPLER: &'static str = "sampler";
+    #[allow(dead_code)]
+    pub const LAYERS: &'static str = "array_texture_layers";
 }
 
 pub(crate) const COLLECTION_ATTRIBUTE: &str = "collection";
@@ -474,6 +476,20 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                                             errors.push(ParseFieldError::WrongAttributeType(
                                                 named_value.into_token_stream(),
                                                 "path",
+                                            ));
+                                        }
+                                    } else if path == ImageAttribute::LAYERS {
+                                        if let Expr::Lit(ExprLit {
+                                            lit: Lit::Int(layers),
+                                            ..
+                                        }) = &named_value.value
+                                        {
+                                            builder.array_texture_layers =
+                                                Some(layers.base10_parse::<u32>().unwrap());
+                                        } else {
+                                            errors.push(ParseFieldError::WrongAttributeType(
+                                                named_value.into_token_stream(),
+                                                "u32",
                                             ));
                                         }
                                     }

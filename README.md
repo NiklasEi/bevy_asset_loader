@@ -269,6 +269,33 @@ The corresponding dynamic asset would be
 })
 ```
 
+### Array images
+
+You can let `bevy_asset_loader` configure the layers of a texture array.
+
+```rust
+use bevy::prelude::*;
+use bevy_asset_loader::asset_collection::AssetCollection;
+
+#[derive(AssetCollection, Resource)]
+struct ImageAssets {
+    #[asset(path = "images/array_texture.png")]
+    #[asset(image(array_texture_layers = 4))]
+    array_texture: Handle<Image>,
+}
+```
+
+The corresponding dynamic asset would be
+
+```ron
+({
+    "array_texture": Image (
+        path: "images/array_texture.png",
+        array_texture_layers: 4
+    ),
+})
+```
+
 ### Standard materials
 
 You can directly load standard materials if you enable the feature `3d`. For a complete example please take a look at [standard_material.rs](/bevy_asset_loader/examples/standard_material.rs).
@@ -466,7 +493,7 @@ In most cases of failed loading states, an asset file is missing or a certain as
 
 Although the pattern of a loading state is quite nice (imo), you might have reasons not to use it. In this case, `bevy_asset_loader` can still be helpful. Deriving `AssetCollection` on a resource can significantly reduce the boilerplate for managing assets.
 
-Asset collections loaded without a loading state do not support folders or dynamic assets, since these cannot instantly create handles that will eventually point to the loaded assets.
+Asset collections loaded without a loading state do not support folders, dynamic assets, or the `iamge` annotation. This is because these features require some form of waiting (see [potential future support for these features](https://github.com/NiklasEi/bevy_asset_loader/issues/230)).
 
 You can directly initialise asset collections on the bevy `App` or `World`. See [no_loading_state.rs](/bevy_asset_loader/examples/no_loading_state.rs) for a complete example.
 
