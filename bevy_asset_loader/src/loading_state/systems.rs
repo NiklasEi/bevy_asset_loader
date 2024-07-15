@@ -1,9 +1,9 @@
-use bevy_asset::{AssetServer, LoadState};
+use bevy_asset::{AssetServer, RecursiveDependencyLoadState};
 use bevy_ecs::schedule::Schedules;
 use bevy_ecs::system::{Res, ResMut, Resource, SystemState};
 use bevy_ecs::world::{FromWorld, World};
 use bevy_log::{debug, info, trace, warn};
-use bevy_state::state::{FreelyMutableState, NextState, State};
+use bevy_state::state::{FreelyMutableState, State};
 use std::any::{type_name, TypeId};
 use std::marker::PhantomData;
 
@@ -107,15 +107,14 @@ fn count_loaded_handles<S: FreelyMutableState, Assets: AssetCollection>(
 
     let failure = loading_asset_handles.handles.iter().any(|handle| {
         matches!(
-            asset_server.get_load_state(handle.id()),
-            Some(LoadState::Failed(_))
+            asset_server.get_recursive_dependency_load_state(handle.id()),
+            Some(RecursiveDependencyLoadState::Failed)
         )
     });
     let done = loading_asset_handles
         .handles
         .iter()
-        .map(|handle| asset_server.get_load_state(handle.id()))
-        .filter(|state| state == &Some(LoadState::Loaded))
+        .filter(|handle| asset_server.is_loaded_with_dependencies(handle.id()))
         .count();
     if done < total && !failure {
         return (done as u32, total as u32);

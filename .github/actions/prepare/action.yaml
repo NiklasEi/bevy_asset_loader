@@ -1,0 +1,29 @@
+name: 'Prepare'
+description: 'Prepare action runner'
+inputs:
+  cache-key:
+    description: key for the cache
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: free up space in github runner
+      run: sudo docker rmi $(docker image ls -aq) >/dev/null 2>&1 || true; sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/share/powershell /usr/share/swift /usr/local/.ghcup /usr/lib/jvm || true; echo "some directories deleted"
+      shell: bash
+      if: runner.os == 'linux'
+    - uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{inputs.cache-key}}
+    - uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: stable
+    - name: Install alsa and udev
+      shell: bash
+      run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
+      if: runner.os == 'linux'
