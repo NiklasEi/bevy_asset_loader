@@ -10,12 +10,14 @@ use crate::loading_state::{
     InternalLoadingState, InternalLoadingStateSet, LoadingStateSchedule,
     OnEnterInternalLoadingState,
 };
-use bevy::app::App;
-use bevy::asset::Asset;
-use bevy::ecs::schedule::SystemConfigs;
-use bevy::prelude::{default, FromWorld, IntoSystemConfigs, Resource};
-use bevy::state::state::FreelyMutableState;
-use bevy::utils::HashMap;
+use bevy_app::App;
+use bevy_asset::Asset;
+use bevy_ecs::schedule::{IntoSystemConfigs, SystemConfigs};
+use bevy_ecs::system::Resource;
+use bevy_ecs::world::FromWorld;
+use bevy_state::state::FreelyMutableState;
+use bevy_utils::default;
+use bevy_utils::HashMap;
 use std::any::TypeId;
 
 /// Methods to configure a loading state
