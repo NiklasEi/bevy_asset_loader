@@ -3,7 +3,7 @@ use bevy_ecs::schedule::Schedules;
 use bevy_ecs::system::{Res, ResMut, Resource, SystemState};
 use bevy_ecs::world::{FromWorld, World};
 use bevy_log::{debug, info, trace, warn};
-use bevy_state::state::{FreelyMutableState, State};
+use bevy_state::state::{FreelyMutableState, NextState, State};
 use std::any::{type_name, TypeId};
 use std::marker::PhantomData;
 
