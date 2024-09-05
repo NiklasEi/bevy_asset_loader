@@ -1,11 +1,11 @@
-use bevy::utils::HashMap;
 use std::any::TypeId;
 use std::fmt::Debug;
 
-use bevy::asset::{Asset, AssetServer, UntypedHandle};
-use bevy::ecs::system::Resource;
-use bevy::ecs::world::World;
-use bevy::state::state::FreelyMutableState;
+use bevy_asset::{Asset, AssetServer, UntypedHandle};
+use bevy_ecs::system::Resource;
+use bevy_ecs::world::World;
+use bevy_state::state::FreelyMutableState;
+use bevy_utils::HashMap;
 use std::marker::PhantomData;
 
 /// Different typed that can generate the asset field value of a dynamic asset
