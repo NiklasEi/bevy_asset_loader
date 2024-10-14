@@ -245,12 +245,16 @@ use bevy_asset_loader::asset_collection::AssetCollection;
 #[derive(AssetCollection, Resource)]
 struct ImageAssets {
     #[asset(path = "images/pixel_tree.png")]
-    #[asset(image(sampler = linear))]
+    #[asset(image(sampler(filter = linear)))]
     tree_linear: Handle<Image>,
 
     #[asset(path = "images/pixel_tree.png")]
-    #[asset(image(sampler = nearest))]
+    #[asset(image(sampler(filter = nearest)))]
     tree_nearest: Handle<Image>,
+
+    #[asset(path = "images/pixel_tree.png")]
+    #[asset(image(sampler(filter = linear, repeat)))]
+    tree_linear_repeat: Handle<Image>,
 }
 ```
 
@@ -260,11 +264,18 @@ The corresponding dynamic asset would be
 ({
     "tree_nearest": Image (
         path: "images/tree.png",
-        sampler: Nearest
+        filter: Nearest,
+        wrap: Clamp
     ),
     "tree_linear": Image (
         path: "images/tree.png",
-        sampler: Linear
+        filter: Linear,
+        wrap: Clamp
+    ),
+    "tree_linear_repeat": Image (
+        path: "images/tree.png",
+        filter: Linear,
+        wrap: Repeat
     ),
 })
 ```

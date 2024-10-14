@@ -1,6 +1,7 @@
 use crate::{ParseFieldError, TextureAtlasAttribute};
 use proc_macro2::{Ident, TokenStream};
 use quote::quote;
+use syn::{spanned::Spanned, Lit, LitStr};
 
 #[derive(PartialEq, Debug)]
 pub(crate) struct TextureAtlasLayoutAssetField {
@@ -16,12 +17,12 @@ pub(crate) struct TextureAtlasLayoutAssetField {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub(crate) enum SamplerType {
+pub(crate) enum FilterType {
     Linear,
     Nearest,
 }
 
-impl TryFrom<String> for SamplerType {
+impl TryFrom<String> for FilterType {
     type Error = &'static str;
     fn try_from(value: String) -> Result<Self, Self::Error> {
         match value.as_str() {
@@ -32,11 +33,20 @@ impl TryFrom<String> for SamplerType {
     }
 }
 
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
+pub(crate) enum WrapMode {
+    #[default]
+    Clamp,
+    #[allow(dead_code)]
+    Repeat,
+}
+
 #[derive(PartialEq, Debug)]
 pub(crate) struct ImageAssetField {
     pub field_ident: Ident,
     pub asset_path: String,
-    pub sampler: Option<SamplerType>,
+    pub filter: Option<FilterType>,
+    pub wrap: Option<WrapMode>,
     pub array_texture_layers: Option<u32>,
 }
 
@@ -124,18 +134,19 @@ impl AssetField {
                 let field_ident = image.field_ident.clone();
                 let asset_path = image.asset_path.clone();
                 let layers = image.array_texture_layers.unwrap_or_default();
-                let sampler = match image.sampler {
-                    Some(SamplerType::Linear) | None => quote!(ImageSampler::linear()),
-                    Some(SamplerType::Nearest) => quote!(ImageSampler::nearest()),
+                let filter = match image.filter {
+                    Some(FilterType::Linear) | None => quote!(ImageFilterMode::Linear),
+                    Some(FilterType::Nearest) => quote!(ImageFilterMode::Nearest),
                 };
-                let descriptor = match image.sampler {
-                    Some(SamplerType::Linear) | None => quote!(ImageSamplerDescriptor::linear()),
-                    Some(SamplerType::Nearest) => quote!(ImageSamplerDescriptor::nearest()),
+                let wrap = match image.wrap {
+                    Some(WrapMode::Clamp) | None => quote!(ImageAddressMode::ClampToEdge),
+                    Some(WrapMode::Repeat) => quote!(ImageAddressMode::Repeat),
                 };
-                let is_sampler_set = image.sampler.is_some();
+                let is_sampler_set = image.filter.is_some() || image.wrap.is_some();
+                let label = Lit::Str(LitStr::new(&field_ident.to_string(), token_stream.span()));
 
                 quote!(#token_stream #field_ident : {
-                    use bevy::render::texture::{ImageSampler, ImageSamplerDescriptor};
+                    use bevy::render::texture::{ImageAddressMode, ImageFilterMode, ImageSampler, ImageSamplerDescriptor};
                     let mut system_state = ::bevy::ecs::system::SystemState::<(
                         ResMut<::bevy::prelude::Assets<::bevy::prelude::Image>>,
                         Res<::bevy::prelude::AssetServer>,
@@ -149,19 +160,30 @@ impl AssetField {
                         image.reinterpret_stacked_2d_as_array(#layers);
                     }
 
+                    let this_descriptor = ImageSamplerDescriptor {
+                        label: Some(#label.to_string()),
+                        address_mode_u: #wrap,
+                        address_mode_v: #wrap,
+                        address_mode_w: #wrap,
+                        mag_filter: #filter,
+                        min_filter: #filter,
+                        mipmap_filter: #filter,
+                        ..::std::default::Default::default()
+                    };
+
                     if (#is_sampler_set) {
                         let is_different_sampler = if let ImageSampler::Descriptor(descriptor) = &image.sampler {
-                            !descriptor.as_wgpu().eq(&#descriptor.as_wgpu())
+                            !descriptor.as_wgpu().eq(&this_descriptor.as_wgpu())
                         } else {
-                            false
+                            true
                         };
 
                         if is_different_sampler {
                             let mut cloned_image = image.clone();
-                            cloned_image.sampler = #sampler;
+                            cloned_image.sampler = ImageSampler::Descriptor(this_descriptor);
                             handle = images.add(cloned_image);
                         } else {
-                            image.sampler = #sampler;
+                            image.sampler = ImageSampler::Default;
                         }
                     }
 
@@ -539,7 +561,8 @@ pub(crate) struct AssetBuilder {
     pub padding_y: Option<u32>,
     pub offset_x: Option<u32>,
     pub offset_y: Option<u32>,
-    pub sampler: Option<SamplerType>,
+    pub filter: Option<FilterType>,
+    pub wrap: Option<WrapMode>,
     pub array_texture_layers: Option<u32>,
 }
 
@@ -665,11 +688,12 @@ impl AssetBuilder {
                 self.is_mapped.into(),
             ));
         }
-        if self.sampler.is_some() || self.array_texture_layers.is_some() {
+        if self.filter.is_some() || self.array_texture_layers.is_some() {
             return Ok(AssetField::Image(ImageAssetField {
                 field_ident: self.field_ident.unwrap(),
                 asset_path: self.asset_path.unwrap(),
-                sampler: self.sampler,
+                filter: self.filter,
+                wrap: self.wrap,
                 array_texture_layers: self.array_texture_layers,
             }));
         }
@@ -929,14 +953,16 @@ mod test {
         let builder_linear = AssetBuilder {
             field_ident: Some(Ident::new("test", Span::call_site())),
             asset_path: Some("some/image.png".to_owned()),
-            sampler: Some(SamplerType::Linear),
+            filter: Some(FilterType::Linear),
+            wrap: None,
             ..Default::default()
         };
 
         let builder_nearest = AssetBuilder {
             field_ident: Some(Ident::new("test", Span::call_site())),
             asset_path: Some("some/image.png".to_owned()),
-            sampler: Some(SamplerType::Nearest),
+            filter: Some(FilterType::Nearest),
+            wrap: None,
             ..Default::default()
         };
 
@@ -960,7 +986,8 @@ mod test {
             AssetField::Image(ImageAssetField {
                 field_ident: Ident::new("test", Span::call_site()),
                 asset_path: "some/image.png".to_owned(),
-                sampler: Some(SamplerType::Linear),
+                filter: Some(FilterType::Linear),
+                wrap: None,
                 array_texture_layers: None
             })
         );
@@ -969,7 +996,8 @@ mod test {
             AssetField::Image(ImageAssetField {
                 field_ident: Ident::new("test", Span::call_site()),
                 asset_path: "some/image.png".to_owned(),
-                sampler: Some(SamplerType::Nearest),
+                filter: Some(FilterType::Nearest),
+                wrap: None,
                 array_texture_layers: None
             })
         );
@@ -978,7 +1006,8 @@ mod test {
             AssetField::Image(ImageAssetField {
                 field_ident: Ident::new("test", Span::call_site()),
                 asset_path: "some/image.png".to_owned(),
-                sampler: None,
+                filter: None,
+                wrap: None,
                 array_texture_layers: Some(42)
             })
         );

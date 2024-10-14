@@ -18,11 +18,11 @@ fn main() {
 #[derive(AssetCollection, Resource)]
 struct ImageAssets {
     #[asset(path = "images/pixel_tree.png")]
-    #[asset(image(sampler = linear))]
+    #[asset(image(sampler(filter = linear)))]
     tree_linear: Handle<Image>,
 
     #[asset(path = "images/pixel_tree.png")]
-    #[asset(image(sampler = nearest))]
+    #[asset(image(sampler(filter = nearest)))]
     tree_nearest: Handle<Image>,
 
     #[asset(path = "images/array_texture.png")]
