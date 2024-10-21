@@ -205,15 +205,15 @@ pub(crate) fn run_loading_state<S: FreelyMutableState>(world: &mut World) {
 }
 
 pub fn apply_internal_state_transition<S: FreelyMutableState>(world: &mut World) {
-    let state = world.resource::<State<S>>().get().clone();
     let next_state = world.remove_resource::<NextState<InternalLoadingState<S>>>();
     match next_state {
         Some(NextState::Pending(entered_state)) => {
             let exited_state = world.remove_resource::<State<InternalLoadingState<S>>>();
             world.insert_resource(State::new(entered_state.clone()));
             trace!(
-            "Switching internal state of loading state from {exited_state:?} to {entered_state:?}"
-        );
+                "Switching internal state of loading state from {exited_state:?} to {entered_state:?}"
+            );
+            let state = world.resource::<State<S>>().get().clone();
             if world
                 .resource::<Schedules>()
                 .contains(OnEnterInternalLoadingState(
