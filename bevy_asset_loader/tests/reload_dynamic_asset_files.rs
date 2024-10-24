@@ -79,7 +79,7 @@ fn splash_countdown(
 }
 
 fn timeout(time: Res<Time>) {
-    if time.elapsed_seconds_f64() > 30. {
+    if time.elapsed_secs_f64() > 30. {
         panic!("The app did not finish in 30 seconds");
     }
 }

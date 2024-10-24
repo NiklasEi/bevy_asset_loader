@@ -50,7 +50,7 @@ fn use_loading_assets(assets: Res<MyAssets>, asset_server: Res<AssetServer>) {
 }
 
 fn timeout(time: Res<Time>) {
-    if time.elapsed_seconds_f64() > 30. {
+    if time.elapsed_secs_f64() > 30. {
         panic!("The app did not finish in 30 seconds");
     }
 }

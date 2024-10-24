@@ -1,5 +1,6 @@
 # Changelog
 
+- support for Bevy 0.15
 - custom `on_unimplemented` diagnostics for the `AssetCollection` trait
 - image derive attribute `array_texture_layers`
 - wait for dependencies of assets to load 

@@ -1,4 +1,4 @@
-use bevy::asset::{AssetServer, RecursiveDependencyLoadState};
+use bevy::asset::AssetServer;
 use bevy::ecs::system::SystemState;
 use bevy::ecs::world::{FromWorld, World};
 use bevy::log::{debug, info, trace, warn};
@@ -106,10 +106,10 @@ fn count_loaded_handles<S: FreelyMutableState, Assets: AssetCollection>(
     let total = loading_asset_handles.handles.len();
 
     let failure = loading_asset_handles.handles.iter().any(|handle| {
-        matches!(
-            asset_server.get_recursive_dependency_load_state(handle.id()),
-            Some(RecursiveDependencyLoadState::Failed)
-        )
+        asset_server
+            .get_recursive_dependency_load_state(handle.id())
+            .map(|state| state.is_failed())
+            .unwrap_or(false)
     });
     let done = loading_asset_handles
         .handles

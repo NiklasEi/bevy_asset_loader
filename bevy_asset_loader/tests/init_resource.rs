@@ -30,7 +30,7 @@ fn init_resource() {
 }
 
 fn timeout(time: Res<Time>) {
-    if time.elapsed_seconds_f64() > 10. {
+    if time.elapsed_secs_f64() > 10. {
         panic!("The asset loader did not change the state in 10 seconds");
     }
 }

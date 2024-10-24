@@ -26,46 +26,45 @@ fn main() {
 }
 
 fn render_stuff(mut commands: Commands, assets: Res<MyAssets>) {
-    commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
-        ..Camera3dBundle::default()
-    });
-    commands.spawn(PbrBundle {
-        mesh: assets.cube.clone(),
-        material: assets.tree_standard_material.clone(),
-        transform: Transform::from_xyz(-1., 0., 1.),
-        ..default()
-    });
-    commands.spawn(PbrBundle {
-        mesh: assets.cube.clone(),
-        material: assets.player_standard_material.clone(),
-        transform: Transform::from_xyz(1., 0., 1.),
-        ..default()
-    });
-    commands.spawn(PointLightBundle {
-        point_light: PointLight {
+    commands.spawn((
+        Camera3d::default(),
+        Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
+    ));
+    commands.spawn((
+        Mesh3d(assets.cube.clone()),
+        MeshMaterial3d(assets.tree_standard_material.clone()),
+        Transform::from_xyz(-1., 0., 1.),
+    ));
+    commands.spawn((
+        Mesh3d(assets.cube.clone()),
+        MeshMaterial3d(assets.player_standard_material.clone()),
+        Transform::from_xyz(1., 0., 1.),
+    ));
+    commands.spawn((
+        PointLight {
             intensity: 1500.0,
             shadows_enabled: true,
             ..default()
         },
-        transform: Transform::from_xyz(4.0, 8.0, 4.0),
-        ..default()
-    });
+        Transform::from_xyz(4.0, 8.0, 4.0),
+    ));
 
-    commands.spawn(Camera2dBundle {
-        camera: Camera {
+    commands.spawn((
+        Camera2d,
+        Camera {
             order: 1,
             clear_color: ClearColorConfig::None,
             ..default()
         },
-        ..default()
-    });
+    ));
     // Combined image as sprite
-    commands.spawn(SpriteBundle {
-        texture: assets.combined_image.clone(),
-        transform: Transform::from_xyz(0.0, 200.0, 0.0),
-        ..default()
-    });
+    commands.spawn((
+        Sprite {
+            image: assets.combined_image.clone(),
+            ..default()
+        },
+        Transform::from_xyz(0.0, 200.0, 0.0),
+    ));
 }
 
 #[derive(AssetCollection, Resource)]
