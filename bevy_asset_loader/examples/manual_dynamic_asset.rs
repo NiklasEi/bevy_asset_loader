@@ -213,7 +213,7 @@ fn menu(mut commands: Commands, font_assets: Res<FontAssets>) {
 }
 
 fn text(bundle: impl Bundle, font_assets: &FontAssets) -> impl Bundle {
-    return (
+    (
         bundle,
         TextFont {
             font: font_assets.fira_sans.clone(),
@@ -222,7 +222,7 @@ fn text(bundle: impl Bundle, font_assets: &FontAssets) -> impl Bundle {
         },
         TextColor(Color::linear_rgb(1., 1., 1.)),
         TextLayout::new_with_justify(JustifyText::Center),
-    );
+    )
 }
 
 fn update_menu(
