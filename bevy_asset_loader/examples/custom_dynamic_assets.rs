@@ -59,10 +59,7 @@ fn render_stuff(mut commands: Commands, assets: Res<MyAssets>) {
     ));
     // Combined image as sprite
     commands.spawn((
-        Sprite {
-            image: assets.combined_image.clone(),
-            ..default()
-        },
+        Sprite::from_image(assets.combined_image.clone()),
         Transform::from_xyz(0.0, 200.0, 0.0),
     ));
 }

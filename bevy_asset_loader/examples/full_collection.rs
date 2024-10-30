@@ -1,5 +1,5 @@
 use bevy::app::AppExit;
-use bevy::asset::{RecursiveDependencyLoadState, UntypedAssetId};
+use bevy::asset::UntypedAssetId;
 use bevy::prelude::*;
 use bevy::render::texture::{ImageSampler, ImageSamplerDescriptor};
 use bevy::utils::HashMap;

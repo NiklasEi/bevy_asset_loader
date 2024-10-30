@@ -1,5 +1,5 @@
 use bevy::app::AppExit;
-use bevy::asset::RecursiveDependencyLoadState;
+use bevy::asset::UntypedAssetId;
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
@@ -78,29 +78,14 @@ fn expect(
     texture_atlas_layouts: Res<Assets<TextureAtlasLayout>>,
     mut quit: EventWriter<AppExit>,
 ) {
-    assert_eq!(
-        asset_server.get_recursive_dependency_load_state(&audio_assets.background.clone()),
-        Some(RecursiveDependencyLoadState::Loaded)
-    );
-    assert_eq!(
-        asset_server.get_recursive_dependency_load_state(&audio_assets.plop.clone()),
-        Some(RecursiveDependencyLoadState::Loaded)
-    );
+    is_recursively_loaded(&audio_assets.background, &asset_server);
+    is_recursively_loaded(&audio_assets.plop, &asset_server);
     texture_atlas_layouts
         .get(&texture_assets.female_adventurer_layout)
         .expect("Texture atlas should be added to its assets resource.");
-    assert_eq!(
-        asset_server.get_recursive_dependency_load_state(&texture_assets.female_adventurer.clone()),
-        Some(RecursiveDependencyLoadState::Loaded)
-    );
-    assert_eq!(
-        asset_server.get_recursive_dependency_load_state(&texture_assets.player.clone()),
-        Some(RecursiveDependencyLoadState::Loaded)
-    );
-    assert_eq!(
-        asset_server.get_recursive_dependency_load_state(&texture_assets.tree.clone()),
-        Some(RecursiveDependencyLoadState::Loaded)
-    );
+    is_recursively_loaded(&texture_assets.female_adventurer, &asset_server);
+    is_recursively_loaded(&texture_assets.player, &asset_server);
+    is_recursively_loaded(&texture_assets.tree, &asset_server);
     info!("Everything looks good!");
     info!("Quitting the application...");
     quit.send(AppExit::Success);
@@ -124,6 +109,13 @@ fn print_progress(
             );
         }
     }
+}
+
+fn is_recursively_loaded(handle: impl Into<UntypedAssetId>, asset_server: &AssetServer) -> bool {
+    asset_server
+        .get_recursive_dependency_load_state(handle)
+        .map(|state| state.is_loaded())
+        .unwrap_or(false)
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]

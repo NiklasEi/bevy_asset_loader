@@ -68,12 +68,11 @@ impl FromWorld for ExampleResource {
 }
 
 fn spawn_player(mut commands: Commands, image_assets: Res<ImageAssets>) {
-    commands.spawn(Camera2dBundle::default());
-    commands.spawn(SpriteBundle {
-        texture: image_assets.player.clone(),
-        transform: Transform::from_translation(Vec3::new(0., 0., 1.)),
-        ..Default::default()
-    });
+    commands.spawn(Camera2d);
+    commands.spawn((
+        Sprite::from_image(image_assets.player.clone()),
+        Transform::from_translation(Vec3::new(0., 0., 1.)),
+    ));
 }
 
 fn play_background_audio(mut commands: Commands, audio_assets: Res<AudioAssets>) {
