@@ -3,7 +3,7 @@ use bevy::asset::UntypedAssetId;
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
-use iyes_progress::{Progress, ProgressCounter, ProgressPlugin, ProgressSystem};
+use iyes_progress::{Progress, ProgressPlugin, ProgressReturningSystem, ProgressTracker};
 
 /// This example shows how to track the loading progress of your collections using `iyes_progress`
 ///
@@ -16,7 +16,8 @@ fn main() {
         .add_plugins((
             DefaultPlugins,
             // track progress during `MyStates::AssetLoading` and continue to `MyStates::Next` when progress is completed
-            ProgressPlugin::new(MyStates::AssetLoading).continue_to(MyStates::Next),
+            ProgressPlugin::<MyStates>::new()
+                .with_state_transition(MyStates::AssetLoading, MyStates::Next),
             FrameTimeDiagnosticsPlugin,
         ))
         .init_state::<MyStates>()
@@ -29,7 +30,10 @@ fn main() {
         .add_systems(OnEnter(MyStates::Next), expect)
         .add_systems(
             Update,
-            (track_fake_long_task.track_progress(), print_progress)
+            (
+                track_fake_long_task.track_progress::<MyStates>(),
+                print_progress,
+            )
                 .chain()
                 .run_if(in_state(MyStates::AssetLoading))
                 .after(LoadingStateSet(MyStates::AssetLoading)),
@@ -92,22 +96,21 @@ fn expect(
 }
 
 fn print_progress(
-    progress: Option<Res<ProgressCounter>>,
+    progress: Res<ProgressTracker<MyStates>>,
     diagnostics: Res<DiagnosticsStore>,
     mut last_done: Local<u32>,
 ) {
-    if let Some(progress) = progress.map(|counter| counter.progress()) {
-        if progress.done > *last_done {
-            *last_done = progress.done;
-            info!(
-                "[Frame {}] Changed progress: {:?}",
-                diagnostics
-                    .get(&FrameTimeDiagnosticsPlugin::FRAME_COUNT)
-                    .map(|diagnostic| diagnostic.value().unwrap_or(0.))
-                    .unwrap_or(0.),
-                progress
-            );
-        }
+    let progress = progress.get_global_progress();
+    if progress.done > *last_done {
+        *last_done = progress.done;
+        info!(
+            "[Frame {}] Changed progress: {:?}",
+            diagnostics
+                .get(&FrameTimeDiagnosticsPlugin::FRAME_COUNT)
+                .map(|diagnostic| diagnostic.value().unwrap_or(0.))
+                .unwrap_or(0.),
+            progress
+        );
     }
 }
 

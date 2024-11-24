@@ -1,20 +1,20 @@
+use crate::asset_collection::AssetCollection;
+#[cfg(feature = "progress_tracking")]
+use crate::loading_state::{AssetCollectionsProgressId, LoadingStateProgressId};
+use crate::loading_state::{
+    AssetLoaderConfiguration, InternalLoadingState, LoadingAssetHandles, LoadingStateSchedule,
+    OnEnterInternalLoadingState,
+};
 use bevy::asset::AssetServer;
 use bevy::ecs::system::SystemState;
 use bevy::ecs::world::{FromWorld, World};
 use bevy::log::{debug, info, trace, warn};
 use bevy::prelude::{NextState, Res, ResMut, Resource, Schedules};
 use bevy::state::state::{FreelyMutableState, State};
+#[cfg(feature = "progress_tracking")]
+use iyes_progress::{ProgressEntryId, ProgressTracker};
 use std::any::{type_name, TypeId};
 use std::marker::PhantomData;
-
-#[cfg(feature = "progress_tracking")]
-use iyes_progress::{HiddenProgress, Progress, ProgressCounter};
-
-use crate::asset_collection::AssetCollection;
-use crate::loading_state::{
-    AssetLoaderConfiguration, InternalLoadingState, LoadingAssetHandles, LoadingStateSchedule,
-    OnEnterInternalLoadingState,
-};
 
 pub(crate) fn init_resource<Asset: Resource + FromWorld>(world: &mut World) {
     let asset = Asset::from_world(world);
@@ -53,6 +53,11 @@ pub(crate) fn start_loading_collection<S: FreelyMutableState, Assets: AssetColle
         marker: PhantomData::<Assets>,
     };
     world.insert_resource(handles);
+
+    #[cfg(feature = "progress_tracking")]
+    world.insert_resource(AssetCollectionsProgressId::<S, Assets>::new(
+        ProgressEntryId::new(),
+    ));
 }
 
 #[allow(clippy::type_complexity)]
@@ -79,20 +84,17 @@ pub(crate) fn check_loading_collection<S: FreelyMutableState, Assets: AssetColle
             &asset_server,
             &mut asset_loader_configuration,
         );
+        #[cfg(feature = "progress_tracking")]
+        {
+            let entry_id = world.resource::<AssetCollectionsProgressId<S, Assets>>().id;
+            world
+                .resource::<ProgressTracker<S>>()
+                .set_progress(entry_id, done, total);
+        }
         if total == done {
             let asset_collection = Assets::create(world);
             world.insert_resource(asset_collection);
             world.remove_resource::<LoadingAssetHandles<Assets>>();
-
-            #[cfg(feature = "progress_tracking")]
-            world
-                .resource_mut::<ProgressCounter>()
-                .persist_progress(Progress { done, total });
-        } else {
-            #[cfg(feature = "progress_tracking")]
-            world
-                .resource::<ProgressCounter>()
-                .manually_track(Progress { done, total });
         }
     }
 }
@@ -160,22 +162,24 @@ pub(crate) fn resume_to_finalize<S: FreelyMutableState>(
 
 pub(crate) fn initialize_loading_state<S: FreelyMutableState>(
     mut loading_state: ResMut<NextState<InternalLoadingState<S>>>,
-    #[cfg(feature = "progress_tracking")] mut progress_counter: ResMut<ProgressCounter>,
+    #[cfg(feature = "progress_tracking")] tracking_id: Res<LoadingStateProgressId<S>>,
+    #[cfg(feature = "progress_tracking")] tracker: Res<ProgressTracker<S>>,
 ) {
     #[cfg(feature = "progress_tracking")]
-    progress_counter.persist_progress_hidden(HiddenProgress(Progress { total: 1, done: 0 }));
+    tracker.set_total(tracking_id.id, 1);
     loading_state.set(InternalLoadingState::LoadingDynamicAssetCollections);
 }
 
 pub(crate) fn finish_loading_state<S: FreelyMutableState>(
     state: Res<State<S>>,
     mut next_state: ResMut<NextState<S>>,
-    #[cfg(feature = "progress_tracking")] mut progress_counter: ResMut<ProgressCounter>,
+    #[cfg(feature = "progress_tracking")] tracking_id: Res<LoadingStateProgressId<S>>,
+    #[cfg(feature = "progress_tracking")] tracker: Res<ProgressTracker<S>>,
     mut loading_state: ResMut<NextState<InternalLoadingState<S>>>,
     asset_loader_configuration: Res<AssetLoaderConfiguration<S>>,
 ) {
     #[cfg(feature = "progress_tracking")]
-    progress_counter.persist_progress_hidden(HiddenProgress(Progress { total: 0, done: 1 }));
+    tracker.set_done(tracking_id.id, 1);
     info!(
         "Loading state '{}::{:?}' is done",
         type_name::<S>(),
