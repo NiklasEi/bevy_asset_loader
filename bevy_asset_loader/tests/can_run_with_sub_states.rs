@@ -15,25 +15,29 @@ fn can_run_with_sub_states() {
         AudioPlugin::default(),
         StatesPlugin,
     ));
-    app.init_state::<MyStates>();
+    app.init_state::<AppState>();
     app.add_sub_state::<MainMenuState>();
     #[cfg(feature = "progress_tracking")]
     app.add_plugins(iyes_progress::ProgressPlugin::new(MainMenuState::Loading));
-    app.add_loading_state(LoadingState::new(MainMenuState::Loading).load_collection::<MyAssets>())
-        .init_resource::<TestState>()
-        .add_systems(
-            Update,
-            (
-                load_main_menu.run_if(in_state(MyStates::Load)),
-                expect.run_if(in_state(MainMenuState::Loading)),
-                timeout.run_if(in_state(MainMenuState::Loading)),
-            ),
-        )
-        .run();
+    app.add_loading_state(
+        LoadingState::new(MainMenuState::Loading)
+            .continue_to_state(MainMenuState::Active)
+            .load_collection::<MyAssets>(),
+    )
+    .init_resource::<TestState>()
+    .add_systems(
+        Update,
+        (
+            load_main_menu.run_if(in_state(AppState::Load)),
+            expect.run_if(in_state(MainMenuState::Active)),
+            timeout.run_if(in_state(MainMenuState::Loading)),
+        ),
+    )
+    .run();
 }
 
-fn load_main_menu(mut state: ResMut<NextState<MyStates>>) {
-    state.set(MyStates::MainMenu);
+fn load_main_menu(mut state: ResMut<NextState<AppState>>) {
+    state.set(AppState::MainMenu);
 }
 
 fn timeout(time: Res<Time>) {
@@ -77,14 +81,14 @@ struct MyAssets {
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
-enum MyStates {
+enum AppState {
     #[default]
     Load,
     MainMenu,
 }
 
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, SubStates)]
-#[source(MyStates = MyStates::MainMenu)]
+#[source(AppState = AppState::MainMenu)]
 enum MainMenuState {
     #[default]
     Loading,
@@ -93,9 +97,5 @@ enum MainMenuState {
         reason = "not used in test, but useful to show how to use it"
     )]
     Error,
-    #[expect(
-        dead_code,
-        reason = "not used in test, but useful to show how to use it"
-    )]
     Active,
 }
