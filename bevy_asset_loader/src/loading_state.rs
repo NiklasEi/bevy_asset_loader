@@ -69,10 +69,7 @@ use crate::loading_state::systems::{apply_internal_state_transition, run_loading
 /// }
 ///
 /// fn play_audio(mut commands: Commands, audio_assets: Res<AudioAssets>) {
-///     commands.spawn(AudioBundle {
-///         source: audio_assets.background.clone(),
-///         ..default()
-///     });
+///     commands.spawn(AudioPlayer(audio_assets.background.clone()));
 /// }
 ///
 /// #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
