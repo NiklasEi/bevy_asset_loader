@@ -87,9 +87,9 @@ pub(crate) fn check_loading_collection<S: FreelyMutableState, Assets: AssetColle
         #[cfg(feature = "progress_tracking")]
         {
             let entry_id = world.resource::<AssetCollectionsProgressId<S, Assets>>().id;
-            world
-                .resource::<ProgressTracker<S>>()
-                .set_progress(entry_id, done, total);
+            if let Some(tracker) = world.get_resource::<ProgressTracker<S>>() {
+                tracker.set_progress(entry_id, done, total);
+            }
         }
         if total == done {
             let asset_collection = Assets::create(world);
@@ -163,10 +163,12 @@ pub(crate) fn resume_to_finalize<S: FreelyMutableState>(
 pub(crate) fn initialize_loading_state<S: FreelyMutableState>(
     mut loading_state: ResMut<NextState<InternalLoadingState<S>>>,
     #[cfg(feature = "progress_tracking")] tracking_id: Res<LoadingStateProgressId<S>>,
-    #[cfg(feature = "progress_tracking")] tracker: Res<ProgressTracker<S>>,
+    #[cfg(feature = "progress_tracking")] tracker: Option<Res<ProgressTracker<S>>>,
 ) {
     #[cfg(feature = "progress_tracking")]
-    tracker.set_total(tracking_id.id, 1);
+    if let Some(tracker) = tracker {
+        tracker.set_total(tracking_id.id, 1);
+    }
     loading_state.set(InternalLoadingState::LoadingDynamicAssetCollections);
 }
 
@@ -174,12 +176,14 @@ pub(crate) fn finish_loading_state<S: FreelyMutableState>(
     state: Res<State<S>>,
     mut next_state: ResMut<NextState<S>>,
     #[cfg(feature = "progress_tracking")] tracking_id: Res<LoadingStateProgressId<S>>,
-    #[cfg(feature = "progress_tracking")] tracker: Res<ProgressTracker<S>>,
+    #[cfg(feature = "progress_tracking")] tracker: Option<Res<ProgressTracker<S>>>,
     mut loading_state: ResMut<NextState<InternalLoadingState<S>>>,
     asset_loader_configuration: Res<AssetLoaderConfiguration<S>>,
 ) {
     #[cfg(feature = "progress_tracking")]
-    tracker.set_done(tracking_id.id, 1);
+    if let Some(tracker) = tracker {
+        tracker.set_done(tracking_id.id, 1);
+    }
     info!(
         "Loading state '{}::{:?}' is done",
         type_name::<S>(),

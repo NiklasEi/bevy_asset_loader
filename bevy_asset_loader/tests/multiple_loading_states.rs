@@ -15,11 +15,6 @@ fn multiple_loading_states() {
         StatesPlugin,
     ));
     app.init_state::<MyStates>();
-    #[cfg(feature = "progress_tracking")]
-    app.add_plugins((
-        iyes_progress::ProgressPlugin::new(MyStates::Splash),
-        iyes_progress::ProgressPlugin::new(MyStates::Load),
-    ));
     app.add_loading_state(
         LoadingState::new(MyStates::Splash)
             .continue_to_state(MyStates::Load)

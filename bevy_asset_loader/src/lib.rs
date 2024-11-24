@@ -15,7 +15,6 @@
 //!         .add_plugins(DefaultPlugins)
 //! # */
 //! #       .add_plugins((MinimalPlugins, AssetPlugin::default(), StatesPlugin))
-//! #       .init_resource::<iyes_progress::ProgressCounter>()
 //!         .init_state::<GameState>()
 //!         .add_loading_state(
 //!             LoadingState::new(GameState::Loading)

@@ -15,8 +15,6 @@ fn same_collection_multiple_times() {
         StatesPlugin,
     ));
     app.init_state::<MyStates>();
-    #[cfg(feature = "progress_tracking")]
-    app.add_plugins(iyes_progress::ProgressPlugin::new(MyStates::Load));
     app.add_loading_state(
         LoadingState::new(MyStates::Load)
             .continue_to_state(MyStates::Play)
