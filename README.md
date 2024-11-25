@@ -253,7 +253,7 @@ struct ImageAssets {
     tree_nearest: Handle<Image>,
 
     #[asset(path = "images/pixel_tree.png")]
-    #[asset(image(sampler(filter = linear, repeat)))]
+    #[asset(image(sampler(filter = linear, wrap = repeat)))]
     tree_linear_repeat: Handle<Image>,
 }
 ```

@@ -72,9 +72,7 @@ impl SamplerAttribute {
     #[allow(dead_code)]
     pub const FILTER: &'static str = "filter";
     #[allow(dead_code)]
-    pub const CLAMP: &'static str = "clamp";
-    #[allow(dead_code)]
-    pub const REPEAT: &'static str = "repeat";
+    pub const WRAP: &'static str = "wrap";
 }
 
 pub(crate) const COLLECTION_ATTRIBUTE: &str = "collection";
@@ -510,28 +508,41 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                                                             );
                                                         }
                                                     }
-                                                }
-                                                Meta::Path(path) => {
-                                                    let path = path.get_ident().unwrap().clone();
-                                                    if path == SamplerAttribute::CLAMP {
-                                                        builder.wrap = Some(WrapMode::Clamp);
-                                                    } else if path == SamplerAttribute::REPEAT {
-                                                        builder.wrap = Some(WrapMode::Repeat);
-                                                    } else {
-                                                        errors.push(
-                                                            ParseFieldError::UnknownAttribute(
-                                                                path.into_token_stream(),
-                                                            ),
-                                                        );
+                                                    if path == SamplerAttribute::WRAP {
+                                                        if let Expr::Path(ExprPath {
+                                                            path, ..
+                                                        }) = &named_value.value
+                                                        {
+                                                            let wrap_result = WrapMode::try_from(
+                                                                path.get_ident()
+                                                                    .unwrap()
+                                                                    .to_string(),
+                                                            );
+
+                                                            if let Ok(wrap) = wrap_result {
+                                                                builder.wrap = Some(wrap);
+                                                            } else {
+                                                                errors.push(ParseFieldError::UnknownAttribute(
+                                                                    named_value.value.clone().into_token_stream(),
+                                                                ));
+                                                            }
+                                                        } else {
+                                                            errors.push(
+                                                                ParseFieldError::WrongAttributeType(
+                                                                    named_value.into_token_stream(),
+                                                                    "path",
+                                                                ),
+                                                            );
+                                                        }
                                                     }
                                                 }
-                                                Meta::List(_) => {
+                                                Meta::List(_) | Meta::Path(_) => {
                                                     errors.push(
                                                         ParseFieldError::WrongAttributeType(
                                                             sampler_meta_list
                                                                 .clone()
                                                                 .into_token_stream(),
-                                                            "name-value or path",
+                                                            "name-value",
                                                         ),
                                                     );
                                                 }

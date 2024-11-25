@@ -32,6 +32,7 @@
         Image(
             path: "images/female_adventurer_sheet.png",
             sampler: Nearest,
+            wrap: Repeat,
         ),
         Image(
             path: "images/female_adventurer_sheet.png",

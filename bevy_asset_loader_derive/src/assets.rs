@@ -33,12 +33,21 @@ impl TryFrom<String> for FilterType {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub(crate) enum WrapMode {
-    #[default]
     Clamp,
-    #[allow(dead_code)]
     Repeat,
+}
+
+impl TryFrom<String> for WrapMode {
+    type Error = &'static str;
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        match value.as_str() {
+            "clamp" => Ok(Self::Clamp),
+            "repeat" => Ok(Self::Repeat),
+            _ => Err("Value must be either `clamp` or `repeat`"),
+        }
+    }
 }
 
 #[derive(PartialEq, Debug)]
