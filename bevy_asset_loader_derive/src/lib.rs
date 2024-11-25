@@ -170,7 +170,7 @@ fn impl_asset_collection(
         }
     } else {
         return Err(vec![syn::Error::new_spanned(
-            &ast.into_token_stream(),
+            ast.into_token_stream(),
             "AssetCollection can only be derived for a struct",
         )]);
     }
