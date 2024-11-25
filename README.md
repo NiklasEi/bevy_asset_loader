@@ -45,10 +45,7 @@ struct AudioAssets {
 /// This system runs in MyStates::Next. Thus, AudioAssets is available as a resource
 /// and the contained handle is done loading.
 fn start_background_audio(mut commands: Commands, audio_assets: Res<AudioAssets>) {
-    commands.spawn(AudioBundle {
-        source: audio_assets.background.clone(),
-        settings: PlaybackSettings::LOOP,
-    });
+    commands.spawn((AudioPlayer(audio_assets.background.clone()), PlaybackSettings::LOOP));
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]

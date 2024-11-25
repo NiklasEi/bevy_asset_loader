@@ -29,17 +29,16 @@ fn spawn_player(
     my_assets: Res<MyAssets>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
-    commands.spawn(PbrBundle {
-        mesh: meshes.add(Cuboid {
+    commands.spawn((
+        MeshMaterial3d(my_assets.player.clone()),
+        Mesh3d(meshes.add(Cuboid {
             half_size: Vec3::splat(1.0),
-        }),
-        material: my_assets.player.clone(),
-        ..Default::default()
-    });
-    commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(-3.0, 3.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
-        ..Default::default()
-    });
+        })),
+    ));
+    commands.spawn((
+        Camera3d::default(),
+        Transform::from_xyz(-3.0, 3.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
+    ));
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]

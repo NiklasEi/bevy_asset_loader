@@ -31,25 +31,28 @@ struct ImageAssets {
 }
 
 fn draw(mut commands: Commands, image_assets: Res<ImageAssets>) {
-    commands.spawn(Camera2dBundle {
-        projection: OrthographicProjection {
+    commands.spawn((
+        Camera2d,
+        OrthographicProjection {
             far: 1000.,
-            near: -1000.,
             scale: 0.25,
-            ..default()
+            ..OrthographicProjection::default_2d()
         },
-        ..default()
-    });
-    commands.spawn(SpriteBundle {
-        texture: image_assets.tree_linear.clone(),
-        transform: Transform::from_translation(Vec3::new(-50., 0., 1.)),
-        ..Default::default()
-    });
-    commands.spawn(SpriteBundle {
-        texture: image_assets.tree_nearest.clone(),
-        transform: Transform::from_translation(Vec3::new(50., 0., 1.)),
-        ..Default::default()
-    });
+    ));
+    commands.spawn((
+        Sprite {
+            image: image_assets.tree_linear.clone(),
+            ..Default::default()
+        },
+        Transform::from_translation(Vec3::new(-50., 0., 1.)),
+    ));
+    commands.spawn((
+        Sprite {
+            image: image_assets.tree_nearest.clone(),
+            ..Default::default()
+        },
+        Transform::from_translation(Vec3::new(50., 0., 1.)),
+    ));
 }
 
 fn assert(images: Res<ImageAssets>, image_assets: Res<Assets<Image>>) {

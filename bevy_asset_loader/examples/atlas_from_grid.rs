@@ -35,21 +35,19 @@ struct MyAssets {
 }
 
 fn draw_atlas(mut commands: Commands, my_assets: Res<MyAssets>) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d);
     // draw the original image (whole sprite sheet)
-    commands.spawn(SpriteBundle {
-        texture: my_assets.female_adventurer.clone(),
-        transform: Transform::from_xyz(0., -150., 0.),
-        ..Default::default()
-    });
+    commands.spawn((
+        Sprite::from_image(my_assets.female_adventurer.clone()),
+        Transform::from_xyz(0., -150., 0.),
+    ));
     // draw animated sprite using the texture atlas layout
     commands.spawn((
-        SpriteBundle {
-            texture: my_assets.female_adventurer.clone(),
-            transform: Transform::from_xyz(0., 150., 0.),
-            ..Default::default()
-        },
-        TextureAtlas::from(my_assets.female_adventurer_layout.clone()),
+        Sprite::from_atlas_image(
+            my_assets.female_adventurer.clone(),
+            TextureAtlas::from(my_assets.female_adventurer_layout.clone()),
+        ),
+        Transform::from_xyz(0., 150., 0.),
         AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
     ));
 }
@@ -57,14 +55,13 @@ fn draw_atlas(mut commands: Commands, my_assets: Res<MyAssets>) {
 #[derive(Component)]
 struct AnimationTimer(Timer);
 
-fn animate_sprite_system(
-    time: Res<Time>,
-    mut sprites_to_animate: Query<(&mut AnimationTimer, &mut TextureAtlas)>,
-) {
-    for (mut timer, mut sprite) in &mut sprites_to_animate {
+fn animate_sprite_system(time: Res<Time>, mut query: Query<(&mut AnimationTimer, &mut Sprite)>) {
+    for (mut timer, mut sprite) in &mut query {
         timer.0.tick(time.delta());
         if timer.0.finished() {
-            sprite.index = (sprite.index + 1) % 8;
+            if let Some(atlas) = &mut sprite.texture_atlas {
+                atlas.index = (atlas.index + 1) % 8;
+            }
         }
     }
 }

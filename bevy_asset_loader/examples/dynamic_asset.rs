@@ -46,41 +46,29 @@ struct AudioAssets {
 }
 
 fn spawn_player_and_tree(mut commands: Commands, image_assets: Res<ImageAssets>) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d);
     let mut transform = Transform::from_translation(Vec3::new(0., 0., 1.));
     transform.scale = Vec3::splat(0.5);
-    commands
-        .spawn((
-            SpriteBundle {
-                transform: Transform {
-                    translation: Vec3::new(0., 150., 0.),
-                    ..Default::default()
-                },
-                texture: image_assets.player.clone(),
-                ..Default::default()
-            },
-            TextureAtlas {
-                layout: image_assets.player_layout.clone(),
-                index: 0,
-            },
-        ))
-        .insert(AnimationTimer(Timer::from_seconds(
-            0.1,
-            TimerMode::Repeating,
-        )))
-        .insert(Player);
-    commands.spawn(SpriteBundle {
-        texture: image_assets.tree.clone(),
-        transform: Transform::from_translation(Vec3::new(50., 30., 1.)),
-        ..Default::default()
-    });
+    commands.spawn((
+        Sprite::from_atlas_image(
+            image_assets.player.clone(),
+            TextureAtlas::from(image_assets.player_layout.clone()),
+        ),
+        Transform::from_translation(Vec3::new(0., 150., 0.)),
+        AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
+        Player,
+    ));
+    commands.spawn((
+        Sprite::from_image(image_assets.tree.clone()),
+        Transform::from_translation(Vec3::new(50., 30., 1.)),
+    ));
 }
 
 fn play_background_audio(mut commands: Commands, audio_assets: Res<AudioAssets>) {
-    commands.spawn(AudioBundle {
-        source: audio_assets.background.clone(),
-        settings: PlaybackSettings::LOOP,
-    });
+    commands.spawn((
+        AudioPlayer(audio_assets.background.clone()),
+        PlaybackSettings::LOOP,
+    ));
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
@@ -96,14 +84,13 @@ struct Player;
 #[derive(Component)]
 struct AnimationTimer(Timer);
 
-fn animate_sprite_system(
-    time: Res<Time>,
-    mut query: Query<(&mut AnimationTimer, &mut TextureAtlas)>,
-) {
+fn animate_sprite_system(time: Res<Time>, mut query: Query<(&mut AnimationTimer, &mut Sprite)>) {
     for (mut timer, mut sprite) in &mut query {
         timer.0.tick(time.delta());
         if timer.0.finished() {
-            sprite.index = (sprite.index + 1) % 8;
+            if let Some(atlas) = &mut sprite.texture_atlas {
+                atlas.index = (atlas.index + 1) % 8;
+            }
         }
     }
 }

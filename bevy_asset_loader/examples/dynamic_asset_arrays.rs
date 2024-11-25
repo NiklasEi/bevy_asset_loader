@@ -34,39 +34,26 @@ struct ImageAssets {
 }
 
 fn spawn_player_and_tree(mut commands: Commands, image_assets: Res<ImageAssets>) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d);
     let mut transform = Transform::from_translation(Vec3::new(0., 0., 1.));
     transform.scale = Vec3::splat(0.5);
-    commands
-        .spawn((
-            SpriteBundle {
-                transform: Transform {
-                    translation: Vec3::new(0., 150., 0.),
-                    ..Default::default()
-                },
-                texture: image_assets.mixed_handlers[1].clone().typed(),
-                ..Default::default()
-            },
-            TextureAtlas {
-                layout: image_assets.atlas_layout[0].clone(),
-                index: 0,
-            },
-        ))
-        .insert(AnimationTimer(Timer::from_seconds(
-            0.1,
-            TimerMode::Repeating,
-        )))
-        .insert(Player);
-    commands.spawn(SpriteBundle {
-        texture: image_assets.mixed_handlers[1].clone().typed(),
-        transform: Transform::from_translation(Vec3::new(50., 30., 1.)),
-        ..Default::default()
-    });
-    commands.spawn(SpriteBundle {
-        texture: image_assets.mixed_handlers[2].clone().typed(),
-        transform: Transform::from_translation(Vec3::new(50., -90., 1.)),
-        ..Default::default()
-    });
+    commands.spawn((
+        Transform::from_translation(Vec3::new(0., 150., 0.)),
+        Sprite::from_atlas_image(
+            image_assets.mixed_handlers[1].clone().typed(),
+            TextureAtlas::from(image_assets.atlas_layout[0].clone()),
+        ),
+        AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
+        Player,
+    ));
+    commands.spawn((
+        Sprite::from_image(image_assets.mixed_handlers[1].clone().typed()),
+        Transform::from_translation(Vec3::new(50., 30., 1.)),
+    ));
+    commands.spawn((
+        Sprite::from_image(image_assets.mixed_handlers[2].clone().typed()),
+        Transform::from_translation(Vec3::new(50., -90., 1.)),
+    ));
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
@@ -82,14 +69,13 @@ struct Player;
 #[derive(Component)]
 struct AnimationTimer(Timer);
 
-fn animate_sprite_system(
-    time: Res<Time>,
-    mut query: Query<(&mut AnimationTimer, &mut TextureAtlas)>,
-) {
+fn animate_sprite_system(time: Res<Time>, mut query: Query<(&mut AnimationTimer, &mut Sprite)>) {
     for (mut timer, mut sprite) in &mut query {
         timer.0.tick(time.delta());
         if timer.0.finished() {
-            sprite.index = (sprite.index + 1) % 8;
+            if let Some(atlas) = &mut sprite.texture_atlas {
+                atlas.index = (atlas.index + 1) % 8;
+            }
         }
     }
 }

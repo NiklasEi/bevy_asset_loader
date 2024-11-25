@@ -10,8 +10,6 @@ fn continues_to_failure_state() {
 
     app.add_plugins((MinimalPlugins, AssetPlugin::default(), StatesPlugin));
     app.init_state::<MyStates>();
-    #[cfg(feature = "progress_tracking")]
-    app.add_plugins(iyes_progress::ProgressPlugin::new(MyStates::Load));
     app.add_loading_state(
         LoadingState::new(MyStates::Load)
             .continue_to_state(MyStates::Next)
@@ -33,7 +31,7 @@ fn exit(mut exit: EventWriter<AppExit>) {
 }
 
 fn timeout(time: Res<Time>) {
-    if time.elapsed_seconds_f64() > 10. {
+    if time.elapsed_secs_f64() > 10. {
         panic!("The asset loader did not change the state in 10 seconds");
     }
 }

@@ -17,8 +17,6 @@ fn mapped_path_use_slash() {
         StatesPlugin,
     ));
     app.init_state::<MyStates>();
-    #[cfg(feature = "progress_tracking")]
-    app.add_plugins(iyes_progress::ProgressPlugin::new(MyStates::Load));
     app.add_loading_state(
         LoadingState::new(MyStates::Load)
             .continue_to_state(MyStates::Next)
@@ -30,7 +28,7 @@ fn mapped_path_use_slash() {
 }
 
 fn timeout(time: Res<Time>) {
-    if time.elapsed_seconds_f64() > 60. {
+    if time.elapsed_secs_f64() > 60. {
         panic!("The asset loader did not change the state in 60 seconds");
     }
 }

@@ -43,10 +43,7 @@ fn load_audio(world: &mut World) {
 fn play_audio(audio_assets: Option<Res<AudioAssets>>, mut commands: Commands) {
     if let Some(audio_assets) = audio_assets {
         if audio_assets.is_added() {
-            commands.spawn(AudioBundle {
-                source: audio_assets.background.clone(),
-                ..default()
-            });
+            commands.spawn(AudioPlayer(audio_assets.background.clone()));
         }
     }
 }
@@ -68,38 +65,35 @@ struct AudioAssets {
 }
 
 fn draw(mut commands: Commands, image_assets: Res<ImageAssets>) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d);
     commands
         .spawn((
-            SpriteBundle {
-                texture: image_assets.female_adventurer.clone(),
-                transform: Transform::from_translation(Vec3::new(-150., 0., 1.)),
-                ..Default::default()
-            },
-            TextureAtlas::from(image_assets.female_adventurer_layout.clone()),
+            Sprite::from_atlas_image(
+                image_assets.female_adventurer.clone(),
+                TextureAtlas::from(image_assets.female_adventurer_layout.clone()),
+            ),
+            Transform::from_translation(Vec3::new(-150., 0., 1.)),
         ))
         .insert(AnimationTimer(Timer::from_seconds(
             0.1,
             TimerMode::Repeating,
         )));
-    commands.spawn(SpriteBundle {
-        texture: image_assets.tree.clone(),
-        transform: Transform::from_translation(Vec3::new(150., 0., 1.)),
-        ..Default::default()
-    });
+    commands.spawn((
+        Sprite::from_image(image_assets.tree.clone()),
+        Transform::from_translation(Vec3::new(150., 0., 1.)),
+    ));
 }
 
 #[derive(Component)]
 struct AnimationTimer(Timer);
 
-fn animate_sprite_system(
-    time: Res<Time>,
-    mut query: Query<(&mut AnimationTimer, &mut TextureAtlas)>,
-) {
+fn animate_sprite_system(time: Res<Time>, mut query: Query<(&mut AnimationTimer, &mut Sprite)>) {
     for (mut timer, mut sprite) in &mut query {
         timer.0.tick(time.delta());
         if timer.0.finished() {
-            sprite.index = (sprite.index + 1) % 8;
+            if let Some(atlas) = &mut sprite.texture_atlas {
+                atlas.index = (atlas.index + 1) % 8;
+            }
         }
     }
 }

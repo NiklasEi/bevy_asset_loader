@@ -33,15 +33,13 @@ use systems::{
 };
 
 #[cfg(feature = "standard_dynamic_assets")]
-use bevy_common_assets::ron::RonAssetPlugin;
-
-#[cfg(feature = "standard_dynamic_assets")]
 use crate::standard_dynamic_asset::{
     StandardDynamicAsset, StandardDynamicAssetArrayCollection, StandardDynamicAssetCollection,
 };
-
+#[cfg(feature = "standard_dynamic_assets")]
+use bevy_common_assets::ron::RonAssetPlugin;
 #[cfg(feature = "progress_tracking")]
-use iyes_progress::TrackedProgressSet;
+use iyes_progress::ProgressEntryId;
 
 use crate::dynamic_asset::{DynamicAsset, DynamicAssets};
 use crate::loading_state::systems::{apply_internal_state_transition, run_loading_state};
@@ -57,7 +55,6 @@ use crate::loading_state::systems::{apply_internal_state_transition, run_loading
 /// App::new()
 ///         .add_plugins((MinimalPlugins, AssetPlugin::default(), StatesPlugin))
 ///         .init_state::<GameState>()
-/// #       .init_resource::<iyes_progress::ProgressCounter>()
 ///         .add_loading_state(LoadingState::new(GameState::Loading)
 ///             .continue_to_state(GameState::Menu)
 ///             .load_collection::<AudioAssets>()
@@ -69,10 +66,7 @@ use crate::loading_state::systems::{apply_internal_state_transition, run_loading
 /// }
 ///
 /// fn play_audio(mut commands: Commands, audio_assets: Res<AudioAssets>) {
-///     commands.spawn(AudioBundle {
-///         source: audio_assets.background.clone(),
-///         ..default()
-///     });
+///     commands.spawn(AudioPlayer(audio_assets.background.clone()));
 /// }
 ///
 /// #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
@@ -124,7 +118,6 @@ where
     /// App::new()
     /// #       .add_plugins((MinimalPlugins, AssetPlugin::default(), StatesPlugin))
     /// #       .init_state::<GameState>()
-    /// #       .init_resource::<iyes_progress::ProgressCounter>()
     ///         .add_loading_state(
     ///           LoadingState::new(GameState::Loading)
     ///             .continue_to_state(GameState::Menu)
@@ -177,7 +170,6 @@ where
     /// App::new()
     /// #       .add_plugins((MinimalPlugins, AssetPlugin::default(), StatesPlugin))
     /// #       .init_state::<GameState>()
-    /// #       .init_resource::<iyes_progress::ProgressCounter>()
     ///         .add_loading_state(
     ///           LoadingState::new(GameState::Loading)
     ///             .continue_to_state(GameState::Menu)
@@ -223,7 +215,6 @@ where
     /// App::new()
     /// #       .add_plugins((MinimalPlugins, AssetPlugin::default(), StatesPlugin))
     /// #       .init_state::<GameState>()
-    /// #       .init_resource::<iyes_progress::ProgressCounter>()
     ///         .add_loading_state(
     ///           LoadingState::new(GameState::Loading)
     ///             .continue_to_state(GameState::Menu)
@@ -297,7 +288,6 @@ where
     /// App::new()
     /// #       .add_plugins((MinimalPlugins, AssetPlugin::default(), StatesPlugin))
     /// #       .init_state::<GameState>()
-    /// #       .init_resource::<iyes_progress::ProgressCounter>()
     ///         .add_loading_state(
     ///           LoadingState::new(GameState::Loading)
     ///             .continue_to_state(GameState::Menu)
@@ -350,6 +340,11 @@ where
         }
         app.init_resource::<State<InternalLoadingState<S>>>();
         app.init_resource::<NextState<InternalLoadingState<S>>>();
+        #[cfg(feature = "progress_tracking")]
+        app.insert_resource(LoadingStateProgressId::<S> {
+            id: ProgressEntryId::new(),
+            _marker: default(),
+        });
 
         app.init_resource::<DynamicAssetCollections<S>>();
         #[cfg(feature = "standard_dynamic_assets")]
@@ -440,15 +435,6 @@ where
                     .register_dynamic_asset_collection::<StandardDynamicAssetArrayCollection>();
             }
 
-            #[cfg(feature = "progress_tracking")]
-            app.add_systems(
-                Update,
-                run_loading_state::<S>
-                    .in_set(TrackedProgressSet)
-                    .in_set(LoadingStateSet(self.loading_state.clone()))
-                    .run_if(in_state(self.loading_state)),
-            );
-            #[cfg(not(feature = "progress_tracking"))]
             app.add_systems(
                 Update,
                 run_loading_state::<S>
@@ -546,6 +532,32 @@ impl<T> Default for LoadingAssetHandles<T> {
     }
 }
 
+#[cfg(feature = "progress_tracking")]
+#[derive(Resource)]
+struct LoadingStateProgressId<State: FreelyMutableState> {
+    id: ProgressEntryId,
+    _marker: PhantomData<State>,
+}
+
+#[cfg(feature = "progress_tracking")]
+#[derive(Resource)]
+struct AssetCollectionsProgressId<State: FreelyMutableState, Assets: AssetCollection> {
+    id: ProgressEntryId,
+    _marker_state: PhantomData<State>,
+    _marker_assets: PhantomData<Assets>,
+}
+
+#[cfg(feature = "progress_tracking")]
+impl<State: FreelyMutableState, Assets: AssetCollection> AssetCollectionsProgressId<State, Assets> {
+    pub(crate) fn new(id: ProgressEntryId) -> Self {
+        AssetCollectionsProgressId {
+            id,
+            _marker_state: default(),
+            _marker_assets: default(),
+        }
+    }
+}
+
 #[derive(Resource)]
 pub(crate) struct AssetLoaderConfiguration<State: FreelyMutableState> {
     state_configurations: HashMap<State, LoadingConfiguration<State>>,
@@ -620,7 +632,6 @@ pub trait LoadingStateAppExt {
     /// App::new()
     /// #       .add_plugins((MinimalPlugins, AssetPlugin::default(), StatesPlugin))
     /// #       .init_state::<GameState>()
-    /// #       .init_resource::<iyes_progress::ProgressCounter>()
     ///         .add_loading_state(
     ///           LoadingState::new(GameState::Loading)
     ///             .continue_to_state(GameState::Menu)
@@ -702,7 +713,6 @@ pub trait LoadingStateAppExt {
     /// App::new()
     /// #       .add_plugins((MinimalPlugins, AssetPlugin::default(), StatesPlugin))
     /// #       .init_state::<GameState>()
-    /// #       .init_resource::<iyes_progress::ProgressCounter>()
     ///         .add_loading_state(
     ///           LoadingState::new(GameState::Loading)
     ///             .continue_to_state(GameState::Menu)
