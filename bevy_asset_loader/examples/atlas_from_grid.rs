@@ -29,7 +29,7 @@ struct MyAssets {
     #[asset(texture_atlas_layout(tile_size_x = 96, tile_size_y = 99, columns = 8, rows = 1))]
     female_adventurer_layout: Handle<TextureAtlasLayout>,
     // you can configure the sampler for the sprite sheet image
-    #[asset(image(sampler = nearest))]
+    #[asset(image(sampler(filter = nearest)))]
     #[asset(path = "images/female_adventurer_sheet.png")]
     female_adventurer: Handle<Image>,
 }

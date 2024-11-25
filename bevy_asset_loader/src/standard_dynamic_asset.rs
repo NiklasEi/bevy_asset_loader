@@ -1,6 +1,7 @@
 use crate::dynamic_asset::{DynamicAsset, DynamicAssetType};
 use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssets};
 use bevy::asset::{Asset, AssetServer, Assets, LoadedFolder, UntypedHandle};
+use bevy::ecs::change_detection::Res;
 use bevy::ecs::system::SystemState;
 use bevy::ecs::world::{Command, World};
 use bevy::reflect::TypePath;
@@ -11,12 +12,15 @@ use serde::{Deserialize, Serialize};
 use bevy::math::UVec2;
 #[cfg(feature = "3d")]
 use bevy::pbr::StandardMaterial;
-use bevy::prelude::{Res, ResMut};
 #[cfg(feature = "2d")]
 use bevy::sprite::TextureAtlasLayout;
 
 #[cfg(any(feature = "3d", feature = "2d"))]
-use bevy::render::texture::{Image, ImageSampler, ImageSamplerDescriptor};
+use bevy::ecs::change_detection::ResMut;
+#[cfg(any(feature = "3d", feature = "2d"))]
+use bevy::render::texture::{
+    Image, ImageAddressMode, ImageFilterMode, ImageSampler, ImageSamplerDescriptor,
+};
 
 /// These asset variants can be loaded from configuration files. They will then replace
 /// a dynamic asset based on their keys.
@@ -48,8 +52,11 @@ pub enum StandardDynamicAsset {
         /// Image file path
         path: String,
         /// Sampler
-        #[serde(with = "optional", skip_serializing_if = "Option::is_none", default)]
-        sampler: Option<ImageSamplerType>,
+        #[serde(default, skip_serializing_if = "is_default")]
+        sampler: ImageSamplerType,
+        /// Sampler
+        #[serde(default, skip_serializing_if = "is_default")]
+        wrap: ImageAddressModeType,
         /// array texture layers
         #[serde(with = "optional", skip_serializing_if = "Option::is_none", default)]
         array_texture_layers: Option<u32>,
@@ -111,32 +118,49 @@ mod optional {
     }
 }
 
+#[cfg(any(feature = "3d", feature = "2d"))]
+fn is_default<T: Default + PartialEq + Copy>(value: &T) -> bool {
+    T::default() == *value
+}
+
 /// Define the image sampler to configure for an image asset
 #[cfg(any(feature = "3d", feature = "2d"))]
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Default)]
 pub enum ImageSamplerType {
     /// See [`ImageSampler::nearest`]
+    #[default]
     Nearest,
     /// See [`ImageSampler::linear`]
     Linear,
 }
 
 #[cfg(any(feature = "3d", feature = "2d"))]
-impl From<ImageSamplerType> for ImageSamplerDescriptor {
-    fn from(value: ImageSamplerType) -> Self {
+impl From<&ImageSamplerType> for ImageFilterMode {
+    fn from(value: &ImageSamplerType) -> Self {
         match value {
-            ImageSamplerType::Nearest => ImageSamplerDescriptor::nearest(),
-            ImageSamplerType::Linear => ImageSamplerDescriptor::linear(),
+            ImageSamplerType::Nearest => ImageFilterMode::Nearest,
+            ImageSamplerType::Linear => ImageFilterMode::Linear,
         }
     }
 }
 
+/// Define the image sampler address mode
 #[cfg(any(feature = "3d", feature = "2d"))]
-impl From<ImageSamplerType> for ImageSampler {
-    fn from(value: ImageSamplerType) -> Self {
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Default)]
+pub enum ImageAddressModeType {
+    /// See [`ImageAddressMode::ClampToEdge`]
+    #[default]
+    ClampToEdge,
+    /// See [`ImageAddressMode::Repeat`]
+    Repeat,
+}
+
+#[cfg(any(feature = "3d", feature = "2d"))]
+impl From<&ImageAddressModeType> for ImageAddressMode {
+    fn from(value: &ImageAddressModeType) -> Self {
         match value {
-            ImageSamplerType::Nearest => ImageSampler::nearest(),
-            ImageSamplerType::Linear => ImageSampler::linear(),
+            ImageAddressModeType::ClampToEdge => ImageAddressMode::ClampToEdge,
+            ImageAddressModeType::Repeat => ImageAddressMode::Repeat,
         }
     }
 }
@@ -179,15 +203,14 @@ impl DynamicAsset for StandardDynamicAsset {
             StandardDynamicAsset::Image {
                 path,
                 sampler,
+                wrap: address_mode,
                 array_texture_layers,
             } => {
                 let mut system_state =
                     SystemState::<(ResMut<Assets<Image>>, Res<AssetServer>)>::new(world);
                 let (mut images, asset_server) = system_state.get_mut(world);
                 let mut handle = asset_server.load(path);
-                if let Some(sampler) = sampler {
-                    Self::update_image_sampler(&mut handle, &mut images, sampler);
-                }
+                Self::update_image_sampler(&mut handle, &mut images, sampler, address_mode);
                 if let Some(layers) = array_texture_layers {
                     let image = images
                         .get_mut(&handle)
@@ -273,10 +296,19 @@ impl StandardDynamicAsset {
         handle: &mut bevy::asset::Handle<Image>,
         images: &mut Assets<Image>,
         sampler_type: &ImageSamplerType,
+        address_mode: &ImageAddressModeType,
     ) {
         let image = images.get_mut(&*handle).unwrap();
+        let configured_descriptor = ImageSamplerDescriptor {
+            address_mode_u: address_mode.into(),
+            address_mode_v: address_mode.into(),
+            address_mode_w: address_mode.into(),
+            mag_filter: sampler_type.into(),
+            min_filter: sampler_type.into(),
+            mipmap_filter: sampler_type.into(),
+            ..Default::default()
+        };
         let is_different_sampler = if let ImageSampler::Descriptor(descriptor) = &image.sampler {
-            let configured_descriptor: ImageSamplerDescriptor = sampler_type.clone().into();
             !descriptor.as_wgpu().eq(&configured_descriptor.as_wgpu())
         } else {
             false
@@ -284,10 +316,10 @@ impl StandardDynamicAsset {
 
         if is_different_sampler {
             let mut cloned_image = image.clone();
-            cloned_image.sampler = sampler_type.clone().into();
+            cloned_image.sampler = ImageSampler::Descriptor(configured_descriptor);
             *handle = images.add(cloned_image);
         } else {
-            image.sampler = sampler_type.clone().into();
+            image.sampler = ImageSampler::Descriptor(configured_descriptor);
         }
     }
 }

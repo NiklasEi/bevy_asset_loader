@@ -35,7 +35,7 @@ struct MyAssets {
 
     // Image asset with sampler nearest (good for crisp pixel art)
     #[asset(path = "images/pixel_tree.png")]
-    #[asset(image(sampler = nearest))]
+    #[asset(image(sampler(filter = nearest)))]
     image_tree_nearest: Handle<Image>,
     // Array texture
     #[asset(path = "images/array_texture.png")]
