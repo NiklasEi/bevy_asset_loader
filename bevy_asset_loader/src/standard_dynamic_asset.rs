@@ -1,6 +1,7 @@
 use crate::dynamic_asset::{DynamicAsset, DynamicAssetType};
 use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssets};
 use bevy::asset::{Asset, AssetServer, Assets, LoadedFolder, UntypedHandle};
+use bevy::ecs::change_detection::Res;
 use bevy::ecs::system::SystemState;
 use bevy::ecs::world::{Command, World};
 use bevy::reflect::TypePath;
@@ -11,13 +12,15 @@ use serde::{Deserialize, Serialize};
 use bevy::math::UVec2;
 #[cfg(feature = "3d")]
 use bevy::pbr::StandardMaterial;
-use bevy::prelude::{Res, ResMut};
 #[cfg(feature = "2d")]
 use bevy::sprite::TextureAtlasLayout;
 
 #[cfg(any(feature = "3d", feature = "2d"))]
-use bevy::render::texture::{Image, ImageSampler, ImageSamplerDescriptor};
-use bevy::render::texture::{ImageAddressMode, ImageFilterMode};
+use bevy::ecs::change_detection::ResMut;
+#[cfg(any(feature = "3d", feature = "2d"))]
+use bevy::render::texture::{
+    Image, ImageAddressMode, ImageFilterMode, ImageSampler, ImageSamplerDescriptor,
+};
 
 /// These asset variants can be loaded from configuration files. They will then replace
 /// a dynamic asset based on their keys.
@@ -115,6 +118,7 @@ mod optional {
     }
 }
 
+#[cfg(any(feature = "3d", feature = "2d"))]
 fn is_default<T: Default + PartialEq + Copy>(value: &T) -> bool {
     T::default() == *value
 }
