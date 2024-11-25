@@ -121,3 +121,7 @@ required-features = ["2d"]
 [[example]]
 name = "asset_maps"
 path = "examples/asset_maps.rs"
+
+[[example]]
+name = "sub_state"
+path = "examples/sub_state.rs"
