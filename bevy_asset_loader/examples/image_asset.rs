@@ -1,7 +1,9 @@
+use bevy::math::Affine2;
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 
-/// This example demonstrates how you can set a different sampler for an [`Image`].
+/// This example demonstrates how you can set different samplers and wrap modes for
+/// an [`Image`] asset.
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
@@ -18,37 +20,64 @@ fn main() {
 #[derive(AssetCollection, Resource)]
 struct ImageAssets {
     #[asset(path = "images/pixel_tree.png")]
-    #[asset(image(sampler = linear))]
+    #[asset(image(sampler(filter = linear)))]
     tree_linear: Handle<Image>,
 
     #[asset(path = "images/pixel_tree.png")]
-    #[asset(image(sampler = nearest))]
+    #[asset(image(sampler(filter = nearest)))]
     tree_nearest: Handle<Image>,
+
+    #[asset(path = "images/pixel_tree.png")]
+    #[asset(image(sampler(filter = nearest, wrap = repeat)))]
+    tree_nearest_repeat: Handle<Image>,
 
     #[asset(path = "images/array_texture.png")]
     #[asset(image(array_texture_layers = 4))]
     array_texture: Handle<Image>,
 }
 
-fn draw(mut commands: Commands, image_assets: Res<ImageAssets>) {
-    commands.spawn(Camera2dBundle {
-        projection: OrthographicProjection {
-            far: 1000.,
-            near: -1000.,
-            scale: 0.25,
+fn draw(
+    mut commands: Commands,
+    image_assets: Res<ImageAssets>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    commands.spawn(Camera3dBundle {
+        transform: Transform::from_xyz(0.0, 1.5, 4.0).looking_at(Vec3::ZERO, Vec3::Y),
+        camera: Camera {
+            order: 1,
             ..default()
         },
         ..default()
     });
+    commands.spawn(Camera2dBundle::default());
     commands.spawn(SpriteBundle {
         texture: image_assets.tree_linear.clone(),
-        transform: Transform::from_translation(Vec3::new(-50., 0., 1.)),
+        transform: Transform::from_translation(Vec3::new(-50., 0., 1.)).with_scale(Vec3::splat(5.)),
         ..Default::default()
     });
     commands.spawn(SpriteBundle {
         texture: image_assets.tree_nearest.clone(),
-        transform: Transform::from_translation(Vec3::new(50., 0., 1.)),
+        transform: Transform::from_translation(Vec3::new(50., 0., 1.)).with_scale(Vec3::splat(5.)),
         ..Default::default()
+    });
+    commands.spawn(PbrBundle {
+        mesh: meshes.add(Cuboid::new(1.0, 1.0, 1.0)),
+        material: materials.add(StandardMaterial {
+            base_color_texture: Some(image_assets.tree_nearest_repeat.clone()),
+            uv_transform: Affine2::from_scale(Vec2::new(2., 3.)),
+            ..default()
+        }),
+        transform: Transform::from_xyz(1.5, 0.0, 0.0),
+        ..default()
+    });
+    commands.spawn(PointLightBundle {
+        point_light: PointLight {
+            shadows_enabled: true,
+            ..default()
+        },
+        transform: Transform::from_xyz(4.0, 8.0, 4.0),
+        ..default()
     });
 }
 
