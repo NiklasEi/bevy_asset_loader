@@ -35,7 +35,7 @@ struct MyAssets {
 
     // Image asset with sampler nearest (good for crisp pixel art)
     #[asset(path = "images/pixel_tree.png")]
-    #[asset(image(sampler = nearest))]
+    #[asset(image(sampler(filter = nearest)))]
     image_tree_nearest: Handle<Image>,
     // Array texture
     #[asset(path = "images/array_texture.png")]
@@ -112,7 +112,11 @@ fn expectations(
     };
     assert_eq!(
         descriptor.as_wgpu(),
-        ImageSamplerDescriptor::nearest().as_wgpu()
+        ImageSamplerDescriptor {
+            label: Some("image_tree_nearest".to_string()),
+            ..ImageSamplerDescriptor::nearest()
+        }
+        .as_wgpu()
     );
 
     let image = images
@@ -120,20 +124,20 @@ fn expectations(
         .expect("Image should be added to its asset resource");
     assert_eq!(image.texture_descriptor.array_layer_count(), 4);
 
-    assert_eq!(assets.folder_untyped.len(), 7);
+    assert_eq!(assets.folder_untyped.len(), 8);
     for handle in assets.folder_untyped.iter() {
         assert!(is_recursively_loaded(handle, &asset_server));
     }
-    assert_eq!(assets.folder_typed.len(), 7);
+    assert_eq!(assets.folder_typed.len(), 8);
     for handle in assets.folder_typed.iter() {
         assert!(is_recursively_loaded(handle, &asset_server));
     }
-    assert_eq!(assets.mapped_folder_untyped.len(), 7);
+    assert_eq!(assets.mapped_folder_untyped.len(), 8);
     for (name, handle) in assets.mapped_folder_untyped.iter() {
         assert!(is_recursively_loaded(handle, &asset_server));
         assert_eq!(&handle.path().unwrap().to_string(), name);
     }
-    assert_eq!(assets.mapped_folder_typed.len(), 7);
+    assert_eq!(assets.mapped_folder_typed.len(), 8);
     for (name, handle) in assets.mapped_folder_typed.iter() {
         assert!(is_recursively_loaded(handle, &asset_server));
         assert_eq!(&handle.path().unwrap().to_string(), name);

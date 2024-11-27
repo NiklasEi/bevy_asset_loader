@@ -1,7 +1,7 @@
 use bevy::app::AppExit;
 use bevy::asset::UntypedAssetId;
 use bevy::prelude::*;
-use bevy::render::texture::{ImageSampler, ImageSamplerDescriptor};
+use bevy::render::texture::{ImageAddressMode, ImageSampler, ImageSamplerDescriptor};
 use bevy::utils::HashMap;
 use bevy_asset_loader::prelude::*;
 
@@ -54,6 +54,9 @@ struct MyAssets {
     // Image asset with sampler nearest (good for crisp pixel art)
     #[asset(key = "pixel_tree")]
     image_tree_nearest: Handle<Image>,
+    // Image asset with sampler nearest and address mode repeat
+    #[asset(key = "pixel_tree_repeat")]
+    image_tree_nearest_repeat: Handle<Image>,
     // Array texture
     #[asset(key = "array_texture")]
     array_texture: Handle<Image>,
@@ -139,11 +142,27 @@ fn expectations(
         .get(&assets.image_tree_nearest)
         .expect("Image should be added to its asset resource");
     let ImageSampler::Descriptor(descriptor) = &image.sampler else {
-        panic!("Descriptor was not set to non default value nearest");
+        panic!("Descriptor was not set to non default value");
     };
     assert_eq!(
         descriptor.as_wgpu(),
         ImageSamplerDescriptor::nearest().as_wgpu()
+    );
+    let image = images
+        .get(&assets.image_tree_nearest_repeat)
+        .expect("Image should be added to its asset resource");
+    let ImageSampler::Descriptor(descriptor) = &image.sampler else {
+        panic!("Descriptor was not set to non default value");
+    };
+    assert_eq!(
+        descriptor.as_wgpu(),
+        ImageSamplerDescriptor {
+            address_mode_u: ImageAddressMode::Repeat,
+            address_mode_v: ImageAddressMode::Repeat,
+            address_mode_w: ImageAddressMode::Repeat,
+            ..ImageSamplerDescriptor::nearest()
+        }
+        .as_wgpu()
     );
 
     let image = images

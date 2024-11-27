@@ -15,6 +15,11 @@
         path: "images/tree.png",
         sampler: Nearest
     ),
+    "pixel_tree_repeat": Image (
+        path: "images/tree.png",
+        sampler: Nearest,
+        wrap: Repeat
+    ),
     "array_texture": Image (
         path: "images/array_texture.png",
         array_texture_layers: 4
