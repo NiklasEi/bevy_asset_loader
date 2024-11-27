@@ -2,6 +2,7 @@
 
 - support for Bevy 0.15
 - support for using sub states as loading states ([@mgi388](https://github.com/mgi388) in [#239](https://github.com/NiklasEi/bevy_asset_loader/pull/239))
+- support image sampler address modes for image assets ([@pcwalton](https://github.com/pcwalton) in [#238](https://github.com/NiklasEi/bevy_asset_loader/pull/238))
 - custom `on_unimplemented` diagnostics for the `AssetCollection` trait
 - image derive attribute `array_texture_layers`
 - wait for dependencies of assets to load 
