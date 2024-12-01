@@ -68,7 +68,7 @@ struct TextureAssets {
 }
 
 fn render_description(mut commands: Commands) {
-    commands.spawn(Camera2d::default());
+    commands.spawn(Camera2d);
     commands.spawn(Text::new(
         r#"
     See the console for progress output

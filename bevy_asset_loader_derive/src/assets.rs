@@ -155,7 +155,7 @@ impl AssetField {
                 let label = Lit::Str(LitStr::new(&field_ident.to_string(), token_stream.span()));
 
                 quote!(#token_stream #field_ident : {
-                    use bevy::render::texture::{ImageAddressMode, ImageFilterMode, ImageSampler, ImageSamplerDescriptor};
+                    use bevy::image::{ImageAddressMode, ImageFilterMode, ImageSampler, ImageSamplerDescriptor};
                     let mut system_state = ::bevy::ecs::system::SystemState::<(
                         ResMut<::bevy::prelude::Assets<::bevy::prelude::Image>>,
                         Res<::bevy::prelude::AssetServer>,
@@ -282,7 +282,7 @@ impl AssetField {
                         Res<::bevy::prelude::AssetServer>,
                     )>::new(world);
                     let (mut materials, asset_server) = system_state.get_mut(world);
-                    materials.add(::bevy::pbr::StandardMaterial::from(asset_server.load::<::bevy::render::texture::Image>(#asset_path)))
+                    materials.add(::bevy::pbr::StandardMaterial::from(asset_server.load::<::bevy::image::Image>(#asset_path)))
                 },)
             }
             AssetField::TextureAtlasLayout(texture_atlas) => {
@@ -537,7 +537,7 @@ impl AssetField {
                 let asset_path = asset_path.clone();
                 quote!(#token_stream {
                     let asset_server = world.get_resource::<::bevy::prelude::AssetServer>().expect("Cannot get AssetServer");
-                    handles.push(asset_server.load::<::bevy::render::texture::Image>(#asset_path).untyped());
+                    handles.push(asset_server.load::<::bevy::image::Image>(#asset_path).untyped());
                 })
             }
             AssetField::Files(assets, _, _) => {

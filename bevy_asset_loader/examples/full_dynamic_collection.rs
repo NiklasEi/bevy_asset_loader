@@ -1,13 +1,12 @@
+//! This example requires the `standard_dynamic_assets` feature for loading the ron file
+//! and the `2d` and `3d` features for `TextureAtlas` and `StandardMaterial` dynamic assets.
+//! It showcases all possible configurations for dynamic assets.
 use bevy::app::AppExit;
 use bevy::asset::UntypedAssetId;
+use bevy::image::{ImageAddressMode, ImageSampler, ImageSamplerDescriptor};
 use bevy::prelude::*;
-use bevy::render::texture::{ImageAddressMode, ImageSampler, ImageSamplerDescriptor};
 use bevy::utils::HashMap;
 use bevy_asset_loader::prelude::*;
-
-/// This example requires the `standard_dynamic_assets` feature for loading the ron file
-/// and the `2d` and `3d` features for `TextureAtlas` and `StandardMaterial` dynamic assets.
-/// It showcases all possible configurations for dynamic assets.
 
 const FOLDER_SIZE: usize = 8;
 

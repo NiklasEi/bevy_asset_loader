@@ -1,7 +1,7 @@
 use bevy::app::AppExit;
 use bevy::asset::UntypedAssetId;
+use bevy::image::{ImageSampler, ImageSamplerDescriptor};
 use bevy::prelude::*;
-use bevy::render::texture::{ImageSampler, ImageSamplerDescriptor};
 use bevy::utils::HashMap;
 use bevy_asset_loader::prelude::*;
 
