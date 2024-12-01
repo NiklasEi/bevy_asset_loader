@@ -42,43 +42,48 @@ fn draw(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(0.0, 1.5, 4.0).looking_at(Vec3::ZERO, Vec3::Y),
-        camera: Camera {
+    commands.spawn((
+        Camera3d::default(),
+        Transform::from_xyz(0.0, 1.5, 4.0).looking_at(Vec3::ZERO, Vec3::Y),
+        Camera {
             order: 1,
             ..default()
         },
-        ..default()
-    });
-    commands.spawn(Camera2dBundle::default());
-    commands.spawn(SpriteBundle {
-        texture: image_assets.tree_linear.clone(),
-        transform: Transform::from_translation(Vec3::new(-50., 0., 1.)).with_scale(Vec3::splat(5.)),
-        ..Default::default()
-    });
-    commands.spawn(SpriteBundle {
-        texture: image_assets.tree_nearest.clone(),
-        transform: Transform::from_translation(Vec3::new(50., 0., 1.)).with_scale(Vec3::splat(5.)),
-        ..Default::default()
-    });
-    commands.spawn(PbrBundle {
-        mesh: meshes.add(Cuboid::new(1.0, 1.0, 1.0)),
-        material: materials.add(StandardMaterial {
+    ));
+    commands.spawn(Camera2d);
+    commands.spawn((
+        Sprite {
+            image: image_assets.tree_linear.clone(),
+            ..Default::default()
+        },
+        Transform::from_translation(Vec3::new(-50., 0., 1.)).with_scale(Vec3::splat(5.)),
+    ));
+    commands.spawn((
+        Sprite {
+            image: image_assets.tree_nearest.clone(),
+            ..Default::default()
+        },
+        Transform::from_translation(Vec3::new(50., 0., 1.)).with_scale(Vec3::splat(5.)),
+    ));
+    commands.spawn((
+        MeshMaterial3d(materials.add(StandardMaterial {
             base_color_texture: Some(image_assets.tree_nearest_repeat.clone()),
             uv_transform: Affine2::from_scale(Vec2::new(2., 3.)),
             ..default()
-        }),
-        transform: Transform::from_xyz(1.5, 0.0, 0.0),
-        ..default()
-    });
-    commands.spawn(PointLightBundle {
-        point_light: PointLight {
+        })),
+        Mesh3d(meshes.add(Cuboid {
+            half_size: Vec3::splat(0.5),
+        })),
+        Transform::from_xyz(1.5, 0.0, 0.0),
+    ));
+    commands.spawn((
+        PointLight {
+            intensity: 1500.0,
             shadows_enabled: true,
             ..default()
         },
-        transform: Transform::from_xyz(4.0, 8.0, 4.0),
-        ..default()
-    });
+        Transform::from_xyz(4.0, 8.0, 4.0),
+    ));
 }
 
 fn assert(images: Res<ImageAssets>, image_assets: Res<Assets<Image>>) {

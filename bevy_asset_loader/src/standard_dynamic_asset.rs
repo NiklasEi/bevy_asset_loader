@@ -18,9 +18,7 @@ use bevy::sprite::TextureAtlasLayout;
 #[cfg(any(feature = "3d", feature = "2d"))]
 use bevy::ecs::change_detection::ResMut;
 #[cfg(any(feature = "3d", feature = "2d"))]
-use bevy::render::texture::{
-    Image, ImageAddressMode, ImageFilterMode, ImageSampler, ImageSamplerDescriptor,
-};
+use bevy::image::{Image, ImageAddressMode, ImageFilterMode, ImageSampler, ImageSamplerDescriptor};
 
 /// These asset variants can be loaded from configuration files. They will then replace
 /// a dynamic asset based on their keys.

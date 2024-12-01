@@ -7,33 +7,30 @@ use bevy_asset_loader::prelude::*;
 
 #[test]
 fn can_run_with_sub_states() {
-    let mut app = App::new();
-
-    app.add_plugins((
-        MinimalPlugins,
-        AssetPlugin::default(),
-        AudioPlugin::default(),
-        StatesPlugin,
-    ));
-    app.init_state::<AppState>();
-    app.add_sub_state::<MainMenuState>();
-    #[cfg(feature = "progress_tracking")]
-    app.add_plugins(iyes_progress::ProgressPlugin::new(MainMenuState::Loading));
-    app.add_loading_state(
-        LoadingState::new(MainMenuState::Loading)
-            .continue_to_state(MainMenuState::Active)
-            .load_collection::<MyAssets>(),
-    )
-    .init_resource::<TestState>()
-    .add_systems(
-        Update,
-        (
-            load_main_menu.run_if(in_state(AppState::Load)),
-            expect.run_if(in_state(MainMenuState::Active)),
-            timeout.run_if(in_state(MainMenuState::Loading)),
-        ),
-    )
-    .run();
+    App::new()
+        .add_plugins((
+            MinimalPlugins,
+            AssetPlugin::default(),
+            AudioPlugin::default(),
+            StatesPlugin,
+        ))
+        .init_state::<AppState>()
+        .add_sub_state::<MainMenuState>()
+        .add_loading_state(
+            LoadingState::new(MainMenuState::Loading)
+                .continue_to_state(MainMenuState::Active)
+                .load_collection::<MyAssets>(),
+        )
+        .init_resource::<TestState>()
+        .add_systems(
+            Update,
+            (
+                load_main_menu.run_if(in_state(AppState::Load)),
+                expect.run_if(in_state(MainMenuState::Active)),
+                timeout.run_if(in_state(MainMenuState::Loading)),
+            ),
+        )
+        .run();
 }
 
 fn load_main_menu(mut state: ResMut<NextState<AppState>>) {
@@ -41,7 +38,7 @@ fn load_main_menu(mut state: ResMut<NextState<AppState>>) {
 }
 
 fn timeout(time: Res<Time>) {
-    if time.elapsed_seconds_f64() > 30. {
+    if time.elapsed_secs_f64() > 30. {
         panic!("The asset loader did not load the collection in 30 seconds");
     }
 }
@@ -73,11 +70,10 @@ impl Default for TestState {
     }
 }
 
-#[allow(dead_code)]
 #[derive(AssetCollection, Resource)]
 struct MyAssets {
     #[asset(path = "audio/background.ogg")]
-    background: Handle<AudioSource>,
+    _background: Handle<AudioSource>,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
@@ -92,10 +88,5 @@ enum AppState {
 enum MainMenuState {
     #[default]
     Loading,
-    #[expect(
-        dead_code,
-        reason = "not used in test, but useful to show how to use it"
-    )]
-    Error,
     Active,
 }

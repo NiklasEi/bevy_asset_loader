@@ -1,13 +1,12 @@
+//! This example requires the `standard_dynamic_assets` feature for loading the ron file
+//! and the `2d` and `3d` features for `TextureAtlas` and `StandardMaterial` dynamic assets.
+//! It showcases all possible configurations for dynamic assets.
 use bevy::app::AppExit;
-use bevy::asset::RecursiveDependencyLoadState;
+use bevy::asset::UntypedAssetId;
+use bevy::image::{ImageAddressMode, ImageSampler, ImageSamplerDescriptor};
 use bevy::prelude::*;
-use bevy::render::texture::{ImageAddressMode, ImageSampler, ImageSamplerDescriptor};
 use bevy::utils::HashMap;
 use bevy_asset_loader::prelude::*;
-
-/// This example requires the `standard_dynamic_assets` feature for loading the ron file
-/// and the `2d` and `3d` features for `TextureAtlas` and `StandardMaterial` dynamic assets.
-/// It showcases all possible configurations for dynamic assets.
 
 const FOLDER_SIZE: usize = 8;
 
@@ -122,22 +121,17 @@ fn expectations(
 ) {
     info!("Done loading the collection. Checking expectations...");
 
-    assert_eq!(
-        asset_server.get_recursive_dependency_load_state(&assets.single_file),
-        Some(RecursiveDependencyLoadState::Loaded)
-    );
+    assert!(is_recursively_loaded(&assets.single_file, &asset_server));
     let material = standard_materials
         .get(&assets.standard_material)
         .expect("Standard material should be added to its assets resource.");
-    assert_eq!(
-        asset_server.get_recursive_dependency_load_state(
-            material
-                .base_color_texture
-                .as_ref()
-                .expect("Material should have image as base color texture")
-        ),
-        Some(RecursiveDependencyLoadState::Loaded)
-    );
+    assert!(is_recursively_loaded(
+        material
+            .base_color_texture
+            .as_ref()
+            .expect("Material should have image as base color texture"),
+        &asset_server
+    ));
     texture_atlas_layouts
         .get(&assets.texture_atlas_layout)
         .expect("Texture atlas layout should be added to its assets resource.");
@@ -177,62 +171,38 @@ fn expectations(
 
     assert_eq!(assets.folder_untyped.len(), FOLDER_SIZE);
     for handle in assets.folder_untyped.iter() {
-        assert_eq!(
-            asset_server.get_recursive_dependency_load_state(handle.id()),
-            Some(RecursiveDependencyLoadState::Loaded)
-        );
+        assert!(is_recursively_loaded(handle, &asset_server));
     }
     assert_eq!(assets.folder_untyped_mapped.len(), FOLDER_SIZE);
     for (name, handle) in assets.folder_untyped_mapped.iter() {
-        assert_eq!(
-            asset_server.get_recursive_dependency_load_state(handle.id()),
-            Some(RecursiveDependencyLoadState::Loaded)
-        );
+        assert!(is_recursively_loaded(handle, &asset_server));
         assert_eq!(&handle.path().unwrap().to_string(), name);
     }
     assert_eq!(assets.folder_typed.len(), FOLDER_SIZE);
     for handle in assets.folder_typed.iter() {
-        assert_eq!(
-            asset_server.get_recursive_dependency_load_state(handle.id()),
-            Some(RecursiveDependencyLoadState::Loaded)
-        );
+        assert!(is_recursively_loaded(handle, &asset_server));
     }
     assert_eq!(assets.folder_typed_mapped.len(), FOLDER_SIZE);
     for (name, handle) in assets.folder_typed_mapped.iter() {
-        assert_eq!(
-            asset_server.get_recursive_dependency_load_state(handle.id()),
-            Some(RecursiveDependencyLoadState::Loaded)
-        );
+        assert!(is_recursively_loaded(handle, &asset_server));
         assert_eq!(&handle.path().unwrap().to_string(), name);
     }
     assert_eq!(assets.files_untyped.len(), 2);
     for handle in assets.files_untyped.iter() {
-        assert_eq!(
-            asset_server.get_recursive_dependency_load_state(handle.id()),
-            Some(RecursiveDependencyLoadState::Loaded)
-        );
+        assert!(is_recursively_loaded(handle, &asset_server));
     }
     assert_eq!(assets.files_untyped_mapped.len(), 2);
     for (name, handle) in assets.files_untyped_mapped.iter() {
-        assert_eq!(
-            asset_server.get_recursive_dependency_load_state(handle.id()),
-            Some(RecursiveDependencyLoadState::Loaded)
-        );
+        assert!(is_recursively_loaded(handle, &asset_server));
         assert_eq!(&handle.path().unwrap().to_string(), name);
     }
     assert_eq!(assets.files_typed.len(), 2);
     for handle in assets.files_typed.iter() {
-        assert_eq!(
-            asset_server.get_recursive_dependency_load_state(handle),
-            Some(RecursiveDependencyLoadState::Loaded)
-        );
+        assert!(is_recursively_loaded(handle, &asset_server));
     }
     assert_eq!(assets.files_typed_mapped.len(), 2);
     for (name, handle) in assets.files_typed_mapped.iter() {
-        assert_eq!(
-            asset_server.get_recursive_dependency_load_state(handle),
-            Some(RecursiveDependencyLoadState::Loaded)
-        );
+        assert!(is_recursively_loaded(handle, &asset_server));
         assert_eq!(&handle.path().unwrap().to_string(), name);
     }
 
@@ -242,20 +212,14 @@ fn expectations(
     };
     assert_eq!(optional_folder_untyped.len(), FOLDER_SIZE);
     for handle in optional_folder_untyped.iter() {
-        assert_eq!(
-            asset_server.get_recursive_dependency_load_state(handle.id()),
-            Some(RecursiveDependencyLoadState::Loaded)
-        );
+        assert!(is_recursively_loaded(handle, &asset_server));
     }
     let Some(ref optional_folder_untyped_mapped) = assets.optional_folder_untyped_mapped else {
         panic!("Optional asset not loaded")
     };
     assert_eq!(optional_folder_untyped_mapped.len(), FOLDER_SIZE);
     for (name, handle) in optional_folder_untyped_mapped.iter() {
-        assert_eq!(
-            asset_server.get_recursive_dependency_load_state(handle.id()),
-            Some(RecursiveDependencyLoadState::Loaded)
-        );
+        assert!(is_recursively_loaded(handle, &asset_server));
         assert_eq!(&handle.path().unwrap().to_string(), name);
     }
     let Some(ref optional_folder_typed) = assets.optional_folder_typed else {
@@ -263,20 +227,14 @@ fn expectations(
     };
     assert_eq!(optional_folder_typed.len(), FOLDER_SIZE);
     for handle in optional_folder_typed.iter() {
-        assert_eq!(
-            asset_server.get_recursive_dependency_load_state(handle.id()),
-            Some(RecursiveDependencyLoadState::Loaded)
-        );
+        assert!(is_recursively_loaded(handle, &asset_server));
     }
     let Some(ref optional_folder_typed_mapped) = assets.optional_folder_typed_mapped else {
         panic!("Optional asset not loaded")
     };
     assert_eq!(optional_folder_typed_mapped.len(), FOLDER_SIZE);
     for (name, handle) in optional_folder_typed_mapped.iter() {
-        assert_eq!(
-            asset_server.get_recursive_dependency_load_state(handle.id()),
-            Some(RecursiveDependencyLoadState::Loaded)
-        );
+        assert!(is_recursively_loaded(handle, &asset_server));
         assert_eq!(&handle.path().unwrap().to_string(), name);
     }
 
@@ -286,20 +244,14 @@ fn expectations(
     };
     assert_eq!(optional_files_untyped.len(), 2);
     for handle in optional_files_untyped.iter() {
-        assert_eq!(
-            asset_server.get_recursive_dependency_load_state(handle.id()),
-            Some(RecursiveDependencyLoadState::Loaded)
-        );
+        assert!(is_recursively_loaded(handle, &asset_server));
     }
     let Some(ref optional_files_untyped_mapped) = assets.optional_files_untyped_mapped else {
         panic!("Optional asset not loaded")
     };
     assert_eq!(optional_files_untyped_mapped.len(), 2);
     for (name, handle) in optional_files_untyped_mapped.iter() {
-        assert_eq!(
-            asset_server.get_recursive_dependency_load_state(handle.id()),
-            Some(RecursiveDependencyLoadState::Loaded)
-        );
+        assert!(is_recursively_loaded(handle, &asset_server));
         assert_eq!(&handle.path().unwrap().to_string(), name);
     }
     let Some(ref optional_files_typed) = assets.optional_files_typed else {
@@ -307,26 +259,27 @@ fn expectations(
     };
     assert_eq!(optional_files_typed.len(), 2);
     for handle in optional_files_typed.iter() {
-        assert_eq!(
-            asset_server.get_recursive_dependency_load_state(handle),
-            Some(RecursiveDependencyLoadState::Loaded)
-        );
+        assert!(is_recursively_loaded(handle, &asset_server));
     }
     let Some(ref optional_files_typed_mapped) = assets.optional_files_typed_mapped else {
         panic!("Optional asset not loaded")
     };
     assert_eq!(optional_files_typed_mapped.len(), 2);
     for (name, handle) in optional_files_typed_mapped.iter() {
-        assert_eq!(
-            asset_server.get_recursive_dependency_load_state(handle),
-            Some(RecursiveDependencyLoadState::Loaded)
-        );
+        assert!(is_recursively_loaded(handle, &asset_server));
         assert_eq!(&handle.path().unwrap().to_string(), name);
     }
 
     info!("Everything looks good!");
     info!("Quitting the application...");
     quit.send(AppExit::Success);
+}
+
+fn is_recursively_loaded(handle: impl Into<UntypedAssetId>, asset_server: &AssetServer) -> bool {
+    asset_server
+        .get_recursive_dependency_load_state(handle)
+        .map(|state| state.is_loaded())
+        .unwrap_or(false)
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
