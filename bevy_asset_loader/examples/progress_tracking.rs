@@ -26,6 +26,7 @@ fn main() {
                 .load_collection::<TextureAssets>()
                 .load_collection::<AudioAssets>(),
         )
+        .add_systems(OnEnter(MyStates::AssetLoading), render_description)
         // gracefully quit the app when `MyStates::Next` is reached
         .add_systems(OnEnter(MyStates::Next), expect)
         .add_systems(
@@ -64,6 +65,16 @@ struct TextureAssets {
     female_adventurer: Handle<Image>,
     #[asset(texture_atlas_layout(tile_size_x = 96, tile_size_y = 99, columns = 8, rows = 1))]
     female_adventurer_layout: Handle<TextureAtlasLayout>,
+}
+
+fn render_description(mut commands: Commands) {
+    commands.spawn(Camera2d::default());
+    commands.spawn(Text::new(
+        r#"
+    See the console for progress output
+    
+    This window will close when progress completes..."#,
+    ));
 }
 
 fn track_fake_long_task(time: Res<Time>) -> Progress {
