@@ -477,6 +477,10 @@ impl<S: FreelyMutableState> ConfigureLoadingState for LoadingState<S> {
 
         self
     }
+
+    fn init_resource<R: Resource + FromWorld>(self) -> Self {
+        self.finally_init_resource::<R>()
+    }
 }
 
 ///  Systems in this set check the loading state of assets.

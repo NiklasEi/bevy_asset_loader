@@ -48,6 +48,17 @@ pub trait ConfigureLoadingState {
     /// See the `dynamic_asset` example
     #[must_use = "The configuration will only be applied when passed to App::configure_loading_state"]
     fn with_dynamic_assets_file<C: DynamicAssetCollection + Asset>(self, file: &str) -> Self;
+
+    /// The resource will be initialized at the end of the loading state using its [`FromWorld`] implementation.
+    /// All asset collections will be available at that point and fully loaded.
+    ///
+    /// See the `finally_init_resource` example
+    #[must_use = "The configuration will only be applied when passed to App::configure_loading_state"]
+    #[deprecated(
+        since = "0.22.1",
+        note = "Method has been renamed to `finally_init_resource`"
+    )]
+    fn init_resource<R: Resource + FromWorld>(self) -> Self;
 }
 
 /// Can be used to add new asset collections or similar configuration to a loading state.
@@ -191,5 +202,9 @@ impl<S: FreelyMutableState> ConfigureLoadingState for LoadingStateConfig<S> {
         self.with_dynamic_assets_type_id(file, TypeId::of::<C>());
 
         self
+    }
+
+    fn init_resource<R: Resource + FromWorld>(self) -> Self {
+        self.finally_init_resource::<R>()
     }
 }
