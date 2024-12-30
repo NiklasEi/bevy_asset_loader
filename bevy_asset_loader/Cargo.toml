@@ -57,8 +57,8 @@ path = "examples/atlas_from_grid.rs"
 required-features = ["2d"]
 
 [[example]]
-name = "init_resource"
-path = "examples/init_resource.rs"
+name = "finally_init_resource"
+path = "examples/finally_init_resource.rs"
 
 [[example]]
 name = "manual_dynamic_asset"

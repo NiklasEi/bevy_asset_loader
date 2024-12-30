@@ -28,8 +28,8 @@ use dynamic_asset_systems::{
     resume_to_loading_asset_collections,
 };
 use systems::{
-    check_loading_collection, finish_loading_state, init_resource, initialize_loading_state,
-    reset_loading_state, resume_to_finalize, start_loading_collection,
+    check_loading_collection, finally_init_resource, finish_loading_state,
+    initialize_loading_state, reset_loading_state, resume_to_finalize, start_loading_collection,
 };
 
 #[cfg(feature = "standard_dynamic_assets")]
@@ -459,8 +459,8 @@ impl<S: FreelyMutableState> ConfigureLoadingState for LoadingState<S> {
         self
     }
 
-    fn init_resource<R: Resource + FromWorld>(mut self) -> Self {
-        self.config = self.config.init_resource::<R>();
+    fn finally_init_resource<R: Resource + FromWorld>(mut self) -> Self {
+        self.config = self.config.finally_init_resource::<R>();
 
         self
     }
@@ -717,7 +717,7 @@ pub trait LoadingStateAppExt {
     ///           LoadingState::new(GameState::Loading)
     ///             .continue_to_state(GameState::Menu)
     ///             .load_collection::<TextureForAtlas>()
-    ///             .init_resource::<TextureAtlasLayoutFromWorld>()
+    ///             .finally_init_resource::<TextureAtlasLayoutFromWorld>()
     ///         )
     /// #       .set_runner(|mut app| {app.update(); AppExit::Success})
     /// #       .run();
@@ -748,7 +748,7 @@ pub trait LoadingStateAppExt {
     /// ```
     #[deprecated(
         since = "0.19.0",
-        note = "Use `LoadingState::init_resource` or `LoadingStateConfig::init_resource` instead."
+        note = "Use `LoadingState::finally_init_resource` or `LoadingStateConfig::finally_init_resource` instead."
     )]
     fn init_resource_after_loading_state<S: FreelyMutableState, A: Resource + FromWorld>(
         &mut self,
@@ -833,7 +833,7 @@ impl LoadingStateAppExt for App {
     ) -> &mut Self {
         self.add_systems(
             OnEnterInternalLoadingState(loading_state, InternalLoadingState::Finalize),
-            init_resource::<A>,
+            finally_init_resource::<A>,
         )
     }
 }

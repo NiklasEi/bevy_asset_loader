@@ -6,7 +6,7 @@ use bevy::state::app::StatesPlugin;
 use bevy_asset_loader::prelude::*;
 
 #[test]
-fn init_resource() {
+fn finally_init_resource() {
     let mut app = App::new();
 
     app.add_plugins((
@@ -20,7 +20,7 @@ fn init_resource() {
         LoadingState::new(MyStates::Load)
             .continue_to_state(MyStates::Next)
             .load_collection::<MyAssets>()
-            .init_resource::<PostProcessed>(),
+            .finally_init_resource::<PostProcessed>(),
     )
     .add_systems(Update, timeout.run_if(in_state(MyStates::Load)))
     .add_systems(OnEnter(MyStates::Next), expect)

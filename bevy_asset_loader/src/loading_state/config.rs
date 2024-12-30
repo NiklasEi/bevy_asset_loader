@@ -4,7 +4,7 @@ use crate::loading_state::dynamic_asset_systems::{
     check_dynamic_asset_collections, load_dynamic_asset_collections,
 };
 use crate::loading_state::systems::{
-    check_loading_collection, init_resource, start_loading_collection,
+    check_loading_collection, finally_init_resource, start_loading_collection,
 };
 use crate::loading_state::{
     InternalLoadingState, InternalLoadingStateSet, LoadingStateSchedule,
@@ -32,9 +32,9 @@ pub trait ConfigureLoadingState {
     /// The resource will be initialized at the end of the loading state using its [`FromWorld`] implementation.
     /// All asset collections will be available at that point and fully loaded.
     ///
-    /// See the `init_resource` example
+    /// See the `finally_init_resource` example
     #[must_use = "The configuration will only be applied when passed to App::configure_loading_state"]
-    fn init_resource<R: Resource + FromWorld>(self) -> Self;
+    fn finally_init_resource<R: Resource + FromWorld>(self) -> Self;
 
     /// Register a custom dynamic asset collection type
     ///
@@ -169,9 +169,9 @@ impl<S: FreelyMutableState> ConfigureLoadingState for LoadingStateConfig<S> {
         self
     }
 
-    fn init_resource<R: Resource + FromWorld>(mut self) -> Self {
+    fn finally_init_resource<R: Resource + FromWorld>(mut self) -> Self {
         self.on_enter_finalize
-            .push(init_resource::<R>.into_configs());
+            .push(finally_init_resource::<R>.into_configs());
 
         self
     }
