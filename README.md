@@ -477,9 +477,9 @@ Any field in an asset collection without any attribute is required to implement 
 
 ## Initializing FromWorld resources
 
-In situations where you would like to prepare other resources based on your loaded asset collections you can use `LoadingState::init_resource` or `LoadingStateConfig::init_resource` to initialize `FromWorld` resources. See [init_resource.rs](/bevy_asset_loader/examples/init_resource.rs) for an example that loads two images and then combines their pixel data into a third image.
+In situations where you would like to prepare other resources based on your loaded asset collections you can use `LoadingState::finally_init_resource` or `LoadingStateConfig::finally_init_resource` to initialize `FromWorld` resources. See [finally_init_resource.rs](/bevy_asset_loader/examples/finally_init_resource.rs) for an example that loads two images and then combines their pixel data into a third image.
 
-Both `init_resource` methods from `bevy_asset_loader` do the same as Bevy's `App::init_resource`, but at a different point in time. While Bevy inserts your resources at application startup, `bevy_asset_loader` will initialize them only after your asset collections are available. That means you can use your asset collections in the `FromWorld` implementation of the resource.
+Both `finally_init_resource` methods from `bevy_asset_loader` do the same as Bevy's `App::init_resource`, but at a different point in time. While Bevy inserts your resources at application startup, `bevy_asset_loader` will initialize them only after your asset collections are available. That means you can use your asset collections in the `FromWorld` implementation of the resource.
 
 ## Progress tracking
 

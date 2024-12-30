@@ -16,9 +16,8 @@ use iyes_progress::{ProgressEntryId, ProgressTracker};
 use std::any::{type_name, TypeId};
 use std::marker::PhantomData;
 
-pub(crate) fn init_resource<Asset: Resource + FromWorld>(world: &mut World) {
-    let asset = Asset::from_world(world);
-    world.insert_resource(asset);
+pub(crate) fn finally_init_resource<Asset: Resource + FromWorld>(world: &mut World) {
+    world.init_resource::<Asset>();
 }
 
 #[allow(clippy::type_complexity)]

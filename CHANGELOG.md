@@ -1,5 +1,7 @@
 # Changelog
 
+- renamed `init_resource` to `finally_init_resource` to emphasise the difference to Bevy's `init_resource`
+
 ## v0.22.0 - 01.12.2024
 - support for Bevy 0.15
 - support for using sub states as loading states ([@mgi388](https://github.com/mgi388) in [#239](https://github.com/NiklasEi/bevy_asset_loader/pull/239))

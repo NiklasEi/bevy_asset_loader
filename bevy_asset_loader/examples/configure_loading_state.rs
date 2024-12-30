@@ -37,7 +37,7 @@ impl Plugin for PlayerAndMusicPlugin {
                 LoadingStateConfig::new(MyStates::AssetLoading)
                     .load_collection::<AudioAssets>()
                     .load_collection::<ImageAssets>()
-                    .init_resource::<ExampleResource>(),
+                    .finally_init_resource::<ExampleResource>(),
             );
     }
 }
