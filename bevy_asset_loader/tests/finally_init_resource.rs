@@ -6,7 +6,7 @@ use bevy::state::app::StatesPlugin;
 use bevy_asset_loader::prelude::*;
 
 #[test]
-fn init_resource() {
+fn finally_init_resource() {
     let mut app = App::new();
 
     app.add_plugins((
@@ -16,13 +16,11 @@ fn init_resource() {
         StatesPlugin,
     ));
     app.init_state::<MyStates>();
-    #[cfg(feature = "progress_tracking")]
-    app.add_plugins(iyes_progress::ProgressPlugin::new(MyStates::Load));
     app.add_loading_state(
         LoadingState::new(MyStates::Load)
             .continue_to_state(MyStates::Next)
             .load_collection::<MyAssets>()
-            .init_resource::<PostProcessed>(),
+            .finally_init_resource::<PostProcessed>(),
     )
     .add_systems(Update, timeout.run_if(in_state(MyStates::Load)))
     .add_systems(OnEnter(MyStates::Next), expect)
@@ -30,7 +28,7 @@ fn init_resource() {
 }
 
 fn timeout(time: Res<Time>) {
-    if time.elapsed_seconds_f64() > 10. {
+    if time.elapsed_secs_f64() > 10. {
         panic!("The asset loader did not change the state in 10 seconds");
     }
 }

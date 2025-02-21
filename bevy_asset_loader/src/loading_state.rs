@@ -26,20 +26,18 @@ use dynamic_asset_systems::{
     resume_to_loading_asset_collections,
 };
 use systems::{
-    check_loading_collection, finish_loading_state, init_resource, initialize_loading_state,
-    reset_loading_state, resume_to_finalize, start_loading_collection,
+    check_loading_collection, finally_init_resource, finish_loading_state,
+    initialize_loading_state, reset_loading_state, resume_to_finalize, start_loading_collection,
 };
-
-#[cfg(feature = "standard_dynamic_assets")]
-use bevy_common_assets::ron::RonAssetPlugin;
 
 #[cfg(feature = "standard_dynamic_assets")]
 use crate::standard_dynamic_asset::{
     StandardDynamicAsset, StandardDynamicAssetArrayCollection, StandardDynamicAssetCollection,
 };
-
+#[cfg(feature = "standard_dynamic_assets")]
+use bevy_common_assets::ron::RonAssetPlugin;
 #[cfg(feature = "progress_tracking")]
-use iyes_progress::TrackedProgressSet;
+use iyes_progress::ProgressEntryId;
 
 use crate::dynamic_asset::{DynamicAsset, DynamicAssets};
 use crate::loading_state::systems::{apply_internal_state_transition, run_loading_state};
@@ -55,7 +53,6 @@ use crate::loading_state::systems::{apply_internal_state_transition, run_loading
 /// App::new()
 ///         .add_plugins((MinimalPlugins, AssetPlugin::default(), StatesPlugin))
 ///         .init_state::<GameState>()
-/// #       .init_resource::<iyes_progress::ProgressCounter>()
 ///         .add_loading_state(LoadingState::new(GameState::Loading)
 ///             .continue_to_state(GameState::Menu)
 ///             .load_collection::<AudioAssets>()
@@ -67,10 +64,7 @@ use crate::loading_state::systems::{apply_internal_state_transition, run_loading
 /// }
 ///
 /// fn play_audio(mut commands: Commands, audio_assets: Res<AudioAssets>) {
-///     commands.spawn(AudioBundle {
-///         source: audio_assets.background.clone(),
-///         ..default()
-///     });
+///     commands.spawn(AudioPlayer(audio_assets.background.clone()));
 /// }
 ///
 /// #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
@@ -122,7 +116,6 @@ where
     /// App::new()
     /// #       .add_plugins((MinimalPlugins, AssetPlugin::default(), StatesPlugin))
     /// #       .init_state::<GameState>()
-    /// #       .init_resource::<iyes_progress::ProgressCounter>()
     ///         .add_loading_state(
     ///           LoadingState::new(GameState::Loading)
     ///             .continue_to_state(GameState::Menu)
@@ -175,7 +168,6 @@ where
     /// App::new()
     /// #       .add_plugins((MinimalPlugins, AssetPlugin::default(), StatesPlugin))
     /// #       .init_state::<GameState>()
-    /// #       .init_resource::<iyes_progress::ProgressCounter>()
     ///         .add_loading_state(
     ///           LoadingState::new(GameState::Loading)
     ///             .continue_to_state(GameState::Menu)
@@ -221,7 +213,6 @@ where
     /// App::new()
     /// #       .add_plugins((MinimalPlugins, AssetPlugin::default(), StatesPlugin))
     /// #       .init_state::<GameState>()
-    /// #       .init_resource::<iyes_progress::ProgressCounter>()
     ///         .add_loading_state(
     ///           LoadingState::new(GameState::Loading)
     ///             .continue_to_state(GameState::Menu)
@@ -295,7 +286,6 @@ where
     /// App::new()
     /// #       .add_plugins((MinimalPlugins, AssetPlugin::default(), StatesPlugin))
     /// #       .init_state::<GameState>()
-    /// #       .init_resource::<iyes_progress::ProgressCounter>()
     ///         .add_loading_state(
     ///           LoadingState::new(GameState::Loading)
     ///             .continue_to_state(GameState::Menu)
@@ -348,6 +338,11 @@ where
         }
         app.init_resource::<State<InternalLoadingState<S>>>();
         app.init_resource::<NextState<InternalLoadingState<S>>>();
+        #[cfg(feature = "progress_tracking")]
+        app.insert_resource(LoadingStateProgressId::<S> {
+            id: ProgressEntryId::new(),
+            _marker: default(),
+        });
 
         app.init_resource::<DynamicAssetCollections<S>>();
         #[cfg(feature = "standard_dynamic_assets")]
@@ -438,15 +433,6 @@ where
                     .register_dynamic_asset_collection::<StandardDynamicAssetArrayCollection>();
             }
 
-            #[cfg(feature = "progress_tracking")]
-            app.add_systems(
-                Update,
-                run_loading_state::<S>
-                    .in_set(TrackedProgressSet)
-                    .in_set(LoadingStateSet(self.loading_state.clone()))
-                    .run_if(in_state(self.loading_state)),
-            );
-            #[cfg(not(feature = "progress_tracking"))]
             app.add_systems(
                 Update,
                 run_loading_state::<S>
@@ -471,8 +457,8 @@ impl<S: FreelyMutableState> ConfigureLoadingState for LoadingState<S> {
         self
     }
 
-    fn init_resource<R: Resource + FromWorld>(mut self) -> Self {
-        self.config = self.config.init_resource::<R>();
+    fn finally_init_resource<R: Resource + FromWorld>(mut self) -> Self {
+        self.config = self.config.finally_init_resource::<R>();
 
         self
     }
@@ -488,6 +474,10 @@ impl<S: FreelyMutableState> ConfigureLoadingState for LoadingState<S> {
             .with_dynamic_assets_type_id(file, TypeId::of::<C>());
 
         self
+    }
+
+    fn init_resource<R: Resource + FromWorld>(self) -> Self {
+        self.finally_init_resource::<R>()
     }
 }
 
@@ -540,6 +530,32 @@ impl<T> Default for LoadingAssetHandles<T> {
         LoadingAssetHandles {
             handles: Default::default(),
             marker: Default::default(),
+        }
+    }
+}
+
+#[cfg(feature = "progress_tracking")]
+#[derive(Resource)]
+struct LoadingStateProgressId<State: FreelyMutableState> {
+    id: ProgressEntryId,
+    _marker: PhantomData<State>,
+}
+
+#[cfg(feature = "progress_tracking")]
+#[derive(Resource)]
+struct AssetCollectionsProgressId<State: FreelyMutableState, Assets: AssetCollection> {
+    id: ProgressEntryId,
+    _marker_state: PhantomData<State>,
+    _marker_assets: PhantomData<Assets>,
+}
+
+#[cfg(feature = "progress_tracking")]
+impl<State: FreelyMutableState, Assets: AssetCollection> AssetCollectionsProgressId<State, Assets> {
+    pub(crate) fn new(id: ProgressEntryId) -> Self {
+        AssetCollectionsProgressId {
+            id,
+            _marker_state: default(),
+            _marker_assets: default(),
         }
     }
 }
@@ -618,7 +634,6 @@ pub trait LoadingStateAppExt {
     /// App::new()
     /// #       .add_plugins((MinimalPlugins, AssetPlugin::default(), StatesPlugin))
     /// #       .init_state::<GameState>()
-    /// #       .init_resource::<iyes_progress::ProgressCounter>()
     ///         .add_loading_state(
     ///           LoadingState::new(GameState::Loading)
     ///             .continue_to_state(GameState::Menu)
@@ -700,12 +715,11 @@ pub trait LoadingStateAppExt {
     /// App::new()
     /// #       .add_plugins((MinimalPlugins, AssetPlugin::default(), StatesPlugin))
     /// #       .init_state::<GameState>()
-    /// #       .init_resource::<iyes_progress::ProgressCounter>()
     ///         .add_loading_state(
     ///           LoadingState::new(GameState::Loading)
     ///             .continue_to_state(GameState::Menu)
     ///             .load_collection::<TextureForAtlas>()
-    ///             .init_resource::<TextureAtlasLayoutFromWorld>()
+    ///             .finally_init_resource::<TextureAtlasLayoutFromWorld>()
     ///         )
     /// #       .set_runner(|mut app| {app.update(); AppExit::Success})
     /// #       .run();
@@ -736,7 +750,7 @@ pub trait LoadingStateAppExt {
     /// ```
     #[deprecated(
         since = "0.19.0",
-        note = "Use `LoadingState::init_resource` or `LoadingStateConfig::init_resource` instead."
+        note = "Use `LoadingState::finally_init_resource` or `LoadingStateConfig::finally_init_resource` instead."
     )]
     fn init_resource_after_loading_state<S: FreelyMutableState, A: Resource + FromWorld>(
         &mut self,
@@ -821,7 +835,7 @@ impl LoadingStateAppExt for App {
     ) -> &mut Self {
         self.add_systems(
             OnEnterInternalLoadingState(loading_state, InternalLoadingState::Finalize),
-            init_resource::<A>,
+            finally_init_resource::<A>,
         )
     }
 }

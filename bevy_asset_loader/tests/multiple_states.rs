@@ -15,11 +15,6 @@ fn main() {
         StatesPlugin,
     ));
     app.init_state::<Prepare>().init_state::<Game>();
-    #[cfg(feature = "progress_tracking")]
-    app.add_plugins((
-        iyes_progress::ProgressPlugin::new(Game::Booting),
-        iyes_progress::ProgressPlugin::new(Prepare::Loading),
-    ));
     app.add_loading_state(
         LoadingState::new(Game::Booting)
             .continue_to_state(Game::Loading)
@@ -85,7 +80,7 @@ fn go_to_game_play_loading_done(
 }
 
 fn timeout(time: Res<Time>) {
-    if time.elapsed_seconds_f64() > 30. {
+    if time.elapsed_secs_f64() > 30. {
         panic!("The app did not finish in 30 seconds");
     }
 }

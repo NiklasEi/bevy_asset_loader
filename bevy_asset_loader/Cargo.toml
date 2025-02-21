@@ -1,6 +1,6 @@
 [package]
 name = "bevy_asset_loader"
-version = "0.21.0"
+version = "0.22.0"
 authors = ["Niklas Eicker <git@nikl.me>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
@@ -27,30 +27,30 @@ standard_dynamic_assets = ["dep:bevy_common_assets", "dep:serde"]
 progress_tracking = ["dep:iyes_progress"]
 
 [dependencies]
-bevy_app = "0.14"
-bevy_asset = "0.14"
-bevy_ecs = "0.14"
-bevy_log = "0.14"
-bevy_math = { version = "0.14", optional = true }
-bevy_pbr = { version = "0.14", optional = true }
-bevy_reflect = "0.14"
-bevy_render = { version = "0.14", optional = true }
-bevy_sprite = { version = "0.14", optional = true }
-bevy_state = "0.14"
-bevy_utils = "0.14"
-bevy_asset_loader_derive = { version = "=0.21.0", path = "../bevy_asset_loader_derive" }
+bevy_app = "0.15"
+bevy_asset = "0.15"
+bevy_ecs = "0.15"
+bevy_log = "0.15"
+bevy_math = { version = "0.15", optional = true }
+bevy_pbr = { version = "0.15", optional = true }
+bevy_reflect = "0.15"
+bevy_render = { version = "0.15", optional = true }
+bevy_sprite = { version = "0.15", optional = true }
+bevy_state = "0.15"
+bevy_utils = "0.15"
+bevy_asset_loader_derive = { version = "0.22.0", path = "../bevy_asset_loader_derive" }
 anyhow = "1"
 path-slash = "0.2"
 
-bevy_common_assets = { version = "0.11.0", features = ["ron"], optional = true }
+bevy_common_assets = { version = "0.12.0", features = ["ron"], optional = true }
 serde = { version = "1", optional = true }
-iyes_progress = { version = "0.12.0", optional = true }
+iyes_progress = { version = "0.13.0", optional = true }
 
 [dev-dependencies]
-bevy = { version = "0.14.0", features = ["vorbis"] }
+bevy = { version = "0.15.0", features = ["vorbis"] }
 anyhow = "1"
-iyes_progress = { version = "0.12.0" }
-bevy_common_assets = { version = "0.11.0", features = ["ron"] }
+iyes_progress = { version = "0.13.0" }
+bevy_common_assets = { version = "0.12.0", features = ["ron"] }
 serde = { version = "1" }
 ron = "0.8.1"
 trybuild = { version = "1.0" }
@@ -72,8 +72,8 @@ path = "examples/atlas_from_grid.rs"
 required-features = ["2d"]
 
 [[example]]
-name = "init_resource"
-path = "examples/init_resource.rs"
+name = "finally_init_resource"
+path = "examples/finally_init_resource.rs"
 
 [[example]]
 name = "manual_dynamic_asset"
@@ -136,3 +136,7 @@ required-features = ["2d"]
 [[example]]
 name = "asset_maps"
 path = "examples/asset_maps.rs"
+
+[[example]]
+name = "sub_state"
+path = "examples/sub_state.rs"

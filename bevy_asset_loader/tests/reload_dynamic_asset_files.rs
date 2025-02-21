@@ -18,11 +18,6 @@ fn main() {
         StatesPlugin,
     ));
     app.init_state::<MyStates>();
-    #[cfg(feature = "progress_tracking")]
-    app.add_plugins((
-        iyes_progress::ProgressPlugin::new(MyStates::SplashAssetLoading),
-        iyes_progress::ProgressPlugin::new(MyStates::MainMenuAssetLoading),
-    ));
     app.insert_resource(SplashTimer(Timer::from_seconds(1.0, TimerMode::Once)))
         .add_loading_state(
             LoadingState::new(MyStates::SplashAssetLoading)
@@ -79,7 +74,7 @@ fn splash_countdown(
 }
 
 fn timeout(time: Res<Time>) {
-    if time.elapsed_seconds_f64() > 30. {
+    if time.elapsed_secs_f64() > 30. {
         panic!("The app did not finish in 30 seconds");
     }
 }

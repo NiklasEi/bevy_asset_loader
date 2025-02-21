@@ -11,7 +11,7 @@ This [Bevy][bevy] plugin reduces boilerplate for handling game assets. The crate
 
 In most cases you will want to load your asset collections during loading states (think loading screens). During such a state, all assets are loaded and their loading progress is observed. Only when asset collections can be built with fully loaded asset handles, the collections are inserted to Bevy's ECS as resources. If you do not want to use a loading state, asset collections can still result in cleaner code and improved maintainability (see the ["usage without a loading state"](#usage-without-a-loading-state) section).
 
-_The `main` branch and the latest release support Bevy version `0.14` (see [version table](#compatible-bevy-versions))_
+_The `main` branch and the latest release support Bevy version `0.15` (see [version table](#compatible-bevy-versions))_
 
 ## Loading states
 
@@ -45,10 +45,7 @@ struct AudioAssets {
 /// This system runs in MyStates::Next. Thus, AudioAssets is available as a resource
 /// and the contained handle is done loading.
 fn start_background_audio(mut commands: Commands, audio_assets: Res<AudioAssets>) {
-    commands.spawn(AudioBundle {
-        source: audio_assets.background.clone(),
-        settings: PlaybackSettings::LOOP,
-    });
+    commands.spawn((AudioPlayer(audio_assets.background.clone()), PlaybackSettings::LOOP));
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
@@ -245,12 +242,16 @@ use bevy_asset_loader::asset_collection::AssetCollection;
 #[derive(AssetCollection, Resource)]
 struct ImageAssets {
     #[asset(path = "images/pixel_tree.png")]
-    #[asset(image(sampler = linear))]
+    #[asset(image(sampler(filter = linear)))]
     tree_linear: Handle<Image>,
 
     #[asset(path = "images/pixel_tree.png")]
-    #[asset(image(sampler = nearest))]
+    #[asset(image(sampler(filter = nearest)))]
     tree_nearest: Handle<Image>,
+
+    #[asset(path = "images/pixel_tree.png")]
+    #[asset(image(sampler(filter = linear, wrap = repeat)))]
+    tree_linear_repeat: Handle<Image>,
 }
 ```
 
@@ -260,11 +261,18 @@ The corresponding dynamic asset would be
 ({
     "tree_nearest": Image (
         path: "images/tree.png",
-        sampler: Nearest
+        filter: Nearest,
+        wrap: Clamp
     ),
     "tree_linear": Image (
         path: "images/tree.png",
-        sampler: Linear
+        filter: Linear,
+        wrap: Clamp
+    ),
+    "tree_linear_repeat": Image (
+        path: "images/tree.png",
+        filter: Linear,
+        wrap: Repeat
     ),
 })
 ```
@@ -469,9 +477,9 @@ Any field in an asset collection without any attribute is required to implement 
 
 ## Initializing FromWorld resources
 
-In situations where you would like to prepare other resources based on your loaded asset collections you can use `LoadingState::init_resource` or `LoadingStateConfig::init_resource` to initialize `FromWorld` resources. See [init_resource.rs](/bevy_asset_loader/examples/init_resource.rs) for an example that loads two images and then combines their pixel data into a third image.
+In situations where you would like to prepare other resources based on your loaded asset collections you can use `LoadingState::finally_init_resource` or `LoadingStateConfig::finally_init_resource` to initialize `FromWorld` resources. See [finally_init_resource.rs](/bevy_asset_loader/examples/finally_init_resource.rs) for an example that loads two images and then combines their pixel data into a third image.
 
-Both `init_resource` methods from `bevy_asset_loader` do the same as Bevy's `App::init_resource`, but at a different point in time. While Bevy inserts your resources at application startup, `bevy_asset_loader` will initialize them only after your asset collections are available. That means you can use your asset collections in the `FromWorld` implementation of the resource.
+Both `finally_init_resource` methods from `bevy_asset_loader` do the same as Bevy's `App::init_resource`, but at a different point in time. While Bevy inserts your resources at application startup, `bevy_asset_loader` will initialize them only after your asset collections are available. That means you can use your asset collections in the `FromWorld` implementation of the resource.
 
 ## Progress tracking
 
@@ -493,7 +501,7 @@ In most cases of failed loading states, an asset file is missing or a certain as
 
 Although the pattern of a loading state is quite nice (imo), you might have reasons not to use it. In this case, `bevy_asset_loader` can still be helpful. Deriving `AssetCollection` on a resource can significantly reduce the boilerplate for managing assets.
 
-Asset collections loaded without a loading state do not support folders, dynamic assets, or the `iamge` annotation. This is because these features require some form of waiting (see [potential future support for these features](https://github.com/NiklasEi/bevy_asset_loader/issues/230)).
+Asset collections loaded without a loading state do not support folders, dynamic assets, or the `image` annotation. This is because these features require some form of waiting (see [potential future support for these features](https://github.com/NiklasEi/bevy_asset_loader/issues/230)).
 
 You can directly initialise asset collections on the bevy `App` or `World`. See [no_loading_state.rs](/bevy_asset_loader/examples/no_loading_state.rs) for a complete example.
 
@@ -529,6 +537,7 @@ Compatibility of `bevy_asset_loader` versions:
 
 | Bevy version | `bevy_asset_loader` version |
 |:-------------|:----------------------------|
+| `0.15`       | `0.22`                      |
 | `0.14`       | `0.21`                      |
 | `0.13`       | `0.20`                      |
 | `0.12`       | `0.18` - `0.19`             |
@@ -539,7 +548,7 @@ Compatibility of `bevy_asset_loader` versions:
 | `0.7`        | `0.10` - `0.11`             |
 | `0.6`        | `0.8` - `0.9`               |
 | `0.5`        | `0.1` - `0.7`               |
-| `0.13`       | branch `main`               |
+| `0.15`       | branch `main`               |
 | `main`       | branch `bevy_main`          |
 
 ## License

@@ -42,26 +42,23 @@ struct ImageAssets {
 struct Player;
 
 fn spawn_player_and_tree(mut commands: Commands, image_assets: Res<ImageAssets>) {
-    commands.spawn(Camera2dBundle::default());
-    commands
-        .spawn(SpriteBundle {
-            texture: image_assets.player.clone(),
-            transform: Transform::from_translation(Vec3::new(0., 0., 1.)),
-            ..Default::default()
-        })
-        .insert(Player);
-    commands.spawn(SpriteBundle {
-        texture: image_assets.tree.clone(),
-        transform: Transform::from_translation(Vec3::new(50., 30., 1.)),
-        ..Default::default()
-    });
+    commands.spawn(Camera2d);
+    commands.spawn((
+        Sprite::from_image(image_assets.player.clone()),
+        Transform::from_translation(Vec3::new(0., 0., 1.)),
+        Player,
+    ));
+    commands.spawn((
+        Sprite::from_image(image_assets.tree.clone()),
+        Transform::from_translation(Vec3::new(50., 30., 1.)),
+    ));
 }
 
 fn play_background_audio(mut commands: Commands, audio_assets: Res<AudioAssets>) {
-    commands.spawn(AudioBundle {
-        source: audio_assets.background.clone(),
-        settings: PlaybackSettings::LOOP,
-    });
+    commands.spawn((
+        AudioPlayer(audio_assets.background.clone()),
+        PlaybackSettings::LOOP,
+    ));
 }
 
 fn move_player(input: Res<ButtonInput<KeyCode>>, mut player: Query<&mut Transform, With<Player>>) {

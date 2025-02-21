@@ -15,8 +15,6 @@ fn same_collection_multiple_times() {
         StatesPlugin,
     ));
     app.init_state::<MyStates>();
-    #[cfg(feature = "progress_tracking")]
-    app.add_plugins(iyes_progress::ProgressPlugin::new(MyStates::Load));
     app.add_loading_state(
         LoadingState::new(MyStates::Load)
             .continue_to_state(MyStates::Play)
@@ -50,7 +48,7 @@ fn use_loading_assets(assets: Res<MyAssets>, asset_server: Res<AssetServer>) {
 }
 
 fn timeout(time: Res<Time>) {
-    if time.elapsed_seconds_f64() > 30. {
+    if time.elapsed_secs_f64() > 30. {
         panic!("The app did not finish in 30 seconds");
     }
 }

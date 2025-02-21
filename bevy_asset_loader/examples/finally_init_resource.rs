@@ -2,9 +2,9 @@ use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 
-/// This example demonstrates how you can use [`LoadingState::init_resource`] to initialize
+/// This example demonstrates how you can use [`LoadingState::finally_init_resource`] to initialize
 /// assets implementing [`FromWorld`] after your collections are inserted into the ECS.
-/// The same is possible with [`LoadingStateConfig::init_resource`] from anywhere in your Bevy application
+/// The same is possible with [`LoadingStateConfig::finally_init_resource`] from anywhere in your Bevy application
 ///
 /// In this showcase we load two images in an [`AssetCollection`] and then combine
 /// them by adding up their pixel data.
@@ -16,7 +16,7 @@ fn main() {
             LoadingState::new(MyStates::AssetLoading)
                 .continue_to_state(MyStates::Next)
                 .load_collection::<ImageAssets>()
-                .init_resource::<CombinedImage>(),
+                .finally_init_resource::<CombinedImage>(),
         )
         .add_systems(OnEnter(MyStates::Next), draw)
         .run();
@@ -63,21 +63,16 @@ fn draw(
     combined_texture: Res<CombinedImage>,
     image_assets: Res<ImageAssets>,
 ) {
-    commands.spawn(Camera2dBundle::default());
-    commands.spawn(SpriteBundle {
-        texture: image_assets.player.clone(),
-        transform: Transform::from_translation(Vec3::new(-150., 0., 1.)),
-        ..Default::default()
-    });
-    commands.spawn(SpriteBundle {
-        texture: combined_texture.combined.clone(),
-        ..Default::default()
-    });
-    commands.spawn(SpriteBundle {
-        texture: image_assets.tree.clone(),
-        transform: Transform::from_translation(Vec3::new(150., 0., 1.)),
-        ..Default::default()
-    });
+    commands.spawn(Camera2d);
+    commands.spawn((
+        Sprite::from_image(image_assets.player.clone()),
+        Transform::from_translation(Vec3::new(-150., 0., 1.)),
+    ));
+    commands.spawn(Sprite::from_image(combined_texture.combined.clone()));
+    commands.spawn((
+        Sprite::from_image(image_assets.tree.clone()),
+        Transform::from_translation(Vec3::new(150., 0., 1.)),
+    ));
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]

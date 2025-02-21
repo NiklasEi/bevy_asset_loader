@@ -6,26 +6,35 @@ use bevy::state::app::StatesPlugin;
 use bevy_asset_loader::prelude::*;
 
 #[test]
-fn can_run_without_next_state() {
-    let mut app = App::new();
-
-    app.add_plugins((
-        MinimalPlugins,
-        AssetPlugin::default(),
-        AudioPlugin::default(),
-        StatesPlugin,
-    ));
-    app.init_state::<MyStates>();
-    app.add_loading_state(LoadingState::new(MyStates::Load).load_collection::<MyAssets>())
+fn can_run_with_sub_states() {
+    App::new()
+        .add_plugins((
+            MinimalPlugins,
+            AssetPlugin::default(),
+            AudioPlugin::default(),
+            StatesPlugin,
+        ))
+        .init_state::<AppState>()
+        .add_sub_state::<MainMenuState>()
+        .add_loading_state(
+            LoadingState::new(MainMenuState::Loading)
+                .continue_to_state(MainMenuState::Active)
+                .load_collection::<MyAssets>(),
+        )
         .init_resource::<TestState>()
         .add_systems(
             Update,
             (
-                expect.run_if(in_state(MyStates::Load)),
-                timeout.run_if(in_state(MyStates::Load)),
+                load_main_menu.run_if(in_state(AppState::Load)),
+                expect.run_if(in_state(MainMenuState::Active)),
+                timeout.run_if(in_state(MainMenuState::Loading)),
             ),
         )
         .run();
+}
+
+fn load_main_menu(mut state: ResMut<NextState<AppState>>) {
+    state.set(AppState::MainMenu);
 }
 
 fn timeout(time: Res<Time>) {
@@ -61,15 +70,23 @@ impl Default for TestState {
     }
 }
 
-#[allow(dead_code)]
 #[derive(AssetCollection, Resource)]
 struct MyAssets {
     #[asset(path = "audio/background.ogg")]
-    background: Handle<AudioSource>,
+    _background: Handle<AudioSource>,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
-enum MyStates {
+enum AppState {
     #[default]
     Load,
+    MainMenu,
+}
+
+#[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, SubStates)]
+#[source(AppState = AppState::MainMenu)]
+enum MainMenuState {
+    #[default]
+    Loading,
+    Active,
 }

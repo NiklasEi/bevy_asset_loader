@@ -66,6 +66,15 @@ impl ImageAttribute {
     pub const LAYERS: &'static str = "array_texture_layers";
 }
 
+#[allow(dead_code)]
+pub(crate) struct SamplerAttribute;
+impl SamplerAttribute {
+    #[allow(dead_code)]
+    pub const FILTER: &'static str = "filter";
+    #[allow(dead_code)]
+    pub const WRAP: &'static str = "wrap";
+}
+
 pub(crate) const COLLECTION_ATTRIBUTE: &str = "collection";
 pub(crate) const PATHS_ATTRIBUTE: &str = "paths";
 pub(crate) const TYPED_ATTRIBUTE: &str = "typed";
@@ -170,7 +179,7 @@ fn impl_asset_collection(
         }
     } else {
         return Err(vec![syn::Error::new_spanned(
-            &ast.into_token_stream(),
+            ast.into_token_stream(),
             "AssetCollection can only be derived for a struct",
         )]);
     }
@@ -455,30 +464,95 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                             .parse_args_with(Punctuated::<Meta, Token![,]>::parse_terminated);
                         for attribute in image_meta_list.unwrap() {
                             match attribute {
+                                Meta::List(meta_list) => {
+                                    let path = meta_list.path.get_ident().unwrap().clone();
+                                    if path == ImageAttribute::SAMPLER {
+                                        let sampler_meta_list = meta_list
+                                            .parse_args_with(
+                                                Punctuated::<Meta, Token![,]>::parse_terminated,
+                                            )
+                                            .unwrap();
+                                        for attribute in &sampler_meta_list {
+                                            match attribute {
+                                                Meta::NameValue(named_value) => {
+                                                    let path = named_value
+                                                        .path
+                                                        .get_ident()
+                                                        .unwrap()
+                                                        .clone();
+                                                    if path == SamplerAttribute::FILTER {
+                                                        if let Expr::Path(ExprPath {
+                                                            path, ..
+                                                        }) = &named_value.value
+                                                        {
+                                                            let filter_result =
+                                                                FilterType::try_from(
+                                                                    path.get_ident()
+                                                                        .unwrap()
+                                                                        .to_string(),
+                                                                );
+
+                                                            if let Ok(filter) = filter_result {
+                                                                builder.filter = Some(filter);
+                                                            } else {
+                                                                errors.push(ParseFieldError::UnknownAttribute(
+                                                                    named_value.value.clone().into_token_stream(),
+                                                                ));
+                                                            }
+                                                        } else {
+                                                            errors.push(
+                                                                ParseFieldError::WrongAttributeType(
+                                                                    named_value.into_token_stream(),
+                                                                    "path",
+                                                                ),
+                                                            );
+                                                        }
+                                                    }
+                                                    if path == SamplerAttribute::WRAP {
+                                                        if let Expr::Path(ExprPath {
+                                                            path, ..
+                                                        }) = &named_value.value
+                                                        {
+                                                            let wrap_result = WrapMode::try_from(
+                                                                path.get_ident()
+                                                                    .unwrap()
+                                                                    .to_string(),
+                                                            );
+
+                                                            if let Ok(wrap) = wrap_result {
+                                                                builder.wrap = Some(wrap);
+                                                            } else {
+                                                                errors.push(ParseFieldError::UnknownAttribute(
+                                                                    named_value.value.clone().into_token_stream(),
+                                                                ));
+                                                            }
+                                                        } else {
+                                                            errors.push(
+                                                                ParseFieldError::WrongAttributeType(
+                                                                    named_value.into_token_stream(),
+                                                                    "path",
+                                                                ),
+                                                            );
+                                                        }
+                                                    }
+                                                }
+                                                Meta::List(_) | Meta::Path(_) => {
+                                                    errors.push(
+                                                        ParseFieldError::WrongAttributeType(
+                                                            sampler_meta_list
+                                                                .clone()
+                                                                .into_token_stream(),
+                                                            "name-value",
+                                                        ),
+                                                    );
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                                 Meta::NameValue(named_value) => {
                                     let path = named_value.path.get_ident().unwrap().clone();
-                                    if path == ImageAttribute::SAMPLER {
-                                        if let Expr::Path(ExprPath { path, .. }) =
-                                            &named_value.value
-                                        {
-                                            let sampler_result = SamplerType::try_from(
-                                                path.get_ident().unwrap().to_string(),
-                                            );
-
-                                            if let Ok(sampler) = sampler_result {
-                                                builder.sampler = Some(sampler);
-                                            } else {
-                                                errors.push(ParseFieldError::UnknownAttribute(
-                                                    named_value.value.into_token_stream(),
-                                                ));
-                                            }
-                                        } else {
-                                            errors.push(ParseFieldError::WrongAttributeType(
-                                                named_value.into_token_stream(),
-                                                "path",
-                                            ));
-                                        }
-                                    } else if path == ImageAttribute::LAYERS {
+                                    if path == ImageAttribute::LAYERS {
                                         if let Expr::Lit(ExprLit {
                                             lit: Lit::Int(layers),
                                             ..
@@ -492,6 +566,10 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                                                 "u32",
                                             ));
                                         }
+                                    } else {
+                                        errors.push(ParseFieldError::UnknownAttributeType(
+                                            path.into_token_stream(),
+                                        ));
                                     }
                                 }
                                 _ => {
