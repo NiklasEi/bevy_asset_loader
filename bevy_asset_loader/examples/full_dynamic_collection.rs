@@ -4,8 +4,8 @@
 use bevy::app::AppExit;
 use bevy::asset::UntypedAssetId;
 use bevy::image::{ImageAddressMode, ImageSampler, ImageSamplerDescriptor};
+use bevy::platform_support::collections::HashMap;
 use bevy::prelude::*;
-use bevy::utils::HashMap;
 use bevy_asset_loader::prelude::*;
 
 const FOLDER_SIZE: usize = 8;
@@ -272,7 +272,7 @@ fn expectations(
 
     info!("Everything looks good!");
     info!("Quitting the application...");
-    quit.send(AppExit::Success);
+    quit.write(AppExit::Success);
 }
 
 fn is_recursively_loaded(handle: impl Into<UntypedAssetId>, asset_server: &AssetServer) -> bool {

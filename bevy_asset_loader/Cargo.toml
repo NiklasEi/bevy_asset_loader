@@ -1,8 +1,8 @@
 [package]
 name = "bevy_asset_loader"
-version = "0.22.0"
+version = "0.23.0-rc.1"
 authors = ["Niklas Eicker <git@nikl.me>"]
-edition = "2021"
+edition = "2024"
 license = "MIT OR Apache-2.0"
 description = "Bevy plugin for asset loading"
 repository = "https://github.com/NiklasEi/bevy_asset_loader"
@@ -10,7 +10,7 @@ homepage = "https://github.com/NiklasEi/bevy_asset_loader"
 documentation = "https://docs.rs/bevy_asset_loader"
 keywords = ["bevy", "gamedev", "asset", "assets"]
 categories = ["game-development"]
-rust-version = "1.74.0"
+rust-version = "1.85.0"
 readme = "README.md"
 
 [features]
@@ -22,20 +22,20 @@ standard_dynamic_assets = ["dep:bevy_common_assets", "dep:serde"]
 progress_tracking = ["dep:iyes_progress"]
 
 [dependencies]
-bevy = { version = "0.15.0", default-features = false, features = ["bevy_asset", "bevy_state"] }
-bevy_asset_loader_derive = { version = "0.22.0", path = "../bevy_asset_loader_derive" }
+bevy = { version = "0.16.0-rc.1", default-features = false, features = ["bevy_asset", "bevy_state", "bevy_log"] }
+bevy_asset_loader_derive = { version = "0.23.0-rc.1", path = "../bevy_asset_loader_derive" }
 anyhow = "1"
 path-slash = "0.2"
 
-bevy_common_assets = { version = "0.12.0", features = ["ron"], optional = true }
+bevy_common_assets = { version = "0.13.0-rc.1", features = ["ron"], optional = true }
 serde = { version = "1", optional = true }
-iyes_progress = { version = "0.13.0", optional = true }
+iyes_progress = { git = "https://github.com/IyesGames/iyes_progress", optional = true }
 
 [dev-dependencies]
-bevy = { version = "0.15.0", features = ["vorbis"] }
+bevy = { version = "0.16.0-rc.1", features = ["vorbis"] }
 anyhow = "1"
-iyes_progress = { version = "0.13.0" }
-bevy_common_assets = { version = "0.12.0", features = ["ron"] }
+iyes_progress = { git = "https://github.com/IyesGames/iyes_progress" }
+bevy_common_assets = { version = "0.13.0-rc.1", features = ["ron"] }
 serde = { version = "1" }
 ron = "0.8.1"
 trybuild = { version = "1.0" }

@@ -13,7 +13,7 @@ use bevy::prelude::{NextState, Res, ResMut, Resource, Schedules};
 use bevy::state::state::{FreelyMutableState, State};
 #[cfg(feature = "progress_tracking")]
 use iyes_progress::{ProgressEntryId, ProgressTracker};
-use std::any::{type_name, TypeId};
+use std::any::{TypeId, type_name};
 use std::marker::PhantomData;
 
 pub(crate) fn finally_init_resource<Asset: Resource + FromWorld>(world: &mut World) {

@@ -1,8 +1,8 @@
 use bevy::ecs::system::SystemState;
+use bevy::platform_support::collections::HashMap;
 use bevy::prelude::*;
 use bevy::reflect::TypePath;
 use bevy::render::render_asset::RenderAssetUsages;
-use bevy::utils::HashMap;
 use bevy_asset_loader::prelude::*;
 use bevy_common_assets::ron::RonAssetPlugin;
 
@@ -44,7 +44,7 @@ fn render_stuff(mut commands: Commands, assets: Res<MyAssets>) {
         PointLight {
             intensity: 1500.0,
             shadows_enabled: true,
-            ..default()
+            ..Default::default()
         },
         Transform::from_xyz(4.0, 8.0, 4.0),
     ));
@@ -128,22 +128,18 @@ impl DynamicAsset for CustomDynamicAsset {
                 let second = images
                     .get(&asset_server.load(bottom_layer))
                     .expect("Failed to get second layer");
+                let combined_data: Vec<u8> = first
+                    .data
+                    .as_ref()
+                    .unwrap()
+                    .iter()
+                    .zip(second.data.as_ref().expect("Image has no data").iter())
+                    .map(|(a, b)| a.saturating_add(*b))
+                    .collect();
                 let combined = Image::new(
                     second.texture_descriptor.size,
                     second.texture_descriptor.dimension,
-                    second
-                        .data
-                        .iter()
-                        .enumerate()
-                        .map(|(index, data)| {
-                            data.saturating_add(
-                                *first
-                                    .data
-                                    .get(index)
-                                    .expect("Images do not have the same size!"),
-                            )
-                        })
-                        .collect(),
+                    combined_data,
                     second.texture_descriptor.format,
                     RenderAssetUsages::all(),
                 );

@@ -1,7 +1,7 @@
 use bevy::app::AppExit;
 use bevy::asset::AssetPath;
+use bevy::platform_support::collections::HashMap;
 use bevy::prelude::*;
-use bevy::utils::HashMap;
 use bevy_asset_loader::prelude::*;
 
 fn main() {
@@ -71,7 +71,7 @@ fn use_audio_assets(audio_assets: Res<AudioAssets>, mut quit: EventWriter<AppExi
 
     info!("Everything looks good!");
     info!("Quitting the application...");
-    quit.send(AppExit::Success);
+    quit.write(AppExit::Success);
 }
 
 #[derive(PartialEq, Eq, Hash)]

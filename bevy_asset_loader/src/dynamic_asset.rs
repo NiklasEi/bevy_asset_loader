@@ -1,10 +1,10 @@
-use bevy::utils::HashMap;
 use std::any::TypeId;
 use std::fmt::Debug;
 
 use bevy::asset::{Asset, AssetServer, UntypedHandle};
-use bevy::ecs::system::Resource;
+use bevy::ecs::resource::Resource;
 use bevy::ecs::world::World;
+use bevy::platform_support::collections::HashMap;
 use bevy::state::state::FreelyMutableState;
 use std::marker::PhantomData;
 

@@ -3,17 +3,18 @@ use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssets};
 use bevy::asset::{Asset, AssetServer, Assets, LoadedFolder, UntypedHandle};
 use bevy::ecs::change_detection::Res;
 use bevy::ecs::system::SystemState;
-use bevy::ecs::world::{Command, World};
+use bevy::ecs::system::command::Command;
+use bevy::ecs::world::World;
+use bevy::platform_support::collections::HashMap;
 use bevy::reflect::TypePath;
-use bevy::utils::HashMap;
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "2d")]
+use bevy::image::TextureAtlasLayout;
 #[cfg(feature = "2d")]
 use bevy::math::UVec2;
 #[cfg(feature = "3d")]
 use bevy::pbr::StandardMaterial;
-#[cfg(feature = "2d")]
-use bevy::sprite::TextureAtlasLayout;
 
 #[cfg(any(feature = "3d", feature = "2d"))]
 use bevy::ecs::change_detection::ResMut;

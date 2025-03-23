@@ -1,8 +1,8 @@
 use bevy::app::AppExit;
 use bevy::asset::UntypedAssetId;
 use bevy::image::{ImageSampler, ImageSamplerDescriptor};
+use bevy::platform_support::collections::HashMap;
 use bevy::prelude::*;
-use bevy::utils::HashMap;
 use bevy_asset_loader::prelude::*;
 
 fn main() {
@@ -163,7 +163,7 @@ fn expectations(
 
     info!("Everything looks good!");
     info!("Quitting the application...");
-    quit.send(AppExit::Success);
+    quit.write(AppExit::Success);
 }
 
 struct ColorStandardMaterial<const R: u8, const G: u8, const B: u8, const A: u8> {
