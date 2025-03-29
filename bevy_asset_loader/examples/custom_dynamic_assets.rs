@@ -14,6 +14,10 @@ fn main() {
         ))
         // We need to make sure that our dynamic asset collections can be loaded from the asset file
         .init_state::<MyStates>()
+        .insert_resource(AmbientLight {
+            brightness: 500.0,
+            ..default()
+        })
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading)
                 .continue_to_state(MyStates::Next)
@@ -40,14 +44,11 @@ fn render_stuff(mut commands: Commands, assets: Res<MyAssets>) {
         MeshMaterial3d(assets.player_standard_material.clone()),
         Transform::from_xyz(1., 0., 1.),
     ));
-    commands.spawn((
-        PointLight {
-            intensity: 1500.0,
-            shadows_enabled: true,
-            ..Default::default()
-        },
-        Transform::from_xyz(4.0, 8.0, 4.0),
-    ));
+    commands.spawn(PointLight {
+        intensity: 1500.0,
+        shadows_enabled: true,
+        ..Default::default()
+    });
 
     commands.spawn((
         Camera2d,
