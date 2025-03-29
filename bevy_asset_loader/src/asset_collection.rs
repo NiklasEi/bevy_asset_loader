@@ -23,11 +23,11 @@ pub use bevy_asset_loader_derive::AssetCollection;
 #[diagnostic::on_unimplemented(
     message = "`{Self}` is not an `AssetCollection`",
     label = "invalid `AssetCollection`",
-    note = "consider annotating `{Self}` with `#[derive(AssetCollection)]`"
+    note = "consider annotating `{Self}` with `#[derive(AssetCollection, Resource)]`"
 )]
 pub trait AssetCollection: Resource {
-    /// Create a new asset collection from the [`AssetServer`](::bevy::asset::AssetServer)
-    fn create(world: &mut World) -> Self;
+    /// Build and then insert the asset collection as resource
+    fn add(world: &mut World);
     /// Start loading all the assets in the collection
     fn load(world: &mut World) -> Vec<UntypedHandle>;
 }
@@ -54,8 +54,7 @@ impl AssetCollectionApp for App {
             self.init_resource::<DynamicAssets>();
             // make sure the assets start to load
             let _ = Collection::load(self.world_mut());
-            let resource = Collection::create(self.world_mut());
-            self.insert_resource(resource);
+            Collection::add(self.world_mut());
         }
         self
     }
@@ -77,8 +76,7 @@ impl AssetCollectionWorld for World {
             // Since bevy_asset_loader can be used without adding a plugin,
             // we need to make sure the resource exists here
             self.init_resource::<DynamicAssets>();
-            let collection = A::create(self);
-            self.insert_resource(collection);
+            A::add(self);
         }
     }
 }

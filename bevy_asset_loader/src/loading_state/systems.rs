@@ -91,8 +91,7 @@ pub(crate) fn check_loading_collection<S: FreelyMutableState, Assets: AssetColle
             }
         }
         if total == done {
-            let asset_collection = Assets::create(world);
-            world.insert_resource(asset_collection);
+            Assets::add(world);
             world.remove_resource::<LoadingAssetHandles<Assets>>();
         }
     }

@@ -210,29 +210,29 @@ fn impl_asset_collection(
         index += 1;
         tokens
     }));
-    let create_function = quote! {
-        fn create(world: &mut ::bevy::ecs::world::World) -> Self {
+    let add_function = quote! {
+        fn add(world: &mut ::bevy::ecs::world::World) {
             let from_world_fields = (#prepare_from_world);
-            world.resource_scope(
+            let collection = world.resource_scope(
                 |world, asset_keys: ::bevy::prelude::Mut<::bevy_asset_loader::dynamic_asset::DynamicAssets>| {
                     #name {
                         #asset_creation
                     }
                 },
-            )
+            );
+            world.insert_resource(collection);
         }
     };
 
-    let impl_asset_collection = quote! {
+    Ok(quote! {
         #[automatically_derived]
         #[allow(unused_variables)]
         impl AssetCollection for #name {
-            #create_function
+            #add_function
 
             #load_function
         }
-    };
-    Ok(impl_asset_collection)
+    })
 }
 
 #[derive(Debug)]
