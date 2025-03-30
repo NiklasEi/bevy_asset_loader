@@ -71,6 +71,8 @@ pub mod dynamic_asset;
 pub mod loading_state;
 /// Trait definition for mapped assets collection
 pub mod mapped;
+/// todo
+pub mod rewrite;
 /// Dynamic assets for common Bevy asset types
 #[cfg_attr(docsrs, doc(cfg(feature = "standard_dynamic_assets")))]
 #[cfg(feature = "standard_dynamic_assets")]
