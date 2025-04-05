@@ -26,7 +26,7 @@ use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssetCollections};
 use config::{ConfigureLoadingState, LoadingStateConfig};
 use dynamic_asset_systems::resume_to_loading_asset_collections;
 use systems::{
-    finish_loading_state, initialize_loading_state, reset_loading_state, resume_to_finalize,
+    finish_loading_state, initialize_loading_state, reset_loading_state,
 };
 
 #[cfg(feature = "standard_dynamic_assets")]
@@ -386,7 +386,6 @@ where
                     resume_to_loading_asset_collections::<S>
                         .in_set(InternalLoadingStateSet::ResumeDynamicAssetCollections),
                     initialize_loading_state::<S>.in_set(InternalLoadingStateSet::Initialize),
-                    resume_to_finalize::<S>.in_set(InternalLoadingStateSet::CheckAssets),
                     finish_loading_state::<S>.in_set(InternalLoadingStateSet::Finalize),
                 ),
             )

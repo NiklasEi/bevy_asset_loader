@@ -3,7 +3,7 @@ use bevy::app::App;
 use bevy::asset::UntypedHandle;
 use bevy::ecs::resource::Resource;
 use bevy::ecs::world::World;
-
+use bevy::prelude::BevyError;
 pub use bevy_asset_loader_derive::AssetCollection;
 
 /// Trait to mark a struct as a collection of assets
@@ -29,7 +29,7 @@ pub trait AssetCollection: Resource {
     /// Build and then insert the asset collection as resource
     fn add(world: &mut World);
     /// Start loading all the assets in the collection
-    fn load(world: &mut World) -> Vec<UntypedHandle>;
+    fn load(world: &mut World) -> Result<Vec<UntypedHandle>, BevyError>;
 }
 
 /// Extension trait for [`App`] enabling initialisation of [asset collections](crate::asset_collection::AssetCollection)

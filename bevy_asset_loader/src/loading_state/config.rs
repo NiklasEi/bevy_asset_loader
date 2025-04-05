@@ -3,9 +3,7 @@ use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssetCollections};
 use crate::loading_state::dynamic_asset_systems::{
     check_dynamic_asset_collections, load_dynamic_asset_collections,
 };
-use crate::loading_state::systems::{
-    check_loading_collection, finally_init_resource, start_loading_collection,
-};
+use crate::loading_state::systems::{check_progress, finally_init_resource, start_loading_collection};
 use crate::loading_state::{
     InternalLoadingState, InternalLoadingStateSet, LoadingStateSchedule,
     OnEnterInternalLoadingState,
@@ -17,6 +15,7 @@ use bevy::platform_support::collections::HashMap;
 use bevy::prelude::{BevyError, FromWorld, IntoScheduleConfigs, Resource, default};
 use bevy::state::state::FreelyMutableState;
 use std::any::TypeId;
+use crate::rewrite::{AssetCollectionNode, AssetCollectionNodeConfig};
 
 /// Methods to configure a loading state
 pub trait ConfigureLoadingState {
@@ -61,8 +60,8 @@ pub trait ConfigureLoadingState {
     fn init_resource<R: Resource + FromWorld>(self) -> Self;
 }
 
-type SchedulConfig = ScheduleConfigs<
-    Box<(dyn bevy::prelude::System<In = (), Out = Result<(), BevyError>> + 'static)>,
+pub type ScheduleConfig<Out = ()> = ScheduleConfigs<
+    Box<(dyn bevy::prelude::System<In = (), Out = Result<Out, BevyError>> + 'static)>,
 >;
 
 /// Can be used to add new asset collections or similar configuration to a loading state.
@@ -104,10 +103,11 @@ type SchedulConfig = ScheduleConfigs<
 pub struct LoadingStateConfig<S: FreelyMutableState> {
     state: S,
 
-    on_enter_loading_assets: Vec<SchedulConfig>,
-    on_enter_loading_dynamic_asset_collections: Vec<SchedulConfig>,
-    on_update: Vec<SchedulConfig>,
-    on_enter_finalize: Vec<SchedulConfig>,
+    asset_collection_nodes: Vec<AssetCollectionNodeConfig>,
+    on_enter_loading_assets: Vec<ScheduleConfig>,
+    on_enter_loading_dynamic_asset_collections: Vec<ScheduleConfig>,
+    on_update: Vec<ScheduleConfig>,
+    on_enter_finalize: Vec<ScheduleConfig>,
 
     dynamic_assets: HashMap<TypeId, Vec<String>>,
 }
@@ -173,10 +173,11 @@ impl<S: FreelyMutableState> LoadingStateConfig<S> {
 
 impl<S: FreelyMutableState> ConfigureLoadingState for LoadingStateConfig<S> {
     fn load_collection<A: AssetCollection>(mut self) -> Self {
+        self.asset_collection_nodes.push(AssetCollectionNodeConfig::new::<A>());
         self.on_enter_loading_assets
-            .push(start_loading_collection::<S, A>.into_configs());
+            .push(start_loading_collection.into_configs());
         self.on_update.push(
-            check_loading_collection::<S, A>
+            check_progress::<S>
                 .in_set(InternalLoadingStateSet::CheckAssets)
                 .into_configs(),
         );
