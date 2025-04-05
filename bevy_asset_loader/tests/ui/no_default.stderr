@@ -2,17 +2,17 @@ error[E0277]: the trait bound `NoDefault: FromWorld` is not satisfied
  --> tests/ui/no_default.rs:8:5
   |
 8 |     no_default: NoDefault,
-  |     ^^^^^^^^^^ the trait `std::default::Default` is not implemented for `NoDefault`, which is required by `NoDefault: FromWorld`
+  |     ^^^^^^^^^^ the trait `std::default::Default` is not implemented for `NoDefault`
   |
   = help: the following other types implement trait `FromWorld`:
+            AtmosphereSamplers
             BlitPipeline
             BoxShadowPipeline
             CasNode
             CasPipeline
-            Children
+            ChildOf
+            DefaultQueryFilters
             DeferredLightingLayout
-            DepthOfFieldGlobalBindGroupLayout
-            FallbackImage
           and $N others
   = note: required for `NoDefault` to implement `FromWorld`
 help: consider annotating `NoDefault` with `#[derive(Default)]`
