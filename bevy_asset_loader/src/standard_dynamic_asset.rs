@@ -5,7 +5,7 @@ use bevy::ecs::change_detection::Res;
 use bevy::ecs::system::SystemState;
 use bevy::ecs::system::command::Command;
 use bevy::ecs::world::World;
-use bevy::platform_support::collections::HashMap;
+use bevy::platform::collections::HashMap;
 use bevy::reflect::TypePath;
 use serde::{Deserialize, Serialize};
 

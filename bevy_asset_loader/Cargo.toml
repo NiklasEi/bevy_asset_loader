@@ -22,12 +22,18 @@ standard_dynamic_assets = ["dep:bevy_common_assets", "dep:serde"]
 progress_tracking = ["dep:iyes_progress"]
 
 [dependencies]
-bevy = { version = "0.16.0-rc.4", default-features = false, features = ["bevy_asset", "bevy_state"] }
+bevy = { version = "0.16.0-rc.5", default-features = false, features = [
+    "bevy_asset",
+    "bevy_state",
+    "bevy_log",
+] }
 bevy_asset_loader_derive = { version = "0.23.0-rc.2", path = "../bevy_asset_loader_derive" }
 anyhow = "1"
 path-slash = "0.2"
 
-bevy_common_assets = { version = "0.13.0-rc.1", features = ["ron"], optional = true }
+bevy_common_assets = { version = "0.13.0-rc.1", features = [
+    "ron",
+], optional = true }
 serde = { version = "1", optional = true }
 iyes_progress = { version = "0.14.0-rc.1", optional = true }
 
