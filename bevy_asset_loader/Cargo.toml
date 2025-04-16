@@ -1,6 +1,6 @@
 [package]
 name = "bevy_asset_loader"
-version = "0.23.0-rc.2"
+version = "0.23.0-rc.3"
 authors = ["Niklas Eicker <git@nikl.me>"]
 edition = "2024"
 license = "MIT OR Apache-2.0"
@@ -27,7 +27,7 @@ bevy = { version = "0.16.0-rc.5", default-features = false, features = [
     "bevy_state",
     "bevy_log",
 ] }
-bevy_asset_loader_derive = { version = "0.23.0-rc.2", path = "../bevy_asset_loader_derive" }
+bevy_asset_loader_derive = { version = "0.23.0-rc.3", path = "../bevy_asset_loader_derive" }
 anyhow = "1"
 path-slash = "0.2"
 
