@@ -1,7 +1,7 @@
 use bevy::app::AppExit;
 use bevy::asset::AssetPlugin;
 use bevy::audio::AudioPlugin;
-use bevy::platform_support::collections::HashMap;
+use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
 use bevy::state::app::StatesPlugin;
 use bevy_asset_loader::prelude::*;

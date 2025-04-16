@@ -4,7 +4,7 @@
 use bevy::app::AppExit;
 use bevy::asset::UntypedAssetId;
 use bevy::image::{ImageAddressMode, ImageSampler, ImageSamplerDescriptor};
-use bevy::platform_support::collections::HashMap;
+use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 

@@ -1,5 +1,5 @@
 use bevy::ecs::system::SystemState;
-use bevy::platform_support::collections::HashMap;
+use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
 use bevy::reflect::TypePath;
 use bevy::render::render_asset::RenderAssetUsages;

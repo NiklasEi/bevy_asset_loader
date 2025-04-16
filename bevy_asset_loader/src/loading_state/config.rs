@@ -13,7 +13,7 @@ use crate::loading_state::{
 use bevy::app::App;
 use bevy::asset::Asset;
 use bevy::ecs::schedule::ScheduleConfigs;
-use bevy::platform_support::collections::HashMap;
+use bevy::platform::collections::HashMap;
 use bevy::prelude::{BevyError, FromWorld, IntoScheduleConfigs, Resource, default};
 use bevy::state::state::FreelyMutableState;
 use std::any::TypeId;

@@ -1,6 +1,6 @@
 use bevy::app::AppExit;
 use bevy::asset::AssetPath;
-use bevy::platform_support::collections::HashMap;
+use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 

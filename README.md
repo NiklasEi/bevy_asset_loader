@@ -455,7 +455,7 @@ This is only a change in derive attributes and asset field type. The examples fr
 
 ```rust
 use bevy::prelude::*;
-use bevy::platform_support::collections::HashMap;
+use bevy::platform::collections::HashMap;
 use bevy_asset_loader::asset_collection::AssetCollection;
 
 #[derive(AssetCollection, Resource)]

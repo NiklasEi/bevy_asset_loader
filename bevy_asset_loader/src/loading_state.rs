@@ -11,7 +11,7 @@ use bevy::ecs::{
     schedule::{InternedScheduleLabel, ScheduleLabel, SystemSet},
     world::FromWorld,
 };
-use bevy::platform_support::collections::{HashMap, HashSet};
+use bevy::platform::collections::{HashMap, HashSet};
 use bevy::prelude::{
     IntoScheduleConfigs, NextState, OnEnter, State, StateTransition, States, Update, in_state,
 };

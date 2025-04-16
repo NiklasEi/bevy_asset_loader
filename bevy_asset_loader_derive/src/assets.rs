@@ -228,7 +228,7 @@ impl AssetField {
                                         Res<::bevy::prelude::AssetServer>,
                                     )>::new(world);
                                     let (folders, asset_server) = system_state.get(world);
-                                    let mut folder_map = ::bevy::platform_support::collections::HashMap::default();
+                                    let mut folder_map = ::bevy::platform::collections::HashMap::default();
                                     let handle = asset_server.get_handle(#asset_path).unwrap_or_else(|| panic!("Folders are only supported when using a loading state. Consider using 'paths' for {}.{}.", #name, #field));
                                     let folder = &folders.get(&handle).unwrap().handles;
                                     for handle in folder {
@@ -259,7 +259,7 @@ impl AssetField {
                                         Res<::bevy::prelude::AssetServer>,
                                     )>::new(world);
                                     let (folders, asset_server) = system_state.get(world);
-                                    let mut folder_map = ::bevy::platform_support::collections::HashMap::default();
+                                    let mut folder_map = ::bevy::platform::collections::HashMap::default();
                                     let handle = asset_server.get_handle(#asset_path).unwrap_or_else(|| panic!("Folders are only supported when using a loading state. Consider using 'paths' for {}.{}.", #name, #field));
                                     let folder = &folders.get(&handle).unwrap().handles;
                                     for handle in folder {
@@ -318,7 +318,7 @@ impl AssetField {
                             },),
                         Mapped::Yes => quote!(#token_stream #field_ident : {
                                 let asset_server = world.get_resource::<::bevy::asset::AssetServer>().expect("Cannot get AssetServer");
-                                let mut folder_map = ::bevy::platform_support::collections::HashMap::default();
+                                let mut folder_map = ::bevy::platform::collections::HashMap::default();
                                 #(
                                     let path = ::bevy::asset::AssetPath::try_parse(#asset_paths.as_ref()).expect("Failed to parse asset path");
                                     let key = ::bevy_asset_loader::mapped::MapKey::from_asset_path(&path);
@@ -334,7 +334,7 @@ impl AssetField {
                             },),
                         Mapped::Yes => quote!(#token_stream #field_ident : {
                                 let asset_server = world.get_resource::<::bevy::asset::AssetServer>().expect("Cannot get AssetServer");
-                                let mut folder_map = ::bevy::platform_support::collections::HashMap::default();
+                                let mut folder_map = ::bevy::platform::collections::HashMap::default();
                                 #(
                                     let path = ::bevy::asset::AssetPath::try_parse(#asset_paths.as_ref()).expect("Failed to parse asset path");
                                     let key = ::bevy_asset_loader::mapped::MapKey::from_asset_path(&path);
@@ -468,7 +468,7 @@ impl AssetField {
         quote!(
             ::bevy_asset_loader::prelude::DynamicAssetType::Collection(mut handles) => {
                 let asset_server = world.get_resource::<::bevy::asset::AssetServer>().expect("Cannot get AssetServer");
-                let mut folder_map = ::bevy::platform_support::collections::HashMap::default();
+                let mut folder_map = ::bevy::platform::collections::HashMap::default();
                 for handle in handles {
                     let path = handle.path().unwrap();
                     let key = ::bevy_asset_loader::mapped::MapKey::from_asset_path(path);
