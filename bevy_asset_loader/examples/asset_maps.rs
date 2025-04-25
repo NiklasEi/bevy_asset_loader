@@ -1,7 +1,7 @@
 use bevy::app::AppExit;
 use bevy::asset::AssetPath;
+use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
-use bevy::utils::HashMap;
 use bevy_asset_loader::prelude::*;
 
 fn main() {

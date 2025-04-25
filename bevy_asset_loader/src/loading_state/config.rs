@@ -12,10 +12,11 @@ use crate::loading_state::{
 };
 use bevy::app::App;
 use bevy::asset::Asset;
-use bevy::ecs::schedule::SystemConfigs;
-use bevy::prelude::{default, FromWorld, IntoSystemConfigs, Resource};
+use bevy::ecs::schedule::ScheduleConfigs;
+use bevy::ecs::system::ScheduleSystem;
+use bevy::platform::collections::HashMap;
+use bevy::prelude::{default, FromWorld, IntoScheduleConfigs, Resource};
 use bevy::state::state::FreelyMutableState;
-use bevy::utils::HashMap;
 use std::any::TypeId;
 
 /// Methods to configure a loading state
@@ -100,10 +101,10 @@ pub trait ConfigureLoadingState {
 pub struct LoadingStateConfig<S: FreelyMutableState> {
     state: S,
 
-    on_enter_loading_assets: Vec<SystemConfigs>,
-    on_enter_loading_dynamic_asset_collections: Vec<SystemConfigs>,
-    on_update: Vec<SystemConfigs>,
-    on_enter_finalize: Vec<SystemConfigs>,
+    on_enter_loading_assets: Vec<ScheduleConfigs<ScheduleSystem>>,
+    on_enter_loading_dynamic_asset_collections: Vec<ScheduleConfigs<ScheduleSystem>>,
+    on_update: Vec<ScheduleConfigs<ScheduleSystem>>,
+    on_enter_finalize: Vec<ScheduleConfigs<ScheduleSystem>>,
 
     dynamic_assets: HashMap<TypeId, Vec<String>>,
 }
