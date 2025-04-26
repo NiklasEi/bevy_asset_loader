@@ -1,6 +1,6 @@
 [package]
 name = "bevy_asset_loader_derive"
-version = "0.23.0-rc.3"
+version = "0.23.0"
 authors = ["Niklas Eicker <git@nikl.me>"]
 edition = "2024"
 license = "MIT OR Apache-2.0"
