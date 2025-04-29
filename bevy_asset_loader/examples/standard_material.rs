@@ -35,6 +35,10 @@ fn spawn_player(
             half_size: Vec3::splat(1.0),
         })),
     ));
+    commands.insert_resource(AmbientLight {
+        brightness: 500.0,
+        ..default()
+    });
     commands.spawn((
         Camera3d::default(),
         Transform::from_xyz(-3.0, 3.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y),

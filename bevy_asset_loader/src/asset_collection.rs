@@ -1,10 +1,9 @@
-use crate::dynamic_asset::DynamicAssets;
-use bevy::app::App;
-use bevy::asset::UntypedHandle;
-use bevy::ecs::system::Resource;
-use bevy::ecs::world::World;
-
+use bevy_app::App;
+use bevy_asset::UntypedHandle;
 pub use bevy_asset_loader_derive::AssetCollection;
+use bevy_ecs::{resource::Resource, world::World};
+
+use crate::dynamic_asset::DynamicAssets;
 
 /// Trait to mark a struct as a collection of assets
 ///

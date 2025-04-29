@@ -166,7 +166,7 @@ fn move_player(input: Res<ButtonInput<KeyCode>>, mut player: Query<&mut Transfor
         return;
     }
     movement = movement.normalize() * PLAYER_SPEED;
-    if let Ok(mut transform) = player.get_single_mut() {
+    if let Ok(mut transform) = player.single_mut() {
         transform.translation += movement;
     }
 }
@@ -228,19 +228,21 @@ fn text(bundle: impl Bundle, font_assets: &FontAssets) -> impl Bundle {
 fn update_menu(
     mut background_text: Query<&mut TextSpan, With<BackgroundText>>,
     show_background: Res<ShowBackground>,
-) {
+) -> Result {
     if show_background.is_changed() {
-        background_text.single_mut().0 = if show_background.0 {
+        background_text.single_mut()?.0 = if show_background.0 {
             "On".to_string()
         } else {
             "Off".to_string()
         };
     }
+
+    Ok(())
 }
 
 fn exit_menu(mut commands: Commands, ui: Query<Entity, With<MenuUi>>) {
     for entity in &ui {
-        commands.entity(entity).despawn_recursive();
+        commands.entity(entity).despawn();
     }
 }
 

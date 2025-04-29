@@ -1,8 +1,8 @@
 use bevy::ecs::system::SystemState;
+use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
 use bevy::reflect::TypePath;
 use bevy::render::render_asset::RenderAssetUsages;
-use bevy::utils::HashMap;
 use bevy_asset_loader::prelude::*;
 use bevy_common_assets::ron::RonAssetPlugin;
 
@@ -14,6 +14,10 @@ fn main() {
         ))
         // We need to make sure that our dynamic asset collections can be loaded from the asset file
         .init_state::<MyStates>()
+        .insert_resource(AmbientLight {
+            brightness: 500.0,
+            ..default()
+        })
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading)
                 .continue_to_state(MyStates::Next)
@@ -40,14 +44,11 @@ fn render_stuff(mut commands: Commands, assets: Res<MyAssets>) {
         MeshMaterial3d(assets.player_standard_material.clone()),
         Transform::from_xyz(1., 0., 1.),
     ));
-    commands.spawn((
-        PointLight {
-            intensity: 1500.0,
-            shadows_enabled: true,
-            ..default()
-        },
-        Transform::from_xyz(4.0, 8.0, 4.0),
-    ));
+    commands.spawn(PointLight {
+        intensity: 1500.0,
+        shadows_enabled: true,
+        ..Default::default()
+    });
 
     commands.spawn((
         Camera2d,
@@ -128,22 +129,18 @@ impl DynamicAsset for CustomDynamicAsset {
                 let second = images
                     .get(&asset_server.load(bottom_layer))
                     .expect("Failed to get second layer");
+                let combined_data: Vec<u8> = first
+                    .data
+                    .as_ref()
+                    .unwrap()
+                    .iter()
+                    .zip(second.data.as_ref().expect("Image has no data").iter())
+                    .map(|(a, b)| a.saturating_add(*b))
+                    .collect();
                 let combined = Image::new(
                     second.texture_descriptor.size,
                     second.texture_descriptor.dimension,
-                    second
-                        .data
-                        .iter()
-                        .enumerate()
-                        .map(|(index, data)| {
-                            data.saturating_add(
-                                *first
-                                    .data
-                                    .get(index)
-                                    .expect("Images do not have the same size!"),
-                            )
-                        })
-                        .collect(),
+                    combined_data,
                     second.texture_descriptor.format,
                     RenderAssetUsages::all(),
                 );

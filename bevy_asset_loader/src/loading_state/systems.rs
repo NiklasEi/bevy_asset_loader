@@ -1,3 +1,19 @@
+use std::any::{TypeId, type_name};
+use std::marker::PhantomData;
+
+use bevy_asset::AssetServer;
+use bevy_ecs::schedule::Schedules;
+use bevy_ecs::world::{FromWorld, World};
+use bevy_ecs::{
+    change_detection::{Res, ResMut},
+    resource::Resource,
+    system::SystemState,
+};
+use bevy_log::{debug, info, trace, warn};
+use bevy_state::state::{FreelyMutableState, NextState, State};
+#[cfg(feature = "progress_tracking")]
+use iyes_progress::{ProgressEntryId, ProgressTracker};
+
 use crate::asset_collection::AssetCollection;
 #[cfg(feature = "progress_tracking")]
 use crate::loading_state::{AssetCollectionsProgressId, LoadingStateProgressId};
@@ -5,16 +21,6 @@ use crate::loading_state::{
     AssetLoaderConfiguration, InternalLoadingState, LoadingAssetHandles, LoadingStateSchedule,
     OnEnterInternalLoadingState,
 };
-use bevy::asset::AssetServer;
-use bevy::ecs::system::SystemState;
-use bevy::ecs::world::{FromWorld, World};
-use bevy::log::{debug, info, trace, warn};
-use bevy::prelude::{NextState, Res, ResMut, Resource, Schedules};
-use bevy::state::state::{FreelyMutableState, State};
-#[cfg(feature = "progress_tracking")]
-use iyes_progress::{ProgressEntryId, ProgressTracker};
-use std::any::{type_name, TypeId};
-use std::marker::PhantomData;
 
 pub(crate) fn finally_init_resource<Asset: Resource + FromWorld>(world: &mut World) {
     world.init_resource::<Asset>();

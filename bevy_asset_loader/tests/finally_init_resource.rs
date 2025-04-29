@@ -37,7 +37,7 @@ fn expect(collection: Option<Res<PostProcessed>>, mut exit: EventWriter<AppExit>
     if collection.is_none() {
         panic!("Post processed collection was not inserted");
     } else {
-        exit.send(AppExit::Success);
+        exit.write(AppExit::Success);
     }
 }
 

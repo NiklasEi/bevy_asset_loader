@@ -27,7 +27,7 @@ fn fail() {
 }
 
 fn exit(mut exit: EventWriter<AppExit>) {
-    exit.send(AppExit::Success);
+    exit.write(AppExit::Success);
 }
 
 fn timeout(time: Res<Time>) {
