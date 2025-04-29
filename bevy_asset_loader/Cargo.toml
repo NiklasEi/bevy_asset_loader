@@ -33,6 +33,7 @@ bevy_ecs = "0.16"
 bevy_log = "0.16"
 bevy_math = { version = "0.16", optional = true }
 bevy_pbr = { version = "0.16", optional = true }
+bevy_platform = "0.16"
 bevy_reflect = "0.16"
 bevy_render = { version = "0.16", optional = true }
 bevy_sprite = { version = "0.16", optional = true }
@@ -54,9 +55,6 @@ bevy_common_assets = { version = "0.13", features = ["ron"] }
 serde = { version = "1" }
 ron = "0.10"
 trybuild = { version = "1" }
-
-[patch.crates-io]
-iyes_progress = { git = "https://github.com/benfrankel/iyes_progress.git", branch = "bevy-0-16" }
 
 [package.metadata.docs.rs]
 all-features = true

@@ -6,6 +6,7 @@ use bevy_ecs::{
     error::BevyError,
     resource::Resource,
     schedule::{IntoScheduleConfigs, ScheduleConfigs},
+    system::System,
     world::FromWorld,
 };
 use bevy_platform::collections::HashMap;
@@ -68,9 +69,8 @@ pub trait ConfigureLoadingState {
     fn init_resource<R: Resource + FromWorld>(self) -> Self;
 }
 
-type SchedulConfig = ScheduleConfigs<
-    Box<(dyn bevy::prelude::System<In = (), Out = Result<(), BevyError>> + 'static)>,
->;
+type SchedulConfig =
+    ScheduleConfigs<Box<(dyn System<In = (), Out = Result<(), BevyError>> + 'static)>>;
 
 /// Can be used to add new asset collections or similar configuration to a loading state.
 /// ```edition2021

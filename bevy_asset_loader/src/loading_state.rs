@@ -11,10 +11,7 @@ use bevy_app::{App, Plugin, Update};
 use bevy_asset::{Asset, UntypedHandle};
 use bevy_ecs::{
     resource::Resource,
-    schedule::{
-        InternedScheduleLabel, IntoScheduleConfigs, IntoSystemConfigs, IntoSystemSetConfigs,
-        ScheduleLabel, SystemSet,
-    },
+    schedule::{InternedScheduleLabel, IntoScheduleConfigs, ScheduleLabel, SystemSet},
     world::FromWorld,
 };
 use bevy_platform::collections::{HashMap, HashSet};

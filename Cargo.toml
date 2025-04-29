@@ -1,9 +1,6 @@
 [workspace]
 resolver = "2"
-members = [
-    "bevy_asset_loader",
-    "bevy_asset_loader_derive"
-]
+members = ["bevy_asset_loader", "bevy_asset_loader_derive"]
 
 [workspace.lints.clippy]
 doc_markdown = "warn"
@@ -12,3 +9,6 @@ match_same_arms = "warn"
 semicolon_if_nothing_returned = "warn"
 map_flatten = "warn"
 manual_let_else = "warn"
+
+[patch.crates-io]
+iyes_progress = { git = "https://github.com/benfrankel/iyes_progress.git", branch = "bevy-0-16" }
