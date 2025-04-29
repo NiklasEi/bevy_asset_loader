@@ -41,7 +41,7 @@ fn expect(
 ) {
     if collection.is_some() {
         if test_state.wait_frames_after_load == 0 {
-            exit.send(AppExit::Success);
+            exit.write(AppExit::Success);
             return;
         }
         test_state.wait_frames_after_load -= 1;

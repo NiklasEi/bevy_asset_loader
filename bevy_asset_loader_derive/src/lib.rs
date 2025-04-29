@@ -16,10 +16,10 @@ use std::result::Result::{Err, Ok};
 
 use crate::assets::*;
 use proc_macro2::Ident;
-use quote::{quote, quote_spanned, ToTokens, TokenStreamExt};
-use syn::punctuated::Punctuated;
+use quote::{ToTokens, TokenStreamExt, quote, quote_spanned};
 #[cfg(any(feature = "2d", feature = "3d"))]
 use syn::ExprPath;
+use syn::punctuated::Punctuated;
 use syn::{Data, Expr, ExprLit, Field, Fields, Index, Lit, LitStr, Meta, Token};
 
 /// Derive macro for [`AssetCollection`]

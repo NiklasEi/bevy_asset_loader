@@ -18,7 +18,7 @@ fn main() {
             // track progress during `MyStates::AssetLoading` and continue to `MyStates::Next` when progress is completed
             ProgressPlugin::<MyStates>::new()
                 .with_state_transition(MyStates::AssetLoading, MyStates::Next),
-            FrameTimeDiagnosticsPlugin,
+            FrameTimeDiagnosticsPlugin::default(),
         ))
         .init_state::<MyStates>()
         .add_loading_state(
@@ -103,7 +103,7 @@ fn expect(
     is_recursively_loaded(&texture_assets.tree, &asset_server);
     info!("Everything looks good!");
     info!("Quitting the application...");
-    quit.send(AppExit::Success);
+    quit.write(AppExit::Success);
 }
 
 fn print_progress(

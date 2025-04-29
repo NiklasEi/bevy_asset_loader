@@ -1,12 +1,16 @@
-use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssetCollections, DynamicAssets};
-use crate::loading_state::{AssetLoaderConfiguration, InternalLoadingState, LoadingAssetHandles};
+use std::any::{TypeId, type_name};
+
 use bevy_asset::{Asset, AssetServer, Assets, LoadState};
-use bevy_ecs::change_detection::ResMut;
-use bevy_ecs::system::{Res, SystemState};
-use bevy_ecs::world::World;
+use bevy_ecs::{
+    change_detection::{Res, ResMut},
+    system::SystemState,
+    world::World,
+};
 use bevy_log::{debug, warn};
 use bevy_state::state::{FreelyMutableState, NextState, State};
-use std::any::{type_name, TypeId};
+
+use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssetCollections, DynamicAssets};
+use crate::loading_state::{AssetLoaderConfiguration, InternalLoadingState, LoadingAssetHandles};
 
 #[allow(clippy::type_complexity)]
 pub(crate) fn load_dynamic_asset_collections<
@@ -37,7 +41,11 @@ pub(crate) fn load_dynamic_asset_collections<
         .get_mut(state.get())
     {
         if !config.loading_dynamic_collections.insert(TypeId::of::<C>()) {
-            warn!("The dynamic asset collection {} was registered multiple times on the loading state {:?}", type_name::<C>(), state.get());
+            warn!(
+                "The dynamic asset collection {} was registered multiple times on the loading state {:?}",
+                type_name::<C>(),
+                state.get()
+            );
         }
     }
     world.insert_resource(loading_collections);

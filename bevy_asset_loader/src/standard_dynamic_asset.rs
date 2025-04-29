@@ -1,22 +1,23 @@
-use crate::dynamic_asset::{DynamicAsset, DynamicAssetType};
-use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssets};
 use bevy_asset::{Asset, AssetServer, Assets, LoadedFolder, UntypedHandle};
-use bevy_ecs::system::{Res, ResMut, SystemState};
-use bevy_ecs::world::{Command, World};
-use bevy_reflect::TypePath;
-use bevy_utils::HashMap;
-use serde::{Deserialize, Serialize};
-
+use bevy_ecs::{
+    change_detection::{Res, ResMut},
+    system::{SystemState, command::Command},
+    world::World,
+};
+#[cfg(feature = "2d")]
+use bevy_image::TextureAtlasLayout;
+#[cfg(any(feature = "3d", feature = "2d"))]
+use bevy_image::{Image, ImageAddressMode, ImageFilterMode, ImageSampler, ImageSamplerDescriptor};
 #[cfg(feature = "2d")]
 use bevy_math::UVec2;
-#[cfg(feature = "2d")]
-use bevy_sprite::TextureAtlasLayout;
-
 #[cfg(feature = "3d")]
 use bevy_pbr::StandardMaterial;
+use bevy_platform::collections::HashMap;
+use bevy_reflect::TypePath;
+use serde::{Deserialize, Serialize};
 
-#[cfg(any(feature = "3d", feature = "2d"))]
-use bevy_render::texture::{Image, ImageAddressMode, ImageFilterMode, ImageSampler, ImageSamplerDescriptor};
+use crate::dynamic_asset::{DynamicAsset, DynamicAssetType};
+use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssets};
 
 /// These asset variants can be loaded from configuration files. They will then replace
 /// a dynamic asset based on their keys.

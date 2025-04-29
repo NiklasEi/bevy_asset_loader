@@ -4,18 +4,25 @@ mod systems;
 /// Configuration of loading states
 pub mod config;
 
-use bevy_app::{App, Plugin, Update};
-use bevy_asset::{Asset, UntypedHandle};
-use bevy_ecs::schedule::{
-    InternedScheduleLabel, IntoSystemConfigs, IntoSystemSetConfigs, ScheduleLabel, SystemSet,
-};
-use bevy_ecs::system::Resource;
-use bevy_ecs::world::FromWorld;
-use bevy_state::condition::in_state;
-use bevy_state::state::{FreelyMutableState, NextState, OnEnter, State, StateTransition, States};
-use bevy_utils::{default, HashMap, HashSet};
 use std::any::TypeId;
 use std::marker::PhantomData;
+
+use bevy_app::{App, Plugin, Update};
+use bevy_asset::{Asset, UntypedHandle};
+use bevy_ecs::{
+    resource::Resource,
+    schedule::{
+        InternedScheduleLabel, IntoScheduleConfigs, IntoSystemConfigs, IntoSystemSetConfigs,
+        ScheduleLabel, SystemSet,
+    },
+    world::FromWorld,
+};
+use bevy_platform::collections::{HashMap, HashSet};
+use bevy_state::{
+    condition::in_state,
+    state::{FreelyMutableState, NextState, OnEnter, State, StateTransition, States},
+};
+use bevy_utils::default;
 
 use crate::asset_collection::AssetCollection;
 use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssetCollections};
