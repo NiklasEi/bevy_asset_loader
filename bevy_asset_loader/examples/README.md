@@ -15,7 +15,6 @@ with `cargo run --example <example>`.
 | [`finally_init_resource.rs`](finally_init_resource.rs)     | Inserting a `FromWorld` resource when all asset collections are loaded   |
 | [`manual_dynamic_asset.rs`](manual_dynamic_asset.rs)       | Load an image asset from a path resolved at run time                     |
 | [`no_loading_state.rs`](no_loading_state.rs)               | How to use asset collections without a loading state                     |
-| [`progress_tracking.rs`](progress_tracking.rs)             | How to set up progress tracking using `iyes_progress`                    |
 | [`standard_material.rs`](standard_material.rs)             | Loading a standard material from a png file                              |
 | [`sub_state.rs`](sub_state.rs)                             | How to use a sub state                                                   |
 | [`two_collections.rs`](two_collections.rs)                 | Load multiple asset collections                                          |
