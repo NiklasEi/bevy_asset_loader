@@ -1,9 +1,9 @@
 use bevy::app::AppExit;
 use bevy::asset::AssetPlugin;
 use bevy::audio::AudioPlugin;
+use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
 use bevy::state::app::StatesPlugin;
-use bevy::utils::HashMap;
 use bevy_asset_loader::prelude::*;
 
 #[test]
@@ -48,7 +48,7 @@ fn expect(collection: Option<Res<AudioCollection>>, mut exit: EventWriter<AppExi
             "Expected path 'audio/plop.ogg' was not in {:?}",
             files
         );
-        exit.send(AppExit::Success);
+        exit.write(AppExit::Success);
     }
 }
 

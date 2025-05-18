@@ -7,15 +7,16 @@ pub mod config;
 use bevy::app::{App, Plugin};
 use bevy::asset::{Asset, UntypedHandle};
 use bevy::ecs::{
-    schedule::{
-        InternedScheduleLabel, IntoSystemConfigs, IntoSystemSetConfigs, ScheduleLabel, SystemSet,
-    },
-    system::Resource,
+    resource::Resource,
+    schedule::{InternedScheduleLabel, ScheduleLabel, SystemSet},
     world::FromWorld,
 };
-use bevy::prelude::{in_state, NextState, OnEnter, State, StateTransition, States, Update};
+use bevy::platform::collections::{HashMap, HashSet};
+use bevy::prelude::{
+    IntoScheduleConfigs, NextState, OnEnter, State, StateTransition, States, Update, in_state,
+};
 use bevy::state::state::FreelyMutableState;
-use bevy::utils::{default, HashMap, HashSet};
+use bevy::utils::default;
 use std::any::TypeId;
 use std::marker::PhantomData;
 

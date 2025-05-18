@@ -87,5 +87,5 @@ fn timeout(time: Res<Time>) {
 
 fn quit(mut exit: EventWriter<AppExit>) {
     info!("Everything fine, quitting the app");
-    exit.send(AppExit::Success);
+    exit.write(AppExit::Success);
 }

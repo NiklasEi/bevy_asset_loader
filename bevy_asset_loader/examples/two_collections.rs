@@ -61,7 +61,10 @@ fn play_background_audio(mut commands: Commands, audio_assets: Res<AudioAssets>)
     ));
 }
 
-fn move_player(input: Res<ButtonInput<KeyCode>>, mut player: Query<&mut Transform, With<Player>>) {
+fn move_player(
+    input: Res<ButtonInput<KeyCode>>,
+    mut player: Query<&mut Transform, With<Player>>,
+) -> Result {
     let mut movement = Vec3::new(0., 0., 0.);
     if input.pressed(KeyCode::KeyW) {
         movement.y += 1.;
@@ -76,11 +79,13 @@ fn move_player(input: Res<ButtonInput<KeyCode>>, mut player: Query<&mut Transfor
         movement.x += 1.;
     }
     if movement == Vec3::ZERO {
-        return;
+        return Ok(());
     }
     movement = movement.normalize() * PLAYER_SPEED;
-    let mut transform = player.single_mut();
+    let mut transform = player.single_mut()?;
     transform.translation += movement;
+
+    Ok(())
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
