@@ -1,5 +1,6 @@
 # Changelog
 
+## v0.23.0 - 18.05.2024
 - support for Bevy 0.16
 - renamed `init_resource` to `finally_init_resource` to emphasize the difference to Bevy's `init_resource`
 
