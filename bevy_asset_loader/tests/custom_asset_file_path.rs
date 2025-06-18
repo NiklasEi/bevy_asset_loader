@@ -6,13 +6,13 @@ use bevy::state::app::StatesPlugin;
 use bevy_asset_loader::prelude::*;
 
 #[test]
-fn main() {
+fn custom_asset_file_path() {
     let mut app = App::new();
 
     app.add_plugins((
         MinimalPlugins,
         AssetPlugin {
-            file_path: "assets/audio".to_owned(),
+            file_path: "../assets/audio".to_owned(),
             ..default()
         },
         AudioPlugin::default(),
