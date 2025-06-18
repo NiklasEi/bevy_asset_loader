@@ -12,7 +12,7 @@ fn custom_asset_file_path() {
     app.add_plugins((
         MinimalPlugins,
         AssetPlugin {
-            file_path: "../assets/audio".to_owned(),
+            file_path: "../assets".to_owned(),
             ..default()
         },
         AudioPlugin::default(),
@@ -45,7 +45,7 @@ fn expect(collection: Option<Res<PlopAudio>>, mut exit: EventWriter<AppExit>) {
 
 #[derive(AssetCollection, Resource)]
 struct PlopAudio {
-    #[asset(path = "plop.ogg")]
+    #[asset(path = "audio/plop.ogg")]
     _plop: Handle<AudioSource>,
 }
 
