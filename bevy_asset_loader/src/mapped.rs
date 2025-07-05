@@ -1,6 +1,6 @@
 use std::borrow::Borrow;
 
-use bevy::asset::AssetPath;
+use bevy_asset::AssetPath;
 
 /// A type that can be used as key for mapped asset collection.
 ///

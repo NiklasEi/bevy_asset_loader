@@ -15,25 +15,42 @@ readme = "README.md"
 
 [features]
 # This feature adds support for bevy's TextureAtlas assets
-2d = ["bevy/bevy_sprite", "bevy/png", "bevy_asset_loader_derive/2d"]
+2d = [
+    "dep:bevy_image",
+    "dep:bevy_math",
+    "dep:bevy_render",
+    "dep:bevy_sprite",
+    "bevy_asset_loader_derive/2d",
+]
 # This feature adds support for bevy's StandardMaterial assets
-3d = ["bevy/bevy_pbr", "bevy/png", "bevy_asset_loader_derive/3d"]
+3d = [
+    "dep:bevy_image",
+    "dep:bevy_pbr",
+    "dep:bevy_render",
+    "bevy_asset_loader_derive/3d",
+]
 standard_dynamic_assets = ["dep:bevy_common_assets", "dep:serde"]
 progress_tracking = ["dep:iyes_progress"]
 
 [dependencies]
-bevy = { version = "0.16.0", default-features = false, features = [
-    "bevy_asset",
-    "bevy_state",
-    "bevy_log",
-] }
+bevy_app = { version = "0.16.0", default-features = false }
+bevy_asset = { version = "0.16.0", default-features = false }
+bevy_ecs = { version = "0.16.0", default-features = false }
+bevy_image = { version = "0.16.0", default-features = false, optional = true }
+bevy_log = { version = "0.16.0", default-features = false }
+bevy_math = { version = "0.16.0", default-features = false, optional = true }
+bevy_pbr = { version = "0.16.0", default-features = false, optional = true }
+bevy_platform = { version = "0.16.0", default-features = false }
+bevy_reflect = { version = "0.16.0", default-features = false }
+bevy_render = { version = "0.16.0", default-features = false, optional = true }
+bevy_sprite = { version = "0.16.0", default-features = false, optional = true }
+bevy_state = { version = "0.16.0", default-features = false }
+bevy_utils = { version = "0.16.0", default-features = false }
 bevy_asset_loader_derive = { version = "0.23.0", path = "../bevy_asset_loader_derive" }
 anyhow = "1"
 path-slash = "0.2"
 
-bevy_common_assets = { version = "0.13.0", features = [
-    "ron",
-], optional = true }
+bevy_common_assets = { version = "0.13.0", features = ["ron"], optional = true }
 serde = { version = "1", optional = true }
 iyes_progress = { version = "0.14.0", optional = true }
 
