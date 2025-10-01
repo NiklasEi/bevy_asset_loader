@@ -1,25 +1,26 @@
 use crate::dynamic_asset::{DynamicAsset, DynamicAssetType};
 use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssets};
-use bevy::asset::{Asset, AssetServer, Assets, LoadedFolder, UntypedHandle};
-use bevy::ecs::change_detection::Res;
-use bevy::ecs::system::SystemState;
-use bevy::ecs::system::command::Command;
-use bevy::ecs::world::World;
-use bevy::platform::collections::HashMap;
-use bevy::reflect::TypePath;
+use bevy_asset::{Asset, AssetServer, Assets, LoadedFolder, UntypedHandle};
+use bevy_ecs::{
+    change_detection::Res,
+    system::{Command, SystemState},
+    world::World,
+};
+use bevy_platform::collections::HashMap;
+use bevy_reflect::TypePath;
 use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "2d")]
-use bevy::image::TextureAtlasLayout;
+use bevy_image::TextureAtlasLayout;
 #[cfg(feature = "2d")]
-use bevy::math::UVec2;
+use bevy_math::UVec2;
 #[cfg(feature = "3d")]
-use bevy::pbr::StandardMaterial;
+use bevy_pbr::StandardMaterial;
 
 #[cfg(any(feature = "3d", feature = "2d"))]
-use bevy::ecs::change_detection::ResMut;
+use bevy_ecs::change_detection::ResMut;
 #[cfg(any(feature = "3d", feature = "2d"))]
-use bevy::image::{Image, ImageAddressMode, ImageFilterMode, ImageSampler, ImageSamplerDescriptor};
+use bevy_image::{Image, ImageAddressMode, ImageFilterMode, ImageSampler, ImageSamplerDescriptor};
 
 /// These asset variants can be loaded from configuration files. They will then replace
 /// a dynamic asset based on their keys.
@@ -292,7 +293,7 @@ impl DynamicAsset for StandardDynamicAsset {
 #[cfg(any(feature = "3d", feature = "2d"))]
 impl StandardDynamicAsset {
     fn update_image_sampler(
-        handle: &mut bevy::asset::Handle<Image>,
+        handle: &mut bevy_asset::Handle<Image>,
         images: &mut Assets<Image>,
         sampler_type: &ImageSamplerType,
         address_mode: &ImageAddressModeType,

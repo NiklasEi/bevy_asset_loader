@@ -10,12 +10,17 @@ use crate::loading_state::{
     InternalLoadingState, InternalLoadingStateSet, LoadingStateSchedule,
     OnEnterInternalLoadingState,
 };
-use bevy::app::App;
-use bevy::asset::Asset;
-use bevy::ecs::schedule::ScheduleConfigs;
-use bevy::platform::collections::HashMap;
-use bevy::prelude::{BevyError, FromWorld, IntoScheduleConfigs, Resource, default};
-use bevy::state::state::FreelyMutableState;
+use bevy_app::App;
+use bevy_asset::Asset;
+use bevy_ecs::{
+    error::BevyError,
+    resource::Resource,
+    schedule::{IntoScheduleConfigs, ScheduleConfigs},
+    world::FromWorld,
+};
+use bevy_platform::collections::HashMap;
+use bevy_state::state::FreelyMutableState;
+use bevy_utils::default;
 use std::any::TypeId;
 
 /// Methods to configure a loading state
@@ -62,7 +67,7 @@ pub trait ConfigureLoadingState {
 }
 
 type SchedulConfig = ScheduleConfigs<
-    Box<(dyn bevy::prelude::System<In = (), Out = Result<(), BevyError>> + 'static)>,
+    Box<(dyn bevy_ecs::system::System<In = (), Out = Result<(), BevyError>> + 'static)>,
 >;
 
 /// Can be used to add new asset collections or similar configuration to a loading state.

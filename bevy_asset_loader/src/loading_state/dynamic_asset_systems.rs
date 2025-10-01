@@ -1,11 +1,13 @@
 use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssetCollections, DynamicAssets};
 use crate::loading_state::{AssetLoaderConfiguration, InternalLoadingState, LoadingAssetHandles};
-use bevy::asset::{Asset, AssetServer, Assets, LoadState};
-use bevy::ecs::system::{Res, ResMut, SystemState};
-use bevy::ecs::world::World;
-use bevy::log::{debug, warn};
-use bevy::prelude::NextState;
-use bevy::state::state::{FreelyMutableState, State};
+use bevy_asset::{Asset, AssetServer, Assets, LoadState};
+use bevy_ecs::{
+    change_detection::{Res, ResMut},
+    system::SystemState,
+    world::World,
+};
+use bevy_log::{debug, warn};
+use bevy_state::state::{FreelyMutableState, NextState, State};
 use std::any::{TypeId, type_name};
 
 #[allow(clippy::type_complexity)]
