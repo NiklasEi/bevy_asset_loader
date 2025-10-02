@@ -20,10 +20,11 @@ runs:
           ~/.cargo/git/db/
           target/
         key: ${{inputs.cache-key}}
-    - uses: dtolnay/rust-toolchain@master
+    - uses: dtolnay/rust-toolchain@stable
       with:
         toolchain: stable
-    - name: Install alsa and udev
+        components: rustfmt, clippy
+    - name: Install Bevy dependencies
       shell: bash
-      run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
+      run: sudo apt-get update; sudo apt-get install --no-install-recommends g++ pkg-config libx11-dev libasound2-dev libudev-dev libxkbcommon-x11-0 libwayland-dev libxkbcommon-dev
       if: runner.os == 'linux'

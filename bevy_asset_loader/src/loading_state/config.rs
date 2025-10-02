@@ -66,8 +66,8 @@ pub trait ConfigureLoadingState {
     fn init_resource<R: Resource + FromWorld>(self) -> Self;
 }
 
-type SchedulConfig = ScheduleConfigs<
-    Box<(dyn bevy_ecs::system::System<In = (), Out = Result<(), BevyError>> + 'static)>,
+type ScheduleConfig = ScheduleConfigs<
+    Box<dyn bevy_ecs::system::System<In = (), Out = Result<(), BevyError>> + 'static>,
 >;
 
 /// Can be used to add new asset collections or similar configuration to a loading state.
@@ -109,10 +109,10 @@ type SchedulConfig = ScheduleConfigs<
 pub struct LoadingStateConfig<S: FreelyMutableState> {
     state: S,
 
-    on_enter_loading_assets: Vec<SchedulConfig>,
-    on_enter_loading_dynamic_asset_collections: Vec<SchedulConfig>,
-    on_update: Vec<SchedulConfig>,
-    on_enter_finalize: Vec<SchedulConfig>,
+    on_enter_loading_assets: Vec<ScheduleConfig>,
+    on_enter_loading_dynamic_asset_collections: Vec<ScheduleConfig>,
+    on_update: Vec<ScheduleConfig>,
+    on_enter_finalize: Vec<ScheduleConfig>,
 
     dynamic_assets: HashMap<TypeId, Vec<String>>,
 }

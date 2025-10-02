@@ -876,7 +876,7 @@ mod test {
             ..Default::default()
         };
 
-        let asset = builder.build().expect_err("Should be pasing error");
+        let asset = builder.build().expect_err("Should be parsing error");
         assert!(variant_eq(
             asset.first().unwrap(),
             &ParseFieldError::PathAndPathsAreExclusive
