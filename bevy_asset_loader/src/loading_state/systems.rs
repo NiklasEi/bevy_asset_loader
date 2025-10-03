@@ -1,6 +1,4 @@
 use crate::asset_collection::AssetCollection;
-#[cfg(feature = "progress_tracking")]
-use crate::loading_state::{AssetCollectionsProgressId, LoadingStateProgressId};
 use crate::loading_state::{
     AssetLoaderConfiguration, InternalLoadingState, LoadingAssetHandles, LoadingStateSchedule,
     OnEnterInternalLoadingState,
@@ -15,8 +13,6 @@ use bevy_ecs::{
 };
 use bevy_log::{debug, info, trace, warn};
 use bevy_state::state::{FreelyMutableState, NextState, State};
-#[cfg(feature = "progress_tracking")]
-use iyes_progress::{ProgressEntryId, ProgressTracker};
 use std::any::{TypeId, type_name};
 use std::marker::PhantomData;
 
@@ -56,11 +52,6 @@ pub(crate) fn start_loading_collection<S: FreelyMutableState, Assets: AssetColle
         marker: PhantomData::<Assets>,
     };
     world.insert_resource(handles);
-
-    #[cfg(feature = "progress_tracking")]
-    world.insert_resource(AssetCollectionsProgressId::<S, Assets>::new(
-        ProgressEntryId::new(),
-    ));
 }
 
 #[allow(clippy::type_complexity)]
@@ -87,13 +78,6 @@ pub(crate) fn check_loading_collection<S: FreelyMutableState, Assets: AssetColle
             &asset_server,
             &mut asset_loader_configuration,
         );
-        #[cfg(feature = "progress_tracking")]
-        {
-            let entry_id = world.resource::<AssetCollectionsProgressId<S, Assets>>().id;
-            if let Some(tracker) = world.get_resource::<ProgressTracker<S>>() {
-                tracker.set_progress(entry_id, done, total);
-            }
-        }
         if total == done {
             let asset_collection = Assets::create(world);
             world.insert_resource(asset_collection);
@@ -165,28 +149,16 @@ pub(crate) fn resume_to_finalize<S: FreelyMutableState>(
 
 pub(crate) fn initialize_loading_state<S: FreelyMutableState>(
     mut loading_state: ResMut<NextState<InternalLoadingState<S>>>,
-    #[cfg(feature = "progress_tracking")] tracking_id: Res<LoadingStateProgressId<S>>,
-    #[cfg(feature = "progress_tracking")] tracker: Option<Res<ProgressTracker<S>>>,
 ) {
-    #[cfg(feature = "progress_tracking")]
-    if let Some(tracker) = tracker {
-        tracker.set_total(tracking_id.id, 1);
-    }
     loading_state.set(InternalLoadingState::LoadingDynamicAssetCollections);
 }
 
 pub(crate) fn finish_loading_state<S: FreelyMutableState>(
     state: Res<State<S>>,
     mut next_state: ResMut<NextState<S>>,
-    #[cfg(feature = "progress_tracking")] tracking_id: Res<LoadingStateProgressId<S>>,
-    #[cfg(feature = "progress_tracking")] tracker: Option<Res<ProgressTracker<S>>>,
     mut loading_state: ResMut<NextState<InternalLoadingState<S>>>,
     asset_loader_configuration: Res<AssetLoaderConfiguration<S>>,
 ) {
-    #[cfg(feature = "progress_tracking")]
-    if let Some(tracker) = tracker {
-        tracker.set_done(tracking_id.id, 1);
-    }
     info!(
         "Loading state '{}::{:?}' is done",
         type_name::<S>(),

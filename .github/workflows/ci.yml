@@ -43,8 +43,6 @@ jobs:
       - uses: ./.github/actions/prepare/
         with:
           cache-key: ${{ runner.os }}-cargo-progress-tracking-test-${{ hashFiles('**/Cargo.toml') }}
-      - name: Build & run tests progress tracking
-        run: cargo test --features "progress_tracking" -p bevy_asset_loader
   full-test:
     strategy:
       matrix:
@@ -56,7 +54,7 @@ jobs:
         with:
           cache-key: ${{ runner.os }}-cargo-full-test-${{ hashFiles('**/Cargo.toml') }}
       - name: Build & run tests progress tracking and 2d,3d,dynamic
-        run: cargo test --features "2d, 3d, standard_dynamic_assets, progress_tracking" -p bevy_asset_loader
+        run: cargo test --features "2d, 3d, standard_dynamic_assets" -p bevy_asset_loader
   lint:
     runs-on: ubuntu-latest
     steps:
