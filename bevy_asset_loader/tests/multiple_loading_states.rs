@@ -50,7 +50,7 @@ fn use_loading_assets(
     // I could do something with the `MyAssets` and `MyOtherAssets` collections here
 }
 
-fn quit(mut exit: EventWriter<AppExit>) {
+fn quit(mut exit: MessageWriter<AppExit>) {
     info!("Everything fine, quitting the app");
     exit.write(AppExit::Success);
 }

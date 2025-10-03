@@ -91,7 +91,7 @@ fn expect(
     texture_assets: Res<TextureAssets>,
     asset_server: Res<AssetServer>,
     texture_atlas_layouts: Res<Assets<TextureAtlasLayout>>,
-    mut quit: EventWriter<AppExit>,
+    mut quit: MessageWriter<AppExit>,
 ) {
     is_recursively_loaded(&audio_assets.background, &asset_server);
     is_recursively_loaded(&audio_assets.plop, &asset_server);

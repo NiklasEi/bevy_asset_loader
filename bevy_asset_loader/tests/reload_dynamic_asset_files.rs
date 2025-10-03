@@ -68,7 +68,7 @@ fn splash_countdown(
     time: Res<Time>,
     mut timer: ResMut<SplashTimer>,
 ) {
-    if timer.tick(time.delta()).finished() {
+    if timer.tick(time.delta()).is_finished() {
         game_state.set(MyStates::MainMenuAssetLoading);
     }
 }
@@ -79,7 +79,7 @@ fn timeout(time: Res<Time>) {
     }
 }
 
-fn quit(mut exit: EventWriter<AppExit>) {
+fn quit(mut exit: MessageWriter<AppExit>) {
     info!("Everything fine, quitting the app");
     exit.write(AppExit::Success);
 }
