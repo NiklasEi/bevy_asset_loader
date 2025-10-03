@@ -36,7 +36,7 @@ fn timeout(time: Res<Time>) {
 
 fn expect(
     collection: Option<Res<MyAssets>>,
-    mut exit: EventWriter<AppExit>,
+    mut exit: MessageWriter<AppExit>,
     mut test_state: ResMut<TestState>,
 ) {
     if collection.is_some() {

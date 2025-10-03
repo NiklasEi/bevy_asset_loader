@@ -33,7 +33,7 @@ fn timeout(time: Res<Time>) {
     }
 }
 
-fn expect(collection: Option<Res<PostProcessed>>, mut exit: EventWriter<AppExit>) {
+fn expect(collection: Option<Res<PostProcessed>>, mut exit: MessageWriter<AppExit>) {
     if collection.is_none() {
         panic!("Post processed collection was not inserted");
     } else {

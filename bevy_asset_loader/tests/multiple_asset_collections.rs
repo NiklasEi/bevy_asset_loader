@@ -36,7 +36,7 @@ fn timeout(time: Res<Time>) {
 fn expect(
     collection: Option<Res<PlopAudio>>,
     other_collection: Option<Res<BackgroundAudio>>,
-    mut exit: EventWriter<AppExit>,
+    mut exit: MessageWriter<AppExit>,
 ) {
     if collection.is_none() || other_collection.is_none() {
         panic!("At least one asset collection was not inserted");

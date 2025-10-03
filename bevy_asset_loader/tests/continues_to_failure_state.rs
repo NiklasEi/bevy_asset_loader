@@ -26,7 +26,7 @@ fn fail() {
     panic!("The library should have switched to the failure state");
 }
 
-fn exit(mut exit: EventWriter<AppExit>) {
+fn exit(mut exit: MessageWriter<AppExit>) {
     exit.write(AppExit::Success);
 }
 

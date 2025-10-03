@@ -45,7 +45,7 @@ struct AudioAssets {
     custom: HashMap<MyAudio, Handle<AudioSource>>,
 }
 
-fn use_audio_assets(audio_assets: Res<AudioAssets>, mut quit: EventWriter<AppExit>) {
+fn use_audio_assets(audio_assets: Res<AudioAssets>, mut quit: MessageWriter<AppExit>) {
     audio_assets
         .full_path
         .get("audio/plop.ogg")
