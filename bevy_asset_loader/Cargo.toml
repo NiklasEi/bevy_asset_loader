@@ -32,19 +32,19 @@ readme = "README.md"
 standard_dynamic_assets = ["dep:bevy_common_assets", "dep:serde"]
 
 [dependencies]
-bevy_app = { version = "0.17.1", default-features = false }
-bevy_asset = { version = "0.17.1", default-features = false }
-bevy_ecs = { version = "0.17.1", default-features = false }
-bevy_image = { version = "0.17.1", default-features = false, optional = true }
-bevy_log = { version = "0.17.1", default-features = false }
-bevy_math = { version = "0.17.1", default-features = false, optional = true }
-bevy_pbr = { version = "0.17.1", default-features = false, optional = true }
-bevy_platform = { version = "0.17.1", default-features = false }
-bevy_reflect = { version = "0.17.1", default-features = false }
-bevy_render = { version = "0.17.1", default-features = false, optional = true }
-bevy_sprite = { version = "0.17.1", default-features = false, optional = true }
-bevy_state = { version = "0.17.1", default-features = false }
-bevy_utils = { version = "0.17.1", default-features = false }
+bevy_app = { version = "0.17.3", default-features = false }
+bevy_asset = { version = "0.17.3", default-features = false }
+bevy_ecs = { version = "0.17.3", default-features = false }
+bevy_image = { version = "0.17.3", default-features = false, optional = true }
+bevy_log = { version = "0.17.3", default-features = false }
+bevy_math = { version = "0.17.3", default-features = false, optional = true }
+bevy_pbr = { version = "0.17.3", default-features = false, optional = true }
+bevy_platform = { version = "0.17.3", default-features = false }
+bevy_reflect = { version = "0.17.3", default-features = false }
+bevy_render = { version = "0.17.3", default-features = false, optional = true }
+bevy_sprite = { version = "0.17.3", default-features = false, optional = true }
+bevy_state = { version = "0.17.3", default-features = false }
+bevy_utils = { version = "0.17.3", default-features = false }
 bevy_asset_loader_derive = { version = "0.24.0-rc.1", path = "../bevy_asset_loader_derive" }
 anyhow = "1"
 path-slash = "0.2"
@@ -53,7 +53,7 @@ bevy_common_assets = { version = "0.14.0", features = ["ron"], optional = true }
 serde = { version = "1", optional = true }
 
 [dev-dependencies]
-bevy = { version = "0.17.1", features = ["vorbis"] }
+bevy = { version = "0.17.3", features = ["vorbis"] }
 anyhow = "1"
 iyes_progress = { version = "0.14.0" }
 bevy_common_assets = { version = "0.14.0", features = ["ron"] }
