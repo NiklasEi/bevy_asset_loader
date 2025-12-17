@@ -221,7 +221,7 @@ fn text(bundle: impl Bundle, font_assets: &FontAssets) -> impl Bundle {
             ..default()
         },
         TextColor(Color::linear_rgb(1., 1., 1.)),
-        TextLayout::new_with_justify(JustifyText::Center),
+        TextLayout::new_with_justify(Justify::Center),
     )
 }
 

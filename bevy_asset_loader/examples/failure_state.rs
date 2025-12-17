@@ -32,7 +32,7 @@ fn fail() {
     panic!("The library should have switched to the failure state!");
 }
 
-fn ok(mut quit: EventWriter<AppExit>) {
+fn ok(mut quit: MessageWriter<AppExit>) {
     info!("As expected, bevy_asset_loader switched to the failure state");
     info!("Quitting the application...");
     quit.write(AppExit::Success);

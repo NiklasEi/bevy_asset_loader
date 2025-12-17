@@ -24,7 +24,7 @@ fn expect(mut test_state: ResMut<TestState>) {
     test_state.wait_frames -= 1;
 }
 
-fn exit(mut exit: EventWriter<AppExit>) {
+fn exit(mut exit: MessageWriter<AppExit>) {
     exit.write(AppExit::Success);
 }
 

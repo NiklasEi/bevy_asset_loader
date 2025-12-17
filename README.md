@@ -537,6 +537,7 @@ Compatibility of `bevy_asset_loader` versions:
 
 | Bevy version | `bevy_asset_loader` version |
 |:-------------|:----------------------------|
+| `0.17`       | `0.24`                      |
 | `0.16`       | `0.23`                      |
 | `0.15`       | `0.22`                      |
 | `0.14`       | `0.21`                      |

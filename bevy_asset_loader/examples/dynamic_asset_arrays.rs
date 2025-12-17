@@ -35,8 +35,6 @@ struct ImageAssets {
 
 fn spawn_player_and_tree(mut commands: Commands, image_assets: Res<ImageAssets>) {
     commands.spawn(Camera2d);
-    let mut transform = Transform::from_translation(Vec3::new(0., 0., 1.));
-    transform.scale = Vec3::splat(0.5);
     commands.spawn((
         Transform::from_translation(Vec3::new(0., 150., 0.)),
         Sprite::from_atlas_image(
@@ -72,7 +70,7 @@ struct AnimationTimer(Timer);
 fn animate_sprite_system(time: Res<Time>, mut query: Query<(&mut AnimationTimer, &mut Sprite)>) {
     for (mut timer, mut sprite) in &mut query {
         timer.0.tick(time.delta());
-        if timer.0.finished() {
+        if timer.0.is_finished() {
             if let Some(atlas) = &mut sprite.texture_atlas {
                 atlas.index = (atlas.index + 1) % 8;
             }

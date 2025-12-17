@@ -79,7 +79,7 @@ fn expectations(
     standard_materials: Res<Assets<StandardMaterial>>,
     texture_atlas_layouts: Res<Assets<TextureAtlasLayout>>,
     images: Res<Assets<Image>>,
-    mut quit: EventWriter<AppExit>,
+    mut quit: MessageWriter<AppExit>,
 ) {
     info!("Done loading the collection. Checking expectations...");
 
