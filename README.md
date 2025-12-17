@@ -483,7 +483,9 @@ Both `finally_init_resource` methods from `bevy_asset_loader` do the same as Bev
 
 ## Progress tracking
 
-> This feature is removed in the release candidate
+With the feature `progress_tracking`, you can integrate with [`iyes_progress`][iyes_progress] to track asset loading during a loading state. This, for example, enables progress bars.
+
+See [`progress_tracking`](/bevy_asset_loader/examples/progress_tracking.rs) for a complete example.
 
 ### A note on system ordering
 

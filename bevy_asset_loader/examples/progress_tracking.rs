@@ -1,0 +1,140 @@
+use bevy::app::AppExit;
+use bevy::asset::UntypedAssetId;
+use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
+use bevy::prelude::*;
+use bevy_asset_loader::prelude::*;
+use iyes_progress::{Progress, ProgressPlugin, ProgressReturningSystem, ProgressTracker};
+
+/// This example shows how to track the loading progress of your collections using `iyes_progress`
+///
+/// Running it will print the current progress for every frame. The five assets from
+/// the two collections will be loaded rather quickly (one/a few frames). The final task
+/// completes after four seconds. At that point, `iyes_progress` will continue to the next state
+/// and the app will terminate.
+fn main() {
+    App::new()
+        .add_plugins((
+            DefaultPlugins,
+            // track progress during `MyStates::AssetLoading` and continue to `MyStates::Next` when progress is completed
+            ProgressPlugin::<MyStates>::new()
+                .with_state_transition(MyStates::AssetLoading, MyStates::Next),
+            FrameTimeDiagnosticsPlugin::default(),
+        ))
+        .init_state::<MyStates>()
+        .add_loading_state(
+            LoadingState::new(MyStates::AssetLoading)
+                .load_collection::<TextureAssets>()
+                .load_collection::<AudioAssets>(),
+        )
+        .add_systems(OnEnter(MyStates::AssetLoading), render_description)
+        // gracefully quit the app when `MyStates::Next` is reached
+        .add_systems(OnEnter(MyStates::Next), expect)
+        .add_systems(
+            Update,
+            (
+                track_fake_long_task.track_progress::<MyStates>(),
+                print_progress,
+            )
+                .chain()
+                .run_if(in_state(MyStates::AssetLoading))
+                .after(LoadingStateSet(MyStates::AssetLoading)),
+        )
+        .run();
+}
+
+// Time in seconds to complete a custom long-running task.
+// If assets are loaded earlier, the current state will not
+// be changed until the 'fake long task' is completed (thanks to 'iyes_progress')
+const DURATION_LONG_TASK_IN_SECS: f64 = 4.0;
+
+#[derive(AssetCollection, Resource)]
+struct AudioAssets {
+    #[asset(path = "audio/background.ogg")]
+    background: Handle<AudioSource>,
+    #[asset(path = "audio/plop.ogg")]
+    plop: Handle<AudioSource>,
+}
+
+#[derive(AssetCollection, Resource)]
+struct TextureAssets {
+    #[asset(path = "images/player.png")]
+    player: Handle<Image>,
+    #[asset(path = "images/tree.png")]
+    tree: Handle<Image>,
+    #[asset(path = "images/female_adventurer_sheet.png")]
+    female_adventurer: Handle<Image>,
+    #[asset(texture_atlas_layout(tile_size_x = 96, tile_size_y = 99, columns = 8, rows = 1))]
+    female_adventurer_layout: Handle<TextureAtlasLayout>,
+}
+
+fn render_description(mut commands: Commands) {
+    commands.spawn(Camera2d);
+    commands.spawn(Text::new(
+        r#"
+    See the console for progress output
+    
+    This window will close when progress completes..."#,
+    ));
+}
+
+fn track_fake_long_task(time: Res<Time>) -> Progress {
+    if time.elapsed_secs_f64() > DURATION_LONG_TASK_IN_SECS {
+        info!("Long fake task is completed");
+        true.into()
+    } else {
+        false.into()
+    }
+}
+
+fn expect(
+    audio_assets: Res<AudioAssets>,
+    texture_assets: Res<TextureAssets>,
+    asset_server: Res<AssetServer>,
+    texture_atlas_layouts: Res<Assets<TextureAtlasLayout>>,
+    mut quit: MessageWriter<AppExit>,
+) {
+    is_recursively_loaded(&audio_assets.background, &asset_server);
+    is_recursively_loaded(&audio_assets.plop, &asset_server);
+    texture_atlas_layouts
+        .get(&texture_assets.female_adventurer_layout)
+        .expect("Texture atlas should be added to its assets resource.");
+    is_recursively_loaded(&texture_assets.female_adventurer, &asset_server);
+    is_recursively_loaded(&texture_assets.player, &asset_server);
+    is_recursively_loaded(&texture_assets.tree, &asset_server);
+    info!("Everything looks good!");
+    info!("Quitting the application...");
+    quit.write(AppExit::Success);
+}
+
+fn print_progress(
+    progress: Res<ProgressTracker<MyStates>>,
+    diagnostics: Res<DiagnosticsStore>,
+    mut last_done: Local<u32>,
+) {
+    let progress = progress.get_global_progress();
+    if progress.done > *last_done {
+        *last_done = progress.done;
+        info!(
+            "[Frame {}] Changed progress: {:?}",
+            diagnostics
+                .get(&FrameTimeDiagnosticsPlugin::FRAME_COUNT)
+                .map(|diagnostic| diagnostic.value().unwrap_or(0.))
+                .unwrap_or(0.),
+            progress
+        );
+    }
+}
+
+fn is_recursively_loaded(handle: impl Into<UntypedAssetId>, asset_server: &AssetServer) -> bool {
+    asset_server
+        .get_recursive_dependency_load_state(handle)
+        .map(|state| state.is_loaded())
+        .unwrap_or(false)
+}
+
+#[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
+enum MyStates {
+    #[default]
+    AssetLoading,
+    Next,
+}
