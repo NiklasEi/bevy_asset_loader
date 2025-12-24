@@ -166,7 +166,7 @@ impl AssetField {
                     let mut image = images.get_mut(&handle).expect("Only asset collection fields holding an `Image` handle can be annotated with `image`");
 
                     if (#layers > 0) {
-                        image.reinterpret_stacked_2d_as_array(#layers);
+                        let _ = image.reinterpret_stacked_2d_as_array(#layers);
                     }
 
                     let this_descriptor = ImageSamplerDescriptor {

@@ -215,7 +215,7 @@ impl DynamicAsset for StandardDynamicAsset {
                     let image = images
                         .get_mut(&handle)
                         .expect("Failed to find loaded image");
-                    image.reinterpret_stacked_2d_as_array(*layers);
+                    let _ = image.reinterpret_stacked_2d_as_array(*layers);
                 }
 
                 Ok(DynamicAssetType::Single(handle.untyped()))
