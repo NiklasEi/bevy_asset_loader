@@ -1,5 +1,6 @@
 # Changelog
 
+## v0.25.0 - 14.01.2026
 - support for Bevy 0.18
 
 ## v0.24.0 - 17.12.2025
