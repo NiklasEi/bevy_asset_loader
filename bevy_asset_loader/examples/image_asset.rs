@@ -8,10 +8,6 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .init_state::<MyStates>()
-        .insert_resource(AmbientLight {
-            brightness: 500.0,
-            ..default()
-        })
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading)
                 .continue_to_state(MyStates::Next)
@@ -51,6 +47,10 @@ fn draw(
         Transform::from_xyz(0.0, 1.5, 4.0).looking_at(Vec3::ZERO, -Vec3::Y),
         Camera {
             order: 1,
+            ..default()
+        },
+        AmbientLight {
+            brightness: 500.0,
             ..default()
         },
     ));

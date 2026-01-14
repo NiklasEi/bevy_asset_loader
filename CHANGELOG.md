@@ -1,10 +1,14 @@
 # Changelog
 
+## v0.25.0 - 14.01.2026
+- support for Bevy 0.18
+
+## v0.24.0 - 17.12.2025
 - support for Bevy 0.17
 - depend on Bevy subcrates ([@benfrankel](https://github.com/benfrankel) in [#256](https://github.com/NiklasEi/bevy_asset_loader/pull/256))
 - removed some App extension methods that were deprecated in version 0.19
 
-## v0.23.0 - 18.05.2024
+## v0.23.0 - 18.05.2025
 - support for Bevy 0.16
 - renamed `init_resource` to `finally_init_resource` to emphasize the difference to Bevy's `init_resource`
 

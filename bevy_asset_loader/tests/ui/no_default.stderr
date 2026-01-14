@@ -5,7 +5,7 @@ error[E0277]: the trait bound `NoDefault: FromWorld` is not satisfied
   |     ^^^^^^^^^^ the trait `std::default::Default` is not implemented for `NoDefault`
   |
   = help: the following other types implement trait `FromWorld`:
-            AtmosphereSamplers
+            AtmosphereSampler
             CasNode
             ChildOf
             DefaultQueryFilters
