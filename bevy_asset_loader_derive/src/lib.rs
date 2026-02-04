@@ -265,6 +265,16 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
 
         builder.field_ident = Some(field.clone().ident.unwrap());
 
+        if let syn::Type::Path(ref outer) = field.ty
+            && let Some(segment) = outer.path.segments.first()
+            && segment.ident == "Handle"
+            && let syn::PathArguments::AngleBracketed(ref segment_args) = segment.arguments
+            && let Some(syn::GenericArgument::Type(asset_type)) = segment_args.args.first()
+            && let syn::Type::Path(type_path) = asset_type
+        {
+            builder.asset_type = Some(type_path.to_owned());
+        }
+
         for attribute in asset_meta_list.unwrap() {
             match attribute {
                 Meta::List(meta_list)
