@@ -644,13 +644,13 @@ impl AssetBuilder {
         if self.asset_path.is_some() && self.asset_paths.is_some() {
             return Err(vec![ParseFieldError::PathAndPathsAreExclusive]);
         }
-        if self.key.is_some() {
+        if let Some(key) = self.key {
             return if self.is_optional {
                 if self.is_collection {
                     Ok(AssetField::OptionalDynamicFileCollection(
                         DynamicAssetField {
                             field_ident: self.field_ident.unwrap(),
-                            key: self.key.unwrap(),
+                            key,
                         },
                         self.is_typed.into(),
                         self.is_mapped.into(),
@@ -658,14 +658,14 @@ impl AssetBuilder {
                 } else {
                     Ok(AssetField::OptionalDynamic(DynamicAssetField {
                         field_ident: self.field_ident.unwrap(),
-                        key: self.key.unwrap(),
+                        key,
                     }))
                 }
             } else if self.is_collection {
                 Ok(AssetField::DynamicFileCollection(
                     DynamicAssetField {
                         field_ident: self.field_ident.unwrap(),
-                        key: self.key.unwrap(),
+                        key,
                     },
                     self.is_typed.into(),
                     self.is_mapped.into(),
@@ -673,15 +673,15 @@ impl AssetBuilder {
             } else {
                 Ok(AssetField::Dynamic(DynamicAssetField {
                     field_ident: self.field_ident.unwrap(),
-                    key: self.key.unwrap(),
+                    key,
                 }))
             };
         }
-        if self.asset_paths.is_some() {
+        if let Some(asset_paths) = self.asset_paths {
             return Ok(AssetField::Files(
                 MultipleFilesField {
                     field_ident: self.field_ident.unwrap(),
-                    asset_paths: self.asset_paths.unwrap(),
+                    asset_paths,
                 },
                 self.is_typed.into(),
                 self.is_mapped.into(),
