@@ -1,0 +1,5 @@
+({
+    "collection_loading.background": File (
+        path: "audio/background.ogg",
+    ),
+})

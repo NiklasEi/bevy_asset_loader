@@ -1,33 +1,29 @@
-mod dynamic_asset_systems;
 mod systems;
 
 /// Configuration of loading states
 pub mod config;
 
-use bevy_app::{App, Plugin, Update};
-use bevy_asset::{Asset, UntypedHandle};
+use bevy_app::{App, Update};
+use bevy_asset::UntypedHandle;
 use bevy_ecs::{
     resource::Resource,
-    schedule::{InternedScheduleLabel, IntoScheduleConfigs, ScheduleLabel, SystemSet},
-    world::FromWorld,
+    schedule::{IntoScheduleConfigs, SystemSet},
+    system::Commands,
+    world::{FromWorld, World},
 };
-use bevy_platform::collections::{HashMap, HashSet};
+use bevy_platform::collections::HashMap;
 use bevy_state::{
     condition::in_state,
-    state::{FreelyMutableState, NextState, OnEnter, State, StateTransition, States},
+    state::{FreelyMutableState, OnEnter},
 };
-use bevy_utils::default;
-use std::any::TypeId;
 use std::marker::PhantomData;
 
 use crate::asset_collection::AssetCollection;
-use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssetCollections};
+use crate::dynamic_asset::{DynamicAsset, DynamicAssets};
+use crate::loading::{AssetLoadingPlugin, AssetLoadingSet, DynamicFileSpec};
 
 use config::{ConfigureLoadingState, LoadingStateConfig};
-use dynamic_asset_systems::resume_to_loading_asset_collections;
-use systems::{
-    finish_loading_state, initialize_loading_state, reset_loading_state, resume_to_finalize,
-};
+use systems::{check_loading_coordinator, enter_loading_state};
 
 #[cfg(feature = "standard_dynamic_assets")]
 use crate::standard_dynamic_asset::{
@@ -35,11 +31,90 @@ use crate::standard_dynamic_asset::{
 };
 #[cfg(feature = "standard_dynamic_assets")]
 use bevy_common_assets::ron::RonAssetPlugin;
-#[cfg(feature = "progress_tracking")]
-use iyes_progress::ProgressEntryId;
 
-use crate::dynamic_asset::{DynamicAsset, DynamicAssets};
-use crate::loading_state::systems::{apply_internal_state_transition, run_loading_state};
+/// Internal dummy collection used to sequence global dynamic file loading before collections.
+///
+/// This type has no asset fields. It is used as a "gate": the entity-loading pipeline waits
+/// for all attached dynamic file specs to finish, then the observer on this entity spawns the
+/// real collection entities.
+#[derive(Resource)]
+pub(crate) struct DynamicPreloadFinished<S: FreelyMutableState>(PhantomData<S>);
+
+impl<S: FreelyMutableState + 'static> AssetCollection for DynamicPreloadFinished<S> {
+    fn create(_world: &mut World) -> Self {
+        DynamicPreloadFinished(PhantomData)
+    }
+    fn load(_world: &mut World) -> Vec<UntypedHandle> {
+        vec![]
+    }
+}
+
+pub(crate) type CollectionSpawnerFn = Box<dyn Fn(&mut Commands) + Send + Sync>;
+pub(crate) type FinallyCallbackFn = Box<dyn Fn(&mut World) + Send + Sync>;
+
+/// Per-state-value spawner data stored by [`LoadingStateSpawners<S>`].
+pub(crate) struct PerStateSpawners<S: FreelyMutableState> {
+    pub(crate) global_dynamic_files: Vec<DynamicFileSpec>,
+    pub(crate) collection_spawners: Vec<CollectionSpawnerFn>,
+    pub(crate) finally_callbacks: Vec<FinallyCallbackFn>,
+    pub(crate) next_state: Option<S>,
+    pub(crate) failure_state: Option<S>,
+}
+
+impl<S: FreelyMutableState> Default for PerStateSpawners<S> {
+    fn default() -> Self {
+        PerStateSpawners {
+            global_dynamic_files: vec![],
+            collection_spawners: vec![],
+            finally_callbacks: vec![],
+            next_state: None,
+            failure_state: None,
+        }
+    }
+}
+
+/// Resource storing the spawner closures and callbacks for each loading state value.
+///
+/// Keyed by state value so that multiple `LoadingState` configurations for different
+/// variants of the same state enum coexist without conflict.
+#[derive(Resource)]
+pub(crate) struct LoadingStateSpawners<S: FreelyMutableState> {
+    pub(crate) states: HashMap<S, PerStateSpawners<S>>,
+    _marker: PhantomData<S>,
+}
+
+impl<S: FreelyMutableState> Default for LoadingStateSpawners<S> {
+    fn default() -> Self {
+        LoadingStateSpawners {
+            states: HashMap::default(),
+            _marker: PhantomData,
+        }
+    }
+}
+
+/// Runtime state per loading-state-value, tracking how many collection entities are still loading.
+#[derive(Default, Clone)]
+pub(crate) struct CoordinatorState {
+    pub(crate) remaining: usize,
+    pub(crate) any_failed: bool,
+    pub(crate) completed: bool,
+}
+
+/// Resource storing the coordinator state for each loading state value.
+#[derive(Resource)]
+pub(crate) struct LoadingStateCoordinator<S: FreelyMutableState> {
+    pub(crate) states: HashMap<S, CoordinatorState>,
+    _marker: PhantomData<S>,
+}
+
+impl<S: FreelyMutableState> Default for LoadingStateCoordinator<S> {
+    fn default() -> Self {
+        LoadingStateCoordinator {
+            states: HashMap::default(),
+            _marker: PhantomData,
+        }
+    }
+}
 
 /// A Bevy plugin to configure automatic asset loading
 ///
@@ -315,35 +390,8 @@ where
     /// ```
     #[allow(unused_mut)]
     pub fn build(mut self, app: &mut App) {
-        app.init_resource::<AssetLoaderConfiguration<S>>();
-        {
-            let mut asset_loader_configuration = app
-                .world_mut()
-                .get_resource_mut::<AssetLoaderConfiguration<S>>()
-                .unwrap();
-            let mut loading_config = asset_loader_configuration
-                .state_configurations
-                .remove(&self.loading_state)
-                .unwrap_or_default();
-            if self.next_state.is_some() {
-                loading_config.next = self.next_state;
-            }
-            if self.failure_state.is_some() {
-                loading_config.failure = self.failure_state;
-            }
-            asset_loader_configuration
-                .state_configurations
-                .insert(self.loading_state.clone(), loading_config);
-        }
-        app.init_resource::<State<InternalLoadingState<S>>>();
-        app.init_resource::<NextState<InternalLoadingState<S>>>();
-        #[cfg(feature = "progress_tracking")]
-        app.insert_resource(LoadingStateProgressId::<S> {
-            id: ProgressEntryId::new(),
-            _marker: default(),
-        });
-
-        app.init_resource::<DynamicAssetCollections<S>>();
+        // Register standard dynamic asset collection plugins before AssetLoadingPlugin
+        // so AssetLoadingPlugin skips re-registering with different endings.
         #[cfg(feature = "standard_dynamic_assets")]
         if !app.is_plugin_added::<RonAssetPlugin<StandardDynamicAssetCollection>>() {
             app.add_plugins(RonAssetPlugin::<StandardDynamicAssetCollection>::new(
@@ -357,95 +405,56 @@ where
             ));
         }
 
-        if !app.is_plugin_added::<InternalAssetLoaderPlugin<S>>() {
-            app.add_plugins(InternalAssetLoaderPlugin::<S>::new());
+        // Ensure the loading plugin is present
+        if !app.is_plugin_added::<AssetLoadingPlugin>() {
+            app.add_plugins(AssetLoadingPlugin);
         }
 
-        app.init_resource::<LoadingStateSchedules<S>>();
-
-        let loading_state_schedule = LoadingStateSchedule(self.loading_state.clone());
-        let configure_loading_state = app.get_schedule(loading_state_schedule.clone()).is_none();
-        app.init_schedule(loading_state_schedule.clone())
-            .init_schedule(OnEnterInternalLoadingState(
-                self.loading_state.clone(),
-                InternalLoadingState::LoadingAssets,
-            ))
-            .init_schedule(OnEnterInternalLoadingState(
-                self.loading_state.clone(),
-                InternalLoadingState::LoadingDynamicAssetCollections,
-            ))
-            .init_schedule(OnEnterInternalLoadingState(
-                self.loading_state.clone(),
-                InternalLoadingState::Finalize,
-            ));
-
-        if configure_loading_state {
-            app.add_systems(
-                loading_state_schedule.clone(),
-                (
-                    resume_to_loading_asset_collections::<S>
-                        .in_set(InternalLoadingStateSet::ResumeDynamicAssetCollections),
-                    initialize_loading_state::<S>.in_set(InternalLoadingStateSet::Initialize),
-                    resume_to_finalize::<S>.in_set(InternalLoadingStateSet::CheckAssets),
-                    finish_loading_state::<S>.in_set(InternalLoadingStateSet::Finalize),
-                ),
-            )
-            .add_systems(
-                OnEnter(self.loading_state.clone()),
-                reset_loading_state::<S>,
-            )
-            .configure_sets(Update, LoadingStateSet(self.loading_state.clone()));
-            let mut loading_state_schedule = app.get_schedule_mut(loading_state_schedule).unwrap();
-            loading_state_schedule
-                .configure_sets(
-                    InternalLoadingStateSet::Initialize
-                        .run_if(in_state(InternalLoadingState::<S>::Initialize)),
-                )
-                .configure_sets(
-                    InternalLoadingStateSet::CheckDynamicAssetCollections.run_if(in_state(
-                        InternalLoadingState::<S>::LoadingDynamicAssetCollections,
-                    )),
-                )
-                .configure_sets(
-                    InternalLoadingStateSet::ResumeDynamicAssetCollections
-                        .after(InternalLoadingStateSet::CheckDynamicAssetCollections)
-                        .run_if(in_state(
-                            InternalLoadingState::<S>::LoadingDynamicAssetCollections,
-                        )),
-                )
-                .configure_sets(
-                    InternalLoadingStateSet::CheckAssets
-                        .run_if(in_state(InternalLoadingState::<S>::LoadingAssets)),
-                )
-                .configure_sets(
-                    InternalLoadingStateSet::Finalize
-                        .run_if(in_state(InternalLoadingState::<S>::Finalize)),
-                );
-
-            #[cfg(feature = "standard_dynamic_assets")]
-            {
-                self.config = self
-                    .config
-                    .register_dynamic_asset_collection::<StandardDynamicAssetCollection>();
-                self.config = self
-                    .config
-                    .register_dynamic_asset_collection::<StandardDynamicAssetArrayCollection>();
-            }
-
-            app.add_systems(
-                Update,
-                run_loading_state::<S>
-                    .in_set(LoadingStateSet(self.loading_state.clone()))
-                    .run_if(in_state(self.loading_state)),
-            );
-        }
-
+        // Pre-register any DynamicAsset entries specified via add_standard_dynamic_assets
         app.init_resource::<DynamicAssets>();
-        let mut dynamic_assets = app.world_mut().get_resource_mut::<DynamicAssets>().unwrap();
+        let mut da = app.world_mut().resource_mut::<DynamicAssets>();
         for (key, asset) in self.dynamic_assets {
-            dynamic_assets.register_asset(key, asset);
+            da.register_asset(key, asset);
         }
+
+        // Initialize per-S resources (idempotent)
+        app.init_resource::<LoadingStateSpawners<S>>();
+        app.init_resource::<LoadingStateCoordinator<S>>();
+
+        // Store next/failure state into the per-state spawners entry
+        {
+            let mut spawners = app.world_mut().resource_mut::<LoadingStateSpawners<S>>();
+            let per_state = spawners
+                .states
+                .entry(self.loading_state.clone())
+                .or_default();
+            if self.next_state.is_some() {
+                per_state.next_state = self.next_state;
+            }
+            if self.failure_state.is_some() {
+                per_state.failure_state = self.failure_state;
+            }
+        }
+
+        // Apply collection/callback config (appends to the per-state entry)
         self.config.build(app);
+
+        // Add the OnEnter system that spawns entities and resets the coordinator
+        app.add_systems(
+            OnEnter(self.loading_state.clone()),
+            enter_loading_state::<S>,
+        );
+
+        // Add the coordinator check system, after the asset loading systems
+        app.add_systems(
+            Update,
+            check_loading_coordinator::<S>
+                .run_if(in_state(self.loading_state.clone()))
+                .in_set(LoadingStateSet(self.loading_state.clone()))
+                .after(AssetLoadingSet),
+        );
+
+        app.configure_sets(Update, LoadingStateSet(self.loading_state.clone()));
     }
 }
 
@@ -462,15 +471,21 @@ impl<S: FreelyMutableState> ConfigureLoadingState for LoadingState<S> {
         self
     }
 
-    fn register_dynamic_asset_collection<C: DynamicAssetCollection + Asset>(mut self) -> Self {
-        self.config = self.config.register_dynamic_asset_collection::<C>();
-
+    fn register_dynamic_asset_collection<
+        C: crate::dynamic_asset::DynamicAssetCollection + bevy_asset::Asset,
+    >(
+        self,
+    ) -> Self {
         self
     }
 
-    fn with_dynamic_assets_file<C: DynamicAssetCollection + Asset>(mut self, file: &str) -> Self {
-        self.config
-            .with_dynamic_assets_type_id(file, TypeId::of::<C>());
+    fn with_dynamic_assets_file<
+        C: crate::dynamic_asset::DynamicAssetCollection + bevy_asset::Asset,
+    >(
+        mut self,
+        file: &str,
+    ) -> Self {
+        self.config = self.config.with_dynamic_assets_file::<C>(file);
 
         self
     }
@@ -483,129 +498,6 @@ impl<S: FreelyMutableState> ConfigureLoadingState for LoadingState<S> {
 ///  Systems in this set check the loading state of assets.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]
 pub struct LoadingStateSet<S: FreelyMutableState>(pub S);
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]
-pub(crate) enum InternalLoadingStateSet {
-    Initialize,
-    CheckDynamicAssetCollections,
-    ResumeDynamicAssetCollections,
-    CheckAssets,
-    Finalize,
-}
-
-#[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash)]
-pub(crate) struct OnEnterInternalLoadingState<S: FreelyMutableState>(
-    pub S,
-    pub InternalLoadingState<S>,
-);
-#[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash)]
-pub(crate) struct LoadingStateSchedule<S: FreelyMutableState>(pub S);
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, States)]
-pub(crate) enum InternalLoadingState<S: FreelyMutableState> {
-    /// Starting point. Here it will be decided whether dynamic asset collections need to be loaded.
-    #[default]
-    Initialize,
-    /// Load dynamic asset collections and configure their key <-> asset mapping
-    LoadingDynamicAssetCollections,
-    /// Load the actual asset collections and check their status every frame.
-    LoadingAssets,
-    /// All collections are loaded and inserted. Time to e.g. run custom [`insert_resource`](bevy_asset_loader::AssetLoader::insert_resource).
-    Finalize,
-    /// A 'parking' state in case no next state is defined
-    Done(PhantomData<S>),
-}
-
-/// This resource is used for handles from asset collections and loading dynamic asset collection files.
-/// The generic will be the [`AssetCollection`] type for the first and the [`DynamicAssetCollection`] for the second.
-#[derive(Resource)]
-pub(crate) struct LoadingAssetHandles<T> {
-    handles: Vec<UntypedHandle>,
-    marker: PhantomData<T>,
-}
-
-impl<T> Default for LoadingAssetHandles<T> {
-    fn default() -> Self {
-        LoadingAssetHandles {
-            handles: Default::default(),
-            marker: Default::default(),
-        }
-    }
-}
-
-#[cfg(feature = "progress_tracking")]
-#[derive(Resource)]
-struct LoadingStateProgressId<State: FreelyMutableState> {
-    id: ProgressEntryId,
-    _marker: PhantomData<State>,
-}
-
-#[cfg(feature = "progress_tracking")]
-#[derive(Resource)]
-struct AssetCollectionsProgressId<State: FreelyMutableState, Assets: AssetCollection> {
-    id: ProgressEntryId,
-    _marker_state: PhantomData<State>,
-    _marker_assets: PhantomData<Assets>,
-}
-
-#[cfg(feature = "progress_tracking")]
-impl<State: FreelyMutableState, Assets: AssetCollection> AssetCollectionsProgressId<State, Assets> {
-    pub(crate) fn new(id: ProgressEntryId) -> Self {
-        AssetCollectionsProgressId {
-            id,
-            _marker_state: default(),
-            _marker_assets: default(),
-        }
-    }
-}
-
-#[derive(Resource)]
-pub(crate) struct AssetLoaderConfiguration<State: FreelyMutableState> {
-    state_configurations: HashMap<State, LoadingConfiguration<State>>,
-}
-
-impl<State: FreelyMutableState> Default for AssetLoaderConfiguration<State> {
-    fn default() -> Self {
-        AssetLoaderConfiguration {
-            state_configurations: HashMap::default(),
-        }
-    }
-}
-
-struct LoadingConfiguration<State: FreelyMutableState> {
-    next: Option<State>,
-    failure: Option<State>,
-    loading_failed: bool,
-    loading_collections: HashSet<TypeId>,
-    loading_dynamic_collections: HashSet<TypeId>,
-}
-
-impl<State: FreelyMutableState> Default for LoadingConfiguration<State> {
-    fn default() -> Self {
-        LoadingConfiguration {
-            next: None,
-            failure: None,
-            loading_failed: false,
-            loading_collections: default(),
-            loading_dynamic_collections: default(),
-        }
-    }
-}
-
-/// Resource to store the schedules for loading states
-#[derive(Resource)]
-pub struct LoadingStateSchedules<State: FreelyMutableState> {
-    /// Map to store a schedule per loading state
-    pub schedules: HashMap<State, InternedScheduleLabel>,
-}
-
-impl<State: FreelyMutableState> Default for LoadingStateSchedules<State> {
-    fn default() -> Self {
-        LoadingStateSchedules {
-            schedules: HashMap::default(),
-        }
-    }
-}
 
 /// Extension trait for Bevy Apps to add loading states idiomatically
 pub trait LoadingStateAppExt {
@@ -639,29 +531,5 @@ impl LoadingStateAppExt for App {
         configuration.build(self);
 
         self
-    }
-}
-
-struct InternalAssetLoaderPlugin<S> {
-    _state_marker: PhantomData<S>,
-}
-
-impl<S> InternalAssetLoaderPlugin<S>
-where
-    S: FreelyMutableState,
-{
-    fn new() -> Self {
-        InternalAssetLoaderPlugin {
-            _state_marker: PhantomData,
-        }
-    }
-}
-
-impl<S> Plugin for InternalAssetLoaderPlugin<S>
-where
-    S: FreelyMutableState,
-{
-    fn build(&self, app: &mut App) {
-        app.add_systems(StateTransition, apply_internal_state_transition::<S>);
     }
 }

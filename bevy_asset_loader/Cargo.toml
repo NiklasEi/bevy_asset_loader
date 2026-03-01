@@ -148,3 +148,8 @@ path = "examples/asset_maps.rs"
 [[example]]
 name = "sub_state"
 path = "examples/sub_state.rs"
+
+[[example]]
+name = "full_collection_no_states"
+path = "examples/full_collection_no_states.rs"
+required-features = ["2d", "3d"]

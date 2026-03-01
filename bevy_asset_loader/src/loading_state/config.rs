@@ -1,27 +1,19 @@
+use std::sync::Arc;
+
 use crate::asset_collection::AssetCollection;
-use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssetCollections};
-use crate::loading_state::dynamic_asset_systems::{
-    check_dynamic_asset_collections, load_dynamic_asset_collections,
-};
-use crate::loading_state::systems::{
-    check_loading_collection, finally_init_resource, start_loading_collection,
-};
-use crate::loading_state::{
-    InternalLoadingState, InternalLoadingStateSet, LoadingStateSchedule,
-    OnEnterInternalLoadingState,
-};
+use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssets};
+use crate::loading::{DynamicFileSpec, LoadCollectionCommandsExt};
+use crate::loading_state::{CollectionSpawnerFn, FinallyCallbackFn, LoadingStateSpawners};
 use bevy_app::App;
-use bevy_asset::Asset;
-use bevy_ecs::system::BoxedSystem;
+use bevy_asset::{Asset, AssetServer, Assets, UntypedHandle};
 use bevy_ecs::{
     resource::Resource,
-    schedule::{IntoScheduleConfigs, ScheduleConfigs},
-    world::FromWorld,
+    system::Commands,
+    world::{FromWorld, World},
 };
-use bevy_platform::collections::HashMap;
 use bevy_state::state::FreelyMutableState;
-use bevy_utils::default;
-use std::any::TypeId;
+
+use super::systems::{on_collection_failed, on_collection_loaded};
 
 /// Methods to configure a loading state
 pub trait ConfigureLoadingState {
@@ -45,6 +37,11 @@ pub trait ConfigureLoadingState {
     ///
     /// See the `custom_dynamic_assets` example
     #[must_use = "The configuration will only be applied when passed to App::configure_loading_state"]
+    #[deprecated(
+        since = "0.25.0",
+        note = "No longer needed. `with_dynamic_assets_file` handles loading and registering \
+                the collection on its own. You can safely remove calls to this method."
+    )]
     fn register_dynamic_asset_collection<C: DynamicAssetCollection + Asset>(self) -> Self;
 
     /// Add a file containing dynamic assets to the loading state. Keys contained in the file, will
@@ -65,8 +62,6 @@ pub trait ConfigureLoadingState {
     )]
     fn init_resource<R: Resource + FromWorld>(self) -> Self;
 }
-
-type ScheduleConfig = ScheduleConfigs<BoxedSystem>;
 
 /// Can be used to add new asset collections or similar configuration to a loading state.
 /// ```edition2021
@@ -106,13 +101,9 @@ type ScheduleConfig = ScheduleConfigs<BoxedSystem>;
 /// ```
 pub struct LoadingStateConfig<S: FreelyMutableState> {
     state: S,
-
-    on_enter_loading_assets: Vec<ScheduleConfig>,
-    on_enter_loading_dynamic_asset_collections: Vec<ScheduleConfig>,
-    on_update: Vec<ScheduleConfig>,
-    on_enter_finalize: Vec<ScheduleConfig>,
-
-    dynamic_assets: HashMap<TypeId, Vec<String>>,
+    collection_spawners: Vec<CollectionSpawnerFn>,
+    finally_callbacks: Vec<FinallyCallbackFn>,
+    global_dynamic_file_specs: Vec<DynamicFileSpec>,
 }
 
 impl<S: FreelyMutableState> LoadingStateConfig<S> {
@@ -120,94 +111,80 @@ impl<S: FreelyMutableState> LoadingStateConfig<S> {
     pub fn new(state: S) -> Self {
         Self {
             state,
-            on_enter_loading_assets: vec![],
-            on_enter_loading_dynamic_asset_collections: vec![],
-            on_update: vec![],
-            on_enter_finalize: vec![],
-            dynamic_assets: default(),
+            collection_spawners: vec![],
+            finally_callbacks: vec![],
+            global_dynamic_file_specs: vec![],
         }
     }
 
-    pub(crate) fn with_dynamic_assets_type_id(&mut self, file: &str, type_id: TypeId) {
-        let mut dynamic_files = self.dynamic_assets.remove(&type_id).unwrap_or_default();
-        dynamic_files.push(file.to_owned());
-        self.dynamic_assets.insert(type_id, dynamic_files);
-    }
-
-    pub(crate) fn build(mut self, app: &mut App) {
-        for config in self.on_enter_loading_assets {
-            app.add_systems(
-                OnEnterInternalLoadingState(
-                    self.state.clone(),
-                    InternalLoadingState::LoadingAssets,
-                ),
-                config,
-            );
-        }
-        for config in self.on_update {
-            app.add_systems(LoadingStateSchedule(self.state.clone()), config);
-        }
-        for config in self.on_enter_finalize {
-            app.add_systems(
-                OnEnterInternalLoadingState(self.state.clone(), InternalLoadingState::Finalize),
-                config,
-            );
-        }
-        for config in self.on_enter_loading_dynamic_asset_collections.drain(..) {
-            app.add_systems(
-                OnEnterInternalLoadingState(
-                    self.state.clone(),
-                    InternalLoadingState::LoadingDynamicAssetCollections,
-                ),
-                config,
-            );
-        }
-        let mut dynamic_assets = app
+    pub(crate) fn build(self, app: &mut App) {
+        let mut spawners = app
             .world_mut()
-            .get_resource_mut::<DynamicAssetCollections<S>>()
+            .get_resource_mut::<LoadingStateSpawners<S>>()
             .unwrap_or_else(|| {
-                panic!("Failed to get the DynamicAssetCollections resource for the loading state. Are you trying to configure a loading state before it was added to the bevy App?")
+                panic!(
+                    "Failed to get the LoadingStateSpawners resource for the loading state \
+                     '{:?}'. Are you trying to configure a loading state before it was added \
+                     to the bevy App?",
+                    self.state
+                )
             });
-        for (id, files) in self.dynamic_assets.drain() {
-            dynamic_assets.register_files_by_type_id(self.state.clone(), files, id);
-        }
+        let per_state = spawners.states.entry(self.state).or_default();
+        per_state
+            .collection_spawners
+            .extend(self.collection_spawners);
+        per_state.finally_callbacks.extend(self.finally_callbacks);
+        per_state
+            .global_dynamic_files
+            .extend(self.global_dynamic_file_specs);
     }
 }
 
 impl<S: FreelyMutableState> ConfigureLoadingState for LoadingStateConfig<S> {
     fn load_collection<A: AssetCollection>(mut self) -> Self {
-        self.on_enter_loading_assets
-            .push(start_loading_collection::<S, A>.into_configs());
-        self.on_update.push(
-            check_loading_collection::<S, A>
-                .in_set(InternalLoadingStateSet::CheckAssets)
-                .into_configs(),
-        );
-
+        self.collection_spawners
+            .push(Box::new(|commands: &mut Commands| {
+                commands
+                    .load_collection::<A>()
+                    .observe(on_collection_loaded::<S, A>)
+                    .observe(on_collection_failed::<S, A>);
+            }));
         self
     }
 
     fn finally_init_resource<R: Resource + FromWorld>(mut self) -> Self {
-        self.on_enter_finalize
-            .push(finally_init_resource::<R>.into_configs());
-
+        self.finally_callbacks.push(Box::new(|world: &mut World| {
+            let _ = world.init_resource::<R>();
+        }));
         self
     }
 
-    fn register_dynamic_asset_collection<C: DynamicAssetCollection + Asset>(mut self) -> Self {
-        self.on_enter_loading_dynamic_asset_collections
-            .push(load_dynamic_asset_collections::<S, C>.into_configs());
-        self.on_update.push(
-            check_dynamic_asset_collections::<S, C>
-                .in_set(InternalLoadingStateSet::CheckDynamicAssetCollections),
-        );
-
+    fn register_dynamic_asset_collection<C: DynamicAssetCollection + Asset>(self) -> Self {
+        // The user registers the asset plugin for C themselves (e.g. RonAssetPlugin).
+        // The DynamicFileSpec in with_dynamic_assets_file handles loading and registering.
+        // This method is a no-op.
         self
     }
 
     fn with_dynamic_assets_file<C: DynamicAssetCollection + Asset>(mut self, file: &str) -> Self {
-        self.with_dynamic_assets_type_id(file, TypeId::of::<C>());
-
+        let path = file.to_string();
+        self.global_dynamic_file_specs.push(DynamicFileSpec {
+            load_fn: Arc::new(move |asset_server: &AssetServer| {
+                asset_server.load::<C>(path.clone()).untyped()
+            }),
+            register_fn: Arc::new(move |handle: UntypedHandle, world: &mut World| {
+                let typed_handle = handle.typed::<C>();
+                let mut dynamic_assets =
+                    world.remove_resource::<DynamicAssets>().unwrap_or_default();
+                {
+                    let assets = world.resource::<Assets<C>>();
+                    if let Some(collection) = assets.get(&typed_handle) {
+                        collection.register(&mut dynamic_assets);
+                    }
+                }
+                world.insert_resource(dynamic_assets);
+            }),
+        });
         self
     }
 
