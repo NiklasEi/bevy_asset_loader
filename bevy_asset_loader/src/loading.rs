@@ -112,9 +112,17 @@ impl Plugin for AssetLoadingPlugin {
 /// This event is entity-scoped: observers attached to the loading entity via
 /// [`LoadCollectionCommands::observe`] will receive it, as will global observers.
 pub struct AssetCollectionLoaded<C: AssetCollection> {
-    /// The entity used for this loading job (now despawned).
+    /// The entity that was used for this loading job.
     pub entity: Entity,
     _marker: PhantomData<C>,
+}
+
+impl<C: AssetCollection> std::fmt::Debug for AssetCollectionLoaded<C> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AssetCollectionLoaded")
+            .field("entity", &self.entity)
+            .finish()
+    }
 }
 
 impl<C: AssetCollection + 'static> Event for AssetCollectionLoaded<C> {
@@ -132,9 +140,17 @@ impl<C: AssetCollection + 'static> EntityEvent for AssetCollectionLoaded<C> {
 /// This event is entity-scoped: observers attached to the loading entity via
 /// [`LoadCollectionCommands::observe`] will receive it, as will global observers.
 pub struct AssetCollectionFailed<C: AssetCollection> {
-    /// The entity used for this loading job (now despawned).
+    /// The entity that was used for this loading job.
     pub entity: Entity,
     _marker: PhantomData<C>,
+}
+
+impl<C: AssetCollection> std::fmt::Debug for AssetCollectionFailed<C> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AssetCollectionFailed")
+            .field("entity", &self.entity)
+            .finish()
+    }
 }
 
 impl<C: AssetCollection + 'static> Event for AssetCollectionFailed<C> {
@@ -198,22 +214,7 @@ impl<'w, C: AssetCollection> LoadCollectionCommands<'w, C> {
         &mut self,
         path: &str,
     ) -> &mut Self {
-        let path = path.to_string();
-        self.dynamic_files.push(DynamicFileSpec {
-            load_fn: Arc::new(move |asset_server| asset_server.load::<D>(path.clone()).untyped()),
-            register_fn: Arc::new(move |handle: UntypedHandle, world: &mut World| {
-                let typed_handle = handle.typed::<D>();
-                let mut dynamic_assets =
-                    world.remove_resource::<DynamicAssets>().unwrap_or_default();
-                {
-                    let assets = world.resource::<Assets<D>>();
-                    if let Some(collection) = assets.get(&typed_handle) {
-                        collection.register(&mut dynamic_assets);
-                    }
-                }
-                world.insert_resource(dynamic_assets);
-            }),
-        });
+        self.dynamic_files.push(DynamicFileSpec::new::<D>(path));
         self
     }
 
@@ -222,6 +223,14 @@ impl<'w, C: AssetCollection> LoadCollectionCommands<'w, C> {
     /// Used internally by the state-based loading pipeline.
     pub(crate) fn push_dynamic_file_spec(&mut self, spec: DynamicFileSpec) -> &mut Self {
         self.dynamic_files.push(spec);
+        self
+    }
+
+    /// Insert additional components on the loading entity.
+    ///
+    /// This can be used to tag the entity with custom markers for querying or cleanup.
+    pub fn insert(&mut self, bundle: impl Bundle) -> &mut Self {
+        self.commands.entity(self.entity).insert(bundle);
         self
     }
 
@@ -255,8 +264,12 @@ type StartLoadingFn = Box<dyn Fn(&mut World) -> Vec<UntypedHandle> + Send + Sync
 type WorldCallbackFn = Box<dyn Fn(&mut World) + Send + Sync>;
 type EntityWorldCallbackFn = Box<dyn Fn(Entity, &mut World) + Send + Sync>;
 
+/// Marker component on entities that are actively loading an [`AssetCollection`].
+///
+/// All loading entities carry this marker. It can be used to query or despawn
+/// in-progress loading jobs (e.g., when leaving a loading state early).
 #[derive(Component)]
-struct CollectionLoadingMarker;
+pub struct CollectionLoadingMarker;
 
 #[derive(Component)]
 struct CollectionHandles(Vec<UntypedHandle>);
@@ -290,6 +303,76 @@ struct CollectionLoadingFailed;
 pub(crate) struct DynamicFileSpec {
     pub(crate) load_fn: Arc<dyn Fn(&AssetServer) -> UntypedHandle + Send + Sync>,
     pub(crate) register_fn: RegisterFn,
+}
+
+impl DynamicFileSpec {
+    /// Create a [`DynamicFileSpec`] for a [`DynamicAssetCollection`] file.
+    pub(crate) fn new<D: DynamicAssetCollection + Asset>(path: &str) -> Self {
+        let path = path.to_string();
+        DynamicFileSpec {
+            load_fn: Arc::new({
+                let path = path.clone();
+                move |asset_server: &AssetServer| asset_server.load::<D>(path.clone()).untyped()
+            }),
+            register_fn: Arc::new(move |handle: UntypedHandle, world: &mut World| {
+                let typed_handle = handle.typed::<D>();
+                let mut dynamic_assets =
+                    world.remove_resource::<DynamicAssets>().unwrap_or_default();
+                {
+                    let assets = world.resource::<Assets<D>>();
+                    if let Some(collection) = assets.get(&typed_handle) {
+                        collection.register(&mut dynamic_assets);
+                    }
+                }
+                world.insert_resource(dynamic_assets);
+            }),
+        }
+    }
+}
+
+/// Spawn a loading entity for collection `C`, call [`AssetCollection::load`], and return the entity.
+///
+/// The entity will be tracked by [`check_asset_handles`]. When all assets are loaded,
+/// [`AssetCollectionLoaded`] is triggered and the entity is despawned.
+///
+/// The `create_and_insert` callback is guarded: it skips resource insertion if the resource
+/// already exists. This allows callers like [`AssetCollectionApp::init_collection`] to
+/// immediately create the resource while still getting entity-based tracking and events.
+///
+/// [`AssetCollectionApp::init_collection`]: crate::asset_collection::AssetCollectionApp::init_collection
+pub(crate) fn spawn_loading_entity<C: AssetCollection>(world: &mut World) -> Entity {
+    world.init_resource::<DynamicAssets>();
+
+    let entity = world.spawn(CollectionLoadingMarker).id();
+    let handles = C::load(world);
+
+    let callbacks = CollectionCallbacks {
+        start_loading: Box::new(|world| C::load(world)),
+        create_and_insert: Box::new(|world| {
+            if world.get_resource::<C>().is_none() {
+                let collection = C::create(world);
+                world.insert_resource(collection);
+            }
+        }),
+        trigger_loaded: Box::new(|entity, world| {
+            world.trigger(AssetCollectionLoaded::<C> {
+                entity,
+                _marker: PhantomData,
+            });
+        }),
+        trigger_failed: Box::new(|entity, world| {
+            world.trigger(AssetCollectionFailed::<C> {
+                entity,
+                _marker: PhantomData,
+            });
+        }),
+    };
+
+    world
+        .entity_mut(entity)
+        .insert((CollectionHandles(handles), callbacks));
+
+    entity
 }
 
 struct StartLoadingCollection<C: AssetCollection> {

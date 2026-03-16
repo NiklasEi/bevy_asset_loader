@@ -1,11 +1,9 @@
-use std::sync::Arc;
-
 use crate::asset_collection::AssetCollection;
-use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssets};
+use crate::dynamic_asset::DynamicAssetCollection;
 use crate::loading::{DynamicFileSpec, LoadCollectionCommandsExt};
 use crate::loading_state::{CollectionSpawnerFn, FinallyCallbackFn, LoadingStateSpawners};
 use bevy_app::App;
-use bevy_asset::{Asset, AssetServer, Assets, UntypedHandle};
+use bevy_asset::Asset;
 use bevy_ecs::{
     resource::Resource,
     system::Commands,
@@ -146,6 +144,7 @@ impl<S: FreelyMutableState> ConfigureLoadingState for LoadingStateConfig<S> {
             .push(Box::new(|commands: &mut Commands| {
                 commands
                     .load_collection::<A>()
+                    .insert(super::LoadingForState::<S>::default())
                     .observe(on_collection_loaded::<S, A>)
                     .observe(on_collection_failed::<S, A>);
             }));
@@ -167,24 +166,8 @@ impl<S: FreelyMutableState> ConfigureLoadingState for LoadingStateConfig<S> {
     }
 
     fn with_dynamic_assets_file<C: DynamicAssetCollection + Asset>(mut self, file: &str) -> Self {
-        let path = file.to_string();
-        self.global_dynamic_file_specs.push(DynamicFileSpec {
-            load_fn: Arc::new(move |asset_server: &AssetServer| {
-                asset_server.load::<C>(path.clone()).untyped()
-            }),
-            register_fn: Arc::new(move |handle: UntypedHandle, world: &mut World| {
-                let typed_handle = handle.typed::<C>();
-                let mut dynamic_assets =
-                    world.remove_resource::<DynamicAssets>().unwrap_or_default();
-                {
-                    let assets = world.resource::<Assets<C>>();
-                    if let Some(collection) = assets.get(&typed_handle) {
-                        collection.register(&mut dynamic_assets);
-                    }
-                }
-                world.insert_resource(dynamic_assets);
-            }),
-        });
+        self.global_dynamic_file_specs
+            .push(DynamicFileSpec::new::<C>(file));
         self
     }
 

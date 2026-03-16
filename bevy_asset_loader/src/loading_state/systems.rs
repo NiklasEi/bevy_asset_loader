@@ -1,10 +1,14 @@
 use crate::asset_collection::AssetCollection;
 use crate::loading::{AssetCollectionFailed, AssetCollectionLoaded, LoadCollectionCommandsExt};
-use crate::loading_state::{DynamicPreloadFinished, LoadingStateCoordinator, LoadingStateSpawners};
+use crate::loading_state::{
+    DynamicPreloadFinished, LoadingForState, LoadingStateCoordinator, LoadingStateSpawners,
+};
 use bevy_ecs::{
     change_detection::{Res, ResMut},
+    entity::Entity,
     observer::On,
-    system::Commands,
+    query::With,
+    system::{Commands, Query},
     world::World,
 };
 use bevy_log::info;
@@ -64,14 +68,24 @@ fn on_preload_finished<S: FreelyMutableState>(
 /// a [`DynamicPreloadFinished<S>`] gate entity is spawned first; its observer then spawns
 /// the real collection entities once all files are registered. Otherwise, collection entities
 /// are spawned directly.
+///
+/// Any leftover loading entities from a previous cycle are despawned to prevent leaks.
 pub(crate) fn enter_loading_state<S: FreelyMutableState>(
     current_state: Res<State<S>>,
     mut commands: Commands,
     spawners: Res<LoadingStateSpawners<S>>,
     mut coordinator: ResMut<LoadingStateCoordinator<S>>,
+    stale_entities: Query<Entity, With<LoadingForState<S>>>,
 ) {
     let state = current_state.get().clone();
     info!("Entering loading state '{:?}'", &state);
+
+    // Despawn leftover loading entities from a previous load cycle of *this* state type.
+    // Only entities tagged with LoadingForState<S> are affected, so loading for other
+    // parallel state types is not disturbed.
+    for entity in stale_entities.iter() {
+        commands.entity(entity).despawn();
+    }
 
     let coord = coordinator.states.entry(state.clone()).or_default();
     coord.any_failed = false;
@@ -91,6 +105,7 @@ pub(crate) fn enter_loading_state<S: FreelyMutableState>(
         // Its observer fires after all files are loaded, then spawns the real collections.
         coord.remaining = 1;
         let mut preload = commands.load_collection::<DynamicPreloadFinished<S>>();
+        preload.insert(LoadingForState::<S>::default());
         for spec in per_state.global_dynamic_files.iter().cloned() {
             preload.push_dynamic_file_spec(spec);
         }
@@ -134,7 +149,8 @@ pub(crate) fn check_loading_coordinator<S: FreelyMutableState>(world: &mut World
             world.resource_mut::<NextState<S>>().set(failure);
         }
     } else {
-        // Temporarily remove LoadingStateSpawners so callbacks can freely access &mut World
+        // Temporarily remove LoadingStateSpawners so callbacks can freely access &mut World.
+        // NOTE: If a finally_callback reads LoadingStateSpawners<S>, it will panic.
         if let Some(spawners) = world.remove_resource::<LoadingStateSpawners<S>>() {
             let next_state = if let Some(per_state) = spawners.states.get(&state) {
                 for cb in &per_state.finally_callbacks {

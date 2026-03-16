@@ -6,6 +6,7 @@ pub mod config;
 use bevy_app::{App, Update};
 use bevy_asset::UntypedHandle;
 use bevy_ecs::{
+    component::Component,
     resource::Resource,
     schedule::{IntoScheduleConfigs, SystemSet},
     system::Commands,
@@ -48,6 +49,10 @@ impl<S: FreelyMutableState + 'static> AssetCollection for DynamicPreloadFinished
         vec![]
     }
 }
+
+/// Marker component added to loading entities spawned by the state-based pipeline.
+#[derive(Component, Default)]
+pub(crate) struct LoadingForState<S: FreelyMutableState>(PhantomData<S>);
 
 pub(crate) type CollectionSpawnerFn = Box<dyn Fn(&mut Commands) + Send + Sync>;
 pub(crate) type FinallyCallbackFn = Box<dyn Fn(&mut World) + Send + Sync>;
