@@ -118,6 +118,11 @@ path = "examples/full_collection.rs"
 required-features = ["2d", "3d"]
 
 [[example]]
+name = "full_collection_init"
+path = "examples/full_collection_init.rs"
+required-features = ["2d", "3d"]
+
+[[example]]
 name = "full_dynamic_collection"
 path = "examples/full_dynamic_collection.rs"
 required-features = ["2d", "3d", "standard_dynamic_assets"]

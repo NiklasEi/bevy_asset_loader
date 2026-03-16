@@ -288,6 +288,7 @@ struct DynamicFileEntries {
 struct CollectionCallbacks {
     start_loading: StartLoadingFn,
     create_and_insert: WorldCallbackFn,
+    finalize: WorldCallbackFn,
     trigger_loaded: EntityWorldCallbackFn,
     trigger_failed: EntityWorldCallbackFn,
 }
@@ -346,7 +347,17 @@ pub(crate) fn spawn_loading_entity<C: AssetCollection>(world: &mut World) -> Ent
     let entity = world.spawn(CollectionLoadingMarker).id();
     let handles = C::load(world);
 
-    let callbacks = CollectionCallbacks {
+    let callbacks = collection_callbacks::<C>();
+
+    world
+        .entity_mut(entity)
+        .insert((CollectionHandles(handles), callbacks));
+
+    entity
+}
+
+fn collection_callbacks<C: AssetCollection>() -> CollectionCallbacks {
+    CollectionCallbacks {
         start_loading: Box::new(|world| C::load(world)),
         create_and_insert: Box::new(|world| {
             if world.get_resource::<C>().is_none() {
@@ -354,6 +365,7 @@ pub(crate) fn spawn_loading_entity<C: AssetCollection>(world: &mut World) -> Ent
                 world.insert_resource(collection);
             }
         }),
+        finalize: Box::new(|world| C::finalize(world)),
         trigger_loaded: Box::new(|entity, world| {
             world.trigger(AssetCollectionLoaded::<C> {
                 entity,
@@ -366,13 +378,7 @@ pub(crate) fn spawn_loading_entity<C: AssetCollection>(world: &mut World) -> Ent
                 _marker: PhantomData,
             });
         }),
-    };
-
-    world
-        .entity_mut(entity)
-        .insert((CollectionHandles(handles), callbacks));
-
-    entity
+    }
 }
 
 struct StartLoadingCollection<C: AssetCollection> {
@@ -385,25 +391,7 @@ impl<C: AssetCollection> Command for StartLoadingCollection<C> {
     fn apply(self, world: &mut World) {
         world.init_resource::<DynamicAssets>();
 
-        let callbacks = CollectionCallbacks {
-            start_loading: Box::new(|world| C::load(world)),
-            create_and_insert: Box::new(|world| {
-                let collection = C::create(world);
-                world.insert_resource(collection);
-            }),
-            trigger_loaded: Box::new(|entity, world| {
-                world.trigger(AssetCollectionLoaded::<C> {
-                    entity,
-                    _marker: PhantomData,
-                });
-            }),
-            trigger_failed: Box::new(|entity, world| {
-                world.trigger(AssetCollectionFailed::<C> {
-                    entity,
-                    _marker: PhantomData,
-                });
-            }),
-        };
+        let callbacks = collection_callbacks::<C>();
 
         if self.dynamic_files.is_empty() {
             let handles = C::load(world);
@@ -527,6 +515,7 @@ fn check_asset_handles(world: &mut World) {
                     .take::<CollectionCallbacks>()
                     .unwrap();
                 (callbacks.create_and_insert)(world);
+                (callbacks.finalize)(world);
                 (callbacks.trigger_loaded)(entity, world);
                 world.despawn(entity);
             }

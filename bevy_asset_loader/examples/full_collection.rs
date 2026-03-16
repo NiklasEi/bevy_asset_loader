@@ -5,6 +5,9 @@ use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 
+/// Load an asset collection that demonstrates all possibilities in a loading state
+///
+/// See the example counterparts `full_collection_init` and `full_collection_no_states`
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)

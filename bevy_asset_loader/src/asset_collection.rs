@@ -26,10 +26,23 @@ pub use bevy_asset_loader_derive::AssetCollection;
     note = "consider annotating `{Self}` with `#[derive(AssetCollection)]`"
 )]
 pub trait AssetCollection: Resource {
-    /// Create a new asset collection from the [`AssetServer`](::bevy::asset::AssetServer)
+    /// Create a new asset collection from the [`World`](::bevy_ecs::world::World)
+    ///
+    /// For fields that require post-processing (image annotations, dynamic assets,
+    /// standard materials), the collection will contain reserved handles that will
+    /// be populated by [`finalize`](AssetCollection::finalize) after all assets are loaded.
     fn create(world: &mut World) -> Self;
+
     /// Start loading all the assets in the collection
     fn load(world: &mut World) -> Vec<UntypedHandle>;
+
+    /// Populate reserved handles and perform post-processing after all assets are loaded.
+    ///
+    /// This is called automatically by the loading system after all asset handles from
+    /// [`load`](AssetCollection::load) report as loaded. Fields that need processing
+    /// (e.g. `image(...)`, `standard_material`, dynamic assets)
+    /// have their reserved handles populated here.
+    fn finalize(_world: &mut World) {}
 }
 
 /// Extension trait for [`App`] enabling initialisation of [asset collections](crate::asset_collection::AssetCollection)

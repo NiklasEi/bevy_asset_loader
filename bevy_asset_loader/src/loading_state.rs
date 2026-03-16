@@ -51,8 +51,14 @@ impl<S: FreelyMutableState + 'static> AssetCollection for DynamicPreloadFinished
 }
 
 /// Marker component added to loading entities spawned by the state-based pipeline.
-#[derive(Component, Default)]
+#[derive(Component)]
 pub(crate) struct LoadingForState<S: FreelyMutableState>(PhantomData<S>);
+
+impl<S: FreelyMutableState> Default for LoadingForState<S> {
+    fn default() -> Self {
+        LoadingForState(PhantomData)
+    }
+}
 
 pub(crate) type CollectionSpawnerFn = Box<dyn Fn(&mut Commands) + Send + Sync>;
 pub(crate) type FinallyCallbackFn = Box<dyn Fn(&mut World) + Send + Sync>;
