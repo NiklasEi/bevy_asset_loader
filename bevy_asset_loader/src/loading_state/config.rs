@@ -36,7 +36,7 @@ pub trait ConfigureLoadingState {
     /// See the `custom_dynamic_assets` example
     #[must_use = "The configuration will only be applied when passed to App::configure_loading_state"]
     #[deprecated(
-        since = "0.25.0",
+        since = "0.26.0",
         note = "No longer needed. `with_dynamic_assets_file` handles loading and registering \
                 the collection on its own. You can safely remove calls to this method."
     )]
