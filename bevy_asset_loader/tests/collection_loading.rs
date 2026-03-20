@@ -1,8 +1,13 @@
 use bevy::app::AppExit;
 use bevy::asset::AssetPlugin;
-use bevy::audio::AudioPlugin;
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
+use bevy_common_assets::ron::RonAssetPlugin;
+
+#[derive(serde::Deserialize, Asset, TypePath)]
+struct TestAsset {
+    _value: String,
+}
 
 #[test]
 fn collection_loading_simple() {
@@ -10,9 +15,9 @@ fn collection_loading_simple() {
     app.add_plugins((
         MinimalPlugins,
         AssetPlugin::default(),
-        AudioPlugin::default(),
+        RonAssetPlugin::<TestAsset>::new(&["test.ron"]),
+        AssetLoadingPlugin,
     ))
-    .add_plugins(AssetLoadingPlugin)
     .insert_resource(Done(false))
     .add_systems(Startup, setup_simple)
     .add_systems(Update, (timeout, quit_when_done))
@@ -20,8 +25,8 @@ fn collection_loading_simple() {
 }
 
 fn setup_simple(mut commands: Commands) {
-    commands.load_collection::<BackgroundAudio>().observe(
-        |_: On<AssetCollectionLoaded<BackgroundAudio>>, mut done: ResMut<Done>| {
+    commands.load_collection::<TestCollection1>().observe(
+        |_: On<AssetCollectionLoaded<TestCollection1>>, mut done: ResMut<Done>| {
             done.0 = true;
         },
     );
@@ -33,9 +38,9 @@ fn collection_loading_multiple_simultaneous() {
     app.add_plugins((
         MinimalPlugins,
         AssetPlugin::default(),
-        AudioPlugin::default(),
+        RonAssetPlugin::<TestAsset>::new(&["test.ron"]),
+        AssetLoadingPlugin,
     ))
-    .add_plugins(AssetLoadingPlugin)
     .insert_resource(Done(false))
     .insert_resource(LoadedCount(0u32))
     .add_systems(Startup, setup_multiple)
@@ -45,16 +50,16 @@ fn collection_loading_multiple_simultaneous() {
 
 fn setup_multiple(mut commands: Commands) {
     commands
-        .load_collection::<BackgroundAudio>()
-        .observe(on_background_loaded);
+        .load_collection::<TestCollection1>()
+        .observe(on_first_loaded);
 
     commands
-        .load_collection::<PlopAudio>()
-        .observe(on_plop_loaded);
+        .load_collection::<TestCollection2>()
+        .observe(on_second_loaded);
 }
 
-fn on_background_loaded(
-    _: On<AssetCollectionLoaded<BackgroundAudio>>,
+fn on_first_loaded(
+    _: On<AssetCollectionLoaded<TestCollection1>>,
     mut count: ResMut<LoadedCount>,
     mut done: ResMut<Done>,
 ) {
@@ -64,8 +69,8 @@ fn on_background_loaded(
     }
 }
 
-fn on_plop_loaded(
-    _: On<AssetCollectionLoaded<PlopAudio>>,
+fn on_second_loaded(
+    _: On<AssetCollectionLoaded<TestCollection2>>,
     mut count: ResMut<LoadedCount>,
     mut done: ResMut<Done>,
 ) {
@@ -81,9 +86,9 @@ fn collection_loading_sequential() {
     app.add_plugins((
         MinimalPlugins,
         AssetPlugin::default(),
-        AudioPlugin::default(),
+        RonAssetPlugin::<TestAsset>::new(&["test.ron"]),
+        AssetLoadingPlugin,
     ))
-    .add_plugins(AssetLoadingPlugin)
     .insert_resource(Done(false))
     .add_systems(Startup, setup_sequential)
     .add_systems(Update, (timeout, quit_when_done))
@@ -92,18 +97,18 @@ fn collection_loading_sequential() {
 
 fn setup_sequential(mut commands: Commands) {
     commands
-        .load_collection::<BackgroundAudio>()
+        .load_collection::<TestCollection1>()
         .observe(on_first_loaded_start_second);
 }
 
 fn on_first_loaded_start_second(
-    _: On<AssetCollectionLoaded<BackgroundAudio>>,
+    _: On<AssetCollectionLoaded<TestCollection1>>,
     mut commands: Commands,
     done: Res<Done>,
 ) {
     if !done.0 {
-        commands.load_collection::<PlopAudio>().observe(
-            |_: On<AssetCollectionLoaded<PlopAudio>>, mut done: ResMut<Done>| {
+        commands.load_collection::<TestCollection2>().observe(
+            |_: On<AssetCollectionLoaded<TestCollection2>>, mut done: ResMut<Done>| {
                 done.0 = true;
             },
         );
@@ -117,9 +122,9 @@ fn collection_loading_dynamic_assets() {
     app.add_plugins((
         MinimalPlugins,
         AssetPlugin::default(),
-        AudioPlugin::default(),
+        RonAssetPlugin::<TestAsset>::new(&["test.ron"]),
+        AssetLoadingPlugin,
     ))
-    .add_plugins(AssetLoadingPlugin)
     .insert_resource(Done(false))
     .add_systems(Startup, setup_dynamic)
     .add_systems(Update, (timeout, quit_when_done))
@@ -129,13 +134,13 @@ fn collection_loading_dynamic_assets() {
 #[cfg(feature = "standard_dynamic_assets")]
 fn setup_dynamic(mut commands: Commands) {
     commands
-        .load_collection::<DynamicAudio>()
+        .load_collection::<DynamicTestCollection>()
         .with_dynamic_assets_file::<StandardDynamicAssetCollection>("collection_loading.assets.ron")
         .observe(
-            |_: On<AssetCollectionLoaded<DynamicAudio>>,
-             collection: Res<DynamicAudio>,
+            |_: On<AssetCollectionLoaded<DynamicTestCollection>>,
+             collection: Res<DynamicTestCollection>,
              mut done: ResMut<Done>| {
-                let _ = &collection.background;
+                let _ = &collection.first;
                 done.0 = true;
             },
         );
@@ -144,12 +149,16 @@ fn setup_dynamic(mut commands: Commands) {
 #[test]
 fn collection_loading_failure() {
     let mut app = App::new();
-    app.add_plugins((MinimalPlugins, AssetPlugin::default()))
-        .add_plugins(AssetLoadingPlugin)
-        .insert_resource(Done(false))
-        .add_systems(Startup, setup_failing)
-        .add_systems(Update, (timeout, quit_when_done))
-        .run();
+    app.add_plugins((
+        MinimalPlugins,
+        AssetPlugin::default(),
+        RonAssetPlugin::<TestAsset>::new(&["test.ron"]),
+        AssetLoadingPlugin,
+    ))
+    .insert_resource(Done(false))
+    .add_systems(Startup, setup_failing)
+    .add_systems(Update, (timeout, quit_when_done))
+    .run();
 }
 
 fn setup_failing(mut commands: Commands) {
@@ -179,26 +188,26 @@ fn quit_when_done(done: Res<Done>, mut exit: MessageWriter<AppExit>) {
 }
 
 #[derive(AssetCollection, Resource)]
-struct BackgroundAudio {
-    #[asset(path = "audio/background.ogg")]
-    _background: Handle<AudioSource>,
+struct TestCollection1 {
+    #[asset(path = "test/first.test.ron")]
+    _first: Handle<TestAsset>,
 }
 
 #[derive(AssetCollection, Resource)]
-struct PlopAudio {
-    #[asset(path = "audio/plop.ogg")]
-    _plop: Handle<AudioSource>,
+struct TestCollection2 {
+    #[asset(path = "test/second.test.ron")]
+    _second: Handle<TestAsset>,
 }
 
 #[cfg(feature = "standard_dynamic_assets")]
 #[derive(AssetCollection, Resource)]
-struct DynamicAudio {
+struct DynamicTestCollection {
     #[asset(key = "collection_loading.background")]
-    background: Handle<AudioSource>,
+    first: Handle<TestAsset>,
 }
 
 #[derive(AssetCollection, Resource)]
 struct NonExistentAssets {
-    #[asset(path = "audio/does_not_exist_at_all.ogg")]
-    _missing: Handle<AudioSource>,
+    #[asset(path = "test/does_not_exist.test.ron")]
+    _missing: Handle<TestAsset>,
 }

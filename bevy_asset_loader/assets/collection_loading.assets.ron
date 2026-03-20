@@ -1,5 +1,5 @@
 ({
     "collection_loading.background": File (
-        path: "audio/background.ogg",
+        path: "test/first.test.ron",
     ),
 })
