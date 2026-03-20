@@ -5,78 +5,22 @@ use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 
-/// Load an asset collection that demonstrates all possibilities in a loading state
+/// Load an asset collection that demonstrates all possibilities without states
 ///
-/// See the example counterparts `full_collection_init` and `full_collection_no_states`
+/// See the example counterparts `full_collection` and `full_collection_init`
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
-        .init_state::<MyStates>()
-        .add_loading_state(
-            LoadingState::new(MyStates::AssetLoading)
-                .continue_to_state(MyStates::Next)
-                .load_collection::<MyAssets>(),
-        )
-        .add_systems(OnEnter(MyStates::Next), expectations)
+        .add_plugins((DefaultPlugins, AssetLoadingPlugin))
+        .add_systems(Startup, setup)
         .run();
 }
 
-#[derive(AssetCollection, Resource)]
-struct MyAssets {
-    // Any file that can be loaded to a Handle<T>
-    #[asset(path = "audio/background.ogg")]
-    single_file: Handle<AudioSource>,
-    // Any file that can be loaded and turned into a standard material
-    #[asset(path = "images/player.png", standard_material)]
-    standard_material: Handle<StandardMaterial>,
-    // Create a texture atlas layout
-    #[asset(texture_atlas_layout(tile_size_x = 96, tile_size_y = 99, columns = 8, rows = 1))]
-    texture_atlas_layout: Handle<TextureAtlasLayout>,
-    // Example field with type that implements `FromWorld`
-    // If no derive attributes are set, `from_world` will be used to set the value.
-    from_world: ColorStandardMaterial<{ u8::MAX }, 0, 0, { u8::MAX }>,
-
-    // Image asset with sampler nearest (good for crisp pixel art)
-    #[asset(path = "images/pixel_tree.png")]
-    #[asset(image(sampler(filter = nearest)))]
-    image_tree_nearest: Handle<Image>,
-    // Array texture
-    #[asset(path = "images/array_texture.png")]
-    #[asset(image(array_texture_layers = 4))]
-    array_texture: Handle<Image>,
-
-    // Load collections of assets
-
-    // A folder (not supported on the web)
-    #[asset(path = "images", collection)]
-    folder_untyped: Vec<UntypedHandle>,
-    // A folder loaded to typed asset handles (not supported on the web)
-    #[asset(path = "images", collection(typed))]
-    folder_typed: Vec<Handle<Image>>,
-    // A folder loaded as map (not supported on the web)
-    #[asset(path = "images", collection(mapped))]
-    mapped_folder_untyped: HashMap<String, UntypedHandle>,
-    // A folder loaded to typed asset handles mapped with their file names (not supported on the web)
-    #[asset(path = "images", collection(typed, mapped))]
-    mapped_folder_typed: HashMap<String, Handle<Image>>,
-    // A collection of asset files
-    #[asset(paths("images/player.png", "images/tree.png"), collection)]
-    files_untyped: Vec<UntypedHandle>,
-    // A collection of asset files loaded to typed asset handles
-    #[asset(paths("images/player.png", "images/tree.png"), collection(typed))]
-    files_typed: Vec<Handle<Image>>,
-    // A mapped collection of asset files
-    #[asset(paths("images/player.png", "images/tree.png"), collection(mapped))]
-    mapped_files_untyped: HashMap<String, UntypedHandle>,
-    // A mapped collection of asset files loaded to typed asset handles
-    #[asset(
-        paths("images/player.png", "images/tree.png"),
-        collection(typed, mapped)
-    )]
-    mapped_files_typed: HashMap<String, Handle<Image>>,
+fn setup(mut commands: Commands) {
+    commands.load_collection::<MyAssets>().observe(expectations);
 }
 
 fn expectations(
+    _: On<AssetCollectionLoaded<MyAssets>>,
     assets: Res<MyAssets>,
     asset_server: Res<AssetServer>,
     standard_materials: Res<Assets<StandardMaterial>>,
@@ -169,6 +113,61 @@ fn expectations(
     quit.write(AppExit::Success);
 }
 
+#[derive(AssetCollection, Resource)]
+struct MyAssets {
+    // Any file that can be loaded to a Handle<T>
+    #[asset(path = "audio/background.ogg")]
+    single_file: Handle<AudioSource>,
+    // Any file that can be loaded and turned into a standard material
+    #[asset(path = "images/player.png", standard_material)]
+    standard_material: Handle<StandardMaterial>,
+    // Create a texture atlas layout
+    #[asset(texture_atlas_layout(tile_size_x = 96, tile_size_y = 99, columns = 8, rows = 1))]
+    texture_atlas_layout: Handle<TextureAtlasLayout>,
+    // Example field with type that implements `FromWorld`
+    // If no derive attributes are set, `from_world` will be used to set the value.
+    from_world: ColorStandardMaterial<{ u8::MAX }, 0, 0, { u8::MAX }>,
+
+    // Image asset with sampler nearest (good for crisp pixel art)
+    #[asset(path = "images/pixel_tree.png")]
+    #[asset(image(sampler(filter = nearest)))]
+    image_tree_nearest: Handle<Image>,
+    // Array texture
+    #[asset(path = "images/array_texture.png")]
+    #[asset(image(array_texture_layers = 4))]
+    array_texture: Handle<Image>,
+
+    // Load collections of assets
+
+    // A folder (not supported on the web)
+    #[asset(path = "images", collection)]
+    folder_untyped: Vec<UntypedHandle>,
+    // A folder loaded to typed asset handles (not supported on the web)
+    #[asset(path = "images", collection(typed))]
+    folder_typed: Vec<Handle<Image>>,
+    // A folder loaded as map (not supported on the web)
+    #[asset(path = "images", collection(mapped))]
+    mapped_folder_untyped: HashMap<String, UntypedHandle>,
+    // A folder loaded to typed asset handles mapped with their file names (not supported on the web)
+    #[asset(path = "images", collection(typed, mapped))]
+    mapped_folder_typed: HashMap<String, Handle<Image>>,
+    // A collection of asset files
+    #[asset(paths("images/player.png", "images/tree.png"), collection)]
+    files_untyped: Vec<UntypedHandle>,
+    // A collection of asset files loaded to typed asset handles
+    #[asset(paths("images/player.png", "images/tree.png"), collection(typed))]
+    files_typed: Vec<Handle<Image>>,
+    // A mapped collection of asset files
+    #[asset(paths("images/player.png", "images/tree.png"), collection(mapped))]
+    mapped_files_untyped: HashMap<String, UntypedHandle>,
+    // A mapped collection of asset files loaded to typed asset handles
+    #[asset(
+        paths("images/player.png", "images/tree.png"),
+        collection(typed, mapped)
+    )]
+    mapped_files_typed: HashMap<String, Handle<Image>>,
+}
+
 struct ColorStandardMaterial<const R: u8, const G: u8, const B: u8, const A: u8> {
     pub handle: Handle<StandardMaterial>,
 }
@@ -196,11 +195,4 @@ fn is_recursively_loaded(handle: impl Into<UntypedAssetId>, asset_server: &Asset
         .get_recursive_dependency_load_state(handle)
         .map(|state| state.is_loaded())
         .unwrap_or(false)
-}
-
-#[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
-enum MyStates {
-    #[default]
-    AssetLoading,
-    Next,
 }

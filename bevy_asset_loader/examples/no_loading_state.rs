@@ -1,17 +1,15 @@
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 
-/// This example shows how to use a subset of `bevy_asset_loader` without a loading state.
+/// This example shows how to use `bevy_asset_loader` without a loading state.
 /// Asset collections can be used as a convenient method to define resources containing
-/// asset handles. They can be initialised either on the [`App`] or the [`World`].
+/// asset handles.
 ///
-/// The big difference to using a loading state is, that the here presented approach
-/// does not give any guaranties about the loading status of the asset handles. Also, folders and
-/// dynamic assets are not supported since they cannot instantly produce handles that will
-/// eventually point to the correct loaded assets.
+/// Loading a collection (`commands.load_collection::<MyCollection>()`) will only insert
+/// the resource once all handles are loaded.
 ///
-/// There are two asset collections in this example. On startup `ImageAssets` are initialised.
-/// `AudioAssets` are initialised on the world based on user input (mouse click).
+/// If you need the resource directly, you can use `init_collection` to insert it with loading asset handles.
+/// Asset collections can be initialised either on the [`App`] or the [`World`].
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)

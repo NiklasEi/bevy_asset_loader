@@ -128,7 +128,6 @@ impl AssetField {
     pub(crate) fn attach_token_stream_for_creation(
         &self,
         token_stream: TokenStream,
-        name: String,
     ) -> TokenStream {
         match self {
             AssetField::Basic(basic) => {
@@ -141,148 +140,20 @@ impl AssetField {
             }
             AssetField::Image(image) => {
                 let field_ident = image.field_ident.clone();
-                let asset_path = image.asset_path.clone();
-                let layers = image.array_texture_layers.unwrap_or_default();
-                let filter = match image.filter {
-                    Some(FilterType::Linear) | None => quote!(ImageFilterMode::Linear),
-                    Some(FilterType::Nearest) => quote!(ImageFilterMode::Nearest),
-                };
-                let wrap = match image.wrap {
-                    Some(WrapMode::Clamp) | None => quote!(ImageAddressMode::ClampToEdge),
-                    Some(WrapMode::Repeat) => quote!(ImageAddressMode::Repeat),
-                };
-                let is_sampler_set = image.filter.is_some() || image.wrap.is_some();
-                let label = Lit::Str(LitStr::new(&field_ident.to_string(), token_stream.span()));
-
                 quote!(#token_stream #field_ident : {
-                    use bevy::image::{ImageAddressMode, ImageFilterMode, ImageSampler, ImageSamplerDescriptor};
-                    let mut system_state = ::bevy::ecs::system::SystemState::<(
-                        ResMut<::bevy::prelude::Assets<::bevy::prelude::Image>>,
-                        Res<::bevy::prelude::AssetServer>,
-                    )>::new(world);
-                    let (mut images, asset_server) = system_state.get_mut(world);
-
-                    let mut handle = asset_server.load(#asset_path);
-                    let mut image = images.get_mut(&handle).expect("Only asset collection fields holding an `Image` handle can be annotated with `image`");
-
-                    if (#layers > 0) {
-                        let _ = image.reinterpret_stacked_2d_as_array(#layers);
-                    }
-
-                    let this_descriptor = ImageSamplerDescriptor {
-                        label: Some(#label.to_string()),
-                        address_mode_u: #wrap,
-                        address_mode_v: #wrap,
-                        address_mode_w: #wrap,
-                        mag_filter: #filter,
-                        min_filter: #filter,
-                        mipmap_filter: #filter,
-                        ..::std::default::Default::default()
-                    };
-
-                    if (#is_sampler_set) {
-                        let is_different_sampler = if let ImageSampler::Descriptor(descriptor) = &image.sampler {
-                            !descriptor.as_wgpu().eq(&this_descriptor.as_wgpu())
-                        } else {
-                            true
-                        };
-
-                        if is_different_sampler {
-                            let mut cloned_image = image.clone();
-                            cloned_image.sampler = ImageSampler::Descriptor(this_descriptor);
-                            handle = images.add(cloned_image);
-                        } else {
-                            image.sampler = ImageSampler::Default;
-                        }
-                    }
-
-                    handle
+                    let images = world.resource::<::bevy::prelude::Assets<::bevy::prelude::Image>>();
+                    images.reserve_handle()
                 },)
             }
-            AssetField::Folder(basic, typed, mapped) => {
+            AssetField::Folder(basic, _, _) => {
                 let field_ident = basic.field_ident.clone();
-                let field = field_ident.to_string();
-                let asset_path = basic.asset_path.clone();
-                match typed {
-                    Typed::Yes => match mapped {
-                        Mapped::No => {
-                            quote!(#token_stream #field_ident : {
-                                    let mut system_state = ::bevy::ecs::system::SystemState::<(
-                                        Res<::bevy::asset::Assets<::bevy::asset::LoadedFolder>>,
-                                        Res<::bevy::prelude::AssetServer>,
-                                    )>::new(world);
-                                    let (folders, asset_server) = system_state.get(world);
-                                    let handle = asset_server.get_handle(#asset_path).unwrap_or_else(|| panic!("Folders are only supported when using a loading state. Consider using 'paths' for {}.{}.", #name, #field));
-                                    folders.get(&handle)
-                                        .unwrap()
-                                        .handles
-                                        .iter()
-                                        .map(|handle| handle.clone().typed())
-                                        .collect()
-                                },)
-                        }
-                        Mapped::Yes => {
-                            quote!(#token_stream #field_ident : {
-                                    let mut system_state = ::bevy::ecs::system::SystemState::<(
-                                        Res<::bevy::asset::Assets<::bevy::asset::LoadedFolder>>,
-                                        Res<::bevy::prelude::AssetServer>,
-                                    )>::new(world);
-                                    let (folders, asset_server) = system_state.get(world);
-                                    let mut folder_map = ::bevy::platform::collections::HashMap::default();
-                                    let handle = asset_server.get_handle(#asset_path).unwrap_or_else(|| panic!("Folders are only supported when using a loading state. Consider using 'paths' for {}.{}.", #name, #field));
-                                    let folder = &folders.get(&handle).unwrap().handles;
-                                    for handle in folder {
-                                        let path = handle.path().unwrap();
-                                        let key = ::bevy_asset_loader::mapped::MapKey::from_asset_path(path);
-                                        folder_map.insert(key, handle.clone().typed());
-                                    }
-                                    folder_map
-                                },)
-                        }
-                    },
-                    Typed::No => match mapped {
-                        Mapped::No => {
-                            quote!(#token_stream #field_ident : {
-                                    let mut system_state = ::bevy::ecs::system::SystemState::<(
-                                        Res<::bevy::asset::Assets<::bevy::asset::LoadedFolder>>,
-                                        Res<::bevy::prelude::AssetServer>,
-                                    )>::new(world);
-                                    let (folders, asset_server) = system_state.get(world);
-                                    let handle = asset_server.get_handle(#asset_path).unwrap_or_else(|| panic!("Folders are only supported when using a loading state. Consider using 'paths' for {}.{}.", #name, #field));
-                                    folders.get(&handle).expect("test").handles.iter().cloned().collect()
-                                },)
-                        }
-                        Mapped::Yes => {
-                            quote!(#token_stream #field_ident : {
-                                    let mut system_state = ::bevy::ecs::system::SystemState::<(
-                                        Res<::bevy::asset::Assets<::bevy::asset::LoadedFolder>>,
-                                        Res<::bevy::prelude::AssetServer>,
-                                    )>::new(world);
-                                    let (folders, asset_server) = system_state.get(world);
-                                    let mut folder_map = ::bevy::platform::collections::HashMap::default();
-                                    let handle = asset_server.get_handle(#asset_path).unwrap_or_else(|| panic!("Folders are only supported when using a loading state. Consider using 'paths' for {}.{}.", #name, #field));
-                                    let folder = &folders.get(&handle).unwrap().handles;
-                                    for handle in folder {
-                                        let path = handle.path().unwrap();
-                                        let key = ::bevy_asset_loader::mapped::MapKey::from_asset_path(path);
-                                        folder_map.insert(key, handle.clone());
-                                    }
-                                    folder_map
-                                },)
-                        }
-                    },
-                }
+                quote!(#token_stream #field_ident : ::std::default::Default::default(),)
             }
             AssetField::StandardMaterial(basic) => {
                 let field_ident = basic.field_ident.clone();
-                let asset_path = basic.asset_path.clone();
                 quote!(#token_stream #field_ident : {
-                    let mut system_state = ::bevy::ecs::system::SystemState::<(
-                        ResMut<::bevy::asset::Assets<::bevy::pbr::StandardMaterial>>,
-                        Res<::bevy::prelude::AssetServer>,
-                    )>::new(world);
-                    let (mut materials, asset_server) = system_state.get_mut(world);
-                    materials.add(::bevy::pbr::StandardMaterial::from(asset_server.load::<::bevy::image::Image>(#asset_path)))
+                    let materials = world.resource::<::bevy::asset::Assets<::bevy::pbr::StandardMaterial>>();
+                    materials.reserve_handle()
                 },)
             }
             AssetField::TextureAtlasLayout(texture_atlas) => {
@@ -347,111 +218,318 @@ impl AssetField {
             }
             AssetField::Dynamic(dynamic) => {
                 let field_ident = dynamic.field_ident.clone();
-                let asset_key = dynamic.key.clone();
+                // Reserve a handle; finalize() will populate it after loading.
+                // The type parameter is inferred from the struct field type.
                 quote!(#token_stream #field_ident : {
-                    let asset = asset_keys.get_asset(#asset_key.into()).unwrap_or_else(|| panic!("Failed to get asset for key '{}'", #asset_key));
-                    match asset.build(world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
-                        ::bevy_asset_loader::prelude::DynamicAssetType::Single(handle) => handle.typed(),
-                        result => panic!("The dynamic asset '{}' cannot be created. The asset collection {} expected it to resolve to `Single(handle)`, but {asset:?} resolves to {result:?}", #asset_key, #name)
+                    fn __reserve<A: ::bevy::asset::Asset>(world: &::bevy::ecs::world::World) -> ::bevy::prelude::Handle<A> {
+                        world.resource::<::bevy::prelude::Assets<A>>().reserve_handle()
                     }
+                    __reserve(world)
                 },)
+            }
+            AssetField::OptionalDynamic(_) | AssetField::OptionalDynamicFileCollection(_, _, _) => {
+                let field_ident = self.field_ident();
+                quote!(#token_stream #field_ident : None,)
+            }
+            AssetField::DynamicFileCollection(_, _, _) => {
+                let field_ident = self.field_ident();
+                quote!(#token_stream #field_ident : ::std::default::Default::default(),)
+            }
+        }
+    }
+
+    fn field_ident(&self) -> &Ident {
+        match self {
+            AssetField::Basic(b)
+            | AssetField::Folder(b, _, _)
+            | AssetField::StandardMaterial(b) => &b.field_ident,
+            AssetField::Image(i) => &i.field_ident,
+            AssetField::Files(f, _, _) => &f.field_ident,
+            AssetField::TextureAtlasLayout(t) => &t.field_ident,
+            AssetField::Dynamic(d)
+            | AssetField::OptionalDynamic(d)
+            | AssetField::DynamicFileCollection(d, _, _)
+            | AssetField::OptionalDynamicFileCollection(d, _, _) => &d.field_ident,
+        }
+    }
+
+    /// Generate finalize code for fields that need post-processing after assets are loaded.
+    ///
+    /// Fields that don't need finalization return the token stream unchanged.
+    pub(crate) fn attach_token_stream_for_finalize(
+        &self,
+        token_stream: TokenStream,
+        name: String,
+    ) -> TokenStream {
+        match self {
+            // Basic fields don't need finalization — asset_server.load() handles are correct as-is
+            AssetField::Basic(_)
+            | AssetField::Files(_, _, _)
+            | AssetField::TextureAtlasLayout(_) => token_stream,
+
+            AssetField::Folder(basic, typed, mapped) => {
+                let field_ident = basic.field_ident.clone();
+                let asset_path = basic.asset_path.clone();
+                let value = match (typed, mapped) {
+                    (Typed::Yes, Mapped::No) => {
+                        quote!(
+                            folder
+                                .handles
+                                .iter()
+                                .map(|handle| handle.clone().typed())
+                                .collect()
+                        )
+                    }
+                    (Typed::Yes, Mapped::Yes) => {
+                        quote!({
+                            let mut folder_map = ::bevy::platform::collections::HashMap::default();
+                            for handle in &folder.handles {
+                                let path = handle.path().unwrap();
+                                let key =
+                                    ::bevy_asset_loader::mapped::MapKey::from_asset_path(path);
+                                folder_map.insert(key, handle.clone().typed());
+                            }
+                            folder_map
+                        })
+                    }
+                    (Typed::No, Mapped::No) => {
+                        quote!(folder.handles.iter().cloned().collect())
+                    }
+                    (Typed::No, Mapped::Yes) => {
+                        quote!({
+                            let mut folder_map = ::bevy::platform::collections::HashMap::default();
+                            for handle in &folder.handles {
+                                let path = handle.path().unwrap();
+                                let key =
+                                    ::bevy_asset_loader::mapped::MapKey::from_asset_path(path);
+                                folder_map.insert(key, handle.clone());
+                            }
+                            folder_map
+                        })
+                    }
+                };
+                quote!(#token_stream {
+                    let value = {
+                        let mut system_state = ::bevy::ecs::system::SystemState::<(
+                            Res<::bevy::asset::Assets<::bevy::asset::LoadedFolder>>,
+                            Res<::bevy::prelude::AssetServer>,
+                        )>::new(world);
+                        let (folders, asset_server) = system_state.get(world);
+                        let handle = asset_server.get_handle(#asset_path)
+                            .expect("Folder handle should exist after loading");
+                        let folder = folders.get(&handle)
+                            .expect("LoadedFolder should be available in finalize");
+                        #value
+                    };
+                    world.resource_mut::<Self>().#field_ident = value;
+                })
+            }
+
+            AssetField::Image(image) => {
+                let field_ident = image.field_ident.clone();
+                let asset_path = image.asset_path.clone();
+                let layers = image.array_texture_layers.unwrap_or_default();
+                let filter = match image.filter {
+                    Some(FilterType::Linear) | None => quote!(ImageFilterMode::Linear),
+                    Some(FilterType::Nearest) => quote!(ImageFilterMode::Nearest),
+                };
+                let wrap = match image.wrap {
+                    Some(WrapMode::Clamp) | None => quote!(ImageAddressMode::ClampToEdge),
+                    Some(WrapMode::Repeat) => quote!(ImageAddressMode::Repeat),
+                };
+                let is_sampler_set = image.filter.is_some() || image.wrap.is_some();
+                let label = Lit::Str(LitStr::new(&field_ident.to_string(), token_stream.span()));
+
+                quote!(#token_stream {
+                    use bevy::image::{ImageAddressMode, ImageFilterMode, ImageSampler, ImageSamplerDescriptor};
+                    let reserved = world.resource::<Self>().#field_ident.clone();
+                    let mut system_state = ::bevy::ecs::system::SystemState::<(
+                        ResMut<::bevy::prelude::Assets<::bevy::prelude::Image>>,
+                        Res<::bevy::prelude::AssetServer>,
+                    )>::new(world);
+                    let (mut images, asset_server) = system_state.get_mut(world);
+
+                    let loaded_handle = asset_server.load::<::bevy::prelude::Image>(#asset_path);
+                    let loaded_image = images.get(&loaded_handle)
+                        .expect("Image should be loaded before finalize is called");
+                    let mut processed = loaded_image.clone();
+
+                    if (#layers > 0) {
+                        let _ = processed.reinterpret_stacked_2d_as_array(#layers);
+                    }
+
+                    let this_descriptor = ImageSamplerDescriptor {
+                        label: Some(#label.to_string()),
+                        address_mode_u: #wrap,
+                        address_mode_v: #wrap,
+                        address_mode_w: #wrap,
+                        mag_filter: #filter,
+                        min_filter: #filter,
+                        mipmap_filter: #filter,
+                        ..::std::default::Default::default()
+                    };
+
+                    if (#is_sampler_set) {
+                        let is_different_sampler = if let ImageSampler::Descriptor(descriptor) = &loaded_image.sampler {
+                            !descriptor.as_wgpu().eq(&this_descriptor.as_wgpu())
+                        } else {
+                            true
+                        };
+
+                        if is_different_sampler {
+                            processed.sampler = ImageSampler::Descriptor(this_descriptor);
+                        }
+                    }
+
+                    images.insert(reserved.id(), processed)
+                        .expect("Reserved image handle should be valid");
+                })
+            }
+            AssetField::StandardMaterial(basic) => {
+                let field_ident = basic.field_ident.clone();
+                let asset_path = basic.asset_path.clone();
+                quote!(#token_stream {
+                    let reserved = world.resource::<Self>().#field_ident.clone();
+                    let mut system_state = ::bevy::ecs::system::SystemState::<(
+                        ResMut<::bevy::asset::Assets<::bevy::pbr::StandardMaterial>>,
+                        Res<::bevy::prelude::AssetServer>,
+                    )>::new(world);
+                    let (mut materials, asset_server) = system_state.get_mut(world);
+                    let material = ::bevy::pbr::StandardMaterial::from(asset_server.load::<::bevy::image::Image>(#asset_path));
+                    materials.insert(reserved.id(), material)
+                        .expect("Reserved material handle should be valid");
+                })
+            }
+            AssetField::Dynamic(dynamic) => {
+                let field_ident = dynamic.field_ident.clone();
+                let asset_key = dynamic.key.clone();
+                quote!(#token_stream {
+                    let reserved = world.resource::<Self>().#field_ident.clone();
+                    world.resource_scope(
+                        |world, asset_keys: ::bevy::prelude::Mut<::bevy_asset_loader::dynamic_asset::DynamicAssets>| {
+                            let asset = asset_keys.get_asset(#asset_key.into())
+                                .unwrap_or_else(|| panic!("Failed to get asset for key '{}'", #asset_key));
+                            let built = asset.build(world)
+                                .unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key));
+                            match built {
+                                ::bevy_asset_loader::prelude::DynamicAssetType::Single(built_handle) => {
+                                    fn __move_asset<A: ::bevy::asset::Asset>(
+                                        world: &mut ::bevy::ecs::world::World,
+                                        from: ::bevy::prelude::UntypedHandle,
+                                        to_id: ::bevy::asset::AssetId<A>,
+                                    ) {
+                                        let mut assets = world.resource_mut::<::bevy::prelude::Assets<A>>();
+                                        let data = assets.remove(from.typed::<A>().id())
+                                            .expect("Built dynamic asset should exist in Assets<T>");
+                                        assets.insert(to_id, data)
+                                            .expect("Reserved handle should be valid");
+                                    }
+                                    __move_asset(world, built_handle, reserved.id());
+                                }
+                                result => panic!("The dynamic asset '{}' cannot be created. The asset collection {} expected it to resolve to `Single(handle)`, but {asset:?} resolves to {result:?}", #asset_key, #name)
+                            }
+                        }
+                    );
+                })
             }
             AssetField::OptionalDynamic(dynamic) => {
                 let field_ident = dynamic.field_ident.clone();
                 let asset_key = dynamic.key.clone();
-                quote!(#token_stream #field_ident : {
-                    let asset = asset_keys.get_asset(#asset_key.into());
-                    asset.map(|asset| match asset.build(world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
-                            ::bevy_asset_loader::prelude::DynamicAssetType::Single(handle) => handle.typed(),
-                            result => panic!("The dynamic asset '{}' cannot be created. The asset collection {} expected it to resolve to `Single(handle)`, but {asset:?} resolves to {result:?}", #asset_key, #name)
+                quote!(#token_stream {
+                    world.resource_scope(
+                        |world, asset_keys: ::bevy::prelude::Mut<::bevy_asset_loader::dynamic_asset::DynamicAssets>| {
+                            let asset = asset_keys.get_asset(#asset_key.into());
+                            if let Some(asset) = asset {
+                                let built = asset.build(world)
+                                    .unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key));
+                                match built {
+                                    ::bevy_asset_loader::prelude::DynamicAssetType::Single(handle) => {
+                                        world.resource_mut::<Self>().#field_ident = Some(handle.typed());
+                                    }
+                                    result => panic!("The dynamic asset '{}' cannot be created. The asset collection {} expected it to resolve to `Single(handle)`, but {asset:?} resolves to {result:?}", #asset_key, #name)
+                                }
+                            }
                         }
-                    )
-                },)
+                    );
+                })
             }
             AssetField::DynamicFileCollection(dynamic, typed, mapped) => {
                 let field_ident = dynamic.field_ident.clone();
                 let asset_key = dynamic.key.clone();
-                let load = match typed {
-                    Typed::Yes => {
-                        match mapped {
-                            Mapped::No => quote!(match asset.build(world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
-                                ::bevy_asset_loader::prelude::DynamicAssetType::Collection(mut handles) => handles.drain(..).map(|handle| handle.typed()).collect(),
-                                result => panic!("The dynamic asset '{}' cannot be created. The asset collection {} expected it to resolve to `Collection(handle)`, but {asset:?} resolves to {result:?}", #asset_key, #name),
-                            }),
-                            Mapped::Yes => {
-                                let build_collection = Self::build_mapped_dynamic_file_collection(Typed::Yes, &asset_key, name);
-                                quote!(match asset.build(world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
-                                    #build_collection
-                                })
-                            }
+                let assign =
+                    Self::build_dynamic_collection_assignment(typed, mapped, &asset_key, &name);
+                quote!(#token_stream {
+                    world.resource_scope(
+                        |world, asset_keys: ::bevy::prelude::Mut<::bevy_asset_loader::dynamic_asset::DynamicAssets>| {
+                            let asset = asset_keys.get_asset(#asset_key.into())
+                                .unwrap_or_else(|| panic!("Failed to get asset for key '{}'", #asset_key));
+                            let value = {
+                                let built = asset.build(world)
+                                    .unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key));
+                                #assign
+                            };
+                            world.resource_mut::<Self>().#field_ident = value;
                         }
-                    }
-                    Typed::No => {
-                        match mapped {
-                            Mapped::No =>
-                                quote!(match asset.build(world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
-                                    ::bevy_asset_loader::prelude::DynamicAssetType::Collection(handles) => handles,
-                                    result => panic!("The dynamic asset '{}' cannot be created. The asset collection {} expected it to resolve to `Collection(handle)`, but {asset:?} resolves to {result:?}", #asset_key, #name),
-                                }),
-                            Mapped::Yes => {
-                                let build_collection = Self::build_mapped_dynamic_file_collection(Typed::No, &asset_key, name);
-                                quote!(match asset.build(world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
-                                    #build_collection
-                                })
-                            }
-                        }
-                    }
-                };
-                quote!(#token_stream #field_ident : {
-                    let asset = asset_keys.get_asset(#asset_key.into()).unwrap_or_else(|| panic!("Failed to get asset for key '{}'", #asset_key));
-                    #load
-                },)
+                    );
+                })
             }
             AssetField::OptionalDynamicFileCollection(dynamic, typed, mapped) => {
                 let field_ident = dynamic.field_ident.clone();
                 let asset_key = dynamic.key.clone();
-                let load = match typed {
-                    Typed::Yes => {
-                        match mapped {
-                            Mapped::No => quote!(
-                                asset.map(|asset| match asset.build(world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
-                                    ::bevy_asset_loader::prelude::DynamicAssetType::Collection(mut handles) => handles.drain(..).map(|handle| handle.typed()).collect(),
-                                    result => panic!("The dynamic asset '{}' cannot be created. The asset collection {} expected it to resolve to `Collection(handle)`, but {asset:?} resolves to {result:?}", #asset_key, #name),
-                                })
-                            ),
-                            Mapped::Yes => {
-                                let build_collection = Self::build_mapped_dynamic_file_collection(Typed::Yes, &asset_key, name);
-                                quote!(
-                                    asset.map(|asset| match asset.build(world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
-                                        #build_collection
-                                    })
-                                )
+                let assign =
+                    Self::build_dynamic_collection_assignment(typed, mapped, &asset_key, &name);
+                quote!(#token_stream {
+                    world.resource_scope(
+                        |world, asset_keys: ::bevy::prelude::Mut<::bevy_asset_loader::dynamic_asset::DynamicAssets>| {
+                            let asset = asset_keys.get_asset(#asset_key.into());
+                            if let Some(asset) = asset {
+                                let value = {
+                                    let built = asset.build(world)
+                                        .unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key));
+                                    #assign
+                                };
+                                world.resource_mut::<Self>().#field_ident = Some(value);
                             }
                         }
-                    }
-                    Typed::No => {
-                        match mapped {
-                            Mapped::No => quote!(
-                                asset.map(|asset| match asset.build(world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
-                                    ::bevy_asset_loader::prelude::DynamicAssetType::Collection(handles) => handles,
-                                    result => panic!("The dynamic asset '{}' cannot be created. The asset collection {} expected it to resolve to `Collection(handle)`, but {asset:?} resolves to {result:?}", #asset_key, #name),
-                                })
-                            ),
-                            Mapped::Yes => {
-                                let build_collection = Self::build_mapped_dynamic_file_collection(Typed::No, &asset_key, name);
-                                quote!(
-                                    asset.map(|asset| match asset.build(world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
-                                        #build_collection
-                                    })
-                                )
-                            }
-                        }
-                    }
-                };
-                quote!(#token_stream #field_ident : {
-                    let asset = asset_keys.get_asset(#asset_key.into());
-                    #load
-                },)
+                    );
+                })
+            }
+        }
+    }
+
+    fn build_dynamic_collection_assignment(
+        typed: &Typed,
+        mapped: &Mapped,
+        asset_key: &str,
+        name: &str,
+    ) -> TokenStream {
+        match (typed, mapped) {
+            (Typed::Yes, Mapped::No) => quote!(match built {
+                ::bevy_asset_loader::prelude::DynamicAssetType::Collection(mut handles) =>
+                    handles.drain(..).map(|handle| handle.typed()).collect(),
+                result =>
+                    panic!("The dynamic asset '{}' cannot be created. The asset collection {} expected it to resolve to `Collection(handle)`, but {asset:?} resolves to {result:?}", #asset_key, #name),
+            }),
+            (Typed::No, Mapped::No) => quote!(match built {
+                ::bevy_asset_loader::prelude::DynamicAssetType::Collection(handles) => handles,
+                result =>
+                    panic!("The dynamic asset '{}' cannot be created. The asset collection {} expected it to resolve to `Collection(handle)`, but {asset:?} resolves to {result:?}", #asset_key, #name),
+            }),
+            (Typed::Yes, Mapped::Yes) => {
+                let build_collection = Self::build_mapped_dynamic_file_collection(
+                    Typed::Yes,
+                    &asset_key.to_string(),
+                    name.to_string(),
+                );
+                quote!(match built { #build_collection })
+            }
+            (Typed::No, Mapped::Yes) => {
+                let build_collection = Self::build_mapped_dynamic_file_collection(
+                    Typed::No,
+                    &asset_key.to_string(),
+                    name.to_string(),
+                );
+                quote!(match built { #build_collection })
             }
         }
     }

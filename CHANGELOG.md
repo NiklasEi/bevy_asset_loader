@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.26.0 - 
+- Use the ECS as state machine for loading orchestration (see [#270](https://github.com/NiklasEi/bevy_asset_loader/pull/270))
+
 ## v0.25.0 - 14.01.2026
 - support for Bevy 0.18
 

@@ -67,6 +67,8 @@
 pub mod asset_collection;
 /// Types and infrastructure to load and use dynamic assets
 pub mod dynamic_asset;
+/// Asset collection loading using entities and observers
+pub mod loading;
 /// A game state responsible for loading assets
 pub mod loading_state;
 /// Trait definition for mapped assets collection
@@ -92,6 +94,10 @@ pub mod prelude {
         dynamic_asset::{
             DynamicAsset, DynamicAssetCollection, DynamicAssetCollections, DynamicAssetType,
             DynamicAssets,
+        },
+        loading::{
+            AssetCollectionFailed, AssetCollectionLoaded, AssetLoadingPlugin, AssetLoadingSet,
+            LoadCollectionCommandsExt,
         },
         loading_state::{LoadingState, LoadingStateAppExt, LoadingStateSet},
         mapped::{AssetFileName, AssetFileStem, AssetLabel, MapKey},

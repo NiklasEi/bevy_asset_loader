@@ -201,7 +201,7 @@ fn impl_asset_collection(
     );
 
     let mut asset_creation = assets.iter().fold(quote!(), |token_stream, asset| {
-        asset.attach_token_stream_for_creation(token_stream, name.to_string())
+        asset.attach_token_stream_for_creation(token_stream)
     });
     let mut index = 0;
     asset_creation.append_all(from_world_fields.iter().fold(quote!(), |es, ident| {
@@ -213,13 +213,22 @@ fn impl_asset_collection(
     let create_function = quote! {
         fn create(world: &mut ::bevy::ecs::world::World) -> Self {
             let from_world_fields = (#prepare_from_world);
-            world.resource_scope(
-                |world, asset_keys: ::bevy::prelude::Mut<::bevy_asset_loader::dynamic_asset::DynamicAssets>| {
-                    #name {
-                        #asset_creation
-                    }
-                },
-            )
+            #name {
+                #asset_creation
+            }
+        }
+    };
+
+    let asset_finalize = assets.iter().fold(quote!(), |token_stream, asset| {
+        asset.attach_token_stream_for_finalize(token_stream, name.to_string())
+    });
+    let finalize_function = if asset_finalize.is_empty() {
+        quote!()
+    } else {
+        quote! {
+            fn finalize(world: &mut ::bevy::ecs::world::World) {
+                #asset_finalize
+            }
         }
     };
 
@@ -230,6 +239,8 @@ fn impl_asset_collection(
             #create_function
 
             #load_function
+
+            #finalize_function
         }
     };
     Ok(impl_asset_collection)

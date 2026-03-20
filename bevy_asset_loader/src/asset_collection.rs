@@ -1,7 +1,8 @@
-use crate::dynamic_asset::DynamicAssets;
 use bevy_app::App;
 use bevy_asset::UntypedHandle;
 use bevy_ecs::{resource::Resource, world::World};
+
+use crate::loading::spawn_loading_entity;
 
 pub use bevy_asset_loader_derive::AssetCollection;
 
@@ -25,10 +26,23 @@ pub use bevy_asset_loader_derive::AssetCollection;
     note = "consider annotating `{Self}` with `#[derive(AssetCollection)]`"
 )]
 pub trait AssetCollection: Resource {
-    /// Create a new asset collection from the [`AssetServer`](::bevy::asset::AssetServer)
+    /// Create a new asset collection from the [`World`](::bevy_ecs::world::World)
+    ///
+    /// For fields that require post-processing (image annotations, dynamic assets,
+    /// standard materials), the collection will contain reserved handles that will
+    /// be populated by [`finalize`](AssetCollection::finalize) after all assets are loaded.
     fn create(world: &mut World) -> Self;
+
     /// Start loading all the assets in the collection
     fn load(world: &mut World) -> Vec<UntypedHandle>;
+
+    /// Populate reserved handles and perform post-processing after all assets are loaded.
+    ///
+    /// This is called automatically by the loading system after all asset handles from
+    /// [`load`](AssetCollection::load) report as loaded. Fields that need processing
+    /// (e.g. `image(...)`, `standard_material`, dynamic assets)
+    /// have their reserved handles populated here.
+    fn finalize(_world: &mut World) {}
 }
 
 /// Extension trait for [`App`] enabling initialisation of [asset collections](crate::asset_collection::AssetCollection)
@@ -47,12 +61,7 @@ impl AssetCollectionApp for App {
         Collection: AssetCollection,
     {
         if !self.world().contains_resource::<Collection>() {
-            // This resource is required for loading a collection
-            // Since bevy_asset_loader does not have a "real" Plugin,
-            // we need to make sure the resource exists here
-            self.init_resource::<DynamicAssets>();
-            // make sure the assets start to load
-            let _ = Collection::load(self.world_mut());
+            spawn_loading_entity::<Collection>(self.world_mut());
             let resource = Collection::create(self.world_mut());
             self.insert_resource(resource);
         }
@@ -72,10 +81,7 @@ pub trait AssetCollectionWorld {
 impl AssetCollectionWorld for World {
     fn init_collection<A: AssetCollection>(&mut self) {
         if self.get_resource::<A>().is_none() {
-            // This resource is required for loading a collection
-            // Since bevy_asset_loader can be used without adding a plugin,
-            // we need to make sure the resource exists here
-            self.init_resource::<DynamicAssets>();
+            spawn_loading_entity::<A>(self);
             let collection = A::create(self);
             self.insert_resource(collection);
         }

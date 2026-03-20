@@ -1,6 +1,6 @@
 [package]
 name = "bevy_asset_loader"
-version = "0.25.0"
+version = "0.26.0"
 authors = ["Niklas Eicker <git@nikl.me>"]
 edition = "2024"
 license = "MIT OR Apache-2.0"
@@ -46,7 +46,7 @@ bevy_render = { version = "0.18.0", default-features = false, optional = true }
 bevy_sprite = { version = "0.18.0", default-features = false, optional = true }
 bevy_state = { version = "0.18.0", default-features = false }
 bevy_utils = { version = "0.18.0", default-features = false }
-bevy_asset_loader_derive = { version = "0.25.0", path = "../bevy_asset_loader_derive" }
+bevy_asset_loader_derive = { version = "0.26.0", path = "../bevy_asset_loader_derive" }
 anyhow = "1"
 path-slash = "0.2"
 
@@ -118,6 +118,11 @@ path = "examples/full_collection.rs"
 required-features = ["2d", "3d"]
 
 [[example]]
+name = "full_collection_init"
+path = "examples/full_collection_init.rs"
+required-features = ["2d", "3d"]
+
+[[example]]
 name = "full_dynamic_collection"
 path = "examples/full_dynamic_collection.rs"
 required-features = ["2d", "3d", "standard_dynamic_assets"]
@@ -148,3 +153,8 @@ path = "examples/asset_maps.rs"
 [[example]]
 name = "sub_state"
 path = "examples/sub_state.rs"
+
+[[example]]
+name = "full_collection_no_states"
+path = "examples/full_collection_no_states.rs"
+required-features = ["2d", "3d"]
