@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.26.0 - 01.04.2026
+- bump bevy_common_assets to 0.16
+
 ## v0.25.0 - 14.01.2026
 - support for Bevy 0.18
 
