@@ -208,6 +208,15 @@ pub(crate) fn finish_loading_state<S: FreelyMutableState>(
 pub(crate) fn reset_loading_state<S: FreelyMutableState>(world: &mut World) {
     world.remove_resource::<State<InternalLoadingState<S>>>();
     world.init_resource::<State<InternalLoadingState<S>>>();
+
+    let state = world.resource::<State<S>>().get().clone();
+    if let Some(mut config) = world.get_resource_mut::<AssetLoaderConfiguration<S>>()
+        && let Some(state_config) = config.state_configurations.get_mut(&state)
+    {
+        state_config.loading_failed = false;
+        state_config.loading_collections.clear();
+        state_config.loading_dynamic_collections.clear();
+    }
 }
 
 pub(crate) fn run_loading_state<S: FreelyMutableState>(world: &mut World) {
