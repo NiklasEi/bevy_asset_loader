@@ -41,7 +41,7 @@ pub(crate) fn start_loading_collection<S: FreelyMutableState, Assets: AssetColle
         .unwrap_or_else(|| {
             panic!(
                 "Could not find a loading configuration for state {:?}",
-                &state
+                state
             )
         });
     if !config.loading_collections.insert(TypeId::of::<Assets>()) {
