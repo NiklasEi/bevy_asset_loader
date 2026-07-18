@@ -392,7 +392,8 @@ where
             )
             .add_systems(
                 OnEnter(self.loading_state.clone()),
-                reset_loading_state::<S>,
+                reset_loading_state::<S>
+                    .in_set(ResetLoadingStateSystems(self.loading_state.clone())),
             )
             .configure_sets(Update, LoadingStateSet(self.loading_state.clone()));
             let mut loading_state_schedule = app.get_schedule_mut(loading_state_schedule).unwrap();
@@ -483,6 +484,13 @@ impl<S: FreelyMutableState> ConfigureLoadingState for LoadingState<S> {
 ///  Systems in this set check the loading state of assets.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]
 pub struct LoadingStateSet<S: FreelyMutableState>(pub S);
+
+/// Systems in this set reset the loading state's bookkeeping when the loading
+/// state is entered. It runs in `OnEnter(loading_state)`. You can order your
+/// own `OnEnter(loading_state)` systems `after` this set to run once the
+/// loading state has been reset.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]
+pub struct ResetLoadingStateSystems<S: FreelyMutableState>(pub S);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]
 pub(crate) enum InternalLoadingStateSet {
