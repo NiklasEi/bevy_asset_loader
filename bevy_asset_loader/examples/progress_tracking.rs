@@ -37,7 +37,7 @@ fn main() {
             )
                 .chain()
                 .run_if(in_state(MyStates::AssetLoading))
-                .after(LoadingStateSet(MyStates::AssetLoading)),
+                .after(LoadingStateSystems(MyStates::AssetLoading)),
         )
         .run();
 }

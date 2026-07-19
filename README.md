@@ -489,7 +489,7 @@ See [`progress_tracking`](/bevy_asset_loader/examples/progress_tracking.rs) for 
 
 ### A note on system ordering
 
-The loading state is organized in a private schedule that runs in a single system during the `Update` schedule. If you want to explicitly order against the system running the loading state, you can do so with the exported system set `LoadingStateSet`.
+The loading state is organized in a private schedule that runs in a single system during the `Update` schedule. If you want to explicitly order against the system running the loading state, you can do so with the exported system set `LoadingStateSystems`.
 
 ## Failure state
 

@@ -384,10 +384,10 @@ where
                 loading_state_schedule.clone(),
                 (
                     resume_to_loading_asset_collections::<S>
-                        .in_set(InternalLoadingStateSet::ResumeDynamicAssetCollections),
-                    initialize_loading_state::<S>.in_set(InternalLoadingStateSet::Initialize),
-                    resume_to_finalize::<S>.in_set(InternalLoadingStateSet::CheckAssets),
-                    finish_loading_state::<S>.in_set(InternalLoadingStateSet::Finalize),
+                        .in_set(InternalLoadingStateSystems::ResumeDynamicAssetCollections),
+                    initialize_loading_state::<S>.in_set(InternalLoadingStateSystems::Initialize),
+                    resume_to_finalize::<S>.in_set(InternalLoadingStateSystems::CheckAssets),
+                    finish_loading_state::<S>.in_set(InternalLoadingStateSystems::Finalize),
                 ),
             )
             .add_systems(
@@ -395,31 +395,31 @@ where
                 reset_loading_state::<S>
                     .in_set(ResetLoadingStateSystems(self.loading_state.clone())),
             )
-            .configure_sets(Update, LoadingStateSet(self.loading_state.clone()));
+            .configure_sets(Update, LoadingStateSystems(self.loading_state.clone()));
             let mut loading_state_schedule = app.get_schedule_mut(loading_state_schedule).unwrap();
             loading_state_schedule
                 .configure_sets(
-                    InternalLoadingStateSet::Initialize
+                    InternalLoadingStateSystems::Initialize
                         .run_if(in_state(InternalLoadingState::<S>::Initialize)),
                 )
                 .configure_sets(
-                    InternalLoadingStateSet::CheckDynamicAssetCollections.run_if(in_state(
+                    InternalLoadingStateSystems::CheckDynamicAssetCollections.run_if(in_state(
                         InternalLoadingState::<S>::LoadingDynamicAssetCollections,
                     )),
                 )
                 .configure_sets(
-                    InternalLoadingStateSet::ResumeDynamicAssetCollections
-                        .after(InternalLoadingStateSet::CheckDynamicAssetCollections)
+                    InternalLoadingStateSystems::ResumeDynamicAssetCollections
+                        .after(InternalLoadingStateSystems::CheckDynamicAssetCollections)
                         .run_if(in_state(
                             InternalLoadingState::<S>::LoadingDynamicAssetCollections,
                         )),
                 )
                 .configure_sets(
-                    InternalLoadingStateSet::CheckAssets
+                    InternalLoadingStateSystems::CheckAssets
                         .run_if(in_state(InternalLoadingState::<S>::LoadingAssets)),
                 )
                 .configure_sets(
-                    InternalLoadingStateSet::Finalize
+                    InternalLoadingStateSystems::Finalize
                         .run_if(in_state(InternalLoadingState::<S>::Finalize)),
                 );
 
@@ -436,7 +436,7 @@ where
             app.add_systems(
                 Update,
                 run_loading_state::<S>
-                    .in_set(LoadingStateSet(self.loading_state.clone()))
+                    .in_set(LoadingStateSystems(self.loading_state.clone()))
                     .run_if(in_state(self.loading_state)),
             );
         }
@@ -483,7 +483,7 @@ impl<S: FreelyMutableState> ConfigureLoadingState for LoadingState<S> {
 
 ///  Systems in this set check the loading state of assets.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]
-pub struct LoadingStateSet<S: FreelyMutableState>(pub S);
+pub struct LoadingStateSystems<S: FreelyMutableState>(pub S);
 
 /// Systems in this set reset the loading state's bookkeeping when the loading
 /// state is entered. It runs in `OnEnter(loading_state)`. You can order your
@@ -493,7 +493,7 @@ pub struct LoadingStateSet<S: FreelyMutableState>(pub S);
 pub struct ResetLoadingStateSystems<S: FreelyMutableState>(pub S);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]
-pub(crate) enum InternalLoadingStateSet {
+pub(crate) enum InternalLoadingStateSystems {
     Initialize,
     CheckDynamicAssetCollections,
     ResumeDynamicAssetCollections,
