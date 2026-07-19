@@ -7,7 +7,7 @@ use crate::loading_state::systems::{
     check_loading_collection, finally_init_resource, start_loading_collection,
 };
 use crate::loading_state::{
-    InternalLoadingState, InternalLoadingStateSet, LoadingStateSchedule,
+    InternalLoadingState, InternalLoadingStateSystems, LoadingStateSchedule,
     OnEnterInternalLoadingState,
 };
 use bevy_app::App;
@@ -180,7 +180,7 @@ impl<S: FreelyMutableState> ConfigureLoadingState for LoadingStateConfig<S> {
             .push(start_loading_collection::<S, A>.into_configs());
         self.on_update.push(
             check_loading_collection::<S, A>
-                .in_set(InternalLoadingStateSet::CheckAssets)
+                .in_set(InternalLoadingStateSystems::CheckAssets)
                 .into_configs(),
         );
 
@@ -199,7 +199,7 @@ impl<S: FreelyMutableState> ConfigureLoadingState for LoadingStateConfig<S> {
             .push(load_dynamic_asset_collections::<S, C>.into_configs());
         self.on_update.push(
             check_dynamic_asset_collections::<S, C>
-                .in_set(InternalLoadingStateSet::CheckDynamicAssetCollections),
+                .in_set(InternalLoadingStateSystems::CheckDynamicAssetCollections),
         );
 
         self
