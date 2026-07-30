@@ -2,6 +2,7 @@
 
 ## Unreleased
 - **Breaking**: rename `LoadingStateSet` to `LoadingStateSystems` to follow Bevy's system set naming convention
+- add `settings` derive attribute to pass asset loader settings when loading a collection field (loads through `AssetServer::load_with_settings`)
 
 ## v0.27.0 - 21.06.2026
 - support for Bevy 0.19

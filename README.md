@@ -277,6 +277,27 @@ The corresponding dynamic asset would be
 })
 ```
 
+### Custom asset loader settings
+
+Any collection field with a `path` can pass settings to its asset loader through the
+`settings` attribute. The value is any expression that evaluates to a closure taking the
+loader's settings type (for images this is `ImageLoaderSettings`). Fields using `settings`
+are loaded through `AssetServer::load_with_settings`.
+
+```rust
+use bevy::image::{ImageLoaderSettings, ImageSampler};
+use bevy::prelude::*;
+use bevy_asset_loader::asset_collection::AssetCollection;
+
+#[derive(AssetCollection, Resource)]
+struct ImageAssets {
+    #[asset(path = "images/pixel_tree.png", settings = |settings: &mut ImageLoaderSettings| {
+        settings.sampler = ImageSampler::nearest();
+    })]
+    tree: Handle<Image>,
+}
+```
+
 ### Array images
 
 You can let `bevy_asset_loader` configure the layers of a texture array.

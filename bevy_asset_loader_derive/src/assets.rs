@@ -50,19 +50,62 @@ impl TryFrom<String> for WrapMode {
     }
 }
 
-#[derive(PartialEq, Debug)]
 pub(crate) struct ImageAssetField {
     pub field_ident: Ident,
     pub asset_path: String,
     pub filter: Option<FilterType>,
     pub wrap: Option<WrapMode>,
     pub array_texture_layers: Option<u32>,
+    pub settings: Option<TokenStream>,
+    pub field_type: Option<syn::Type>,
 }
 
-#[derive(PartialEq, Debug)]
+impl std::fmt::Debug for ImageAssetField {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ImageAssetField")
+            .field("field_ident", &self.field_ident)
+            .field("asset_path", &self.asset_path)
+            .field("filter", &self.filter)
+            .field("wrap", &self.wrap)
+            .field("array_texture_layers", &self.array_texture_layers)
+            .field("settings", &self.settings.as_ref().map(|s| s.to_string()))
+            .field("field_type", &"<Type>")
+            .finish()
+    }
+}
+
+impl PartialEq for ImageAssetField {
+    fn eq(&self, other: &Self) -> bool {
+        self.field_ident == other.field_ident
+            && self.asset_path == other.asset_path
+            && self.filter == other.filter
+            && self.wrap == other.wrap
+            && self.array_texture_layers == other.array_texture_layers
+    }
+}
+
 pub(crate) struct BasicAssetField {
     pub field_ident: Ident,
     pub asset_path: String,
+    pub settings: Option<TokenStream>,
+    pub field_type: Option<syn::Type>,
+}
+
+impl std::fmt::Debug for BasicAssetField {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("BasicAssetField")
+            .field("field_ident", &self.field_ident)
+            .field("asset_path", &self.asset_path)
+            .field("settings", &self.settings.as_ref().map(|s| s.to_string()))
+            .field("field_type", &"<Type>")
+            .finish()
+    }
+}
+
+impl PartialEq for BasicAssetField {
+    fn eq(&self, other: &Self) -> bool {
+        self.field_ident == other.field_ident && self.asset_path == other.asset_path
+    }
 }
 
 #[derive(PartialEq, Debug)]
@@ -125,6 +168,23 @@ impl From<bool> for Mapped {
 }
 
 impl AssetField {
+    /// Extract the asset type `T` from `Handle<T>` or `WeakHandle<T>`.
+    fn extract_asset_type_from_handle(field_type: &syn::Type) -> TokenStream {
+        if let syn::Type::Path(type_path) = field_type {
+            if let Some(segment) = type_path.path.segments.last() {
+                if segment.ident == "Handle" || segment.ident == "WeakHandle" {
+                    if let syn::PathArguments::AngleBracketed(args) = &segment.arguments {
+                        if let Some(syn::GenericArgument::Type(inner_type)) = args.args.first() {
+                            return quote!(#inner_type);
+                        }
+                    }
+                }
+            }
+        }
+        // Fallback: use the whole type
+        quote!(#field_type)
+    }
+
     pub(crate) fn attach_token_stream_for_creation(
         &self,
         token_stream: TokenStream,
@@ -134,14 +194,48 @@ impl AssetField {
             AssetField::Basic(basic) => {
                 let field_ident = basic.field_ident.clone();
                 let asset_path = basic.asset_path.clone();
-                quote!(#token_stream #field_ident : {
-                    let asset_server = world.get_resource::<::bevy::asset::AssetServer>().expect("Cannot get AssetServer");
-                    asset_server.load(#asset_path)
-                },)
+                if let Some(settings) = &basic.settings {
+                    if let Some(field_type) = &basic.field_type {
+                        // Extract `T` from `Handle<T>` or `WeakHandle<T>` so we can
+                        // call `load_with_settings::<T, _>`.
+                        let asset_type = Self::extract_asset_type_from_handle(field_type);
+                        quote!(#token_stream #field_ident : {
+                            let asset_server = world.get_resource::<::bevy::asset::AssetServer>().expect("Cannot get AssetServer");
+                            asset_server.load_with_settings::<#asset_type, _>(#asset_path, #settings)
+                        },)
+                    } else {
+                        quote!(#token_stream #field_ident : {
+                            let asset_server = world.get_resource::<::bevy::asset::AssetServer>().expect("Cannot get AssetServer");
+                            asset_server.load_with_settings(#asset_path, #settings)
+                        },)
+                    }
+                } else {
+                    quote!(#token_stream #field_ident : {
+                        let asset_server = world.get_resource::<::bevy::asset::AssetServer>().expect("Cannot get AssetServer");
+                        asset_server.load(#asset_path)
+                    },)
+                }
             }
             AssetField::Image(image) => {
                 let field_ident = image.field_ident.clone();
                 let asset_path = image.asset_path.clone();
+
+                if let Some(settings) = &image.settings {
+                    // When settings are provided, load through `load_with_settings`
+                    // instead of the manual sampler configuration below.
+                    if let Some(field_type) = &image.field_type {
+                        let asset_type = Self::extract_asset_type_from_handle(field_type);
+                        return quote!(#token_stream #field_ident : {
+                            let asset_server = world.get_resource::<::bevy::asset::AssetServer>().expect("Cannot get AssetServer");
+                            asset_server.load_with_settings::<#asset_type, _>(#asset_path, #settings)
+                        },);
+                    }
+                    return quote!(#token_stream #field_ident : {
+                        let asset_server = world.get_resource::<::bevy::asset::AssetServer>().expect("Cannot get AssetServer");
+                        asset_server.load_with_settings(#asset_path, #settings)
+                    },);
+                }
+
                 let layers = image.array_texture_layers.unwrap_or_default();
                 let filter = match image.filter {
                     Some(FilterType::Linear) | None => quote!(ImageFilterMode::Linear),
@@ -485,10 +579,25 @@ impl AssetField {
         match self {
             AssetField::Basic(asset) => {
                 let asset_path = asset.asset_path.clone();
-                quote!(#token_stream {
-                    let asset_server = world.get_resource::<::bevy::prelude::AssetServer>().expect("Cannot get AssetServer");
-                    handles.push(asset_server.load_untyped(#asset_path).untyped());
-                })
+                if let Some(settings) = &asset.settings {
+                    if let Some(field_type) = &asset.field_type {
+                        let asset_type = Self::extract_asset_type_from_handle(field_type);
+                        quote!(#token_stream {
+                            let asset_server = world.get_resource::<::bevy::prelude::AssetServer>().expect("Cannot get AssetServer");
+                            handles.push(asset_server.load_with_settings::<#asset_type, _>(#asset_path, #settings).untyped());
+                        })
+                    } else {
+                        quote!(#token_stream {
+                            let asset_server = world.get_resource::<::bevy::prelude::AssetServer>().expect("Cannot get AssetServer");
+                            handles.push(asset_server.load_with_settings(#asset_path, #settings).untyped());
+                        })
+                    }
+                } else {
+                    quote!(#token_stream {
+                        let asset_server = world.get_resource::<::bevy::prelude::AssetServer>().expect("Cannot get AssetServer");
+                        handles.push(asset_server.load_untyped(#asset_path).untyped());
+                    })
+                }
             }
             AssetField::Folder(asset, _, _) => {
                 let asset_path = asset.asset_path.clone();
@@ -533,13 +642,34 @@ impl AssetField {
             AssetField::TextureAtlasLayout(TextureAtlasLayoutAssetField { .. }) => {
                 quote!(#token_stream)
             }
-            AssetField::StandardMaterial(BasicAssetField { asset_path, .. })
-            | AssetField::Image(ImageAssetField { asset_path, .. }) => {
+            AssetField::StandardMaterial(BasicAssetField { asset_path, .. }) => {
                 let asset_path = asset_path.clone();
                 quote!(#token_stream {
                     let asset_server = world.get_resource::<::bevy::prelude::AssetServer>().expect("Cannot get AssetServer");
                     handles.push(asset_server.load::<::bevy::image::Image>(#asset_path).untyped());
                 })
+            }
+            AssetField::Image(image) => {
+                let asset_path = image.asset_path.clone();
+                if let Some(settings) = &image.settings {
+                    if let Some(field_type) = &image.field_type {
+                        let asset_type = Self::extract_asset_type_from_handle(field_type);
+                        quote!(#token_stream {
+                            let asset_server = world.get_resource::<::bevy::prelude::AssetServer>().expect("Cannot get AssetServer");
+                            handles.push(asset_server.load_with_settings::<#asset_type, _>(#asset_path, #settings).untyped());
+                        })
+                    } else {
+                        quote!(#token_stream {
+                            let asset_server = world.get_resource::<::bevy::prelude::AssetServer>().expect("Cannot get AssetServer");
+                            handles.push(asset_server.load_with_settings(#asset_path, #settings).untyped());
+                        })
+                    }
+                } else {
+                    quote!(#token_stream {
+                        let asset_server = world.get_resource::<::bevy::prelude::AssetServer>().expect("Cannot get AssetServer");
+                        handles.push(asset_server.load::<::bevy::image::Image>(#asset_path).untyped());
+                    })
+                }
             }
             AssetField::Files(assets, _, _) => {
                 let asset_paths = assets.asset_paths.clone();
@@ -552,9 +682,10 @@ impl AssetField {
     }
 }
 
-#[derive(Default, Debug)]
+#[derive(Default)]
 pub(crate) struct AssetBuilder {
     pub field_ident: Option<Ident>,
+    pub field_type: Option<syn::Type>,
     pub asset_path: Option<String>,
     pub asset_paths: Option<Vec<String>>,
     pub is_standard_material: bool,
@@ -574,6 +705,36 @@ pub(crate) struct AssetBuilder {
     pub filter: Option<FilterType>,
     pub wrap: Option<WrapMode>,
     pub array_texture_layers: Option<u32>,
+    pub settings: Option<TokenStream>,
+}
+
+impl std::fmt::Debug for AssetBuilder {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AssetBuilder")
+            .field("field_ident", &self.field_ident)
+            .field("field_type", &"<Type>")
+            .field("asset_path", &self.asset_path)
+            .field("asset_paths", &self.asset_paths)
+            .field("is_standard_material", &self.is_standard_material)
+            .field("is_optional", &self.is_optional)
+            .field("is_collection", &self.is_collection)
+            .field("is_typed", &self.is_typed)
+            .field("is_mapped", &self.is_mapped)
+            .field("key", &self.key)
+            .field("tile_size_x", &self.tile_size_x)
+            .field("tile_size_y", &self.tile_size_y)
+            .field("columns", &self.columns)
+            .field("rows", &self.rows)
+            .field("padding_x", &self.padding_x)
+            .field("padding_y", &self.padding_y)
+            .field("offset_x", &self.offset_x)
+            .field("offset_y", &self.offset_y)
+            .field("filter", &self.filter)
+            .field("wrap", &self.wrap)
+            .field("array_texture_layers", &self.array_texture_layers)
+            .field("settings", &self.settings.as_ref().map(|s| s.to_string()))
+            .finish()
+    }
 }
 
 impl AssetBuilder {
@@ -693,23 +854,29 @@ impl AssetBuilder {
                 BasicAssetField {
                     field_ident: self.field_ident.unwrap(),
                     asset_path: self.asset_path.unwrap(),
+                    settings: self.settings.clone(),
+                    field_type: self.field_type.clone(),
                 },
                 self.is_typed.into(),
                 self.is_mapped.into(),
             ));
         }
-        if self.filter.is_some() || self.array_texture_layers.is_some() {
+        if self.filter.is_some() || self.array_texture_layers.is_some() || self.settings.is_some() {
             return Ok(AssetField::Image(ImageAssetField {
                 field_ident: self.field_ident.unwrap(),
                 asset_path: self.asset_path.unwrap(),
                 filter: self.filter,
                 wrap: self.wrap,
                 array_texture_layers: self.array_texture_layers,
+                settings: self.settings.clone(),
+                field_type: self.field_type.clone(),
             }));
         }
         let asset = BasicAssetField {
             field_ident: self.field_ident.unwrap(),
             asset_path: self.asset_path.unwrap(),
+            settings: self.settings.clone(),
+            field_type: self.field_type.clone(),
         };
         if self.is_standard_material {
             return Ok(AssetField::StandardMaterial(asset));
@@ -737,7 +904,9 @@ mod test {
             asset,
             AssetField::Basic(BasicAssetField {
                 field_ident: Ident::new("test", Span::call_site()),
-                asset_path: "some/image.png".to_owned()
+                asset_path: "some/image.png".to_owned(),
+                settings: None,
+                field_type: None,
             })
         );
     }
@@ -756,7 +925,9 @@ mod test {
             asset,
             AssetField::StandardMaterial(BasicAssetField {
                 field_ident: Ident::new("test", Span::call_site()),
-                asset_path: "some/image.png".to_owned()
+                asset_path: "some/image.png".to_owned(),
+                settings: None,
+                field_type: None,
             })
         );
     }
@@ -776,7 +947,9 @@ mod test {
             AssetField::Folder(
                 BasicAssetField {
                     field_ident: Ident::new("test", Span::call_site()),
-                    asset_path: "some/folder".to_owned()
+                    asset_path: "some/folder".to_owned(),
+                    settings: None,
+                    field_type: None,
                 },
                 Typed::No,
                 Mapped::No
@@ -797,7 +970,9 @@ mod test {
             AssetField::Folder(
                 BasicAssetField {
                     field_ident: Ident::new("test", Span::call_site()),
-                    asset_path: "some/folder".to_owned()
+                    asset_path: "some/folder".to_owned(),
+                    settings: None,
+                    field_type: None,
                 },
                 Typed::Yes,
                 Mapped::No
@@ -818,7 +993,9 @@ mod test {
             AssetField::Folder(
                 BasicAssetField {
                     field_ident: Ident::new("test", Span::call_site()),
-                    asset_path: "some/folder".to_owned()
+                    asset_path: "some/folder".to_owned(),
+                    settings: None,
+                    field_type: None,
                 },
                 Typed::No,
                 Mapped::Yes
@@ -840,7 +1017,9 @@ mod test {
             AssetField::Folder(
                 BasicAssetField {
                     field_ident: Ident::new("test", Span::call_site()),
-                    asset_path: "some/folder".to_owned()
+                    asset_path: "some/folder".to_owned(),
+                    settings: None,
+                    field_type: None,
                 },
                 Typed::Yes,
                 Mapped::Yes
@@ -998,7 +1177,9 @@ mod test {
                 asset_path: "some/image.png".to_owned(),
                 filter: Some(FilterType::Linear),
                 wrap: None,
-                array_texture_layers: None
+                array_texture_layers: None,
+                settings: None,
+                field_type: None,
             })
         );
         assert_eq!(
@@ -1008,7 +1189,9 @@ mod test {
                 asset_path: "some/image.png".to_owned(),
                 filter: Some(FilterType::Nearest),
                 wrap: None,
-                array_texture_layers: None
+                array_texture_layers: None,
+                settings: None,
+                field_type: None,
             })
         );
         assert_eq!(
@@ -1018,7 +1201,9 @@ mod test {
                 asset_path: "some/image.png".to_owned(),
                 filter: None,
                 wrap: None,
-                array_texture_layers: Some(42)
+                array_texture_layers: Some(42),
+                settings: None,
+                field_type: None,
             })
         );
     }
