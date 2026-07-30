@@ -38,6 +38,7 @@ pub(crate) const ASSET_ATTRIBUTE: &str = "asset";
 pub(crate) const PATH_ATTRIBUTE: &str = "path";
 pub(crate) const KEY_ATTRIBUTE: &str = "key";
 pub(crate) const OPTIONAL_ATTRIBUTE: &str = "optional";
+pub(crate) const SETTINGS_ATTRIBUTE: &str = "settings";
 
 pub(crate) struct TextureAtlasAttribute;
 impl TextureAtlasAttribute {
@@ -264,6 +265,7 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
         let asset_meta_list = attr.parse_args_with(Punctuated::<Meta, Token![,]>::parse_terminated);
 
         builder.field_ident = Some(field.clone().ident.unwrap());
+        builder.field_type = Some(field.ty.clone());
 
         for attribute in asset_meta_list.unwrap() {
             match attribute {
@@ -610,6 +612,10 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
                             "str",
                         ));
                     }
+                }
+                Meta::NameValue(named_value) if named_value.path.is_ident(SETTINGS_ATTRIBUTE) => {
+                    // Accept any expression (closure, function reference, etc.)
+                    builder.settings = Some(named_value.value.to_token_stream());
                 }
                 Meta::NameValue(named_value) => errors.push(ParseFieldError::UnknownAttribute(
                     named_value.into_token_stream(),
