@@ -63,6 +63,7 @@ pub(crate) struct ImageAssetField {
 pub(crate) struct BasicAssetField {
     pub field_ident: Ident,
     pub asset_path: String,
+    pub asset_type: Option<syn::TypePath>,
 }
 
 #[derive(PartialEq, Debug)]
@@ -485,9 +486,15 @@ impl AssetField {
         match self {
             AssetField::Basic(asset) => {
                 let asset_path = asset.asset_path.clone();
+                let ty = asset.asset_type.clone();
+                let asset_load = if let Some(ty) = ty {
+                    quote! { asset_server.load::<#ty>(#asset_path).untyped() }
+                } else {
+                    quote! { asset_server.load_untyped(#asset_path).untyped() }
+                };
                 quote!(#token_stream {
                     let asset_server = world.get_resource::<::bevy::prelude::AssetServer>().expect("Cannot get AssetServer");
-                    handles.push(asset_server.load_untyped(#asset_path).untyped());
+                    handles.push(#asset_load);
                 })
             }
             AssetField::Folder(asset, _, _) => {
@@ -555,6 +562,7 @@ impl AssetField {
 #[derive(Default, Debug)]
 pub(crate) struct AssetBuilder {
     pub field_ident: Option<Ident>,
+    pub asset_type: Option<syn::TypePath>,
     pub asset_path: Option<String>,
     pub asset_paths: Option<Vec<String>>,
     pub is_standard_material: bool,
@@ -693,6 +701,7 @@ impl AssetBuilder {
                 BasicAssetField {
                     field_ident: self.field_ident.unwrap(),
                     asset_path: self.asset_path.unwrap(),
+                    asset_type: self.asset_type,
                 },
                 self.is_typed.into(),
                 self.is_mapped.into(),
@@ -710,6 +719,7 @@ impl AssetBuilder {
         let asset = BasicAssetField {
             field_ident: self.field_ident.unwrap(),
             asset_path: self.asset_path.unwrap(),
+            asset_type: self.asset_type,
         };
         if self.is_standard_material {
             return Ok(AssetField::StandardMaterial(asset));
@@ -732,12 +742,14 @@ mod test {
             ..Default::default()
         };
 
+        let asset_type = builder.asset_type.clone();
         let asset = builder.build().expect("This should be a valid BasicAsset");
         assert_eq!(
             asset,
             AssetField::Basic(BasicAssetField {
                 field_ident: Ident::new("test", Span::call_site()),
-                asset_path: "some/image.png".to_owned()
+                asset_path: "some/image.png".to_owned(),
+                asset_type,
             })
         );
     }
@@ -751,12 +763,14 @@ mod test {
             ..Default::default()
         };
 
+        let asset_type = builder.asset_type.clone();
         let asset = builder.build().expect("This should be a valid BasicAsset");
         assert_eq!(
             asset,
             AssetField::StandardMaterial(BasicAssetField {
                 field_ident: Ident::new("test", Span::call_site()),
-                asset_path: "some/image.png".to_owned()
+                asset_path: "some/image.png".to_owned(),
+                asset_type,
             })
         );
     }
@@ -770,13 +784,15 @@ mod test {
             ..Default::default()
         };
 
+        let asset_type = builder.asset_type.clone();
         let asset = builder.build().expect("This should be a valid BasicAsset");
         assert_eq!(
             asset,
             AssetField::Folder(
                 BasicAssetField {
                     field_ident: Ident::new("test", Span::call_site()),
-                    asset_path: "some/folder".to_owned()
+                    asset_path: "some/folder".to_owned(),
+                    asset_type,
                 },
                 Typed::No,
                 Mapped::No
@@ -791,13 +807,15 @@ mod test {
             ..Default::default()
         };
 
+        let asset_type = builder.asset_type.clone();
         let asset = builder.build().expect("This should be a valid BasicAsset");
         assert_eq!(
             asset,
             AssetField::Folder(
                 BasicAssetField {
                     field_ident: Ident::new("test", Span::call_site()),
-                    asset_path: "some/folder".to_owned()
+                    asset_path: "some/folder".to_owned(),
+                    asset_type,
                 },
                 Typed::Yes,
                 Mapped::No
@@ -812,13 +830,15 @@ mod test {
             ..Default::default()
         };
 
+        let asset_type = builder.asset_type.clone();
         let asset = builder.build().expect("This should be a valid BasicAsset");
         assert_eq!(
             asset,
             AssetField::Folder(
                 BasicAssetField {
                     field_ident: Ident::new("test", Span::call_site()),
-                    asset_path: "some/folder".to_owned()
+                    asset_path: "some/folder".to_owned(),
+                    asset_type,
                 },
                 Typed::No,
                 Mapped::Yes
@@ -834,13 +854,15 @@ mod test {
             ..Default::default()
         };
 
+        let asset_type = builder.asset_type.clone();
         let asset = builder.build().expect("This should be a valid BasicAsset");
         assert_eq!(
             asset,
             AssetField::Folder(
                 BasicAssetField {
                     field_ident: Ident::new("test", Span::call_site()),
-                    asset_path: "some/folder".to_owned()
+                    asset_path: "some/folder".to_owned(),
+                    asset_type,
                 },
                 Typed::Yes,
                 Mapped::Yes
