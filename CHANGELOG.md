@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+- load asset collection fields with their declared handle type, so the loading state waits on the same assets the collection holds
+  - an asset type used in a collection must now be registered with the app, otherwise the loading state goes to the failure state
+
 ## v0.28.1 - 13.10.2026
 - drop the dependencies on `bevy_utils` and `bevy_log`
 
