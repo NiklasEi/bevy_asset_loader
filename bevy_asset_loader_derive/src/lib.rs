@@ -264,6 +264,7 @@ fn parse_field(field: &Field) -> Result<AssetField, Vec<ParseFieldError>> {
         let asset_meta_list = attr.parse_args_with(Punctuated::<Meta, Token![,]>::parse_terminated);
 
         builder.field_ident = Some(field.clone().ident.unwrap());
+        builder.field_type = Some(field.ty.clone());
 
         for attribute in asset_meta_list.unwrap() {
             match attribute {
