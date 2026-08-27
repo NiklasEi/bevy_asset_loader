@@ -2,6 +2,7 @@
 
 ## Unreleased
 - **Breaking**: rename `LoadingStateSet` to `LoadingStateSystems` to follow Bevy's system set naming convention
+- load asset collection fields with their declared handle type
 
 ## v0.27.0 - 21.06.2026
 - support for Bevy 0.19
