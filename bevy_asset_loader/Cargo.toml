@@ -1,6 +1,6 @@
 [package]
 name = "bevy_asset_loader"
-version = "0.27.0"
+version = "0.28.0-rc.1"
 authors = ["Niklas Eicker <git@nikl.me>"]
 edition = "2024"
 license = "MIT OR Apache-2.0"
@@ -10,7 +10,7 @@ homepage = "https://github.com/NiklasEi/bevy_asset_loader"
 documentation = "https://docs.rs/bevy_asset_loader"
 keywords = ["bevy", "gamedev", "asset", "assets"]
 categories = ["game-development"]
-rust-version = "1.85.0"
+rust-version = "1.96.0"
 readme = "README.md"
 
 [features]
@@ -33,32 +33,32 @@ standard_dynamic_assets = ["dep:bevy_common_assets", "dep:serde"]
 progress_tracking = ["dep:iyes_progress"]
 
 [dependencies]
-bevy_app = { version = "0.19.0", default-features = false }
-bevy_asset = { version = "0.19.0", default-features = false }
-bevy_ecs = { version = "0.19.0", default-features = false }
-bevy_image = { version = "0.19.0", default-features = false, optional = true }
-bevy_log = { version = "0.19.0", default-features = false }
-bevy_math = { version = "0.19.0", default-features = false, optional = true }
-bevy_pbr = { version = "0.19.0", default-features = false, optional = true }
-bevy_platform = { version = "0.19.0", default-features = false }
-bevy_reflect = { version = "0.19.0", default-features = false }
-bevy_render = { version = "0.19.0", default-features = false, optional = true }
-bevy_sprite = { version = "0.19.0", default-features = false, optional = true }
-bevy_state = { version = "0.19.0", default-features = false }
-bevy_utils = { version = "0.19.0", default-features = false }
-bevy_asset_loader_derive = { version = "0.27.0", path = "../bevy_asset_loader_derive" }
+bevy_app = { version = "0.20.0-rc.1", default-features = false }
+bevy_asset = { version = "0.20.0-rc.1", default-features = false }
+bevy_ecs = { version = "0.20.0-rc.1", default-features = false }
+bevy_image = { version = "0.20.0-rc.1", default-features = false, optional = true }
+bevy_log = { version = "0.20.0-rc.1", default-features = false }
+bevy_math = { version = "0.20.0-rc.1", default-features = false, optional = true }
+bevy_pbr = { version = "0.20.0-rc.1", default-features = false, optional = true }
+bevy_platform = { version = "0.20.0-rc.1", default-features = false }
+bevy_reflect = { version = "0.20.0-rc.1", default-features = false }
+bevy_render = { version = "0.20.0-rc.1", default-features = false, optional = true }
+bevy_sprite = { version = "0.20.0-rc.1", default-features = false, optional = true }
+bevy_state = { version = "0.20.0-rc.1", default-features = false }
+bevy_utils = { version = "0.20.0-rc.1", default-features = false }
+bevy_asset_loader_derive = { version = "0.28.0-rc.1", path = "../bevy_asset_loader_derive" }
 anyhow = "1"
 path-slash = "0.2"
 
-bevy_common_assets = { version = "0.17.0", features = ["ron"], optional = true }
+bevy_common_assets = { version = "0.18.0-rc.1", features = ["ron"], optional = true }
 serde = { version = "1", optional = true }
-iyes_progress = { version = "0.17.0", optional = true }
+iyes_progress = { version = "0.18.0-rc.1", optional = true }
 
 [dev-dependencies]
-bevy = { version = "0.19.0", features = ["vorbis"] }
+bevy = { version = "0.20.0-rc.1", features = ["vorbis"] }
 anyhow = "1"
-iyes_progress = { version = "0.17.0" }
-bevy_common_assets = { version = "0.17.0", features = ["ron"] }
+iyes_progress = { version = "0.18.0-rc.1" }
+bevy_common_assets = { version = "0.18.0-rc.1", features = ["ron"] }
 serde = { version = "1" }
 ron = "0.12"
 trybuild = { version = "1.0" }
