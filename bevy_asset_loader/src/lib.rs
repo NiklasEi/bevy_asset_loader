@@ -71,6 +71,8 @@ pub mod dynamic_asset;
 pub mod loading_state;
 /// Trait definition for mapped assets collection
 pub mod mapped;
+/// Integration of asset collections with BSN
+pub mod scene;
 /// Dynamic assets for common Bevy asset types
 #[cfg_attr(docsrs, doc(cfg(feature = "standard_dynamic_assets")))]
 #[cfg(feature = "standard_dynamic_assets")]
@@ -97,6 +99,7 @@ pub mod prelude {
             LoadingState, LoadingStateAppExt, LoadingStateSystems, ResetLoadingStateSystems,
         },
         mapped::{AssetFileName, AssetFileStem, AssetLabel, MapKey},
+        scene::{CollectionField, FromCollection, from_collection},
     };
 }
 

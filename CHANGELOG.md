@@ -1,6 +1,7 @@
 # Changelog
 
-## Unreleased
+## v0.28.0
+- support for Bevy 0.20
 - **Breaking**: rename `LoadingStateSet` to `LoadingStateSystems` to follow Bevy's system set naming convention
 
 ## v0.27.0 - 21.06.2026

@@ -85,10 +85,10 @@ struct AnimationTimer(Timer);
 fn animate_sprite_system(time: Res<Time>, mut query: Query<(&mut AnimationTimer, &mut Sprite)>) {
     for (mut timer, mut sprite) in &mut query {
         timer.0.tick(time.delta());
-        if timer.0.is_finished() {
-            if let Some(atlas) = &mut sprite.texture_atlas {
-                atlas.index = (atlas.index + 1) % 8;
-            }
+        if timer.0.is_finished()
+            && let Some(atlas) = &mut sprite.texture_atlas
+        {
+            atlas.index = (atlas.index + 1) % 8;
         }
     }
 }

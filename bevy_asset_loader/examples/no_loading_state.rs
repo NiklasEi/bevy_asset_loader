@@ -41,10 +41,10 @@ fn load_audio(world: &mut World) {
 }
 
 fn play_audio(audio_assets: Option<Res<AudioAssets>>, mut commands: Commands) {
-    if let Some(audio_assets) = audio_assets {
-        if audio_assets.is_added() {
-            commands.spawn(AudioPlayer(audio_assets.background.clone()));
-        }
+    if let Some(audio_assets) = audio_assets
+        && audio_assets.is_added()
+    {
+        commands.spawn(AudioPlayer(audio_assets.background.clone()));
     }
 }
 
@@ -90,10 +90,10 @@ struct AnimationTimer(Timer);
 fn animate_sprite_system(time: Res<Time>, mut query: Query<(&mut AnimationTimer, &mut Sprite)>) {
     for (mut timer, mut sprite) in &mut query {
         timer.0.tick(time.delta());
-        if timer.0.is_finished() {
-            if let Some(atlas) = &mut sprite.texture_atlas {
-                atlas.index = (atlas.index + 1) % 8;
-            }
+        if timer.0.is_finished()
+            && let Some(atlas) = &mut sprite.texture_atlas
+        {
+            atlas.index = (atlas.index + 1) % 8;
         }
     }
 }
