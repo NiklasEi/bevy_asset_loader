@@ -6,6 +6,7 @@ with `cargo run --example <example>`.
 | Example                                                    | Description                                                              |
 | ---------------------------------------------------------- | ------------------------------------------------------------------------ |
 | [`atlas_from_grid.rs`](atlas_from_grid.rs)                 | Loading a texture atlas from a sprite sheet                              |
+| [`bsn_integration.rs`](bsn_integration.rs)                 | Using asset collections in scenes defined with `bsn!`                    |
 | [`custom_dynamic_assets.rs`](custom_dynamic_assets.rs)     | Define and use your own dynamic assets                                   |
 | [`dynamic_asset.rs`](dynamic_asset.rs)                     | Load dynamic assets from a `.ron` file                                   |
 | [`failure_state.rs`](failure_state.rs)                     | Sets up a failure state                                                  |

@@ -88,9 +88,23 @@ fn impl_asset_collection(
 
     let mut from_world_fields: Vec<Ident> = vec![];
     let mut assets: Vec<AssetField> = vec![];
+    let mut field_constants: Vec<proc_macro2::TokenStream> = vec![];
     if let Data::Struct(ref data_struct) = ast.data {
         if let Fields::Named(ref named_fields) = data_struct.fields {
             let mut compile_errors = vec![];
+            field_constants = named_fields
+                .named
+                .iter()
+                .map(|field| {
+                    let ident = field.ident.as_ref().unwrap();
+                    let ty = &field.ty;
+                    let visibility = &field.vis;
+                    quote_spanned! {ident.span() =>
+                        #visibility const #ident: ::bevy_asset_loader::scene::CollectionField<#name, #ty> =
+                            ::bevy_asset_loader::scene::CollectionField::new(|collection| &collection.#ident);
+                    }
+                })
+                .collect();
             for field in named_fields.named.iter() {
                 match parse_field(field) {
                     Ok(asset) => assets.push(asset),
@@ -230,6 +244,12 @@ fn impl_asset_collection(
             #create_function
 
             #load_function
+        }
+
+        #[automatically_derived]
+        #[allow(non_upper_case_globals, missing_docs, dead_code)]
+        impl #name {
+            #(#field_constants)*
         }
     };
     Ok(impl_asset_collection)

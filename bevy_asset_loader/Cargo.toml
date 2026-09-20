@@ -148,3 +148,7 @@ path = "examples/asset_maps.rs"
 [[example]]
 name = "sub_state"
 path = "examples/sub_state.rs"
+
+[[example]]
+name = "bsn_integration"
+path = "examples/bsn_integration.rs"
