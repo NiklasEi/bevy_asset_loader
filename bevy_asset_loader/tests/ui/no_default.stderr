@@ -11,8 +11,8 @@ error[E0277]: the trait bound `NoDefault: FromWorld` is not satisfied
              DefaultImageSampler
              DefaultQueryFilters
              DiagnosticsRecorder
+             DownsamplePipeline
              FallbackImage
-             FallbackImageCubemap
            and $N others
    = note: required for `NoDefault` to implement `FromWorld`
 help: consider annotating `NoDefault` with `#[derive(Default)]`
