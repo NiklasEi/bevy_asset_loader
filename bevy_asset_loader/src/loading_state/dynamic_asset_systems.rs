@@ -38,14 +38,13 @@ pub(crate) fn load_dynamic_asset_collections<
     if let Some(config) = asset_loader_config
         .state_configurations
         .get_mut(state.get())
+        && !config.loading_dynamic_collections.insert(TypeId::of::<C>())
     {
-        if !config.loading_dynamic_collections.insert(TypeId::of::<C>()) {
-            warn!(
-                "The dynamic asset collection {} was registered multiple times on the loading state {:?}",
-                type_name::<C>(),
-                state.get()
-            );
-        }
+        warn!(
+            "The dynamic asset collection {} was registered multiple times on the loading state {:?}",
+            type_name::<C>(),
+            state.get()
+        );
     }
     world.insert_resource(loading_collections);
 
