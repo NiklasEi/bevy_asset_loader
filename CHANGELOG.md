@@ -1,7 +1,10 @@
 # Changelog
 
-## Unreleased
+## v0.28.0 - 09.10.2026
+- support for Bevy 0.20
 - **Breaking**: rename `LoadingStateSet` to `LoadingStateSystems` to follow Bevy's system set naming convention
+- use asset collection fields in `bsn!` scenes via `from_collection` (see the `bsn_integration` example)
+  - **Breaking**: the `AssetCollection` derive now generates an associated constant per field, which conflicts with inherent methods of the same name as a field
 
 ## v0.27.0 - 21.06.2026
 - support for Bevy 0.19

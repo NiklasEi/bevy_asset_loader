@@ -40,9 +40,8 @@ fn expect(
 ) {
     if collection.is_none() || other_collection.is_none() {
         panic!("At least one asset collection was not inserted");
-    } else {
-        exit.write(AppExit::Success);
     }
+    exit.write(AppExit::Success);
 }
 
 #[derive(AssetCollection, Resource)]

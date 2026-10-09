@@ -487,7 +487,7 @@ impl AssetField {
                 let asset_path = asset.asset_path.clone();
                 quote!(#token_stream {
                     let asset_server = world.get_resource::<::bevy::prelude::AssetServer>().expect("Cannot get AssetServer");
-                    handles.push(asset_server.load_untyped(#asset_path).untyped());
+                    handles.push(asset_server.load_builder().load_untyped(#asset_path).untyped());
                 })
             }
             AssetField::Folder(asset, _, _) => {
@@ -545,7 +545,7 @@ impl AssetField {
                 let asset_paths = assets.asset_paths.clone();
                 quote!(#token_stream {
                     let asset_server = world.get_resource::<::bevy::prelude::AssetServer>().expect("Cannot get AssetServer");
-                    #(handles.push(asset_server.load_untyped(#asset_paths).untyped()));*;
+                    #(handles.push(asset_server.load_builder().load_untyped(#asset_paths).untyped()));*;
                 })
             }
         }

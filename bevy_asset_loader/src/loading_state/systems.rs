@@ -200,11 +200,10 @@ pub(crate) fn finish_loading_state<S: FreelyMutableState>(
     if let Some(config) = asset_loader_configuration
         .state_configurations
         .get(state.get())
+        && let Some(next) = config.next.as_ref()
     {
-        if let Some(next) = config.next.as_ref() {
-            next_state.set(next.clone());
-            return;
-        }
+        next_state.set(next.clone());
+        return;
     }
 
     loading_state.set(InternalLoadingState::Done(PhantomData));
