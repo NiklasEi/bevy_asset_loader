@@ -20,7 +20,6 @@ use bevy_ecs::{
 };
 use bevy_platform::collections::HashMap;
 use bevy_state::state::FreelyMutableState;
-use bevy_utils::default;
 use std::any::TypeId;
 
 /// Methods to configure a loading state
@@ -124,7 +123,7 @@ impl<S: FreelyMutableState> LoadingStateConfig<S> {
             on_enter_loading_dynamic_asset_collections: vec![],
             on_update: vec![],
             on_enter_finalize: vec![],
-            dynamic_assets: default(),
+            dynamic_assets: Default::default(),
         }
     }
 

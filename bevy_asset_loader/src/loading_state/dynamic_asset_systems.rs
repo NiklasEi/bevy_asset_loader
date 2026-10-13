@@ -7,9 +7,9 @@ use bevy_ecs::{
     system::SystemState,
     world::World,
 };
-use bevy_log::{debug, warn};
 use bevy_state::state::{FreelyMutableState, NextState, State};
 use std::any::{TypeId, type_name};
+use tracing::{debug, warn};
 
 #[allow(clippy::type_complexity)]
 pub(crate) fn load_dynamic_asset_collections<

@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.28.1 - 13.10.2026
+- drop the dependencies on `bevy_utils` and `bevy_log`
+
 ## v0.28.0 - 09.10.2026
 - support for Bevy 0.20
 - **Breaking**: rename `LoadingStateSet` to `LoadingStateSystems` to follow Bevy's system set naming convention
