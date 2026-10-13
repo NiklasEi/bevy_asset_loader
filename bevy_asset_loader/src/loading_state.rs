@@ -16,7 +16,6 @@ use bevy_state::{
     condition::in_state,
     state::{FreelyMutableState, NextState, OnEnter, State, StateTransition, States},
 };
-use bevy_utils::default;
 use std::any::TypeId;
 use std::marker::PhantomData;
 
@@ -340,7 +339,7 @@ where
         #[cfg(feature = "progress_tracking")]
         app.insert_resource(LoadingStateProgressId::<S> {
             id: ProgressEntryId::new(),
-            _marker: default(),
+            _marker: Default::default(),
         });
 
         app.init_resource::<DynamicAssetCollections<S>>();
@@ -561,8 +560,8 @@ impl<State: FreelyMutableState, Assets: AssetCollection> AssetCollectionsProgres
     pub(crate) fn new(id: ProgressEntryId) -> Self {
         AssetCollectionsProgressId {
             id,
-            _marker_state: default(),
-            _marker_assets: default(),
+            _marker_state: Default::default(),
+            _marker_assets: Default::default(),
         }
     }
 }
@@ -594,8 +593,8 @@ impl<State: FreelyMutableState> Default for LoadingConfiguration<State> {
             next: None,
             failure: None,
             loading_failed: false,
-            loading_collections: default(),
-            loading_dynamic_collections: default(),
+            loading_collections: Default::default(),
+            loading_dynamic_collections: Default::default(),
         }
     }
 }
