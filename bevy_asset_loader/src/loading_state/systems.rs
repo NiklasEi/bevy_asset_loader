@@ -209,14 +209,14 @@ pub(crate) fn finish_loading_state<S: FreelyMutableState>(
     loading_state.set(InternalLoadingState::Done(PhantomData));
 }
 
-pub(crate) fn reset_loading_state<S: FreelyMutableState>(world: &mut World) {
-    world.remove_resource::<State<InternalLoadingState<S>>>();
-    world.init_resource::<State<InternalLoadingState<S>>>();
+pub(crate) fn reset_loading_state<S: FreelyMutableState>(
+    state: Res<State<S>>,
+    mut internal_state: ResMut<State<InternalLoadingState<S>>>,
+    mut config: ResMut<AssetLoaderConfiguration<S>>,
+) {
+    *internal_state = State::new(InternalLoadingState::Initialize);
 
-    let state = world.resource::<State<S>>().get().clone();
-    if let Some(mut config) = world.get_resource_mut::<AssetLoaderConfiguration<S>>()
-        && let Some(state_config) = config.state_configurations.get_mut(&state)
-    {
+    if let Some(state_config) = config.state_configurations.get_mut(state.get()) {
         state_config.loading_failed = false;
         state_config.loading_collections.clear();
         state_config.loading_dynamic_collections.clear();
