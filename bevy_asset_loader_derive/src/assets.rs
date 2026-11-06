@@ -78,24 +78,34 @@ fn asset_type_of(field_type: &syn::Type) -> Option<syn::Type> {
         return None;
     };
     let segment = type_path.path.segments.last()?;
-    let inner = single_type_argument(segment)?;
-    if segment.ident == "Vec" {
-        asset_type_of(inner)
-    } else if segment.ident == "Handle" {
-        Some(inner.clone())
-    } else {
-        None
+    match segment.ident.to_string().as_str() {
+        "Handle" => Some(first_type_argument(segment)?.clone()),
+        "Vec" => asset_type_of(first_type_argument(segment)?),
+        "HashMap" => asset_type_of(last_type_argument(segment)?),
+        _ => None,
     }
 }
 
-fn single_type_argument(segment: &syn::PathSegment) -> Option<&syn::Type> {
-    let syn::PathArguments::AngleBracketed(arguments) = &segment.arguments else {
-        return None;
+fn type_arguments(segment: &syn::PathSegment) -> impl Iterator<Item = &syn::Type> {
+    let arguments = match &segment.arguments {
+        syn::PathArguments::AngleBracketed(arguments) => Some(&arguments.args),
+        _ => None,
     };
-    let syn::GenericArgument::Type(inner) = arguments.args.first()? else {
-        return None;
-    };
-    Some(inner)
+    arguments
+        .into_iter()
+        .flatten()
+        .filter_map(|argument| match argument {
+            syn::GenericArgument::Type(inner) => Some(inner),
+            _ => None,
+        })
+}
+
+fn first_type_argument(segment: &syn::PathSegment) -> Option<&syn::Type> {
+    type_arguments(segment).next()
+}
+
+fn last_type_argument(segment: &syn::PathSegment) -> Option<&syn::Type> {
+    type_arguments(segment).last()
 }
 
 #[derive(PartialEq, Debug)]
@@ -516,7 +526,9 @@ impl AssetField {
                     Some(asset_type) => {
                         quote!(handles.push(asset_server.load::<#asset_type>(#asset_path).untyped());)
                     }
-                    None => quote!(handles.push(asset_server.load_builder().load_untyped(#asset_path).untyped());),
+                    None => {
+                        quote!(handles.push(asset_server.load_builder().load_untyped(#asset_path).untyped());)
+                    }
                 };
                 quote!(#token_stream {
                     let asset_server = world.get_resource::<::bevy::prelude::AssetServer>().expect("Cannot get AssetServer");
@@ -992,6 +1004,19 @@ mod test {
             super::asset_type_of(&parse_quote!(Vec<Handle<SomeAsset>>)),
             Some(parse_quote!(SomeAsset))
         );
+
+        assert_eq!(
+            super::asset_type_of(&parse_quote!(HashMap<String, Handle<SomeAsset>>)),
+            Some(parse_quote!(SomeAsset))
+        );
+        assert_eq!(
+            super::asset_type_of(&parse_quote!(
+                ::bevy::platform::collections::HashMap<AssetFileName, Handle<SomeAsset>>
+            )),
+            Some(parse_quote!(SomeAsset))
+        );
+        assert!(super::asset_type_of(&parse_quote!(Vec<UntypedHandle>)).is_none());
+        assert!(super::asset_type_of(&parse_quote!(HashMap<String, UntypedHandle>)).is_none());
 
         assert!(super::asset_type_of(&parse_quote!(SomeAsset)).is_none());
         assert!(super::asset_type_of(&parse_quote!(Option<Handle<SomeAsset>>)).is_none());

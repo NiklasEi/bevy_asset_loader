@@ -3,6 +3,7 @@ use std::time::Duration;
 use bevy::app::AppExit;
 use bevy::asset::io::Reader;
 use bevy::asset::{AssetLoader, AssetPlugin, LoadContext};
+use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
 use bevy::state::app::StatesPlugin;
 use bevy_asset_loader::prelude::*;
@@ -41,8 +42,12 @@ fn expect(mut exit: MessageWriter<AppExit>) {
 #[allow(dead_code)]
 #[derive(AssetCollection, Resource)]
 struct MyAssets {
-    #[asset(path = "slow.slow")]
+    #[asset(path = "slow/single.slow")]
     rendered: Handle<RasterAsset>,
+    #[asset(paths("slow/list.slow"), collection(typed))]
+    list: Vec<Handle<RasterAsset>>,
+    #[asset(paths("slow/mapped.slow"), collection(typed, mapped))]
+    mapped: HashMap<String, Handle<RasterAsset>>,
 }
 
 #[allow(dead_code)]
@@ -62,6 +67,16 @@ impl FromWorld for Resolved {
         loaded
             .get(&assets.rendered)
             .expect("the collection handle must resolve in its typed store when loading completes");
+        for handle in &assets.list {
+            loaded.get(handle).expect(
+                "vec collection handles must resolve in their typed store when loading completes",
+            );
+        }
+        for handle in assets.mapped.values() {
+            loaded
+                .get(handle)
+                .expect("mapped collection handles must resolve in their typed store when loading completes");
+        }
         Resolved {
             rendered: assets.rendered.clone(),
         }
