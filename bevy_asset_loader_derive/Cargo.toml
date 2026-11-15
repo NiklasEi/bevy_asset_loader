@@ -6,7 +6,6 @@ edition = "2024"
 license = "MIT OR Apache-2.0"
 description = "Macro implementation for bevy_asset_loader"
 repository = "https://github.com/NiklasEi/bevy_asset_loader"
-homepage = "https://github.com/NiklasEi/bevy_asset_loader"
 documentation = "https://docs.rs/bevy_asset_loader_derive"
 keywords = ["bevy", "gamedev", "asset", "assets"]
 categories = ["game-development"]
