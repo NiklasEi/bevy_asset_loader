@@ -204,12 +204,12 @@ impl AssetField {
                 let field_ident = basic.field_ident.clone();
                 let field = field_ident.to_string();
                 let asset_path = basic.asset_path.clone();
-                let asset_type = quote!(::bevy_asset_loader::derive_support::asset_type_of_field(|collection: &Self| &collection.#field_ident));
+                let asset_type = quote!(::bevy_asset_loader::derive_support::asset_type_of_field(world, |collection: &Self| &collection.#field_ident, stringify!(#field_ident)));
                 match typed {
                     Typed::Yes => match mapped {
                         Mapped::No => {
                             quote!(#token_stream #field_ident : {
-                                    let handle = ::bevy_asset_loader::derive_support::get_folder_as(world, #asset_path, #asset_type).unwrap_or_else(|| panic!("Folders are only supported when using a loading state. Consider using 'paths' for {}.{}.", #name, #field));
+                                    let handle = ::bevy_asset_loader::derive_support::folder_handle(world, #asset_path, #asset_type).unwrap_or_else(|| panic!("Folders are only supported when using a loading state. Consider using 'paths' for {}.{}.", #name, #field));
                                     let folders = world.resource::<::bevy::asset::Assets<::bevy::asset::LoadedFolder>>();
                                     folders.get(&handle)
                                         .unwrap()
@@ -221,7 +221,7 @@ impl AssetField {
                         }
                         Mapped::Yes => {
                             quote!(#token_stream #field_ident : {
-                                    let handle = ::bevy_asset_loader::derive_support::get_folder_as(world, #asset_path, #asset_type).unwrap_or_else(|| panic!("Folders are only supported when using a loading state. Consider using 'paths' for {}.{}.", #name, #field));
+                                    let handle = ::bevy_asset_loader::derive_support::folder_handle(world, #asset_path, #asset_type).unwrap_or_else(|| panic!("Folders are only supported when using a loading state. Consider using 'paths' for {}.{}.", #name, #field));
                                     let folders = world.resource::<::bevy::asset::Assets<::bevy::asset::LoadedFolder>>();
                                     let mut folder_map = ::bevy::platform::collections::HashMap::default();
                                     let folder = &folders.get(&handle).unwrap().handles;
@@ -342,10 +342,10 @@ impl AssetField {
             AssetField::Dynamic(dynamic) => {
                 let field_ident = dynamic.field_ident.clone();
                 let asset_key = dynamic.key.clone();
-                let asset_type = quote!(::bevy_asset_loader::derive_support::asset_type_of_field(|collection: &Self| &collection.#field_ident));
+                let asset_type = quote!(::bevy_asset_loader::derive_support::asset_type_of_field(world, |collection: &Self| &collection.#field_ident, stringify!(#field_ident)));
                 quote!(#token_stream #field_ident : {
                     let asset = asset_keys.get_asset(#asset_key.into()).unwrap_or_else(|| panic!("Failed to get asset for key '{}'", #asset_key));
-                    match asset.build_as(world, #asset_type).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
+                    match ::bevy_asset_loader::derive_support::build_dynamic(asset, #asset_type, world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
                         ::bevy_asset_loader::prelude::DynamicAssetType::Single(handle) => handle.typed(),
                         result => panic!("The dynamic asset '{}' cannot be created. The asset collection {} expected it to resolve to `Single(handle)`, but {asset:?} resolves to {result:?}", #asset_key, #name)
                     }
@@ -354,10 +354,10 @@ impl AssetField {
             AssetField::OptionalDynamic(dynamic) => {
                 let field_ident = dynamic.field_ident.clone();
                 let asset_key = dynamic.key.clone();
-                let asset_type = quote!(::bevy_asset_loader::derive_support::asset_type_of_field(|collection: &Self| &collection.#field_ident));
+                let asset_type = quote!(::bevy_asset_loader::derive_support::asset_type_of_field(world, |collection: &Self| &collection.#field_ident, stringify!(#field_ident)));
                 quote!(#token_stream #field_ident : {
                     let asset = asset_keys.get_asset(#asset_key.into());
-                    asset.map(|asset| match asset.build_as(world, #asset_type).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
+                    asset.map(|asset| match ::bevy_asset_loader::derive_support::build_dynamic(asset, #asset_type, world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
                             ::bevy_asset_loader::prelude::DynamicAssetType::Single(handle) => handle.typed(),
                             result => panic!("The dynamic asset '{}' cannot be created. The asset collection {} expected it to resolve to `Single(handle)`, but {asset:?} resolves to {result:?}", #asset_key, #name)
                         }
@@ -367,17 +367,17 @@ impl AssetField {
             AssetField::DynamicFileCollection(dynamic, typed, mapped) => {
                 let field_ident = dynamic.field_ident.clone();
                 let asset_key = dynamic.key.clone();
-                let asset_type = quote!(::bevy_asset_loader::derive_support::asset_type_of_field(|collection: &Self| &collection.#field_ident));
+                let asset_type = quote!(::bevy_asset_loader::derive_support::asset_type_of_field(world, |collection: &Self| &collection.#field_ident, stringify!(#field_ident)));
                 let load = match typed {
                     Typed::Yes => {
                         match mapped {
-                            Mapped::No => quote!(match asset.build_as(world, #asset_type).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
+                            Mapped::No => quote!(match ::bevy_asset_loader::derive_support::build_dynamic(asset, #asset_type, world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
                                 ::bevy_asset_loader::prelude::DynamicAssetType::Collection(mut handles) => handles.drain(..).map(|handle| handle.typed()).collect(),
                                 result => panic!("The dynamic asset '{}' cannot be created. The asset collection {} expected it to resolve to `Collection(handle)`, but {asset:?} resolves to {result:?}", #asset_key, #name),
                             }),
                             Mapped::Yes => {
                                 let build_collection = Self::build_mapped_dynamic_file_collection(Typed::Yes, &asset_key, name);
-                                quote!(match asset.build_as(world, #asset_type).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
+                                quote!(match ::bevy_asset_loader::derive_support::build_dynamic(asset, #asset_type, world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
                                     #build_collection
                                 })
                             }
@@ -407,12 +407,12 @@ impl AssetField {
             AssetField::OptionalDynamicFileCollection(dynamic, typed, mapped) => {
                 let field_ident = dynamic.field_ident.clone();
                 let asset_key = dynamic.key.clone();
-                let asset_type = quote!(::bevy_asset_loader::derive_support::asset_type_of_field(|collection: &Self| &collection.#field_ident));
+                let asset_type = quote!(::bevy_asset_loader::derive_support::asset_type_of_field(world, |collection: &Self| &collection.#field_ident, stringify!(#field_ident)));
                 let load = match typed {
                     Typed::Yes => {
                         match mapped {
                             Mapped::No => quote!(
-                                asset.map(|asset| match asset.build_as(world, #asset_type).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
+                                asset.map(|asset| match ::bevy_asset_loader::derive_support::build_dynamic(asset, #asset_type, world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
                                     ::bevy_asset_loader::prelude::DynamicAssetType::Collection(mut handles) => handles.drain(..).map(|handle| handle.typed()).collect(),
                                     result => panic!("The dynamic asset '{}' cannot be created. The asset collection {} expected it to resolve to `Collection(handle)`, but {asset:?} resolves to {result:?}", #asset_key, #name),
                                 })
@@ -420,7 +420,7 @@ impl AssetField {
                             Mapped::Yes => {
                                 let build_collection = Self::build_mapped_dynamic_file_collection(Typed::Yes, &asset_key, name);
                                 quote!(
-                                    asset.map(|asset| match asset.build_as(world, #asset_type).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
+                                    asset.map(|asset| match ::bevy_asset_loader::derive_support::build_dynamic(asset, #asset_type, world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
                                         #build_collection
                                     })
                                 )
@@ -492,7 +492,7 @@ impl AssetField {
             quote!(let dynamic_asset = dynamic_assets.get_asset(#asset_key.into()).unwrap_or_else(|| panic!("Failed to get asset for key '{}'", #asset_key));)
         };
         let load = if typed {
-            quote!(dynamic_asset.load_as(world, ::bevy_asset_loader::derive_support::asset_type_of_field(|collection: &Self| &collection.#field_ident)))
+            quote!(::bevy_asset_loader::derive_support::load_dynamic(world, dynamic_asset, |collection: &Self| &collection.#field_ident, stringify!(#field_ident)))
         } else {
             quote!(dynamic_asset.load(&world.resource::<::bevy::prelude::AssetServer>().clone()))
         };
@@ -511,8 +511,7 @@ impl AssetField {
                 let asset_path = asset.asset_path.clone();
                 let field_ident = asset.field_ident.clone();
                 quote!(#token_stream {
-                    let asset_server = world.get_resource::<::bevy::prelude::AssetServer>().expect("Cannot get AssetServer");
-                    handles.push(::bevy_asset_loader::derive_support::load_as_field(|collection: &Self| &collection.#field_ident, asset_server, #asset_path));
+                    handles.extend(::bevy_asset_loader::derive_support::load_paths(world, |collection: &Self| &collection.#field_ident, stringify!(#field_ident), &[#asset_path]));
                 })
             }
             AssetField::Folder(asset, typed, _) => {
@@ -520,8 +519,8 @@ impl AssetField {
                 let field_ident = asset.field_ident.clone();
                 match typed {
                     Typed::Yes => quote!(#token_stream {
-                        let asset_type = ::bevy_asset_loader::derive_support::asset_type_of_field(|collection: &Self| &collection.#field_ident);
-                        handles.push(::bevy_asset_loader::derive_support::load_folder_as(world, #asset_path, asset_type).untyped());
+
+                        handles.push(::bevy_asset_loader::derive_support::load_folder(world, |collection: &Self| &collection.#field_ident, stringify!(#field_ident), #asset_path));
                     }),
                     Typed::No => quote!(#token_stream {
                         let asset_server = world.get_resource::<::bevy::prelude::AssetServer>().expect("Cannot get AssetServer");
@@ -555,7 +554,7 @@ impl AssetField {
                 let field_ident = assets.field_ident.clone();
                 let load = match typed {
                     Typed::Yes => quote!(
-                        #(handles.push(::bevy_asset_loader::derive_support::load_as_field(|collection: &Self| &collection.#field_ident, asset_server, #asset_paths)));*
+                        handles.extend(::bevy_asset_loader::derive_support::load_paths(world, |collection: &Self| &collection.#field_ident, stringify!(#field_ident), &[#(#asset_paths),*]));
                     ),
                     Typed::No => quote!(
                         #(handles.push(asset_server.load_builder().load_untyped(#asset_paths).untyped()));*

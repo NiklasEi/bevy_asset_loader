@@ -17,7 +17,7 @@ struct TypedFolders(HashMap<(AssetPath<'static>, TypeId), Handle<LoadedFolder>>)
 /// Start loading all files in `path` (recursively) as assets of type `asset_type`.
 ///
 /// Files are skipped if no registered loader produces `asset_type` for their extension.
-pub fn load_folder_as<'a>(
+pub(crate) fn load_folder_as<'a>(
     world: &mut World,
     path: impl Into<AssetPath<'a>>,
     asset_type: TypeId,
@@ -42,7 +42,7 @@ pub fn load_folder_as<'a>(
 }
 
 /// The handle of a folder previously loaded with [`load_folder_as`].
-pub fn get_folder_as<'a>(
+pub(crate) fn get_folder_as<'a>(
     world: &World,
     path: impl Into<AssetPath<'a>>,
     asset_type: TypeId,
