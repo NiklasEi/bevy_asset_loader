@@ -1,5 +1,6 @@
 use bevy::app::AppExit;
-use bevy::asset::AssetPlugin;
+use bevy::asset::{AssetApp, AssetPlugin};
+use bevy::audio::AudioSource;
 use bevy::prelude::*;
 use bevy::state::app::StatesPlugin;
 use bevy_asset_loader::prelude::*;
@@ -9,6 +10,7 @@ fn continues_to_failure_state() {
     let mut app = App::new();
 
     app.add_plugins((MinimalPlugins, AssetPlugin::default(), StatesPlugin));
+    app.init_asset::<AudioSource>();
     app.init_state::<MyStates>();
     app.add_loading_state(
         LoadingState::new(MyStates::Load)
