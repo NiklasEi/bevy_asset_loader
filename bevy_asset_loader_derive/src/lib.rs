@@ -202,7 +202,7 @@ fn impl_asset_collection(
         asset.attach_token_stream_for_loading(token_stream)
     });
     let load_function = quote! {
-            fn load(world: &mut ::bevy::ecs::world::World) -> Vec<::bevy::prelude::UntypedHandle> {
+            fn load(world: &mut ::bevy_asset_loader::derive_support::bevy_ecs::world::World) -> Vec<::bevy_asset_loader::derive_support::bevy_asset::UntypedHandle> {
                 let mut handles = vec![];
                 #asset_loading
                 handles
@@ -211,7 +211,7 @@ fn impl_asset_collection(
 
     let prepare_from_world = from_world_fields.iter().fold(
         quote!(),
-        |es, ident| quote_spanned! {ident.span() => #es ::bevy::ecs::world::FromWorld::from_world(world),},
+        |es, ident| quote_spanned! {ident.span() => #es ::bevy_asset_loader::derive_support::bevy_ecs::world::FromWorld::from_world(world),},
     );
 
     let mut asset_creation = assets.iter().fold(quote!(), |token_stream, asset| {
@@ -225,10 +225,10 @@ fn impl_asset_collection(
         tokens
     }));
     let create_function = quote! {
-        fn create(world: &mut ::bevy::ecs::world::World) -> Self {
+        fn create(world: &mut ::bevy_asset_loader::derive_support::bevy_ecs::world::World) -> Self {
             let from_world_fields = (#prepare_from_world);
             world.resource_scope(
-                |world, asset_keys: ::bevy::prelude::Mut<::bevy_asset_loader::dynamic_asset::DynamicAssets>| {
+                |world, asset_keys: ::bevy_asset_loader::derive_support::bevy_ecs::change_detection::Mut<::bevy_asset_loader::dynamic_asset::DynamicAssets>| {
                     #name {
                         #asset_creation
                     }
@@ -240,7 +240,7 @@ fn impl_asset_collection(
     let impl_asset_collection = quote! {
         #[automatically_derived]
         #[allow(unused_variables)]
-        impl AssetCollection for #name {
+        impl ::bevy_asset_loader::asset_collection::AssetCollection for #name {
             #create_function
 
             #load_function

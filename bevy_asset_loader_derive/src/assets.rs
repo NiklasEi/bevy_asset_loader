@@ -135,7 +135,7 @@ impl AssetField {
                 let field_ident = basic.field_ident.clone();
                 let asset_path = basic.asset_path.clone();
                 quote!(#token_stream #field_ident : {
-                    let asset_server = world.get_resource::<::bevy::asset::AssetServer>().expect("Cannot get AssetServer");
+                    let asset_server = world.get_resource::<::bevy_asset_loader::derive_support::bevy_asset::AssetServer>().expect("Cannot get AssetServer");
                     asset_server.load(#asset_path)
                 },)
             }
@@ -155,10 +155,10 @@ impl AssetField {
                 let label = Lit::Str(LitStr::new(&field_ident.to_string(), token_stream.span()));
 
                 quote!(#token_stream #field_ident : {
-                    use bevy::image::{ImageAddressMode, ImageFilterMode, ImageSampler, ImageSamplerDescriptor};
-                    let mut system_state = ::bevy::ecs::system::SystemState::<(
-                        ResMut<::bevy::prelude::Assets<::bevy::prelude::Image>>,
-                        Res<::bevy::prelude::AssetServer>,
+                    use ::bevy_asset_loader::derive_support::bevy_image::{ImageAddressMode, ImageFilterMode, ImageSampler, ImageSamplerDescriptor};
+                    let mut system_state = ::bevy_asset_loader::derive_support::bevy_ecs::system::SystemState::<(
+                        ::bevy_asset_loader::derive_support::bevy_ecs::change_detection::ResMut<::bevy_asset_loader::derive_support::bevy_asset::Assets<::bevy_asset_loader::derive_support::bevy_image::Image>>,
+                        ::bevy_asset_loader::derive_support::bevy_ecs::change_detection::Res<::bevy_asset_loader::derive_support::bevy_asset::AssetServer>,
                     )>::new(world);
                     let (mut images, asset_server) = system_state.get_mut(world).expect("Params should be valid");
 
@@ -210,7 +210,7 @@ impl AssetField {
                         Mapped::No => {
                             quote!(#token_stream #field_ident : {
                                     let handle = ::bevy_asset_loader::derive_support::folder_handle(world, #asset_path, #asset_type).unwrap_or_else(|| panic!("Folders are only supported when using a loading state. Consider using 'paths' for {}.{}.", #name, #field));
-                                    let folders = world.resource::<::bevy::asset::Assets<::bevy::asset::LoadedFolder>>();
+                                    let folders = world.resource::<::bevy_asset_loader::derive_support::bevy_asset::Assets<::bevy_asset_loader::derive_support::bevy_asset::LoadedFolder>>();
                                     folders.get(&handle)
                                         .unwrap()
                                         .handles
@@ -222,8 +222,8 @@ impl AssetField {
                         Mapped::Yes => {
                             quote!(#token_stream #field_ident : {
                                     let handle = ::bevy_asset_loader::derive_support::folder_handle(world, #asset_path, #asset_type).unwrap_or_else(|| panic!("Folders are only supported when using a loading state. Consider using 'paths' for {}.{}.", #name, #field));
-                                    let folders = world.resource::<::bevy::asset::Assets<::bevy::asset::LoadedFolder>>();
-                                    let mut folder_map = ::bevy::platform::collections::HashMap::default();
+                                    let folders = world.resource::<::bevy_asset_loader::derive_support::bevy_asset::Assets<::bevy_asset_loader::derive_support::bevy_asset::LoadedFolder>>();
+                                    let mut folder_map = ::bevy_asset_loader::derive_support::bevy_platform::collections::HashMap::default();
                                     let folder = &folders.get(&handle).unwrap().handles;
                                     for handle in folder {
                                         let path = handle.path().unwrap();
@@ -237,9 +237,9 @@ impl AssetField {
                     Typed::No => match mapped {
                         Mapped::No => {
                             quote!(#token_stream #field_ident : {
-                                    let mut system_state = ::bevy::ecs::system::SystemState::<(
-                                        Res<::bevy::asset::Assets<::bevy::asset::LoadedFolder>>,
-                                        Res<::bevy::prelude::AssetServer>,
+                                    let mut system_state = ::bevy_asset_loader::derive_support::bevy_ecs::system::SystemState::<(
+                                        ::bevy_asset_loader::derive_support::bevy_ecs::change_detection::Res<::bevy_asset_loader::derive_support::bevy_asset::Assets<::bevy_asset_loader::derive_support::bevy_asset::LoadedFolder>>,
+                                        ::bevy_asset_loader::derive_support::bevy_ecs::change_detection::Res<::bevy_asset_loader::derive_support::bevy_asset::AssetServer>,
                                     )>::new(world);
                                     let (folders, asset_server) = system_state.get(world).expect("Params should be valid");
                                     let handle = asset_server.get_handle(#asset_path).unwrap_or_else(|| panic!("Folders are only supported when using a loading state. Consider using 'paths' for {}.{}.", #name, #field));
@@ -248,12 +248,12 @@ impl AssetField {
                         }
                         Mapped::Yes => {
                             quote!(#token_stream #field_ident : {
-                                    let mut system_state = ::bevy::ecs::system::SystemState::<(
-                                        Res<::bevy::asset::Assets<::bevy::asset::LoadedFolder>>,
-                                        Res<::bevy::prelude::AssetServer>,
+                                    let mut system_state = ::bevy_asset_loader::derive_support::bevy_ecs::system::SystemState::<(
+                                        ::bevy_asset_loader::derive_support::bevy_ecs::change_detection::Res<::bevy_asset_loader::derive_support::bevy_asset::Assets<::bevy_asset_loader::derive_support::bevy_asset::LoadedFolder>>,
+                                        ::bevy_asset_loader::derive_support::bevy_ecs::change_detection::Res<::bevy_asset_loader::derive_support::bevy_asset::AssetServer>,
                                     )>::new(world);
                                     let (folders, asset_server) = system_state.get(world).expect("Params should be valid");
-                                    let mut folder_map = ::bevy::platform::collections::HashMap::default();
+                                    let mut folder_map = ::bevy_asset_loader::derive_support::bevy_platform::collections::HashMap::default();
                                     let handle = asset_server.get_handle(#asset_path).unwrap_or_else(|| panic!("Folders are only supported when using a loading state. Consider using 'paths' for {}.{}.", #name, #field));
                                     let folder = &folders.get(&handle).unwrap().handles;
                                     for handle in folder {
@@ -271,12 +271,12 @@ impl AssetField {
                 let field_ident = basic.field_ident.clone();
                 let asset_path = basic.asset_path.clone();
                 quote!(#token_stream #field_ident : {
-                    let mut system_state = ::bevy::ecs::system::SystemState::<(
-                        ResMut<::bevy::asset::Assets<::bevy::pbr::StandardMaterial>>,
-                        Res<::bevy::prelude::AssetServer>,
+                    let mut system_state = ::bevy_asset_loader::derive_support::bevy_ecs::system::SystemState::<(
+                        ::bevy_asset_loader::derive_support::bevy_ecs::change_detection::ResMut<::bevy_asset_loader::derive_support::bevy_asset::Assets<::bevy_asset_loader::derive_support::bevy_pbr::StandardMaterial>>,
+                        ::bevy_asset_loader::derive_support::bevy_ecs::change_detection::Res<::bevy_asset_loader::derive_support::bevy_asset::AssetServer>,
                     )>::new(world);
                     let (mut materials, asset_server) = system_state.get_mut(world).expect("Params should be valid");
-                    materials.add(::bevy::pbr::StandardMaterial::from(asset_server.load::<::bevy::image::Image>(#asset_path)))
+                    materials.add(::bevy_asset_loader::derive_support::bevy_pbr::StandardMaterial::from(asset_server.load::<::bevy_asset_loader::derive_support::bevy_image::Image>(#asset_path)))
                 },)
             }
             AssetField::TextureAtlasLayout(texture_atlas) => {
@@ -291,13 +291,13 @@ impl AssetField {
                 let offset_y = texture_atlas.offset_y;
 
                 quote!(#token_stream #field_ident : {
-                    let mut atlases = world.get_resource_mut::<::bevy::asset::Assets<::bevy::image::TextureAtlasLayout>>().expect("Cannot get Assets<TextureAtlasLayout>");
-                    atlases.add(TextureAtlasLayout::from_grid(
-                        ::bevy::math::UVec2::new(#tile_size_x, #tile_size_y),
+                    let mut atlases = world.get_resource_mut::<::bevy_asset_loader::derive_support::bevy_asset::Assets<::bevy_asset_loader::derive_support::bevy_image::TextureAtlasLayout>>().expect("Cannot get Assets<TextureAtlasLayout>");
+                    atlases.add(::bevy_asset_loader::derive_support::bevy_image::TextureAtlasLayout::from_grid(
+                        ::bevy_asset_loader::derive_support::bevy_math::UVec2::new(#tile_size_x, #tile_size_y),
                         #columns,
                         #rows,
-                        Some(::bevy::math::UVec2::new(#padding_x, #padding_y)),
-                        Some(::bevy::math::UVec2::new(#offset_x, #offset_y)),
+                        Some(::bevy_asset_loader::derive_support::bevy_math::UVec2::new(#padding_x, #padding_y)),
+                        Some(::bevy_asset_loader::derive_support::bevy_math::UVec2::new(#offset_x, #offset_y)),
                     ))
                 },)
             }
@@ -307,14 +307,14 @@ impl AssetField {
                 match typed {
                     Typed::Yes => match mapped {
                         Mapped::No => quote!(#token_stream #field_ident : {
-                                let asset_server = world.get_resource::<::bevy::asset::AssetServer>().expect("Cannot get AssetServer");
+                                let asset_server = world.get_resource::<::bevy_asset_loader::derive_support::bevy_asset::AssetServer>().expect("Cannot get AssetServer");
                                 vec![#(asset_server.load(#asset_paths)),*]
                             },),
                         Mapped::Yes => quote!(#token_stream #field_ident : {
-                                let asset_server = world.get_resource::<::bevy::asset::AssetServer>().expect("Cannot get AssetServer");
-                                let mut folder_map = ::bevy::platform::collections::HashMap::default();
+                                let asset_server = world.get_resource::<::bevy_asset_loader::derive_support::bevy_asset::AssetServer>().expect("Cannot get AssetServer");
+                                let mut folder_map = ::bevy_asset_loader::derive_support::bevy_platform::collections::HashMap::default();
                                 #(
-                                    let path = ::bevy::asset::AssetPath::try_parse(#asset_paths.as_ref()).expect("Failed to parse asset path");
+                                    let path = ::bevy_asset_loader::derive_support::bevy_asset::AssetPath::try_parse(#asset_paths.as_ref()).expect("Failed to parse asset path");
                                     let key = ::bevy_asset_loader::mapped::MapKey::from_asset_path(&path);
                                     folder_map.insert(key, asset_server.load(#asset_paths));
                                 )*
@@ -323,14 +323,14 @@ impl AssetField {
                     },
                     Typed::No => match mapped {
                         Mapped::No => quote!(#token_stream #field_ident : {
-                                let asset_server = world.get_resource::<::bevy::asset::AssetServer>().expect("Cannot get AssetServer");
+                                let asset_server = world.get_resource::<::bevy_asset_loader::derive_support::bevy_asset::AssetServer>().expect("Cannot get AssetServer");
                                 vec![#(asset_server.get_handle_untyped(#asset_paths).unwrap()),*]
                             },),
                         Mapped::Yes => quote!(#token_stream #field_ident : {
-                                let asset_server = world.get_resource::<::bevy::asset::AssetServer>().expect("Cannot get AssetServer");
-                                let mut folder_map = ::bevy::platform::collections::HashMap::default();
+                                let asset_server = world.get_resource::<::bevy_asset_loader::derive_support::bevy_asset::AssetServer>().expect("Cannot get AssetServer");
+                                let mut folder_map = ::bevy_asset_loader::derive_support::bevy_platform::collections::HashMap::default();
                                 #(
-                                    let path = ::bevy::asset::AssetPath::try_parse(#asset_paths.as_ref()).expect("Failed to parse asset path");
+                                    let path = ::bevy_asset_loader::derive_support::bevy_asset::AssetPath::try_parse(#asset_paths.as_ref()).expect("Failed to parse asset path");
                                     let key = ::bevy_asset_loader::mapped::MapKey::from_asset_path(&path);
                                     folder_map.insert(key, asset_server.get_handle_untyped(#asset_paths).unwrap());
                                 )*
@@ -465,8 +465,8 @@ impl AssetField {
         };
         quote!(
             ::bevy_asset_loader::prelude::DynamicAssetType::Collection(mut handles) => {
-                let asset_server = world.get_resource::<::bevy::asset::AssetServer>().expect("Cannot get AssetServer");
-                let mut folder_map = ::bevy::platform::collections::HashMap::default();
+                let asset_server = world.get_resource::<::bevy_asset_loader::derive_support::bevy_asset::AssetServer>().expect("Cannot get AssetServer");
+                let mut folder_map = ::bevy_asset_loader::derive_support::bevy_platform::collections::HashMap::default();
                 for handle in handles {
                     let path = handle.path().unwrap();
                     let key = ::bevy_asset_loader::mapped::MapKey::from_asset_path(path);
@@ -494,11 +494,17 @@ impl AssetField {
         let load = if typed {
             quote!(::bevy_asset_loader::derive_support::load_dynamic(world, dynamic_asset, |collection: &Self| &collection.#field_ident, stringify!(#field_ident)))
         } else {
-            quote!(dynamic_asset.load(&world.resource::<::bevy::prelude::AssetServer>().clone()))
+            quote!(
+                dynamic_asset.load(
+                    &world
+                        .resource::<::bevy_asset_loader::derive_support::bevy_asset::AssetServer>()
+                        .clone()
+                )
+            )
         };
         quote!(
             #token_stream
-            world.resource_scope(|world, dynamic_assets: ::bevy::prelude::Mut<::bevy_asset_loader::prelude::DynamicAssets>| {
+            world.resource_scope(|world, dynamic_assets: ::bevy_asset_loader::derive_support::bevy_ecs::change_detection::Mut<::bevy_asset_loader::prelude::DynamicAssets>| {
                 #get_asset
                 handles.extend(#load);
             });
@@ -523,7 +529,7 @@ impl AssetField {
                         handles.push(::bevy_asset_loader::derive_support::load_folder(world, |collection: &Self| &collection.#field_ident, stringify!(#field_ident), #asset_path));
                     }),
                     Typed::No => quote!(#token_stream {
-                        let asset_server = world.get_resource::<::bevy::prelude::AssetServer>().expect("Cannot get AssetServer");
+                        let asset_server = world.get_resource::<::bevy_asset_loader::derive_support::bevy_asset::AssetServer>().expect("Cannot get AssetServer");
                         handles.push(asset_server.load_folder(#asset_path).untyped());
                     }),
                 }
@@ -545,8 +551,8 @@ impl AssetField {
             | AssetField::Image(ImageAssetField { asset_path, .. }) => {
                 let asset_path = asset_path.clone();
                 quote!(#token_stream {
-                    let asset_server = world.get_resource::<::bevy::prelude::AssetServer>().expect("Cannot get AssetServer");
-                    handles.push(asset_server.load::<::bevy::image::Image>(#asset_path).untyped());
+                    let asset_server = world.get_resource::<::bevy_asset_loader::derive_support::bevy_asset::AssetServer>().expect("Cannot get AssetServer");
+                    handles.push(asset_server.load::<::bevy_asset_loader::derive_support::bevy_image::Image>(#asset_path).untyped());
                 })
             }
             AssetField::Files(assets, typed, _) => {
@@ -561,7 +567,7 @@ impl AssetField {
                     ),
                 };
                 quote!(#token_stream {
-                    let asset_server = world.get_resource::<::bevy::prelude::AssetServer>().expect("Cannot get AssetServer");
+                    let asset_server = world.get_resource::<::bevy_asset_loader::derive_support::bevy_asset::AssetServer>().expect("Cannot get AssetServer");
                     #load
                 })
             }

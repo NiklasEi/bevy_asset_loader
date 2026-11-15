@@ -3,6 +3,7 @@
 ## Unreleased
 - load asset collection fields with their declared handle type, so the loading state waits on the same assets the collection holds
   - custom `DynamicAsset` implementations can support typed loading through the new `load_as` and `build_as` methods
+- `#[derive(AssetCollection)]` no longer requires a dependency on the `bevy` crate
 
 ## v0.28.1 - 13.10.2026
 - drop the dependencies on `bevy_utils` and `bevy_log`

@@ -2,7 +2,8 @@
 resolver = "2"
 members = [
     "bevy_asset_loader",
-    "bevy_asset_loader_derive"
+    "bevy_asset_loader_derive",
+    "tests/no_bevy_dependency",
 ]
 
 [workspace.lints.clippy]
