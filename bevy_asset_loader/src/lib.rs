@@ -65,6 +65,8 @@
 ///
 /// And extension traits to insert said collections into your Bevy app or world
 pub mod asset_collection;
+#[doc(hidden)]
+pub mod derive_support;
 /// Types and infrastructure to load and use dynamic assets
 pub mod dynamic_asset;
 /// A game state responsible for loading assets
@@ -77,6 +79,7 @@ pub mod scene;
 #[cfg_attr(docsrs, doc(cfg(feature = "standard_dynamic_assets")))]
 #[cfg(feature = "standard_dynamic_assets")]
 pub mod standard_dynamic_asset;
+mod typed_folder;
 
 /// Most commonly used types
 pub mod prelude {
