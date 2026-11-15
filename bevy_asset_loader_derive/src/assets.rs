@@ -194,8 +194,8 @@ impl AssetField {
                 quote!(#token_stream #field_ident : {
                     use bevy::image::{ImageAddressMode, ImageFilterMode, ImageSampler, ImageSamplerDescriptor};
                     let mut system_state = ::bevy::ecs::system::SystemState::<(
-                        ResMut<::bevy::prelude::Assets<::bevy::prelude::Image>>,
-                        Res<::bevy::prelude::AssetServer>,
+                        ::bevy::prelude::ResMut<::bevy::prelude::Assets<::bevy::prelude::Image>>,
+                        ::bevy::prelude::Res<::bevy::prelude::AssetServer>,
                     )>::new(world);
                     let (mut images, asset_server) = system_state.get_mut(world).expect("Params should be valid");
 
@@ -246,8 +246,8 @@ impl AssetField {
                         Mapped::No => {
                             quote!(#token_stream #field_ident : {
                                     let mut system_state = ::bevy::ecs::system::SystemState::<(
-                                        Res<::bevy::asset::Assets<::bevy::asset::LoadedFolder>>,
-                                        Res<::bevy::prelude::AssetServer>,
+                                        ::bevy::prelude::Res<::bevy::asset::Assets<::bevy::asset::LoadedFolder>>,
+                                        ::bevy::prelude::Res<::bevy::prelude::AssetServer>,
                                     )>::new(world);
                                     let (folders, asset_server) = system_state.get(world).expect("Params should be valid");
                                     let handle = asset_server.get_handle(#asset_path).unwrap_or_else(|| panic!("Folders are only supported when using a loading state. Consider using 'paths' for {}.{}.", #name, #field));
@@ -262,8 +262,8 @@ impl AssetField {
                         Mapped::Yes => {
                             quote!(#token_stream #field_ident : {
                                     let mut system_state = ::bevy::ecs::system::SystemState::<(
-                                        Res<::bevy::asset::Assets<::bevy::asset::LoadedFolder>>,
-                                        Res<::bevy::prelude::AssetServer>,
+                                        ::bevy::prelude::Res<::bevy::asset::Assets<::bevy::asset::LoadedFolder>>,
+                                        ::bevy::prelude::Res<::bevy::prelude::AssetServer>,
                                     )>::new(world);
                                     let (folders, asset_server) = system_state.get(world).expect("Params should be valid");
                                     let mut folder_map = ::bevy::platform::collections::HashMap::default();
@@ -282,8 +282,8 @@ impl AssetField {
                         Mapped::No => {
                             quote!(#token_stream #field_ident : {
                                     let mut system_state = ::bevy::ecs::system::SystemState::<(
-                                        Res<::bevy::asset::Assets<::bevy::asset::LoadedFolder>>,
-                                        Res<::bevy::prelude::AssetServer>,
+                                        ::bevy::prelude::Res<::bevy::asset::Assets<::bevy::asset::LoadedFolder>>,
+                                        ::bevy::prelude::Res<::bevy::prelude::AssetServer>,
                                     )>::new(world);
                                     let (folders, asset_server) = system_state.get(world).expect("Params should be valid");
                                     let handle = asset_server.get_handle(#asset_path).unwrap_or_else(|| panic!("Folders are only supported when using a loading state. Consider using 'paths' for {}.{}.", #name, #field));
@@ -293,8 +293,8 @@ impl AssetField {
                         Mapped::Yes => {
                             quote!(#token_stream #field_ident : {
                                     let mut system_state = ::bevy::ecs::system::SystemState::<(
-                                        Res<::bevy::asset::Assets<::bevy::asset::LoadedFolder>>,
-                                        Res<::bevy::prelude::AssetServer>,
+                                        ::bevy::prelude::Res<::bevy::asset::Assets<::bevy::asset::LoadedFolder>>,
+                                        ::bevy::prelude::Res<::bevy::prelude::AssetServer>,
                                     )>::new(world);
                                     let (folders, asset_server) = system_state.get(world).expect("Params should be valid");
                                     let mut folder_map = ::bevy::platform::collections::HashMap::default();
@@ -316,8 +316,8 @@ impl AssetField {
                 let asset_path = basic.asset_path.clone();
                 quote!(#token_stream #field_ident : {
                     let mut system_state = ::bevy::ecs::system::SystemState::<(
-                        ResMut<::bevy::asset::Assets<::bevy::pbr::StandardMaterial>>,
-                        Res<::bevy::prelude::AssetServer>,
+                        ::bevy::prelude::ResMut<::bevy::asset::Assets<::bevy::pbr::StandardMaterial>>,
+                        ::bevy::prelude::Res<::bevy::prelude::AssetServer>,
                     )>::new(world);
                     let (mut materials, asset_server) = system_state.get_mut(world).expect("Params should be valid");
                     materials.add(::bevy::pbr::StandardMaterial::from(asset_server.load::<::bevy::image::Image>(#asset_path)))
@@ -336,7 +336,7 @@ impl AssetField {
 
                 quote!(#token_stream #field_ident : {
                     let mut atlases = world.get_resource_mut::<::bevy::asset::Assets<::bevy::image::TextureAtlasLayout>>().expect("Cannot get Assets<TextureAtlasLayout>");
-                    atlases.add(TextureAtlasLayout::from_grid(
+                    atlases.add(::bevy::image::TextureAtlasLayout::from_grid(
                         ::bevy::math::UVec2::new(#tile_size_x, #tile_size_y),
                         #columns,
                         #rows,
@@ -548,8 +548,8 @@ impl AssetField {
                 quote!(
                     #token_stream {
                         let mut system_state = ::bevy::ecs::system::SystemState::<(
-                            Res<::bevy::prelude::AssetServer>,
-                            Res<::bevy_asset_loader::prelude::DynamicAssets>,
+                            ::bevy::prelude::Res<::bevy::prelude::AssetServer>,
+                            ::bevy::prelude::Res<::bevy_asset_loader::prelude::DynamicAssets>,
                         )>::new(world);
                         let (asset_server, asset_keys) =
                             system_state.get(world).expect("Params should be valid");
@@ -565,8 +565,8 @@ impl AssetField {
                 quote!(
                     #token_stream {
                         let mut system_state = ::bevy::ecs::system::SystemState::<(
-                            Res<::bevy::prelude::AssetServer>,
-                            Res<::bevy_asset_loader::prelude::DynamicAssets>,
+                            ::bevy::prelude::Res<::bevy::prelude::AssetServer>,
+                            ::bevy::prelude::Res<::bevy_asset_loader::prelude::DynamicAssets>,
                         )>::new(world);
                         let (asset_server, asset_keys) =
                             system_state.get(world).expect("Params should be valid");

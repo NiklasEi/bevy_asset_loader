@@ -3,6 +3,7 @@
 ## Unreleased
 - load asset collection fields with their declared handle type, so the loading state waits on the same assets the collection holds
   - **Breaking**: asset types used in collections must be registered with the app (e.g. `app.init_asset::<T>()`); loading a collection with an unregistered asset type now panics instead of continuing to the failure state
+- the `AssetCollection` derive no longer requires `Res`, `ResMut` or `TextureAtlasLayout` to be in scope
 
 ## v0.28.1 - 13.10.2026
 - drop the dependencies on `bevy_utils` and `bevy_log`
