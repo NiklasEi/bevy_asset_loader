@@ -63,49 +63,12 @@ pub(crate) struct ImageAssetField {
 pub(crate) struct BasicAssetField {
     pub field_ident: Ident,
     pub asset_path: String,
-    pub asset_type: Option<syn::Type>,
 }
 
 #[derive(PartialEq, Debug)]
 pub(crate) struct MultipleFilesField {
     pub field_ident: Ident,
     pub asset_paths: Vec<String>,
-    pub asset_type: Option<syn::Type>,
-}
-
-fn asset_type_of(field_type: &syn::Type) -> Option<syn::Type> {
-    let syn::Type::Path(type_path) = field_type else {
-        return None;
-    };
-    let segment = type_path.path.segments.last()?;
-    match segment.ident.to_string().as_str() {
-        "Handle" => Some(first_type_argument(segment)?.clone()),
-        "Vec" => asset_type_of(first_type_argument(segment)?),
-        "HashMap" => asset_type_of(last_type_argument(segment)?),
-        _ => None,
-    }
-}
-
-fn type_arguments(segment: &syn::PathSegment) -> impl Iterator<Item = &syn::Type> {
-    let arguments = match &segment.arguments {
-        syn::PathArguments::AngleBracketed(arguments) => Some(&arguments.args),
-        _ => None,
-    };
-    arguments
-        .into_iter()
-        .flatten()
-        .filter_map(|argument| match argument {
-            syn::GenericArgument::Type(inner) => Some(inner),
-            _ => None,
-        })
-}
-
-fn first_type_argument(segment: &syn::PathSegment) -> Option<&syn::Type> {
-    type_arguments(segment).next()
-}
-
-fn last_type_argument(segment: &syn::PathSegment) -> Option<&syn::Type> {
-    type_arguments(segment).last()
 }
 
 #[derive(PartialEq, Debug)]
@@ -522,17 +485,10 @@ impl AssetField {
         match self {
             AssetField::Basic(asset) => {
                 let asset_path = asset.asset_path.clone();
-                let load = match &asset.asset_type {
-                    Some(asset_type) => {
-                        quote!(handles.push(asset_server.load::<#asset_type>(#asset_path).untyped());)
-                    }
-                    None => {
-                        quote!(handles.push(asset_server.load_builder().load_untyped(#asset_path).untyped());)
-                    }
-                };
+                let field_ident = asset.field_ident.clone();
                 quote!(#token_stream {
                     let asset_server = world.get_resource::<::bevy::prelude::AssetServer>().expect("Cannot get AssetServer");
-                    #load
+                    handles.push(::bevy_asset_loader::derive_support::load_as_field(|collection: &Self| &collection.#field_ident, asset_server, #asset_path));
                 })
             }
             AssetField::Folder(asset, _, _) => {
@@ -586,13 +542,14 @@ impl AssetField {
                     handles.push(asset_server.load::<::bevy::image::Image>(#asset_path).untyped());
                 })
             }
-            AssetField::Files(assets, _, _) => {
+            AssetField::Files(assets, typed, _) => {
                 let asset_paths = assets.asset_paths.clone();
-                let load = match &assets.asset_type {
-                    Some(asset_type) => quote!(
-                        #(handles.push(asset_server.load::<#asset_type>(#asset_paths).untyped()));*
+                let field_ident = assets.field_ident.clone();
+                let load = match typed {
+                    Typed::Yes => quote!(
+                        #(handles.push(::bevy_asset_loader::derive_support::load_as_field(|collection: &Self| &collection.#field_ident, asset_server, #asset_paths)));*
                     ),
-                    None => quote!(
+                    Typed::No => quote!(
                         #(handles.push(asset_server.load_builder().load_untyped(#asset_paths).untyped()));*
                     ),
                 };
@@ -608,7 +565,6 @@ impl AssetField {
 #[derive(Default, Debug)]
 pub(crate) struct AssetBuilder {
     pub field_ident: Option<Ident>,
-    pub field_type: Option<syn::Type>,
     pub asset_path: Option<String>,
     pub asset_paths: Option<Vec<String>>,
     pub is_standard_material: bool,
@@ -699,7 +655,6 @@ impl AssetBuilder {
         if self.asset_path.is_some() && self.asset_paths.is_some() {
             return Err(vec![ParseFieldError::PathAndPathsAreExclusive]);
         }
-        let asset_type = self.field_type.as_ref().and_then(asset_type_of);
         if let Some(key) = self.key {
             return if self.is_optional {
                 if self.is_collection {
@@ -738,7 +693,6 @@ impl AssetBuilder {
                 MultipleFilesField {
                     field_ident: self.field_ident.unwrap(),
                     asset_paths,
-                    asset_type: asset_type.clone(),
                 },
                 self.is_typed.into(),
                 self.is_mapped.into(),
@@ -749,7 +703,6 @@ impl AssetBuilder {
                 BasicAssetField {
                     field_ident: self.field_ident.unwrap(),
                     asset_path: self.asset_path.unwrap(),
-                    asset_type: asset_type.clone(),
                 },
                 self.is_typed.into(),
                 self.is_mapped.into(),
@@ -767,7 +720,6 @@ impl AssetBuilder {
         let asset = BasicAssetField {
             field_ident: self.field_ident.unwrap(),
             asset_path: self.asset_path.unwrap(),
-            asset_type,
         };
         if self.is_standard_material {
             return Ok(AssetField::StandardMaterial(asset));
@@ -796,7 +748,6 @@ mod test {
             AssetField::Basic(BasicAssetField {
                 field_ident: Ident::new("test", Span::call_site()),
                 asset_path: "some/image.png".to_owned(),
-                asset_type: None
             })
         );
     }
@@ -816,7 +767,6 @@ mod test {
             AssetField::StandardMaterial(BasicAssetField {
                 field_ident: Ident::new("test", Span::call_site()),
                 asset_path: "some/image.png".to_owned(),
-                asset_type: None
             })
         );
     }
@@ -837,7 +787,6 @@ mod test {
                 BasicAssetField {
                     field_ident: Ident::new("test", Span::call_site()),
                     asset_path: "some/folder".to_owned(),
-                    asset_type: None
                 },
                 Typed::No,
                 Mapped::No
@@ -859,7 +808,6 @@ mod test {
                 BasicAssetField {
                     field_ident: Ident::new("test", Span::call_site()),
                     asset_path: "some/folder".to_owned(),
-                    asset_type: None
                 },
                 Typed::Yes,
                 Mapped::No
@@ -881,7 +829,6 @@ mod test {
                 BasicAssetField {
                     field_ident: Ident::new("test", Span::call_site()),
                     asset_path: "some/folder".to_owned(),
-                    asset_type: None
                 },
                 Typed::No,
                 Mapped::Yes
@@ -904,7 +851,6 @@ mod test {
                 BasicAssetField {
                     field_ident: Ident::new("test", Span::call_site()),
                     asset_path: "some/folder".to_owned(),
-                    asset_type: None
                 },
                 Typed::Yes,
                 Mapped::Yes
@@ -963,7 +909,6 @@ mod test {
                 MultipleFilesField {
                     field_ident: Ident::new("test", Span::call_site()),
                     asset_paths: vec!["some.asset".to_owned()],
-                    asset_type: None
                 },
                 Typed::No,
                 Mapped::No
@@ -984,57 +929,10 @@ mod test {
                 MultipleFilesField {
                     field_ident: Ident::new("test", Span::call_site()),
                     asset_paths: vec!["some.asset".to_owned()],
-                    asset_type: None
                 },
                 Typed::Yes,
                 Mapped::No
             )
-        );
-    }
-
-    #[test]
-    fn asset_type_of() {
-        use syn::parse_quote;
-
-        assert_eq!(
-            super::asset_type_of(&parse_quote!(Handle<SomeAsset>)),
-            Some(parse_quote!(SomeAsset))
-        );
-        assert_eq!(
-            super::asset_type_of(&parse_quote!(Vec<Handle<SomeAsset>>)),
-            Some(parse_quote!(SomeAsset))
-        );
-
-        assert_eq!(
-            super::asset_type_of(&parse_quote!(HashMap<String, Handle<SomeAsset>>)),
-            Some(parse_quote!(SomeAsset))
-        );
-        assert_eq!(
-            super::asset_type_of(&parse_quote!(
-                ::bevy::platform::collections::HashMap<AssetFileName, Handle<SomeAsset>>
-            )),
-            Some(parse_quote!(SomeAsset))
-        );
-        assert!(super::asset_type_of(&parse_quote!(Vec<UntypedHandle>)).is_none());
-        assert!(super::asset_type_of(&parse_quote!(HashMap<String, UntypedHandle>)).is_none());
-
-        assert!(super::asset_type_of(&parse_quote!(SomeAsset)).is_none());
-        assert!(super::asset_type_of(&parse_quote!(Option<Handle<SomeAsset>>)).is_none());
-
-        let builder = AssetBuilder {
-            field_ident: Some(Ident::new("test", Span::call_site())),
-            field_type: Some(parse_quote!(Handle<SomeAsset>)),
-            asset_path: Some("some/image.png".to_owned()),
-            ..Default::default()
-        };
-        let asset = builder.build().expect("This should be a valid BasicAsset");
-        assert_eq!(
-            asset,
-            AssetField::Basic(BasicAssetField {
-                field_ident: Ident::new("test", Span::call_site()),
-                asset_path: "some/image.png".to_owned(),
-                asset_type: Some(parse_quote!(SomeAsset)),
-            })
         );
     }
 

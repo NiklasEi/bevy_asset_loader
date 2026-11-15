@@ -48,7 +48,11 @@ struct MyAssets {
     list: Vec<Handle<RasterAsset>>,
     #[asset(paths("slow/mapped.slow"), collection(typed, mapped))]
     mapped: HashMap<String, Handle<RasterAsset>>,
+    #[asset(path = "slow/alias.slow")]
+    aliased: RasterHandle,
 }
+
+type RasterHandle = Handle<RasterAsset>;
 
 #[allow(dead_code)]
 #[derive(Resource)]
@@ -67,6 +71,9 @@ impl FromWorld for Resolved {
         loaded
             .get(&assets.rendered)
             .expect("the collection handle must resolve in its typed store when loading completes");
+        loaded.get(&assets.aliased).expect(
+            "handles behind a type alias must resolve in their typed store when loading completes",
+        );
         for handle in &assets.list {
             loaded.get(handle).expect(
                 "vec collection handles must resolve in their typed store when loading completes",

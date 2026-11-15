@@ -65,6 +65,8 @@
 ///
 /// And extension traits to insert said collections into your Bevy app or world
 pub mod asset_collection;
+#[doc(hidden)]
+pub mod derive_support;
 /// Types and infrastructure to load and use dynamic assets
 pub mod dynamic_asset;
 /// A game state responsible for loading assets
