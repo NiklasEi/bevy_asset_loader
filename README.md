@@ -359,7 +359,7 @@ struct MyAssets {
 
 Just like Bevy's `load_folder`, this will also recursively load sub folders.
 
-If all assets in the folder have the same (known) type, you can load the folder as `Vec<Handle<T>>` by setting `typed` in the `collection` attribute. Don't forget to adapt the type of the struct field:
+To load the folder as `Vec<Handle<T>>`, set `typed` in the `collection` attribute and adapt the type of the struct field. Every file is then loaded as `T`, even if another loader is the default for its file extension. Files that no loader can load as `T` are skipped. Sub folders are included here too:
 
 ```rust
 use bevy::prelude::*;
