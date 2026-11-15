@@ -79,6 +79,7 @@ pub mod scene;
 #[cfg_attr(docsrs, doc(cfg(feature = "standard_dynamic_assets")))]
 #[cfg(feature = "standard_dynamic_assets")]
 pub mod standard_dynamic_asset;
+mod typed_folder;
 
 /// Most commonly used types
 pub mod prelude {

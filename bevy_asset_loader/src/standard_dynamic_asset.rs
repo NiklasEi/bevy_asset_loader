@@ -1,6 +1,6 @@
 use crate::dynamic_asset::{DynamicAsset, DynamicAssetType};
 use crate::dynamic_asset::{DynamicAssetCollection, DynamicAssets};
-use bevy_asset::{Asset, AssetServer, Assets, LoadedFolder, UntypedHandle};
+use bevy_asset::{Asset, AssetPath, AssetServer, Assets, LoadedFolder, UntypedHandle};
 use bevy_ecs::{
     change_detection::Res,
     system::{Command, SystemState},
@@ -9,6 +9,7 @@ use bevy_ecs::{
 use bevy_platform::collections::HashMap;
 use bevy_reflect::TypePath;
 use serde::{Deserialize, Serialize};
+use std::any::TypeId;
 
 #[cfg(feature = "2d")]
 use bevy_image::TextureAtlasLayout;
@@ -290,6 +291,64 @@ impl DynamicAsset for StandardDynamicAsset {
             }
         }
     }
+    fn load_as(&self, world: &mut World, asset_type: TypeId) -> Vec<UntypedHandle> {
+        let asset_server = world.resource::<AssetServer>().clone();
+        match self {
+            StandardDynamicAsset::File { path } => {
+                vec![asset_server.load_builder().load_erased(asset_type, path)]
+            }
+            StandardDynamicAsset::Files { paths } => paths
+                .iter()
+                .map(|path| asset_server.load_builder().load_erased(asset_type, path))
+                .collect(),
+            StandardDynamicAsset::Folder { path } => {
+                vec![crate::typed_folder::load_folder_as(world, path, asset_type).untyped()]
+            }
+            // These variants decide their asset type themselves
+            #[allow(unreachable_patterns)]
+            _ => self.load(&asset_server),
+        }
+    }
+
+    fn build_as(
+        &self,
+        world: &mut World,
+        asset_type: TypeId,
+    ) -> Result<DynamicAssetType, anyhow::Error> {
+        let typed_handle = |asset_server: &AssetServer, path: &String| {
+            asset_server
+                .get_path_and_type_id_handle(&AssetPath::from(path.clone()), asset_type)
+                .ok_or_else(|| anyhow::anyhow!("No handle for '{path}' with the requested asset type. Was it loaded with `load_as`?"))
+        };
+        match self {
+            StandardDynamicAsset::File { path } => {
+                let asset_server = world.resource::<AssetServer>();
+                Ok(DynamicAssetType::Single(typed_handle(asset_server, path)?))
+            }
+            StandardDynamicAsset::Files { paths } => {
+                let asset_server = world.resource::<AssetServer>();
+                Ok(DynamicAssetType::Collection(
+                    paths
+                        .iter()
+                        .map(|path| typed_handle(asset_server, path))
+                        .collect::<Result<_, _>>()?,
+                ))
+            }
+            StandardDynamicAsset::Folder { path } => {
+                let handle = crate::typed_folder::get_folder_as(world, path, asset_type)
+                    .ok_or_else(|| {
+                        anyhow::anyhow!("The folder '{path}' was not loaded with `load_as`")
+                    })?;
+                let folders = world.resource::<Assets<LoadedFolder>>();
+                let folder = folders
+                    .get(&handle)
+                    .ok_or_else(|| anyhow::anyhow!("The folder '{path}' is not loaded"))?;
+                Ok(DynamicAssetType::Collection(folder.handles.to_vec()))
+            }
+            #[allow(unreachable_patterns)]
+            _ => self.build(world),
+        }
+    }
 }
 
 #[cfg(any(feature = "3d", feature = "2d"))]
@@ -371,6 +430,29 @@ impl DynamicAsset for Vec<StandardDynamicAsset> {
 
         for asset in self {
             match asset.build(world)? {
+                DynamicAssetType::Single(handle) => all_handles.push(handle),
+                DynamicAssetType::Collection(handles) => all_handles.extend(handles),
+            }
+        }
+
+        Ok(DynamicAssetType::Collection(all_handles))
+    }
+
+    fn load_as(&self, world: &mut World, asset_type: TypeId) -> Vec<UntypedHandle> {
+        self.iter()
+            .flat_map(|asset| asset.load_as(world, asset_type))
+            .collect()
+    }
+
+    fn build_as(
+        &self,
+        world: &mut World,
+        asset_type: TypeId,
+    ) -> Result<DynamicAssetType, anyhow::Error> {
+        let mut all_handles = vec![];
+
+        for asset in self {
+            match asset.build_as(world, asset_type)? {
                 DynamicAssetType::Single(handle) => all_handles.push(handle),
                 DynamicAssetType::Collection(handles) => all_handles.extend(handles),
             }

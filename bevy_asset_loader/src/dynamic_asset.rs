@@ -24,6 +24,32 @@ pub trait DynamicAsset: Debug + Send + Sync {
 
     /// Return the handle(s) defining this asset
     fn build(&self, world: &mut World) -> Result<DynamicAssetType, anyhow::Error>;
+
+    /// Like [`load`](Self::load), but for an asset collection field that holds handles of the
+    /// asset type `asset_type`.
+    ///
+    /// Implement this when your dynamic asset loads files by path. Loading them as `asset_type`
+    /// picks the loader for that type, even if another loader is registered for the same file
+    /// extension. The default implementation ignores the type and calls [`load`](Self::load).
+    ///
+    /// If you implement this, also implement [`build_as`](Self::build_as).
+    fn load_as(&self, world: &mut World, asset_type: TypeId) -> Vec<UntypedHandle> {
+        let _ = asset_type;
+        let asset_server = world.resource::<AssetServer>().clone();
+        self.load(&asset_server)
+    }
+
+    /// Like [`build`](Self::build), but for assets loaded with [`load_as`](Self::load_as).
+    ///
+    /// The default implementation ignores the type and calls [`build`](Self::build).
+    fn build_as(
+        &self,
+        world: &mut World,
+        asset_type: TypeId,
+    ) -> Result<DynamicAssetType, anyhow::Error> {
+        let _ = asset_type;
+        self.build(world)
+    }
 }
 
 /// Resource to dynamically resolve keys to assets.
