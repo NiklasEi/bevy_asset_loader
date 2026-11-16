@@ -1,9 +1,9 @@
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 
-/// This example shows how to load an asset collection with arrays of dynamic assets `ron` file.
+/// This example shows how to load arrays of dynamic assets from a `ron` file.
 ///
-/// The assets loaded in this example are defined in `assets/dynamic_asset_arrays.asset_arrays.ron`
+/// The assets loaded in this example are defined in `assets/dynamic_asset_arrays.assets.ron`.
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
@@ -11,8 +11,8 @@ fn main() {
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading)
                 .continue_to_state(MyStates::Next)
-                .with_dynamic_assets_file::<StandardDynamicAssetArrayCollection>(
-                    "dynamic_asset_arrays.asset_arrays.ron",
+                .with_dynamic_assets_file::<StandardDynamicAssetCollection>(
+                    "dynamic_asset_arrays.assets.ron",
                 )
                 .load_collection::<ImageAssets>(),
         )
@@ -24,13 +24,15 @@ fn main() {
         .run();
 }
 
-// The keys used here are defined in `assets/dynamic_asset_arrays.assets`
+// The keys used here are defined in `assets/dynamic_asset_arrays.assets.ron`
 #[derive(AssetCollection, Resource)]
 struct ImageAssets {
     #[asset(key = "layouts", collection(typed))]
     atlas_layout: Vec<Handle<TextureAtlasLayout>>,
     #[asset(key = "mixed", collection)]
     mixed_handlers: Vec<UntypedHandle>,
+    #[asset(key = "tree")]
+    tree: Handle<Image>,
 }
 
 fn spawn_player_and_tree(mut commands: Commands, image_assets: Res<ImageAssets>) {
@@ -51,6 +53,10 @@ fn spawn_player_and_tree(mut commands: Commands, image_assets: Res<ImageAssets>)
     commands.spawn((
         Sprite::from_image(image_assets.mixed_handlers[2].clone().typed()),
         Transform::from_translation(Vec3::new(50., -90., 1.)),
+    ));
+    commands.spawn((
+        Sprite::from_image(image_assets.tree.clone()),
+        Transform::from_translation(Vec3::new(-150., -90., 1.)),
     ));
 }
 
