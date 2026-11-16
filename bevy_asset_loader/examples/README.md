@@ -21,7 +21,7 @@ with `cargo run --example <example>`.
 | [`sub_state.rs`](sub_state.rs)                             | How to use a sub state                                                   |
 | [`two_collections.rs`](two_collections.rs)                 | Load multiple asset collections                                          |
 | [`asset_maps.rs`](asset_maps.rs)                           | Shows how to use different types as keys in asset maps                   |
-| [`dynamic_asset_arrays.rs`](dynamic_asset_arrays.rs)       | Defines dynamic assets in arrays next to single dynamic assets          |
+| [`dynamic_asset_arrays.rs`](dynamic_asset_arrays.rs)       | Defines arrays and maps of dynamic assets next to single dynamic assets |
 
 ## Credits
 

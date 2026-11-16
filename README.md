@@ -469,7 +469,7 @@ Instead of `Files`, a key in a dynamic assets file can also hold an array of dyn
 })
 ```
 
-Arrays and single dynamic assets can be mixed in the same file. See the [dynamic_asset_arrays](/bevy_asset_loader/examples/dynamic_asset_arrays.rs) example.
+Arrays, maps (see [Collections as maps](#collections-as-maps)) and single dynamic assets can be mixed in the same file. See the [dynamic_asset_arrays](/bevy_asset_loader/examples/dynamic_asset_arrays.rs) example.
 
 ### Collections as maps
 
@@ -491,6 +491,43 @@ struct MyAssets {
     dynamic_files_untyped: HashMap<String, UntypedHandle>,
     #[asset(key = "files_typed", collection(typed, mapped))]
     dynamic_files_typed: HashMap<String, Handle<Image>>,
+}
+```
+
+The keys of dynamic folders and files are derived from the asset paths. If you want to choose the keys yourself, define a map in your dynamic assets file.
+
+```ron
+({
+    "characters": {
+        "player": Image (
+            path: "images/player.png",
+        ),
+        "zombie": Image (
+            path: "images/zombie.png",
+        ),
+    },
+    "animations": {
+        "walk": TextureAtlasLayout (
+            tile_size_x: 96,
+            tile_size_y: 99,
+            columns: 8,
+            rows: 1,
+        ),
+    },
+})
+```
+
+```rust
+use bevy::prelude::*;
+use bevy::platform::collections::HashMap;
+use bevy_asset_loader::asset_collection::AssetCollection;
+
+#[derive(AssetCollection, Resource)]
+struct MyAssets {
+    #[asset(key = "characters", collection(typed, mapped))]
+    characters: HashMap<String, Handle<Image>>,
+    #[asset(key = "animations", collection(typed, mapped))]
+    animations: HashMap<String, Handle<TextureAtlasLayout>>,
 }
 ```
 

@@ -17,6 +17,14 @@ use bevy_asset::AssetPath;
 pub trait MapKey {
     /// Creates the key from the path of the asset.
     fn from_asset_path(path: &AssetPath) -> Self;
+
+    /// Creates the key from a key of a dynamic asset map.
+    fn from_dynamic_key(key: &str) -> Self
+    where
+        Self: Sized,
+    {
+        Self::from_asset_path(&AssetPath::parse(key))
+    }
 }
 
 /// Implements extra traits and methods for the key types.
@@ -78,6 +86,11 @@ impl_map_key_extras!(AssetFileName);
 
 impl MapKey for AssetFileName {
     #[inline]
+    fn from_dynamic_key(key: &str) -> Self {
+        Self(key.into())
+    }
+
+    #[inline]
     fn from_asset_path(path: &AssetPath) -> Self {
         Self(
             path.path()
@@ -113,6 +126,11 @@ impl_map_key_extras!(AssetFileStem);
 
 impl MapKey for AssetFileStem {
     #[inline]
+    fn from_dynamic_key(key: &str) -> Self {
+        Self(key.into())
+    }
+
+    #[inline]
     fn from_asset_path(path: &AssetPath) -> Self {
         Self(
             path.path()
@@ -140,12 +158,22 @@ impl_map_key_extras!(AssetLabel);
 
 impl MapKey for AssetLabel {
     #[inline]
+    fn from_dynamic_key(key: &str) -> Self {
+        Self(key.into())
+    }
+
+    #[inline]
     fn from_asset_path(path: &AssetPath) -> Self {
         Self(path.label().expect("Asset does not have a label").into())
     }
 }
 
 impl MapKey for String {
+    #[inline]
+    fn from_dynamic_key(key: &str) -> Self {
+        key.into()
+    }
+
     #[inline]
     fn from_asset_path(path: &AssetPath) -> Self {
         path_slash::PathExt::to_slash(path.path())
@@ -155,6 +183,11 @@ impl MapKey for String {
 }
 
 impl MapKey for Box<str> {
+    #[inline]
+    fn from_dynamic_key(key: &str) -> Self {
+        key.into()
+    }
+
     #[inline]
     fn from_asset_path(path: &AssetPath) -> Self {
         path_slash::PathExt::to_slash(path.path())

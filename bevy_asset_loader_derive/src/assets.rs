@@ -474,6 +474,9 @@ impl AssetField {
                 }
                 folder_map
             },
+            ::bevy_asset_loader::prelude::DynamicAssetType::Map(handles) => {
+                handles.into_iter().map(|(key, handle)| (::bevy_asset_loader::mapped::MapKey::from_dynamic_key(&key), #handle)).collect()
+            },
             result => panic!("The dynamic asset '{}' cannot be created. The asset collection {} expected it to resolve to `Collection(handle)`, but {asset:?} resolves to {result:?}", #asset_key, #name),
         )
     }

@@ -1,7 +1,8 @@
+use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 
-/// This example shows how to load arrays of dynamic assets from a `ron` file.
+/// This example shows how to load arrays and maps of dynamic assets from a `ron` file.
 ///
 /// The assets loaded in this example are defined in `assets/dynamic_asset_arrays.assets.ron`.
 fn main() {
@@ -33,6 +34,8 @@ struct ImageAssets {
     mixed_handlers: Vec<UntypedHandle>,
     #[asset(key = "tree")]
     tree: Handle<Image>,
+    #[asset(key = "characters", collection(mapped, typed))]
+    characters: HashMap<String, Handle<Image>>,
 }
 
 fn spawn_player_and_tree(mut commands: Commands, image_assets: Res<ImageAssets>) {
@@ -57,6 +60,14 @@ fn spawn_player_and_tree(mut commands: Commands, image_assets: Res<ImageAssets>)
     commands.spawn((
         Sprite::from_image(image_assets.tree.clone()),
         Transform::from_translation(Vec3::new(-150., -90., 1.)),
+    ));
+    commands.spawn((
+        Sprite::from_image(image_assets.characters["player"].clone()),
+        Transform::from_translation(Vec3::new(-150., 90., 1.)),
+    ));
+    commands.spawn((
+        Sprite::from_image(image_assets.characters["zombie"].clone()),
+        Transform::from_translation(Vec3::new(-250., 90., 1.)),
     ));
 }
 

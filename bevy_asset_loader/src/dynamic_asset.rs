@@ -14,6 +14,8 @@ pub enum DynamicAssetType {
     Single(UntypedHandle),
     /// Dynamic asset that is defined by multiple handles
     Collection(Vec<UntypedHandle>),
+    /// Dynamic asset that is defined by multiple handles with a key each
+    Map(HashMap<String, UntypedHandle>),
 }
 
 /// Any type implementing this trait can be assigned to asset keys as part of a dynamic

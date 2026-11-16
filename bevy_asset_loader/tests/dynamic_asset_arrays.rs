@@ -1,6 +1,7 @@
 #![cfg(all(feature = "2d", feature = "standard_dynamic_assets"))]
 
 use bevy::app::AppExit;
+use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
 use bevy::state::app::StatesPlugin;
 use bevy_asset_loader::prelude::*;
@@ -13,6 +14,10 @@ const MIXED: &str = r#"({
         TextureAtlasLayout(tile_size_x: 24, tile_size_y: 32, columns: 12, rows: 1),
         TextureAtlasLayout(tile_size_x: 24, tile_size_y: 32, columns: 8, rows: 1),
     ],
+    "named": {
+        "walk": TextureAtlasLayout(tile_size_x: 24, tile_size_y: 32, columns: 3, rows: 1),
+        "idle": TextureAtlasLayout(tile_size_x: 24, tile_size_y: 32, columns: 5, rows: 1),
+    },
 })"#;
 
 // A file written for the removed `StandardDynamicAssetArrayCollection`
@@ -30,9 +35,16 @@ const INVALID: &str = r#"({
     ],
 })"#;
 
+const FOLDER_IN_MAP: &str = r#"({
+    "named": {
+        "walk": TextureAtlasLayout(tile_size_x: 24, tile_size_y: 32, columns: 3, rows: 1),
+        "all": Folder(path: "layouts"),
+    },
+})"#;
+
 #[test]
-fn single_dynamic_assets_and_arrays() {
-    let assets = asset_dir("single_dynamic_assets_and_arrays");
+fn single_dynamic_assets_arrays_and_maps() {
+    let assets = asset_dir("single_dynamic_assets_arrays_and_maps");
     let mut app = app(&assets);
     app.add_loading_state(
         LoadingState::new(MyStates::Load)
@@ -51,13 +63,22 @@ fn single_dynamic_assets_and_arrays() {
 
 #[test]
 fn invalid_entry_in_array_fails_loading() {
-    let assets = asset_dir("invalid_entry_in_array_fails_loading");
+    expect_failure("invalid_entry_in_array_fails_loading", "invalid.assets.ron");
+}
+
+#[test]
+fn folder_in_map_fails_loading() {
+    expect_failure("folder_in_map_fails_loading", "folder_in_map.assets.ron");
+}
+
+fn expect_failure(test: &str, file: &str) {
+    let assets = asset_dir(test);
     let mut app = app(&assets);
     app.add_loading_state(
         LoadingState::new(MyStates::Load)
             .continue_to_state(MyStates::Next)
             .on_failure_continue_to_state(MyStates::Failed)
-            .with_dynamic_assets_file::<StandardDynamicAssetCollection>("invalid.assets.ron")
+            .with_dynamic_assets_file::<StandardDynamicAssetCollection>(file)
             .load_collection::<Layouts>(),
     )
     .add_systems(OnEnter(MyStates::Next), || -> () {
@@ -78,6 +99,7 @@ fn asset_dir(test: &str) -> PathBuf {
     std::fs::write(dir.join("mixed.assets.ron"), MIXED).unwrap();
     std::fs::write(dir.join("legacy.asset_arrays.ron"), LEGACY_ARRAYS).unwrap();
     std::fs::write(dir.join("invalid.assets.ron"), INVALID).unwrap();
+    std::fs::write(dir.join("folder_in_map.assets.ron"), FOLDER_IN_MAP).unwrap();
     dir
 }
 
@@ -105,6 +127,10 @@ struct Layouts {
     jumps: Vec<Handle<TextureAtlasLayout>>,
     #[asset(key = "runs", collection(typed))]
     runs: Vec<Handle<TextureAtlasLayout>>,
+    #[asset(key = "named", collection(mapped, typed))]
+    named: HashMap<String, Handle<TextureAtlasLayout>>,
+    #[asset(key = "named", collection(mapped))]
+    named_untyped: HashMap<AssetFileStem, UntypedHandle>,
 }
 
 fn check_layouts(
@@ -122,6 +148,11 @@ fn check_layouts(
         collection.runs.iter().map(tiles).collect::<Vec<_>>(),
         vec![6, 2]
     );
+    assert_eq!(collection.named.len(), 2);
+    assert_eq!(tiles(&collection.named["walk"]), 3);
+    assert_eq!(tiles(&collection.named["idle"]), 5);
+    assert_eq!(collection.named_untyped.len(), 2);
+    assert_eq!(tiles(&collection.named_untyped["idle"].clone().typed()), 5);
     exit.write(AppExit::Success);
 }
 
