@@ -114,6 +114,7 @@ pub(crate) fn check_dynamic_asset_collections<
 
 pub(crate) fn resume_to_loading_asset_collections<S: FreelyMutableState>(
     state: Res<State<S>>,
+    mut next_state: ResMut<NextState<S>>,
     mut loading_state: ResMut<NextState<InternalLoadingState<S>>>,
     asset_loader_config: Res<AssetLoaderConfiguration<S>>,
 ) {
@@ -121,6 +122,12 @@ pub(crate) fn resume_to_loading_asset_collections<S: FreelyMutableState>(
         .state_configurations
         .get(state.get())
         .expect("No asset loader configuration for current state");
+    if config.loading_failed {
+        if let Some(failure) = config.failure.clone() {
+            next_state.set(failure);
+        }
+        return;
+    }
     if config.loading_dynamic_collections.is_empty() {
         debug!("No dynamic asset collection file left loading. Resuming to 'LoadingAssets'");
         loading_state.set(InternalLoadingState::LoadingAssets);
