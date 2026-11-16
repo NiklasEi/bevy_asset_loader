@@ -11,6 +11,17 @@ use bevy_reflect::TypePath;
 
 use crate::dynamic_asset::{DynamicAsset, DynamicAssetType};
 
+// The generated code names Bevy types through these re-exports
+pub use bevy_asset;
+pub use bevy_ecs;
+#[cfg(any(feature = "2d", feature = "3d"))]
+pub use bevy_image;
+#[cfg(feature = "2d")]
+pub use bevy_math;
+#[cfg(feature = "3d")]
+pub use bevy_pbr;
+pub use bevy_platform;
+
 /// A collection field type that holds handles of a single asset type.
 pub trait TypedHandleField {
     /// The asset type behind the field's handles.

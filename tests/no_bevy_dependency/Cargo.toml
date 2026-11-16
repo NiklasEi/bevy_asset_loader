@@ -1,0 +1,17 @@
+[package]
+name = "no_bevy_dependency"
+version = "0.0.0"
+edition = "2024"
+publish = false
+description = "Compile test: `#[derive(AssetCollection)]` works without a dependency on the `bevy` crate"
+
+[dependencies]
+bevy_asset_loader = { path = "../../bevy_asset_loader", features = ["2d", "3d"] }
+bevy_asset = { version = "0.20.0", default-features = false }
+bevy_ecs = { version = "0.20.0", default-features = false }
+bevy_image = { version = "0.20.0", default-features = false }
+bevy_pbr = { version = "0.20.0", default-features = false }
+bevy_platform = { version = "0.20.0", default-features = false }
+
+[lints]
+workspace = true

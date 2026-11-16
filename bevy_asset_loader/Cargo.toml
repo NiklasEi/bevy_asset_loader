@@ -6,7 +6,6 @@ edition = "2024"
 license = "MIT OR Apache-2.0"
 description = "Bevy plugin for asset loading"
 repository = "https://github.com/NiklasEi/bevy_asset_loader"
-homepage = "https://github.com/NiklasEi/bevy_asset_loader"
 documentation = "https://docs.rs/bevy_asset_loader"
 keywords = ["bevy", "gamedev", "asset", "assets"]
 categories = ["game-development"]
@@ -18,15 +17,12 @@ readme = "README.md"
 2d = [
     "dep:bevy_image",
     "dep:bevy_math",
-    "dep:bevy_render",
-    "dep:bevy_sprite",
     "bevy_asset_loader_derive/2d",
 ]
 # This feature adds support for bevy's StandardMaterial assets
 3d = [
     "dep:bevy_image",
     "dep:bevy_pbr",
-    "dep:bevy_render",
     "bevy_asset_loader_derive/3d",
 ]
 standard_dynamic_assets = ["dep:bevy_common_assets", "dep:serde"]
@@ -41,8 +37,6 @@ bevy_math = { version = "0.20.0", default-features = false, optional = true }
 bevy_pbr = { version = "0.20.0", default-features = false, optional = true }
 bevy_platform = { version = "0.20.0", default-features = false }
 bevy_reflect = { version = "0.20.0", default-features = false }
-bevy_render = { version = "0.20.0", default-features = false, optional = true }
-bevy_sprite = { version = "0.20.0", default-features = false, optional = true }
 bevy_state = { version = "0.20.0", default-features = false }
 bevy_asset_loader_derive = { version = "0.28.1", path = "../bevy_asset_loader_derive" }
 anyhow = "1"
