@@ -448,6 +448,29 @@ The corresponding assets file differs from the folder example:
 })
 ```
 
+Instead of `Files`, a key in a dynamic assets file can also hold an array of dynamic assets. The handles of all entries end up in the vector. This works for every type of dynamic asset, so you can, for example, load multiple texture atlas layouts or images with different samplers into one field:
+
+```ron
+({
+    "layouts": [
+        TextureAtlasLayout (
+            tile_size_x: 96,
+            tile_size_y: 99,
+            columns: 8,
+            rows: 1,
+        ),
+        TextureAtlasLayout (
+            tile_size_x: 32,
+            tile_size_y: 32,
+            columns: 12,
+            rows: 12,
+        ),
+    ],
+})
+```
+
+Arrays and single dynamic assets can be mixed in the same file. See the [dynamic_asset_arrays](/bevy_asset_loader/examples/dynamic_asset_arrays.rs) example.
+
 ### Collections as maps
 
 Collections can be loaded as maps using any type that implements [`MapKey`](https://docs.rs/bevy_asset_loader/latest/bevy_asset_loader/mapped/trait.MapKey.html) as the keys (see documentation for more details).

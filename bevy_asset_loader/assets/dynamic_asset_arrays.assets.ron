@@ -1,4 +1,8 @@
 ({
+    "tree": Image(
+        path: "images/tree.png",
+        sampler: Nearest,
+    ),
     "layouts": [
         TextureAtlasLayout(
             tile_size_x: 96,
