@@ -469,7 +469,7 @@ Instead of `Files`, a key in a dynamic assets file can also hold an array of dyn
 })
 ```
 
-Arrays, maps (see [Collections as maps](#collections-as-maps)) and single dynamic assets can be mixed in the same file. See the [dynamic_asset_arrays](/bevy_asset_loader/examples/dynamic_asset_arrays.rs) example.
+Arrays, maps (see [Collections as maps](#collections-as-maps)) and single dynamic assets can be mixed in the same file. See the [dynamic_asset_collections](/bevy_asset_loader/examples/dynamic_asset_collections.rs) example.
 
 ### Collections as maps
 

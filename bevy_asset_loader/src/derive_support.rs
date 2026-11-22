@@ -9,7 +9,7 @@ use bevy_ecs::world::World;
 use bevy_platform::collections::HashMap;
 use bevy_reflect::TypePath;
 
-use crate::dynamic_asset::{DynamicAsset, DynamicAssetType};
+use crate::dynamic_asset::{DynamicAsset, DynamicAssetType, DynamicAssets};
 use crate::mapped::MapKey;
 
 // The generated code names Bevy types through these re-exports
@@ -100,62 +100,195 @@ impl MapValue for Vec<UntypedHandle> {
     }
 }
 
-fn describe(value: &DynamicAssetType) -> String {
-    match value {
-        DynamicAssetType::Single(_) => "a single handle".to_owned(),
-        DynamicAssetType::Collection(handles) => format!("{} handles", handles.len()),
-        DynamicAssetType::Map(map) => format!("a map with {} entries", map.len()),
+/// A field of an asset collection that is filled from a dynamic asset.
+pub struct DynamicField {
+    collection: &'static str,
+    field: &'static str,
+    key: &'static str,
+}
+
+/// The kind of value an asset collection field expects a dynamic asset to resolve to
+#[derive(Clone, Copy)]
+enum Expected {
+    Single,
+    List,
+    Map,
+}
+
+impl DynamicField {
+    /// Describe the field `field` of the asset collection `C` with the dynamic asset key `key`
+    pub fn new<C>(field: &'static str, key: &'static str) -> Self {
+        let collection = type_name::<C>();
+        Self {
+            collection: collection.rsplit("::").next().unwrap_or(collection),
+            field,
+            key,
+        }
+    }
+
+    /// Get the dynamic asset for this field
+    ///
+    /// # Panics
+    ///
+    /// If the key is not known
+    pub fn get<'a>(&self, dynamic_assets: &'a DynamicAssets) -> &'a dyn DynamicAsset {
+        dynamic_assets.get_asset(self.key).unwrap_or_else(|| {
+            panic!(
+                "{}: there is no dynamic asset with the key '{}'. \
+                Check the keys in your dynamic asset files, or register the key with `DynamicAssets`.",
+                self.prefix(),
+                self.key
+            )
+        })
+    }
+
+    /// Unwrap the result of building the dynamic asset for this field
+    ///
+    /// # Panics
+    ///
+    /// If building the dynamic asset failed
+    pub fn built(&self, result: Result<DynamicAssetType, anyhow::Error>) -> DynamicAssetType {
+        result.unwrap_or_else(|error| {
+            panic!(
+                "{}: building the dynamic asset '{}' failed: {error:#}",
+                self.prefix(),
+                self.key
+            )
+        })
+    }
+
+    /// The handle of a dynamic asset for a field holding a single handle
+    ///
+    /// # Panics
+    ///
+    /// If the dynamic asset does not resolve to a single handle
+    pub fn single(&self, value: DynamicAssetType) -> UntypedHandle {
+        match value {
+            DynamicAssetType::Single(handle) => handle,
+            value => self.mismatch(Expected::Single, &value),
+        }
+    }
+
+    /// The handles of a dynamic asset for a field holding a list of handles
+    ///
+    /// # Panics
+    ///
+    /// If the dynamic asset does not resolve to a list of handles
+    pub fn list(&self, value: DynamicAssetType) -> Vec<UntypedHandle> {
+        match value {
+            DynamicAssetType::Collection(handles) => handles,
+            value => self.mismatch(Expected::List, &value),
+        }
+    }
+
+    /// The value of a mapped field
+    ///
+    /// For a list of handles, the keys
+    /// are derived from the asset paths.
+    ///
+    /// # Panics
+    ///
+    /// If the dynamic asset does not resolve to a map or a list of handles, or a value does not
+    /// fit the value type of the field
+    pub fn map<K: MapKey, V: MapValue, T: FromIterator<(K, V)>>(
+        &self,
+        value: DynamicAssetType,
+    ) -> T {
+        match value {
+            DynamicAssetType::Collection(handles) => handles
+                .into_iter()
+                .map(|handle| {
+                    let path = handle.path().unwrap_or_else(|| {
+                        panic!(
+                            "{}: the dynamic asset '{}' contains a handle without an asset path, so no map key can be derived for it. \
+                            Define a map in your dynamic asset file to choose the keys yourself.",
+                            self.prefix(),
+                            self.key
+                        )
+                    });
+                    let key = K::from_asset_path(path);
+                    let value = V::from_dynamic_asset_type(DynamicAssetType::Single(handle))
+                        .unwrap_or_else(|_| unreachable!("every map value type accepts a single handle"));
+                    (key, value)
+                })
+                .collect(),
+            DynamicAssetType::Map(map) => map
+                .into_iter()
+                .map(|(key, value)| {
+                    let value = V::from_dynamic_asset_type(value).unwrap_or_else(|value| {
+                        panic!(
+                            "{}: the entry '{key}' of the dynamic asset '{}' is {}, but the field expects {} per key. \
+                            Use `Vec<Handle<T>>` or `Vec<UntypedHandle>` as value type to allow any number of handles per key.",
+                            self.prefix(),
+                            self.key,
+                            describe(&value),
+                            V::EXPECTED
+                        )
+                    });
+                    (K::from_dynamic_key(&key), value)
+                })
+                .collect(),
+            value => self.mismatch(Expected::Map, &value),
+        }
+    }
+
+    fn prefix(&self) -> String {
+        format!(
+            "Cannot load the field `{}` of the asset collection {}",
+            self.field, self.collection
+        )
+    }
+
+    fn mismatch(&self, expected: Expected, value: &DynamicAssetType) -> ! {
+        let expects = match expected {
+            Expected::Single => "a single handle",
+            Expected::List => "a list of handles",
+            Expected::Map => "a map of handles",
+        };
+        let hint = match (expected, value) {
+            (Expected::Single, DynamicAssetType::Collection(_)) => {
+                "Use a `Vec` field with `#[asset(key = \"..\", collection)]` to hold all of them."
+            }
+            (Expected::Single | Expected::List, DynamicAssetType::Map(_)) => {
+                "Use a `HashMap` field with `#[asset(key = \"..\", collection(mapped))]` to keep the keys."
+            }
+            (Expected::List | Expected::Map, DynamicAssetType::Single(_)) => {
+                "Use a `Handle` field without `collection`, or define an array of dynamic assets for the key."
+            }
+            _ => "",
+        };
+        let message = format!(
+            "{}: the field expects {expects}, but the dynamic asset '{}' is {}. {hint}",
+            self.prefix(),
+            self.key,
+            describe(value)
+        );
+        panic!("{}", message.trim_end())
     }
 }
 
-/// Build a mapped asset collection field from handles, using their asset paths as keys
-///
-/// # Panics
-///
-/// If a value of the map does not fit the value type of the field.
-pub fn build_map_from_paths<K: MapKey, V: MapValue, T: FromIterator<(K, V)>>(
-    handles: Vec<UntypedHandle>,
-    dynamic_asset_key: &str,
-    collection: &str,
-) -> T {
-    handles
-        .into_iter()
-        .map(|handle| {
-            let key = K::from_asset_path(handle.path().unwrap_or_else(|| {
-                panic!("The dynamic asset '{dynamic_asset_key}' resolves to a handle without an asset path, so the asset collection {collection} cannot derive a key for it")
-            }));
-            let value = V::from_dynamic_asset_type(DynamicAssetType::Single(handle))
-                .unwrap_or_else(|value| panic!("The dynamic asset '{dynamic_asset_key}' cannot be loaded as part of the asset collection {collection}. A value resolves to {}, but the field expects {} per key", describe(&value), V::EXPECTED));
-            (key, value)
-        })
-        .collect()
-}
-
-/// Build a mapped asset collection field from a dynamic asset that resolved to a
-/// [`DynamicAssetType::Map`].
-///
-/// # Panics
-///
-/// If a value of the map does not fit the value type of the field.
-pub fn build_map<K: MapKey, V: MapValue, T: FromIterator<(K, V)>>(
-    map: HashMap<String, DynamicAssetType>,
-    dynamic_asset_key: &str,
-    collection: &str,
-) -> T {
-    map.into_iter()
-        .map(|(key, value)| {
-            let value = V::from_dynamic_asset_type(value).unwrap_or_else(|value| {
-                panic!(
-                    "The dynamic asset '{dynamic_asset_key}' cannot be loaded as part of the asset collection {collection}. \
-                    The value of '{key}' resolves to {}, but the field expects {} per key. \
-                    Use `Vec<Handle<T>>` or `Vec<UntypedHandle>` as value type of the field to allow multiple handles per key.",
-                    describe(&value),
-                    V::EXPECTED
-                )
-            });
-            (K::from_dynamic_key(&key), value)
-        })
-        .collect()
+fn describe(value: &DynamicAssetType) -> String {
+    const SHOWN_ENTRIES: usize = 5;
+    match value {
+        DynamicAssetType::Single(_) => "a single handle".to_owned(),
+        DynamicAssetType::Collection(handles) => {
+            format!("a list of {} handles", handles.len())
+        }
+        DynamicAssetType::Map(map) => {
+            let mut keys: Vec<_> = map.keys().map(String::as_str).collect();
+            keys.sort_unstable();
+            let mut shown = keys
+                .iter()
+                .take(SHOWN_ENTRIES)
+                .copied()
+                .collect::<Vec<_>>()
+                .join(", ");
+            if keys.len() > SHOWN_ENTRIES {
+                shown.push_str(", ...");
+            }
+            format!("a map with {} entries ({shown})", map.len())
+        }
+    }
 }
 
 /// Loading of an asset collection field failed, because the field's asset type is not
@@ -288,4 +421,103 @@ pub fn folder_handle<'a>(
     asset_type: TypeId,
 ) -> Option<Handle<LoadedFolder>> {
     crate::typed_folder::get_folder_as(world, path, asset_type)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    struct MyAssets;
+
+    fn field() -> DynamicField {
+        DynamicField::new::<MyAssets>("layouts", "named")
+    }
+
+    fn handle() -> UntypedHandle {
+        Handle::<LoadedFolder>::default().untyped()
+    }
+
+    fn map(keys: &[&str]) -> DynamicAssetType {
+        DynamicAssetType::Map(
+            keys.iter()
+                .map(|key| (key.to_string(), DynamicAssetType::Single(handle())))
+                .collect(),
+        )
+    }
+
+    fn panic_message(f: impl FnOnce() + std::panic::UnwindSafe) -> String {
+        let payload = std::panic::catch_unwind(f).unwrap_err();
+        payload
+            .downcast_ref::<String>()
+            .cloned()
+            .unwrap_or_else(|| payload.downcast_ref::<&str>().unwrap().to_string())
+    }
+
+    #[test]
+    fn list_field_on_map() {
+        assert_eq!(
+            panic_message(|| {
+                field().list(map(&["walk", "idle"]));
+            }),
+            "Cannot load the field `layouts` of the asset collection MyAssets: the field expects a list of handles, \
+            but the dynamic asset 'named' is a map with 2 entries (idle, walk). \
+            Use a `HashMap` field with `#[asset(key = \"..\", collection(mapped))]` to keep the keys."
+        );
+    }
+
+    #[test]
+    fn single_field_on_list() {
+        assert_eq!(
+            panic_message(|| {
+                field().single(DynamicAssetType::Collection(vec![handle(), handle()]));
+            }),
+            "Cannot load the field `layouts` of the asset collection MyAssets: the field expects a single handle, \
+            but the dynamic asset 'named' is a list of 2 handles. \
+            Use a `Vec` field with `#[asset(key = \"..\", collection)]` to hold all of them."
+        );
+    }
+
+    #[test]
+    fn mapped_field_on_single() {
+        assert_eq!(
+            panic_message(|| {
+                let _: HashMap<String, UntypedHandle> =
+                    field().map(DynamicAssetType::Single(handle()));
+            }),
+            "Cannot load the field `layouts` of the asset collection MyAssets: the field expects a map of handles, \
+            but the dynamic asset 'named' is a single handle. \
+            Use a `Handle` field without `collection`, or define an array of dynamic assets for the key."
+        );
+    }
+
+    #[test]
+    fn long_maps_are_shortened() {
+        assert_eq!(
+            describe(&map(&["g", "f", "e", "d", "c", "b", "a"])),
+            "a map with 7 entries (a, b, c, d, e, ...)"
+        );
+    }
+
+    #[test]
+    fn missing_key() {
+        assert_eq!(
+            panic_message(|| {
+                field().get(&DynamicAssets::default());
+            }),
+            "Cannot load the field `layouts` of the asset collection MyAssets: there is no dynamic asset with the key 'named'. \
+            Check the keys in your dynamic asset files, or register the key with `DynamicAssets`."
+        );
+    }
+
+    #[test]
+    fn build_error() {
+        assert_eq!(
+            panic_message(|| {
+                field().built(Err(
+                    anyhow::anyhow!("file not found").context("loading failed")
+                ));
+            }),
+            "Cannot load the field `layouts` of the asset collection MyAssets: building the dynamic asset 'named' failed: loading failed: file not found"
+        );
+    }
 }

@@ -4,7 +4,7 @@ use bevy_asset_loader::prelude::*;
 
 /// This example shows how to load arrays and maps of dynamic assets from a `ron` file.
 ///
-/// The assets loaded in this example are defined in `assets/dynamic_asset_arrays.assets.ron`.
+/// The assets loaded in this example are defined in `assets/dynamic_asset_collections.assets.ron`.
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
@@ -13,7 +13,7 @@ fn main() {
             LoadingState::new(MyStates::AssetLoading)
                 .continue_to_state(MyStates::Next)
                 .with_dynamic_assets_file::<StandardDynamicAssetCollection>(
-                    "dynamic_asset_arrays.assets.ron",
+                    "dynamic_asset_collections.assets.ron",
                 )
                 .load_collection::<ImageAssets>(),
         )
@@ -25,7 +25,7 @@ fn main() {
         .run();
 }
 
-// The keys used here are defined in `assets/dynamic_asset_arrays.assets.ron`
+// The keys used here are defined in `assets/dynamic_asset_collections.assets.ron`
 #[derive(AssetCollection, Resource)]
 struct ImageAssets {
     #[asset(key = "layouts", collection(typed))]

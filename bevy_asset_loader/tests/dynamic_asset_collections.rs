@@ -100,6 +100,22 @@ fn folder_in_map_of_single_handles_panics() {
     app.run();
 }
 
+#[test]
+#[should_panic(
+    expected = "Cannot load the field `named` of the asset collection ListOfNamedLayouts: the field expects a list of handles, but the dynamic asset 'named' is a map with 2 entries (idle, walk)."
+)]
+fn list_field_on_map_panics() {
+    let assets = asset_dir("list_field_on_map_panics");
+    let mut app = app(&assets);
+    app.add_loading_state(
+        LoadingState::new(MyStates::Load)
+            .continue_to_state(MyStates::Next)
+            .with_dynamic_assets_file::<StandardDynamicAssetCollection>("mixed.assets.ron")
+            .load_collection::<ListOfNamedLayouts>(),
+    );
+    app.run();
+}
+
 fn expect_failure(test: &str, file: &str) {
     let assets = asset_dir(test);
     let mut app = app(&assets);
@@ -198,6 +214,12 @@ struct Sounds {
     typed: HashMap<String, Vec<Handle<AudioSource>>>,
     #[asset(key = "sounds", collection(mapped))]
     untyped: HashMap<AssetFileStem, Vec<UntypedHandle>>,
+}
+
+#[derive(AssetCollection, Resource)]
+struct ListOfNamedLayouts {
+    #[asset(key = "named", collection(typed))]
+    named: Vec<Handle<TextureAtlasLayout>>,
 }
 
 #[derive(AssetCollection, Resource)]

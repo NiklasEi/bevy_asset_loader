@@ -116,8 +116,8 @@ path = "examples/full_dynamic_collection.rs"
 required-features = ["2d", "3d", "standard_dynamic_assets"]
 
 [[example]]
-name = "dynamic_asset_arrays"
-path = "examples/dynamic_asset_arrays.rs"
+name = "dynamic_asset_collections"
+path = "examples/dynamic_asset_collections.rs"
 required-features = ["2d", "3d", "standard_dynamic_assets"]
 
 [[example]]

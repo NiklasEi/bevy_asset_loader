@@ -19,6 +19,11 @@ pub trait MapKey {
     fn from_asset_path(path: &AssetPath) -> Self;
 
     /// Creates the key from a key of a dynamic asset map.
+    ///
+    /// The default implementation parses the key as an [`AssetPath`] and calls
+    /// [`from_asset_path`](Self::from_asset_path). Keys that are not valid asset paths
+    /// cause a panic. Implement this
+    /// method if your key type should use map keys as they are.
     fn from_dynamic_key(key: &str) -> Self
     where
         Self: Sized,
