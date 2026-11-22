@@ -116,6 +116,28 @@ fn list_field_on_map_panics() {
     app.run();
 }
 
+#[test]
+#[should_panic(
+    expected = "Cannot load the field `_run` of the asset collection MissingEntry: the dynamic asset 'named' has no entry 'run'."
+)]
+fn missing_entry_panics() {
+    let assets = asset_dir("missing_entry_panics");
+    let mut app = app(&assets);
+    app.add_loading_state(
+        LoadingState::new(MyStates::Load)
+            .continue_to_state(MyStates::Next)
+            .with_dynamic_assets_file::<StandardDynamicAssetCollection>("mixed.assets.ron")
+            .load_collection::<MissingEntry>(),
+    );
+    app.run();
+}
+
+#[derive(AssetCollection, Resource)]
+struct MissingEntry {
+    #[asset(key = "named[run]")]
+    _run: Handle<TextureAtlasLayout>,
+}
+
 fn expect_failure(test: &str, file: &str) {
     let assets = asset_dir(test);
     let mut app = app(&assets);
@@ -183,6 +205,12 @@ struct Layouts {
     named: HashMap<String, Handle<TextureAtlasLayout>>,
     #[asset(key = "named", collection(mapped))]
     named_untyped: HashMap<AssetFileStem, UntypedHandle>,
+    #[asset(key = "named[walk]")]
+    walk: Handle<TextureAtlasLayout>,
+    #[asset(key = "jumps[1]")]
+    second_jump: Handle<TextureAtlasLayout>,
+    #[asset(key = "named[run]", optional)]
+    run: Option<Handle<TextureAtlasLayout>>,
 }
 
 fn check_layouts(
@@ -205,11 +233,18 @@ fn check_layouts(
     assert_eq!(tiles(&collection.named["idle"]), 5);
     assert_eq!(collection.named_untyped.len(), 2);
     assert_eq!(tiles(&collection.named_untyped["idle"].clone().typed()), 5);
+    assert_eq!(tiles(&collection.walk), 3);
+    assert_eq!(tiles(&collection.second_jump), 12);
+    assert_eq!(collection.run, None);
     exit.write(AppExit::Success);
 }
 
 #[derive(AssetCollection, Resource)]
 struct Sounds {
+    #[asset(key = "sounds[folder]", collection(typed))]
+    folder: Vec<Handle<AudioSource>>,
+    #[asset(key = "sounds[file]")]
+    file: Handle<AudioSource>,
     #[asset(key = "sounds", collection(mapped, typed))]
     typed: HashMap<String, Vec<Handle<AudioSource>>>,
     #[asset(key = "sounds", collection(mapped))]
@@ -234,7 +269,7 @@ fn check_sounds(
     audio: Res<Assets<AudioSource>>,
     mut exit: MessageWriter<AppExit>,
 ) {
-    let paths = |handles: &Vec<Handle<AudioSource>>| {
+    let paths = |handles: &[Handle<AudioSource>]| {
         let mut paths: Vec<_> = handles
             .iter()
             .map(|handle| {
@@ -254,6 +289,14 @@ fn check_sounds(
         vec!["audio/plop.ogg", "audio/yippee.ogg"]
     );
     assert_eq!(paths(&sounds.typed["file"]), vec!["audio/background.ogg"]);
+    assert_eq!(
+        paths(&sounds.folder),
+        vec!["audio/background.ogg", "audio/plop.ogg", "audio/yippee.ogg"]
+    );
+    assert_eq!(
+        paths(std::slice::from_ref(&sounds.file)),
+        vec!["audio/background.ogg"]
+    );
     assert_eq!(sounds.untyped.len(), 3);
     assert_eq!(sounds.untyped["folder"].len(), 3);
     assert_eq!(sounds.untyped["files"].len(), 2);

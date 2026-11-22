@@ -561,6 +561,27 @@ struct MyAssets {
 }
 ```
 
+#### Single entries
+
+A field can also hold a single entry of a map or array in a dynamic assets file. Add the key of the map entry or the index of the array element in brackets:
+
+```rust
+use bevy::prelude::*;
+use bevy_asset_loader::asset_collection::AssetCollection;
+
+#[derive(AssetCollection, Resource)]
+struct MyAssets {
+    #[asset(key = "characters[player]")]
+    player: Handle<Image>,
+    #[asset(key = "animations[walk]")]
+    walk: Handle<TextureAtlasLayout>,
+    #[asset(key = "enemies[zombie]", collection(typed))]
+    zombie: Vec<Handle<Image>>,
+}
+```
+
+Only the addressed entry is loaded. Array elements are addressed by index starting at zero, e.g. `"layouts[0]"`.
+
 ### Types implementing FromWorld
 
 Any field in an asset collection without any attribute is required to implement the `FromWorld` trait. When the asset collection is build, the `FromWorld` implementation is called to get the value for the field.

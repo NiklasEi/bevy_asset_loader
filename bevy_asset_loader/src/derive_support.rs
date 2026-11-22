@@ -9,7 +9,7 @@ use bevy_ecs::world::World;
 use bevy_platform::collections::HashMap;
 use bevy_reflect::TypePath;
 
-use crate::dynamic_asset::{DynamicAsset, DynamicAssetType, DynamicAssets};
+use crate::dynamic_asset::{DynamicAsset, DynamicAssetType, DynamicAssets, MissingDynamicAsset};
 use crate::mapped::MapKey;
 
 // The generated code names Bevy types through these re-exports
@@ -132,14 +132,20 @@ impl DynamicField {
     ///
     /// If the key is not known
     pub fn get<'a>(&self, dynamic_assets: &'a DynamicAssets) -> &'a dyn DynamicAsset {
-        dynamic_assets.get_asset(self.key).unwrap_or_else(|| {
-            panic!(
-                "{}: there is no dynamic asset with the key '{}'. \
-                Check the keys in your dynamic asset files, or register the key with `DynamicAssets`.",
-                self.prefix(),
-                self.key
-            )
-        })
+        dynamic_assets
+            .resolve(self.key)
+            .unwrap_or_else(|missing| match missing {
+                MissingDynamicAsset::Key(key) => panic!(
+                    "{}: there is no dynamic asset with the key '{key}'. \
+                    Check the keys in your dynamic asset files, or register the key with `DynamicAssets`.",
+                    self.prefix(),
+                ),
+                MissingDynamicAsset::Entry { parent, entry } => panic!(
+                    "{}: the dynamic asset '{parent}' has no entry '{entry}'. \
+                    Only maps and arrays in dynamic asset files have entries, addressed by key or index.",
+                    self.prefix(),
+                ),
+            })
     }
 
     /// Unwrap the result of building the dynamic asset for this field
@@ -249,8 +255,13 @@ impl DynamicField {
             (Expected::Single, DynamicAssetType::Collection(_)) => {
                 "Use a `Vec` field with `#[asset(key = \"..\", collection)]` to hold all of them."
             }
-            (Expected::Single | Expected::List, DynamicAssetType::Map(_)) => {
-                "Use a `HashMap` field with `#[asset(key = \"..\", collection(mapped))]` to keep the keys."
+            (Expected::Single | Expected::List, DynamicAssetType::Map(map)) => {
+                let example = map.keys().min().map_or("..", String::as_str);
+                &format!(
+                    "Use a `HashMap` field with `#[asset(key = \"{key}\", collection(mapped))]` to keep the keys, \
+                    or load a single entry with `#[asset(key = \"{key}[{example}]\")]`.",
+                    key = self.key
+                )
             }
             (Expected::List | Expected::Map, DynamicAssetType::Single(_)) => {
                 "Use a `Handle` field without `collection`, or define an array of dynamic assets for the key."
@@ -461,7 +472,8 @@ mod tests {
             }),
             "Cannot load the field `layouts` of the asset collection MyAssets: the field expects a list of handles, \
             but the dynamic asset 'named' is a map with 2 entries (idle, walk). \
-            Use a `HashMap` field with `#[asset(key = \"..\", collection(mapped))]` to keep the keys."
+            Use a `HashMap` field with `#[asset(key = \"named\", collection(mapped))]` to keep the keys, \
+            or load a single entry with `#[asset(key = \"named[idle]\")]`."
         );
     }
 

@@ -456,6 +456,11 @@ impl<K: Into<String> + Sync + Send + 'static> Command for RegisterStandardDynami
 ///     layouts: Vec<Handle<TextureAtlasLayout>>,
 ///     #[asset(key = "icons", collection(mapped, typed))]
 ///     icons: HashMap<String, Handle<Image>>,
+///     // single entries of maps and arrays
+///     #[asset(key = "icons[play]")]
+///     play: Handle<Image>,
+///     #[asset(key = "layouts[0]")]
+///     first_layout: Handle<TextureAtlasLayout>,
 /// }
 /// ```
 #[derive(Deserialize, Serialize, Asset, TypePath, PartialEq, Debug)]
@@ -570,6 +575,16 @@ impl DynamicAsset for StandardDynamicAssetEntry {
             }
         }
     }
+
+    fn entry(&self, key: &str) -> Option<&dyn DynamicAsset> {
+        match self {
+            StandardDynamicAssetEntry::Single(_) => None,
+            StandardDynamicAssetEntry::Array(assets) => assets.entry(key),
+            StandardDynamicAssetEntry::Map(assets) => {
+                assets.get(key).map(|asset| asset as &dyn DynamicAsset)
+            }
+        }
+    }
 }
 
 fn build_map(
@@ -618,6 +633,14 @@ impl DynamicAsset for Vec<StandardDynamicAsset> {
         }
 
         Ok(DynamicAssetType::Collection(all_handles))
+    }
+
+    fn entry(&self, key: &str) -> Option<&dyn DynamicAsset> {
+        if !key.bytes().all(|byte| byte.is_ascii_digit()) {
+            return None;
+        }
+        self.get(key.parse::<usize>().ok()?)
+            .map(|asset| asset as &dyn DynamicAsset)
     }
 }
 

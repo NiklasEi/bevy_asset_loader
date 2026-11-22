@@ -36,6 +36,8 @@ struct ImageAssets {
     tree: Handle<Image>,
     #[asset(key = "characters", collection(mapped, typed))]
     characters: HashMap<String, Handle<Image>>,
+    #[asset(key = "characters[zombie]")]
+    zombie: Handle<Image>,
 }
 
 fn spawn_player_and_tree(mut commands: Commands, image_assets: Res<ImageAssets>) {
@@ -66,7 +68,7 @@ fn spawn_player_and_tree(mut commands: Commands, image_assets: Res<ImageAssets>)
         Transform::from_translation(Vec3::new(-150., 90., 1.)),
     ));
     commands.spawn((
-        Sprite::from_image(image_assets.characters["zombie"].clone()),
+        Sprite::from_image(image_assets.zombie.clone()),
         Transform::from_translation(Vec3::new(-250., 90., 1.)),
     ));
 }
