@@ -13,7 +13,7 @@ use bevy_ecs::{
 };
 use bevy_platform::collections::HashMap;
 use bevy_reflect::TypePath;
-use ron::error::{Position, Span, SpannedError, SpannedResult};
+use ron::error::{Position, SpannedError, SpannedResult};
 use ron::value::RawValue;
 use serde::{Deserialize, Serialize};
 use std::any::TypeId;
@@ -503,7 +503,7 @@ impl StandardDynamicAssetEntry {
     fn from_raw(raw: &RawValue) -> SpannedResult<Self> {
         match raw.trim().get_ron().chars().next() {
             Some('[') => raw.into_rust().map(StandardDynamicAssetEntry::Array),
-            Some('{') => parse_map(raw).map(StandardDynamicAssetEntry::Map),
+            Some('{') => raw.into_rust().map(StandardDynamicAssetEntry::Map),
             _ => raw.into_rust().map(StandardDynamicAssetEntry::Single),
         }
     }
@@ -576,18 +576,11 @@ fn build_map(
     assets: &HashMap<String, StandardDynamicAsset>,
     mut build: impl FnMut(&StandardDynamicAsset) -> Result<DynamicAssetType, anyhow::Error>,
 ) -> Result<DynamicAssetType, anyhow::Error> {
-    let mut handles = HashMap::with_capacity(assets.len());
+    let mut map = HashMap::with_capacity(assets.len());
     for (key, asset) in assets {
-        match build(asset)? {
-            DynamicAssetType::Single(handle) => {
-                handles.insert(key.clone(), handle);
-            }
-            result => anyhow::bail!(
-                "The dynamic asset {asset:?} with the key '{key}' in a map has to resolve to a single handle, but resolves to {result:?}"
-            ),
-        }
+        map.insert(key.clone(), build(asset)?);
     }
-    Ok(DynamicAssetType::Map(handles))
+    Ok(DynamicAssetType::Map(map))
 }
 
 impl DynamicAsset for Vec<StandardDynamicAsset> {
@@ -601,11 +594,7 @@ impl DynamicAsset for Vec<StandardDynamicAsset> {
         let mut all_handles = vec![];
 
         for asset in self {
-            match asset.build(world)? {
-                DynamicAssetType::Single(handle) => all_handles.push(handle),
-                DynamicAssetType::Collection(handles) => all_handles.extend(handles),
-                DynamicAssetType::Map(handles) => all_handles.extend(handles.into_values()),
-            }
+            all_handles.extend(asset.build(world)?.into_handles());
         }
 
         Ok(DynamicAssetType::Collection(all_handles))
@@ -625,11 +614,7 @@ impl DynamicAsset for Vec<StandardDynamicAsset> {
         let mut all_handles = vec![];
 
         for asset in self {
-            match asset.build_as(world, asset_type)? {
-                DynamicAssetType::Single(handle) => all_handles.push(handle),
-                DynamicAssetType::Collection(handles) => all_handles.extend(handles),
-                DynamicAssetType::Map(handles) => all_handles.extend(handles.into_values()),
-            }
+            all_handles.extend(asset.build_as(world, asset_type)?.into_handles());
         }
 
         Ok(DynamicAssetType::Collection(all_handles))
@@ -723,45 +708,6 @@ fn parse_collection(
         collection.insert(key, entry);
     }
     Ok(StandardDynamicAssetCollection(collection))
-}
-
-/// Parse a map of dynamic assets with errors positioned relative to `raw`.
-fn parse_map(raw: &RawValue) -> SpannedResult<HashMap<String, StandardDynamicAsset>> {
-    let Pairs(pairs) = raw.into_rust()?;
-    let mut map = HashMap::with_capacity(pairs.len());
-    for (key, value) in pairs {
-        let asset: StandardDynamicAsset = value
-            .into_rust()
-            .map_err(|error| offset_error(error, raw.get_ron(), value))?;
-        if matches!(
-            asset,
-            StandardDynamicAsset::Folder { .. } | StandardDynamicAsset::Files { .. }
-        ) {
-            let value = value.trim();
-            let error = SpannedError {
-                code: ron::Error::Message(format!(
-                    "The value of \"{key}\" resolves to multiple assets, but values in maps have to be single assets. Use an array instead of a map for `Folder` and `Files`"
-                )),
-                span: Span {
-                    start: Position { line: 1, col: 1 },
-                    end: end_position(value.get_ron()),
-                },
-            };
-            return Err(offset_error(error, raw.get_ron(), value));
-        }
-        map.insert(key, asset);
-    }
-    Ok(map)
-}
-
-/// The position after the last character of `source`
-fn end_position(source: &str) -> Position {
-    let line = 1 + source.matches('\n').count();
-    let col = 1 + source
-        .rsplit('\n')
-        .next()
-        .map_or(0, |line| line.chars().count());
-    Position { line, col }
 }
 
 fn offset_error(mut error: SpannedError, source: &str, raw: &RawValue) -> SpannedError {
@@ -1081,20 +1027,28 @@ mod tests {
     }
 
     #[test]
-    fn folder_in_map() {
-        assert_eq!(
-            error_message(
-                r#"({
-    "icons": {
-        "play": Image(path: "images/play.png"),
-        "all": Folder(
-            path: "images",
-        ),
+    fn folders_and_files_in_map() {
+        let collection = parse_collection(
+            r#"({
+    "enemies": {
+        "zombie": Folder(path: "enemies/zombie"),
+        "skeleton": Files(paths: ["enemies/skeleton/walk.png", "enemies/skeleton/die.png"]),
+        "boss": File(path: "enemies/boss.png"),
     },
-})"#
-            ),
-            "Invalid dynamic asset \"icons\" at 4:16-6:10: The value of \"all\" resolves to multiple assets, but values in maps have to be single assets. Use an array instead of a map for `Folder` and `Files`"
-        );
+})"#,
+        )
+        .unwrap();
+        let StandardDynamicAssetEntry::Map(enemies) = &collection.0["enemies"] else {
+            panic!("Expected a map, got {:?}", collection.0["enemies"]);
+        };
+        assert!(matches!(
+            enemies["zombie"],
+            StandardDynamicAsset::Folder { .. }
+        ));
+        assert!(matches!(
+            enemies["skeleton"],
+            StandardDynamicAsset::Files { .. }
+        ));
     }
 
     fn serialize_and_deserialize(dynamic_asset_file: &'static str) {

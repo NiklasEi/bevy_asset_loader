@@ -14,8 +14,22 @@ pub enum DynamicAssetType {
     Single(UntypedHandle),
     /// Dynamic asset that is defined by multiple handles
     Collection(Vec<UntypedHandle>),
-    /// Dynamic asset that is defined by multiple handles with a key each
-    Map(HashMap<String, UntypedHandle>),
+    /// Dynamic asset that is defined by a key for each of its values
+    Map(HashMap<String, DynamicAssetType>),
+}
+
+impl DynamicAssetType {
+    /// All handles of this dynamic asset, including the handles in nested collections and maps
+    pub fn into_handles(self) -> Vec<UntypedHandle> {
+        match self {
+            DynamicAssetType::Single(handle) => vec![handle],
+            DynamicAssetType::Collection(handles) => handles,
+            DynamicAssetType::Map(map) => map
+                .into_values()
+                .flat_map(DynamicAssetType::into_handles)
+                .collect(),
+        }
+    }
 }
 
 /// Any type implementing this trait can be assigned to asset keys as part of a dynamic

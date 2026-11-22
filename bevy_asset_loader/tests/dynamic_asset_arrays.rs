@@ -1,6 +1,7 @@
 #![cfg(all(feature = "2d", feature = "standard_dynamic_assets"))]
 
 use bevy::app::AppExit;
+use bevy::audio::AudioPlugin;
 use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
 use bevy::state::app::StatesPlugin;
@@ -35,10 +36,11 @@ const INVALID: &str = r#"({
     ],
 })"#;
 
-const FOLDER_IN_MAP: &str = r#"({
-    "named": {
-        "walk": TextureAtlasLayout(tile_size_x: 24, tile_size_y: 32, columns: 3, rows: 1),
-        "all": Folder(path: "layouts"),
+const SOUND_MAP: &str = r#"({
+    "sounds": {
+        "folder": Folder(path: "audio"),
+        "files": Files(paths: ["audio/plop.ogg", "audio/yippee.ogg"]),
+        "file": File(path: "audio/background.ogg"),
     },
 })"#;
 
@@ -67,8 +69,35 @@ fn invalid_entry_in_array_fails_loading() {
 }
 
 #[test]
-fn folder_in_map_fails_loading() {
-    expect_failure("folder_in_map_fails_loading", "folder_in_map.assets.ron");
+fn folders_and_files_in_map() {
+    let assets = asset_dir("folders_and_files_in_map");
+    let mut app = app(&assets);
+    app.add_loading_state(
+        LoadingState::new(MyStates::Load)
+            .continue_to_state(MyStates::Next)
+            .on_failure_continue_to_state(MyStates::Failed)
+            .with_dynamic_assets_file::<StandardDynamicAssetCollection>("sounds.assets.ron")
+            .load_collection::<Sounds>(),
+    )
+    .add_systems(OnEnter(MyStates::Next), check_sounds)
+    .add_systems(OnEnter(MyStates::Failed), || -> () {
+        panic!("Loading the sounds failed")
+    });
+    assert_eq!(app.run(), AppExit::Success);
+}
+
+#[test]
+#[should_panic(expected = "but the field expects a single handle per key")]
+fn folder_in_map_of_single_handles_panics() {
+    let assets = asset_dir("folder_in_map_of_single_handles_panics");
+    let mut app = app(&assets);
+    app.add_loading_state(
+        LoadingState::new(MyStates::Load)
+            .continue_to_state(MyStates::Next)
+            .with_dynamic_assets_file::<StandardDynamicAssetCollection>("sounds.assets.ron")
+            .load_collection::<SingleSounds>(),
+    );
+    app.run();
 }
 
 fn expect_failure(test: &str, file: &str) {
@@ -99,7 +128,13 @@ fn asset_dir(test: &str) -> PathBuf {
     std::fs::write(dir.join("mixed.assets.ron"), MIXED).unwrap();
     std::fs::write(dir.join("legacy.asset_arrays.ron"), LEGACY_ARRAYS).unwrap();
     std::fs::write(dir.join("invalid.assets.ron"), INVALID).unwrap();
-    std::fs::write(dir.join("folder_in_map.assets.ron"), FOLDER_IN_MAP).unwrap();
+    std::fs::write(dir.join("sounds.assets.ron"), SOUND_MAP).unwrap();
+    let audio = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("assets/audio");
+    std::fs::create_dir_all(dir.join("audio")).unwrap();
+    for file in std::fs::read_dir(audio).unwrap() {
+        let file = file.unwrap();
+        std::fs::copy(file.path(), dir.join("audio").join(file.file_name())).unwrap();
+    }
     dir
 }
 
@@ -112,6 +147,7 @@ fn app(assets: &std::path::Path) -> App {
             ..default()
         },
         StatesPlugin,
+        AudioPlugin::default(),
     ))
     .init_asset::<TextureAtlasLayout>()
     .init_state::<MyStates>()
@@ -153,6 +189,53 @@ fn check_layouts(
     assert_eq!(tiles(&collection.named["idle"]), 5);
     assert_eq!(collection.named_untyped.len(), 2);
     assert_eq!(tiles(&collection.named_untyped["idle"].clone().typed()), 5);
+    exit.write(AppExit::Success);
+}
+
+#[derive(AssetCollection, Resource)]
+struct Sounds {
+    #[asset(key = "sounds", collection(mapped, typed))]
+    typed: HashMap<String, Vec<Handle<AudioSource>>>,
+    #[asset(key = "sounds", collection(mapped))]
+    untyped: HashMap<AssetFileStem, Vec<UntypedHandle>>,
+}
+
+#[derive(AssetCollection, Resource)]
+struct SingleSounds {
+    #[asset(key = "sounds", collection(mapped, typed))]
+    _sounds: HashMap<String, Handle<AudioSource>>,
+}
+
+fn check_sounds(
+    sounds: Res<Sounds>,
+    asset_server: Res<AssetServer>,
+    audio: Res<Assets<AudioSource>>,
+    mut exit: MessageWriter<AppExit>,
+) {
+    let paths = |handles: &Vec<Handle<AudioSource>>| {
+        let mut paths: Vec<_> = handles
+            .iter()
+            .map(|handle| {
+                assert!(audio.contains(handle));
+                asset_server.get_path(handle).unwrap().to_string()
+            })
+            .collect();
+        paths.sort();
+        paths
+    };
+    assert_eq!(
+        paths(&sounds.typed["folder"]),
+        vec!["audio/background.ogg", "audio/plop.ogg", "audio/yippee.ogg"]
+    );
+    assert_eq!(
+        paths(&sounds.typed["files"]),
+        vec!["audio/plop.ogg", "audio/yippee.ogg"]
+    );
+    assert_eq!(paths(&sounds.typed["file"]), vec!["audio/background.ogg"]);
+    assert_eq!(sounds.untyped.len(), 3);
+    assert_eq!(sounds.untyped["folder"].len(), 3);
+    assert_eq!(sounds.untyped["files"].len(), 2);
+    assert_eq!(sounds.untyped["file"].len(), 1);
     exit.write(AppExit::Success);
 }
 

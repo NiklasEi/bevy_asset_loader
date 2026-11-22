@@ -531,6 +531,36 @@ struct MyAssets {
 }
 ```
 
+With `Vec<Handle<T>>` (or `Vec<UntypedHandle>`) as value type, every key can hold any number of assets. This allows values like `Folder` and `Files` in the map:
+
+```ron
+({
+    "enemies": {
+        "zombie": Folder (
+            path: "images/zombie",
+        ),
+        "skeleton": Files (
+            paths: ["images/skeleton_walk.png", "images/skeleton_die.png"],
+        ),
+        "boss": File (
+            path: "images/boss.png",
+        ),
+    },
+})
+```
+
+```rust
+use bevy::prelude::*;
+use bevy::platform::collections::HashMap;
+use bevy_asset_loader::asset_collection::AssetCollection;
+
+#[derive(AssetCollection, Resource)]
+struct MyAssets {
+    #[asset(key = "enemies", collection(typed, mapped))]
+    enemies: HashMap<String, Vec<Handle<Image>>>,
+}
+```
+
 ### Types implementing FromWorld
 
 Any field in an asset collection without any attribute is required to implement the `FromWorld` trait. When the asset collection is build, the `FromWorld` implementation is called to get the value for the field.

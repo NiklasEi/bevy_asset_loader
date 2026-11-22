@@ -376,7 +376,7 @@ impl AssetField {
                                 result => panic!("The dynamic asset '{}' cannot be created. The asset collection {} expected it to resolve to `Collection(handle)`, but {asset:?} resolves to {result:?}", #asset_key, #name),
                             }),
                             Mapped::Yes => {
-                                let build_collection = Self::build_mapped_dynamic_file_collection(Typed::Yes, &asset_key, name);
+                                let build_collection = Self::build_mapped_dynamic_file_collection(&asset_key, name);
                                 quote!(match ::bevy_asset_loader::derive_support::build_dynamic(asset, #asset_type, world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
                                     #build_collection
                                 })
@@ -391,7 +391,7 @@ impl AssetField {
                                     result => panic!("The dynamic asset '{}' cannot be created. The asset collection {} expected it to resolve to `Collection(handle)`, but {asset:?} resolves to {result:?}", #asset_key, #name),
                                 }),
                             Mapped::Yes => {
-                                let build_collection = Self::build_mapped_dynamic_file_collection(Typed::No, &asset_key, name);
+                                let build_collection = Self::build_mapped_dynamic_file_collection(&asset_key, name);
                                 quote!(match asset.build(world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
                                     #build_collection
                                 })
@@ -418,7 +418,7 @@ impl AssetField {
                                 })
                             ),
                             Mapped::Yes => {
-                                let build_collection = Self::build_mapped_dynamic_file_collection(Typed::Yes, &asset_key, name);
+                                let build_collection = Self::build_mapped_dynamic_file_collection(&asset_key, name);
                                 quote!(
                                     asset.map(|asset| match ::bevy_asset_loader::derive_support::build_dynamic(asset, #asset_type, world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
                                         #build_collection
@@ -436,7 +436,7 @@ impl AssetField {
                                 })
                             ),
                             Mapped::Yes => {
-                                let build_collection = Self::build_mapped_dynamic_file_collection(Typed::No, &asset_key, name);
+                                let build_collection = Self::build_mapped_dynamic_file_collection(&asset_key, name);
                                 quote!(
                                     asset.map(|asset| match asset.build(world).unwrap_or_else(|_| panic!("Error building the dynamic asset {:?} with the key {}", asset, #asset_key)) {
                                         #build_collection
@@ -454,28 +454,13 @@ impl AssetField {
         }
     }
 
-    fn build_mapped_dynamic_file_collection(
-        typed: Typed,
-        asset_key: &String,
-        name: String,
-    ) -> TokenStream {
-        let handle = match typed {
-            Typed::Yes => quote!(handle.typed()),
-            Typed::No => quote!(handle),
-        };
+    fn build_mapped_dynamic_file_collection(asset_key: &String, name: String) -> TokenStream {
         quote!(
-            ::bevy_asset_loader::prelude::DynamicAssetType::Collection(mut handles) => {
-                let asset_server = world.get_resource::<::bevy_asset_loader::derive_support::bevy_asset::AssetServer>().expect("Cannot get AssetServer");
-                let mut folder_map = ::bevy_asset_loader::derive_support::bevy_platform::collections::HashMap::default();
-                for handle in handles {
-                    let path = handle.path().unwrap();
-                    let key = ::bevy_asset_loader::mapped::MapKey::from_asset_path(path);
-                    folder_map.insert(key, #handle);
-                }
-                folder_map
+            ::bevy_asset_loader::prelude::DynamicAssetType::Collection(handles) => {
+                ::bevy_asset_loader::derive_support::build_map_from_paths(handles, #asset_key, #name)
             },
-            ::bevy_asset_loader::prelude::DynamicAssetType::Map(handles) => {
-                handles.into_iter().map(|(key, handle)| (::bevy_asset_loader::mapped::MapKey::from_dynamic_key(&key), #handle)).collect()
+            ::bevy_asset_loader::prelude::DynamicAssetType::Map(map) => {
+                ::bevy_asset_loader::derive_support::build_map(map, #asset_key, #name)
             },
             result => panic!("The dynamic asset '{}' cannot be created. The asset collection {} expected it to resolve to `Collection(handle)`, but {asset:?} resolves to {result:?}", #asset_key, #name),
         )
