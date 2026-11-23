@@ -3,6 +3,14 @@
         path: "images/tree.png",
         sampler: Nearest,
     ),
+    "characters": {
+        "player": Image(
+            path: "images/player.png",
+        ),
+        "zombie": Image(
+            path: "images/zombie.png",
+        ),
+    },
     "layouts": [
         TextureAtlasLayout(
             tile_size_x: 96,

@@ -14,6 +14,22 @@ pub enum DynamicAssetType {
     Single(UntypedHandle),
     /// Dynamic asset that is defined by multiple handles
     Collection(Vec<UntypedHandle>),
+    /// Dynamic asset that is defined by a key for each of its values
+    Map(HashMap<String, DynamicAssetType>),
+}
+
+impl DynamicAssetType {
+    /// All handles of this dynamic asset, including the handles in nested collections and maps
+    pub fn into_handles(self) -> Vec<UntypedHandle> {
+        match self {
+            DynamicAssetType::Single(handle) => vec![handle],
+            DynamicAssetType::Collection(handles) => handles,
+            DynamicAssetType::Map(map) => map
+                .into_values()
+                .flat_map(DynamicAssetType::into_handles)
+                .collect(),
+        }
+    }
 }
 
 /// Any type implementing this trait can be assigned to asset keys as part of a dynamic
@@ -50,6 +66,15 @@ pub trait DynamicAsset: Debug + Send + Sync {
         let _ = asset_type;
         self.build(world)
     }
+
+    /// Get an entry of this dynamic asset, like the value for a key of a map or the element
+    /// at an index of an array.
+    ///
+    /// Asset collections address entries with keys like `"icons[play]"` or `"layouts[0]"`.
+    fn entry(&self, key: &str) -> Option<&dyn DynamicAsset> {
+        let _ = key;
+        None
+    }
 }
 
 /// Resource to dynamically resolve keys to assets.
@@ -66,7 +91,33 @@ pub struct DynamicAssets {
 impl DynamicAssets {
     /// Get the asset corresponding to the given key.
     pub fn get_asset(&self, key: &str) -> Option<&dyn DynamicAsset> {
-        self.key_asset_map.get(key).map(|boxed| boxed.as_ref())
+        self.resolve(key).ok()
+    }
+
+    /// Like [`get_asset`](Self::get_asset), but describes which part of the key could not be found.
+    pub(crate) fn resolve(&self, key: &str) -> Result<&dyn DynamicAsset, MissingDynamicAsset> {
+        if let Some(asset) = self.key_asset_map.get(key) {
+            return Ok(asset.as_ref());
+        }
+        let Some((base, entries)) = split_entries(key) else {
+            return Err(MissingDynamicAsset::Key(key.to_owned()));
+        };
+        let mut asset = self
+            .key_asset_map
+            .get(base)
+            .ok_or_else(|| MissingDynamicAsset::Key(base.to_owned()))?
+            .as_ref();
+        let mut parent = base.to_owned();
+        for entry in entries {
+            asset = asset
+                .entry(entry)
+                .ok_or_else(|| MissingDynamicAsset::Entry {
+                    parent: parent.clone(),
+                    entry: entry.to_owned(),
+                })?;
+            parent = format!("{parent}[{entry}]");
+        }
+        Ok(asset)
     }
 
     /// Iterate over all the known key→asset mappings
@@ -82,6 +133,37 @@ impl DynamicAssets {
     pub fn register_asset<K: Into<String>>(&mut self, key: K, asset: Box<dyn DynamicAsset>) {
         self.key_asset_map.insert(key.into(), asset);
     }
+}
+
+/// Split a key like `"icons[play]"` into the base key and the addressed entries.
+///
+/// Returns `None` if the key does not address any entries.
+fn split_entries(key: &str) -> Option<(&str, Vec<&str>)> {
+    let (base, mut rest) = key.split_once('[')?;
+    if base.is_empty() {
+        return None;
+    }
+    let mut entries = vec![];
+    loop {
+        let (entry, after) = rest.split_once(']')?;
+        if entry.is_empty() || entry.contains('[') {
+            return None;
+        }
+        entries.push(entry);
+        if after.is_empty() {
+            return Some((base, entries));
+        }
+        rest = after.strip_prefix('[')?;
+    }
+}
+
+/// A key that could not be resolved to a dynamic asset
+#[derive(Debug, PartialEq)]
+pub(crate) enum MissingDynamicAsset {
+    /// There is no dynamic asset registered for the key
+    Key(String),
+    /// The dynamic asset at `parent` has no entry `entry`
+    Entry { parent: String, entry: String },
 }
 
 /// This traits describes types that contain asset configurations and can
@@ -160,5 +242,86 @@ impl<State: FreelyMutableState> Default for DynamicAssetCollections<State> {
             files: HashMap::default(),
             _marker: PhantomData,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A dynamic asset with named entries
+    #[derive(Debug)]
+    struct Node(Vec<(&'static str, Node)>);
+
+    impl DynamicAsset for Node {
+        fn load(&self, _: &AssetServer) -> Vec<UntypedHandle> {
+            vec![]
+        }
+
+        fn build(&self, _: &mut World) -> Result<DynamicAssetType, anyhow::Error> {
+            Ok(DynamicAssetType::Collection(vec![]))
+        }
+
+        fn entry(&self, key: &str) -> Option<&dyn DynamicAsset> {
+            self.0
+                .iter()
+                .find(|(name, _)| *name == key)
+                .map(|(_, node)| node as &dyn DynamicAsset)
+        }
+    }
+
+    fn dynamic_assets() -> DynamicAssets {
+        let mut dynamic_assets = DynamicAssets::default();
+        dynamic_assets.register_asset(
+            "enemies",
+            Box::new(Node(vec![("boss", Node(vec![("attack", Node(vec![]))]))])),
+        );
+        dynamic_assets.register_asset("weird[key]", Box::new(Node(vec![])));
+        dynamic_assets
+    }
+
+    fn resolves_to_leaf(key: &str) -> bool {
+        dynamic_assets()
+            .resolve(key)
+            .is_ok_and(|asset| format!("{asset:?}") == "Node([])")
+    }
+
+    #[test]
+    fn resolve_nested_entries() {
+        assert!(resolves_to_leaf("enemies[boss][attack]"));
+        assert!(dynamic_assets().get_asset("enemies[boss]").is_some());
+        assert!(resolves_to_leaf("weird[key]"));
+        assert_eq!(
+            dynamic_assets()
+                .resolve("enemies[boss][defend]")
+                .unwrap_err(),
+            MissingDynamicAsset::Entry {
+                parent: "enemies[boss]".to_owned(),
+                entry: "defend".to_owned()
+            }
+        );
+        assert_eq!(
+            dynamic_assets().resolve("enemy[boss]").unwrap_err(),
+            MissingDynamicAsset::Key("enemy".to_owned())
+        );
+        assert_eq!(
+            dynamic_assets().resolve("enemies[boss").unwrap_err(),
+            MissingDynamicAsset::Key("enemies[boss".to_owned())
+        );
+    }
+
+    #[test]
+    fn split_keys_into_entries() {
+        assert_eq!(split_entries("icons"), None);
+        assert_eq!(split_entries("icons[play]"), Some(("icons", vec!["play"])));
+        assert_eq!(
+            split_entries("enemies.big[boss][0]"),
+            Some(("enemies.big", vec!["boss", "0"]))
+        );
+        assert_eq!(split_entries("[play]"), None);
+        assert_eq!(split_entries("icons[]"), None);
+        assert_eq!(split_entries("icons[play"), None);
+        assert_eq!(split_entries("icons[play]x"), None);
+        assert_eq!(split_entries("icons[pl[ay]"), None);
     }
 }

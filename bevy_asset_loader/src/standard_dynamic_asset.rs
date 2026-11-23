@@ -415,7 +415,7 @@ impl<K: Into<String> + Sync + Send + 'static> Command for RegisterStandardDynami
 /// These assets are loaded at the beginning of a loading state
 /// and combined in [`DynamicAssets`].
 ///
-/// Every key maps either to a single [`StandardDynamicAsset`] or to an array of them.
+/// Every key maps to a single [`StandardDynamicAsset`], an array of them, or a map of them.
 ///
 /// ```ron
 /// ({
@@ -437,11 +437,16 @@ impl<K: Into<String> + Sync + Send + 'static> Command for RegisterStandardDynami
 ///             rows: 6,
 ///         ),
 ///     ],
+///     "icons": {
+///         "play": Image(path: "images/play.png"),
+///         "pause": Image(path: "images/pause.png"),
+///     },
 /// })
 /// ```
 ///
 /// ```rust
 /// # use bevy::prelude::*;
+/// # use bevy::platform::collections::HashMap;
 /// # use bevy_asset_loader::prelude::*;
 /// #[derive(AssetCollection, Resource)]
 /// struct MyAssets {
@@ -449,6 +454,13 @@ impl<K: Into<String> + Sync + Send + 'static> Command for RegisterStandardDynami
 ///     player: Handle<Image>,
 ///     #[asset(key = "layouts", collection(typed))]
 ///     layouts: Vec<Handle<TextureAtlasLayout>>,
+///     #[asset(key = "icons", collection(mapped, typed))]
+///     icons: HashMap<String, Handle<Image>>,
+///     // single entries of maps and arrays
+///     #[asset(key = "icons[play]")]
+///     play: Handle<Image>,
+///     #[asset(key = "layouts[0]")]
+///     first_layout: Handle<TextureAtlasLayout>,
 /// }
 /// ```
 #[derive(Deserialize, Serialize, Asset, TypePath, PartialEq, Debug)]
@@ -469,6 +481,8 @@ pub enum StandardDynamicAssetEntry {
     Single(StandardDynamicAsset),
     /// An array of dynamic assets
     Array(Vec<StandardDynamicAsset>),
+    /// A map of dynamic assets
+    Map(HashMap<String, StandardDynamicAsset>),
 }
 
 impl From<StandardDynamicAsset> for StandardDynamicAssetEntry {
@@ -483,13 +497,19 @@ impl From<Vec<StandardDynamicAsset>> for StandardDynamicAssetEntry {
     }
 }
 
+impl From<HashMap<String, StandardDynamicAsset>> for StandardDynamicAssetEntry {
+    fn from(assets: HashMap<String, StandardDynamicAsset>) -> Self {
+        StandardDynamicAssetEntry::Map(assets)
+    }
+}
+
 impl StandardDynamicAssetEntry {
     /// Parse an entry from its RON source.
     fn from_raw(raw: &RawValue) -> SpannedResult<Self> {
-        if raw.trim().get_ron().starts_with('[') {
-            raw.into_rust().map(StandardDynamicAssetEntry::Array)
-        } else {
-            raw.into_rust().map(StandardDynamicAssetEntry::Single)
+        match raw.trim().get_ron().chars().next() {
+            Some('[') => raw.into_rust().map(StandardDynamicAssetEntry::Array),
+            Some('{') => raw.into_rust().map(StandardDynamicAssetEntry::Map),
+            _ => raw.into_rust().map(StandardDynamicAssetEntry::Single),
         }
     }
 }
@@ -499,6 +519,7 @@ impl Serialize for StandardDynamicAssetEntry {
         match self {
             StandardDynamicAssetEntry::Single(asset) => asset.serialize(serializer),
             StandardDynamicAssetEntry::Array(assets) => assets.serialize(serializer),
+            StandardDynamicAssetEntry::Map(assets) => assets.serialize(serializer),
         }
     }
 }
@@ -515,6 +536,10 @@ impl DynamicAsset for StandardDynamicAssetEntry {
         match self {
             StandardDynamicAssetEntry::Single(asset) => asset.load(asset_server),
             StandardDynamicAssetEntry::Array(assets) => assets.load(asset_server),
+            StandardDynamicAssetEntry::Map(assets) => assets
+                .values()
+                .flat_map(|asset| asset.load(asset_server))
+                .collect(),
         }
     }
 
@@ -522,6 +547,7 @@ impl DynamicAsset for StandardDynamicAssetEntry {
         match self {
             StandardDynamicAssetEntry::Single(asset) => asset.build(world),
             StandardDynamicAssetEntry::Array(assets) => assets.build(world),
+            StandardDynamicAssetEntry::Map(assets) => build_map(assets, |asset| asset.build(world)),
         }
     }
 
@@ -529,6 +555,10 @@ impl DynamicAsset for StandardDynamicAssetEntry {
         match self {
             StandardDynamicAssetEntry::Single(asset) => asset.load_as(world, asset_type),
             StandardDynamicAssetEntry::Array(assets) => assets.load_as(world, asset_type),
+            StandardDynamicAssetEntry::Map(assets) => assets
+                .values()
+                .flat_map(|asset| asset.load_as(world, asset_type))
+                .collect(),
         }
     }
 
@@ -540,8 +570,32 @@ impl DynamicAsset for StandardDynamicAssetEntry {
         match self {
             StandardDynamicAssetEntry::Single(asset) => asset.build_as(world, asset_type),
             StandardDynamicAssetEntry::Array(assets) => assets.build_as(world, asset_type),
+            StandardDynamicAssetEntry::Map(assets) => {
+                build_map(assets, |asset| asset.build_as(world, asset_type))
+            }
         }
     }
+
+    fn entry(&self, key: &str) -> Option<&dyn DynamicAsset> {
+        match self {
+            StandardDynamicAssetEntry::Single(_) => None,
+            StandardDynamicAssetEntry::Array(assets) => assets.entry(key),
+            StandardDynamicAssetEntry::Map(assets) => {
+                assets.get(key).map(|asset| asset as &dyn DynamicAsset)
+            }
+        }
+    }
+}
+
+fn build_map(
+    assets: &HashMap<String, StandardDynamicAsset>,
+    mut build: impl FnMut(&StandardDynamicAsset) -> Result<DynamicAssetType, anyhow::Error>,
+) -> Result<DynamicAssetType, anyhow::Error> {
+    let mut map = HashMap::with_capacity(assets.len());
+    for (key, asset) in assets {
+        map.insert(key.clone(), build(asset)?);
+    }
+    Ok(DynamicAssetType::Map(map))
 }
 
 impl DynamicAsset for Vec<StandardDynamicAsset> {
@@ -555,10 +609,7 @@ impl DynamicAsset for Vec<StandardDynamicAsset> {
         let mut all_handles = vec![];
 
         for asset in self {
-            match asset.build(world)? {
-                DynamicAssetType::Single(handle) => all_handles.push(handle),
-                DynamicAssetType::Collection(handles) => all_handles.extend(handles),
-            }
+            all_handles.extend(asset.build(world)?.into_handles());
         }
 
         Ok(DynamicAssetType::Collection(all_handles))
@@ -578,13 +629,18 @@ impl DynamicAsset for Vec<StandardDynamicAsset> {
         let mut all_handles = vec![];
 
         for asset in self {
-            match asset.build_as(world, asset_type)? {
-                DynamicAssetType::Single(handle) => all_handles.push(handle),
-                DynamicAssetType::Collection(handles) => all_handles.extend(handles),
-            }
+            all_handles.extend(asset.build_as(world, asset_type)?.into_handles());
         }
 
         Ok(DynamicAssetType::Collection(all_handles))
+    }
+
+    fn entry(&self, key: &str) -> Option<&dyn DynamicAsset> {
+        if !key.bytes().all(|byte| byte.is_ascii_digit()) {
+            return None;
+        }
+        self.get(key.parse::<usize>().ok()?)
+            .map(|asset| asset as &dyn DynamicAsset)
     }
 }
 
@@ -630,36 +686,36 @@ impl AssetLoader for StandardDynamicAssetCollectionLoader {
     }
 }
 
+struct Pairs<'a>(Vec<(String, &'a RawValue)>);
+impl<'de: 'a, 'a> Deserialize<'de> for Pairs<'a> {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        struct PairsVisitor<'a>(std::marker::PhantomData<&'a ()>);
+        impl<'de: 'a, 'a> serde::de::Visitor<'de> for PairsVisitor<'a> {
+            type Value = Pairs<'a>;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("a map from asset keys to dynamic assets")
+            }
+
+            fn visit_map<A: serde::de::MapAccess<'de>>(
+                self,
+                mut map: A,
+            ) -> Result<Self::Value, A::Error> {
+                let mut pairs = Vec::with_capacity(map.size_hint().unwrap_or_default());
+                while let Some(pair) = map.next_entry()? {
+                    pairs.push(pair);
+                }
+                Ok(Pairs(pairs))
+            }
+        }
+        deserializer.deserialize_map(PairsVisitor(std::marker::PhantomData))
+    }
+}
+
 /// Parse a [`StandardDynamicAssetCollection`]
 fn parse_collection(
     source: &str,
 ) -> Result<StandardDynamicAssetCollection, StandardDynamicAssetCollectionError> {
-    struct Pairs<'a>(Vec<(String, &'a RawValue)>);
-    impl<'de: 'a, 'a> Deserialize<'de> for Pairs<'a> {
-        fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-            struct PairsVisitor<'a>(std::marker::PhantomData<&'a ()>);
-            impl<'de: 'a, 'a> serde::de::Visitor<'de> for PairsVisitor<'a> {
-                type Value = Pairs<'a>;
-
-                fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-                    formatter.write_str("a map from asset keys to dynamic assets")
-                }
-
-                fn visit_map<A: serde::de::MapAccess<'de>>(
-                    self,
-                    mut map: A,
-                ) -> Result<Self::Value, A::Error> {
-                    let mut pairs = Vec::with_capacity(map.size_hint().unwrap_or_default());
-                    while let Some(pair) = map.next_entry()? {
-                        pairs.push(pair);
-                    }
-                    Ok(Pairs(pairs))
-                }
-            }
-            deserializer.deserialize_map(PairsVisitor(std::marker::PhantomData))
-        }
-    }
-
     #[derive(Deserialize)]
     struct Collection<'a>(#[serde(borrow)] Pairs<'a>);
 
@@ -938,6 +994,84 @@ mod tests {
             ),
             "Could not parse RON: 3:1: Expected comma"
         );
+    }
+
+    #[test]
+    fn map() {
+        let dynamic_asset_file = r#"({
+    "single": File(path: "audio/background.ogg"),
+    "layouts": {
+        "walk": TextureAtlasLayout(tile_size_x: 32, tile_size_y: 32, columns: 8, rows: 1),
+        "jump": TextureAtlasLayout(tile_size_x: 32, tile_size_y: 64, columns: 4, rows: 1),
+    },
+    "empty": {},
+})"#;
+        let collection = parse_collection(dynamic_asset_file).unwrap();
+        let StandardDynamicAssetEntry::Map(layouts) = &collection.0["layouts"] else {
+            panic!("Expected a map, got {:?}", collection.0["layouts"]);
+        };
+        assert!(matches!(
+            layouts["jump"],
+            StandardDynamicAsset::TextureAtlasLayout { columns: 4, .. }
+        ));
+        assert_eq!(layouts.len(), 2);
+        assert_eq!(
+            collection.0["empty"],
+            StandardDynamicAssetEntry::Map(Default::default())
+        );
+
+        let serialized_dynamic_asset_file = ron::ser::to_string_pretty(
+            &collection,
+            ron::ser::PrettyConfig::default().new_line("\n"),
+        )
+        .unwrap();
+        assert_eq!(
+            collection,
+            parse_collection(&serialized_dynamic_asset_file).unwrap()
+        );
+        let deserialized: StandardDynamicAssetCollection =
+            ron::from_str(&serialized_dynamic_asset_file).unwrap();
+        assert_eq!(collection, deserialized);
+    }
+
+    #[test]
+    fn error_in_map() {
+        assert_eq!(
+            error_message(
+                r#"({
+    "icons": {
+        "play": Image(path: "images/play.png"),
+        "pause": Image(path: "images/pause.png", sampler: Nearst),
+    },
+})"#
+            ),
+            "Invalid dynamic asset \"icons\" at 4:59-4:65: Unexpected variant named `Nearst` in enum `ImageSamplerType`, expected either `Nearest` or `Linear` instead"
+        );
+    }
+
+    #[test]
+    fn folders_and_files_in_map() {
+        let collection = parse_collection(
+            r#"({
+    "enemies": {
+        "zombie": Folder(path: "enemies/zombie"),
+        "skeleton": Files(paths: ["enemies/skeleton/walk.png", "enemies/skeleton/die.png"]),
+        "boss": File(path: "enemies/boss.png"),
+    },
+})"#,
+        )
+        .unwrap();
+        let StandardDynamicAssetEntry::Map(enemies) = &collection.0["enemies"] else {
+            panic!("Expected a map, got {:?}", collection.0["enemies"]);
+        };
+        assert!(matches!(
+            enemies["zombie"],
+            StandardDynamicAsset::Folder { .. }
+        ));
+        assert!(matches!(
+            enemies["skeleton"],
+            StandardDynamicAsset::Files { .. }
+        ));
     }
 
     fn serialize_and_deserialize(dynamic_asset_file: &'static str) {

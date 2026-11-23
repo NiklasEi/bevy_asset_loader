@@ -6,6 +6,8 @@
 - `#[derive(AssetCollection)]` no longer requires a dependency on the `bevy` crate
 - dynamic asset files can mix single dynamic assets and arrays of dynamic assets (resolves [#78](https://github.com/NiklasEi/bevy_asset_loader/issues/78))
   - `StandardDynamicAssetArrayCollection` was removed. Load your array files as `StandardDynamicAssetCollection` instead
+- dynamic asset files support maps of dynamic assets (resolves [#179](https://github.com/NiklasEi/bevy_asset_loader/issues/179) and [#261](https://github.com/NiklasEi/bevy_asset_loader/issues/261))
+- dynamic asset keys can address entries of maps and arrays, like `#[asset(key = "icons[play]")]` or `#[asset(key = "layouts[0]")]`
 
 ## v0.28.1 - 13.10.2026
 - drop the dependencies on `bevy_utils` and `bevy_log`

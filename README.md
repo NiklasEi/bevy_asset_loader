@@ -469,7 +469,7 @@ Instead of `Files`, a key in a dynamic assets file can also hold an array of dyn
 })
 ```
 
-Arrays and single dynamic assets can be mixed in the same file. See the [dynamic_asset_arrays](/bevy_asset_loader/examples/dynamic_asset_arrays.rs) example.
+Arrays, maps (see [Collections as maps](#collections-as-maps)) and single dynamic assets can be mixed in the same file. See the [dynamic_asset_collections](/bevy_asset_loader/examples/dynamic_asset_collections.rs) example.
 
 ### Collections as maps
 
@@ -493,6 +493,94 @@ struct MyAssets {
     dynamic_files_typed: HashMap<String, Handle<Image>>,
 }
 ```
+
+The keys of dynamic folders and files are derived from the asset paths. If you want to choose the keys yourself, define a map in your dynamic assets file.
+
+```ron
+({
+    "characters": {
+        "player": Image (
+            path: "images/player.png",
+        ),
+        "zombie": Image (
+            path: "images/zombie.png",
+        ),
+    },
+    "animations": {
+        "walk": TextureAtlasLayout (
+            tile_size_x: 96,
+            tile_size_y: 99,
+            columns: 8,
+            rows: 1,
+        ),
+    },
+})
+```
+
+```rust
+use bevy::prelude::*;
+use bevy::platform::collections::HashMap;
+use bevy_asset_loader::asset_collection::AssetCollection;
+
+#[derive(AssetCollection, Resource)]
+struct MyAssets {
+    #[asset(key = "characters", collection(typed, mapped))]
+    characters: HashMap<String, Handle<Image>>,
+    #[asset(key = "animations", collection(typed, mapped))]
+    animations: HashMap<String, Handle<TextureAtlasLayout>>,
+}
+```
+
+With `Vec<Handle<T>>` (or `Vec<UntypedHandle>`) as value type, every key can hold any number of assets. This allows values like `Folder` and `Files` in the map:
+
+```ron
+({
+    "enemies": {
+        "zombie": Folder (
+            path: "images/zombie",
+        ),
+        "skeleton": Files (
+            paths: ["images/skeleton_walk.png", "images/skeleton_die.png"],
+        ),
+        "boss": File (
+            path: "images/boss.png",
+        ),
+    },
+})
+```
+
+```rust
+use bevy::prelude::*;
+use bevy::platform::collections::HashMap;
+use bevy_asset_loader::asset_collection::AssetCollection;
+
+#[derive(AssetCollection, Resource)]
+struct MyAssets {
+    #[asset(key = "enemies", collection(typed, mapped))]
+    enemies: HashMap<String, Vec<Handle<Image>>>,
+}
+```
+
+#### Single entries
+
+A field can also hold a single entry of a map or array in a dynamic assets file. Add the key of the map entry or the index of the array element in brackets:
+
+```rust
+use bevy::prelude::*;
+use bevy_asset_loader::asset_collection::AssetCollection;
+
+#[derive(AssetCollection, Resource)]
+struct MyAssets {
+    #[asset(key = "characters[player]")]
+    player: Handle<Image>,
+    #[asset(key = "animations[walk]")]
+    walk: Handle<TextureAtlasLayout>,
+    #[asset(key = "enemies[zombie]", collection(typed))]
+    zombie: Vec<Handle<Image>>,
+}
+```
+
+Only the addressed entry is loaded. Array elements are addressed by index starting at zero, e.g. `"layouts[0]"`.
 
 ### Types implementing FromWorld
 
