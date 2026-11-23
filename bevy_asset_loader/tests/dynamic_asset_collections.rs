@@ -1,7 +1,7 @@
 #![cfg(all(feature = "2d", feature = "standard_dynamic_assets"))]
 
 use bevy::app::AppExit;
-use bevy::audio::AudioPlugin;
+use bevy::audio::AudioLoader;
 use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
 use bevy::state::app::StatesPlugin;
@@ -185,8 +185,9 @@ fn app(assets: &std::path::Path) -> App {
             ..default()
         },
         StatesPlugin,
-        AudioPlugin::default(),
     ))
+    .init_asset::<AudioSource>()
+    .init_asset_loader::<AudioLoader>()
     .init_asset::<TextureAtlasLayout>()
     .init_state::<MyStates>()
     .add_systems(Update, timeout);
