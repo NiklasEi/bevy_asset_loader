@@ -22,6 +22,7 @@ with `cargo run --example <example>`.
 | [`two_collections.rs`](two_collections.rs)                 | Load multiple asset collections                                          |
 | [`asset_maps.rs`](asset_maps.rs)                           | Shows how to use different types as keys in asset maps                   |
 | [`dynamic_asset_collections.rs`](dynamic_asset_collections.rs) | Defines arrays and maps of dynamic assets next to single dynamic assets |
+| [`level_switching.rs`](level_switching.rs)                 | Switch levels by entering the same loading state again; the previous level's assets are unloaded |
 
 ## Credits
 
@@ -35,6 +36,9 @@ by [Kenny](https://kenney.nl/assets/toon-characters-1)
 
 Pixelart tree [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/)
 by [Kenny](https://www.kenney.nl/assets/tiny-town)
+
+Biome backgrounds [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/)
+by [Kenny](https://kenney.nl/assets/background-elements-remastered)
 
 glTF animated fox from [glTF Sample Models][fox]
     * Low poly fox [by PixelMannen] (CC0 1.0 Universal)
