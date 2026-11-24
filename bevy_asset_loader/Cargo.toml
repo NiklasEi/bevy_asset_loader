@@ -145,3 +145,8 @@ path = "examples/sub_state.rs"
 [[example]]
 name = "bsn_integration"
 path = "examples/bsn_integration.rs"
+
+[[example]]
+name = "level_switching"
+path = "examples/level_switching.rs"
+required-features = ["standard_dynamic_assets"]

@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- new example `level_switching` that loads and unloads asset collections (resolves [#114](https://github.com/NiklasEi/bevy_asset_loader/issues/114) and [#191](https://github.com/NiklasEi/bevy_asset_loader/issues/191))
 - load asset collection fields with their declared handle type, so the loading state waits on the same assets the collection holds
   - custom `DynamicAsset` implementations can support typed loading through the new `load_as` and `build_as` methods
 - `#[derive(AssetCollection)]` no longer requires a dependency on the `bevy` crate

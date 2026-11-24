@@ -88,6 +88,8 @@ enum MyStates {
 }
 ```
 
+An app can have as many loading states as it needs, for example one after another to load the assets of a menu first and the rest of the game afterward (see the [manual_dynamic_asset](https://github.com/NiklasEi/bevy_asset_loader/blob/main/bevy_asset_loader/examples/manual_dynamic_asset.rs) example). A loading state can also be entered again, which loads its collections again. The [level_switching](https://github.com/NiklasEi/bevy_asset_loader/blob/main/bevy_asset_loader/examples/level_switching.rs) example uses this to load the assets of every level when entering it.
+
 ## Compile time vs. Run time (dynamic) assets
 
 Asset configurations, like their file path or dimensions of sprite sheets, can be given at compile time (through derive macro attributes), or at run time (["Dynamic assets"](#dynamic-assets)). The second, allows managing asset configurations as assets. That means you can keep a list of your asset files and their properties in asset files. The main benefit of using dynamic assets is a cleaner split of code and data leading to less recompiles while working on your assets. It also makes your game more approachable for people that want to contribute without touching code.
@@ -639,6 +641,8 @@ struct MyAssets {
 ## Unloading assets
 
 Bevy unloads an asset when there are no strong asset handles left pointing to the asset. An `AssetCollection` stores strong handles and ensures that assets contained in it are not removed from memory. If you want to unload assets, you need to remove any `AssetCollection` resource that holds handles pointing to those assets. You, for example, could do this when leaving the state that needed the collection.
+
+See the [level_switching](https://github.com/NiklasEi/bevy_asset_loader/blob/main/bevy_asset_loader/examples/level_switching.rs) example, which loads the assets of one level at a time and unloads the previous ones.
 
 ## Compatible Bevy versions
 
